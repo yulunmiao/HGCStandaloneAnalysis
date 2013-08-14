@@ -1,15 +1,20 @@
-PFCal
-=====
+# =====
+# PFCal
+# =====
+#
+# Check https://twiki.cern.ch/twiki/bin/view/CMS/PFForwardCalorimeterStudies
+#
 
-PF Calorimeter studies
+# Run FastJet over a set of SLCIO files in castor
 
-Check https://twiki.cern.ch/twiki/bin/view/CMS/PFForwardCalorimeterStudies
+python test/submitMarlinRun.py -i /castor/cern.ch/grid/ilc/prod/clic/1.4tev/h_nunu/ILD/DST/00001504/000 -o /store/cmst3/user/psilva/PFcal/h_nunu
 
+# Run simple analyzer over SLCIO files in EOS
 
-Run FastJet over a SLCIO file (will create AK5PF and CA8PF)
+python test/submitSLCIOanalysis.py -s `pwd`/test/runSLCIOanalysis.py -o CA8 -i /store/cmst3/user/psilva/PFcal/h_nunu -l `pwd`/hnunu_CA8
 
-Marlin test/fastjet.xml --MyLCIOOutputProcessor.LCIOOutputFile=qqqq_dst_2163_1_ak5pf.slcio --global.LCIOInputFiles=qqqq_dst_2163_1.slcio
+# Merge outputs and show plots
 
-Run simple analyzer over SLCIO file
-
-python test/studyVqqResolution.py -i qqqq_dst_2163_1_fj.slcio -j AK5PF
+hadd hnunu_CA8.root hnunu_CA8/*.root
+rm -rf hnunu_CA8/*.root
+python test/studyVqqResolution.py -i hnunu_CA8.root

@@ -10,6 +10,7 @@
 <marlin xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:noNamespaceSchemaLocation="http://ilcsoft.desy.de/marlin/marlin.xsd">
 	<execute>
+		<processor name="AK3Jets" />
 		<processor name="AK5Jets" />
 		<processor name="CA8Jets" />
 		<processor name="MyLCIOOutputProcessor" />
@@ -21,6 +22,14 @@
 		<parameter name="SupressCheck" value="false" />
 		<parameter name="Verbosity"	options="DEBUG0-4,MESSAGE0-4,WARNING0-4,ERROR0-4,SILENT"> MESSAGE  </parameter>
 	</global>
+
+	<processor name="AK3Jets" type="FastJetProcessor">
+		<parameter name="algorithm" type="StringVec">antikt_algorithm 0.3</parameter>
+		<parameter name="clusteringMode" type="StringVec"> InclusiveIterativeNJets 4 10</parameter>
+		<parameter name="jetOut" type="string" lcioOutType="ReconstructedParticle">AK3PF</parameter>
+		<parameter name="recParticleIn" type="string" lcioInType="ReconstructedParticle"> PandoraPFANewPFOs </parameter>
+		<parameter name="recombinationScheme" type="string">E_scheme </parameter>
+	</processor>
 
 	<processor name="AK5Jets" type="FastJetProcessor">
 		<parameter name="algorithm" type="StringVec">antikt_algorithm 0.5</parameter>
