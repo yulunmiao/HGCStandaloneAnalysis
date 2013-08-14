@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-from ROOT import TFile, TH1F, TH2F,TCanvas, TProfile, TPaveText, TLorentzVector, TLegend, gStyle
+from ROOT import TFile, TH1F, TH2F,TCanvas, TProfile, TPaveText, TLorentzVector, TLegend, gStyle, gROOT
 import optparse
 
 def studyVqqResolution(rootFile):
@@ -16,6 +16,7 @@ def studyVqqResolution(rootFile):
     inF.Close()
 
     #plot
+    gROOT.SetStyle('Plain')
     gStyle.SetOptStat(0)
     gStyle.SetOptTitle(0)
 
@@ -33,8 +34,8 @@ def studyVqqResolution(rootFile):
     leg.SetBorderSize(0)
     leg.SetFillStyle(0)
     leg.SetTextFont(42)
-    leg.AddEntry(histos['nj'],'jet','f')
-    leg.AddEntry(histos['nq'],'quark','f')
+    leg.AddEntry(histos['nj'],'PF jet','f')
+    leg.AddEntry(histos['nq'],'Quark jet','f')
     leg.Draw()
     p=c.cd(3)
     p.Divide(3,1)

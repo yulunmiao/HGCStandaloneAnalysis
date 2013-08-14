@@ -1,60 +1,64 @@
 #! /usr/bin/env python
 
 from pyLCIO import IOIMPL
-from ROOT import TFile, TH1F, TH2F, TProfile
+from ROOT import TFile, TH1F, TH2F
 import optparse
 import math
 import re
 import os
 
-def findRecoMatch(q,jetHandle,cone=0.5):
+def findRecoMatch(genP,jetHandle,cone=0.5):
 
-    if jetHandle is None: return None
-    if q.getLorentzVec().Pt()==0 : return None
+    toReturn=[genP,None]
+    if jetHandle is None: return toReturn
+    if genP.getLorentzVec().Pt()==0 : return toReturn
 
     minDR=9999.
-    matchedJet=-1
-    ijet=-1
+    matchedJet=None
     for jet in jetHandle :
-        ijet=ijet+1
         if jet.getLorentzVec().Pt()==0 : continue
-        dR=jet.getLorentzVec().DeltaR(q.getLorentzVec())
+        dR=jet.getLorentzVec().DeltaR(genP.getLorentzVec())
         if dR>minDR : continue
         minDR=dR
-        matchedJet=ijet
-    if minDR>cone : matchedJet=-1
-    return matchedJet
+        matchedJet=jet
+    if minDR>cone : matchedJet=None
+    toReturn[1]=matchedJet
+
+    return toReturn
 
 
 def analyze( dstFileName, genCollName, jetCollName, output, minPt=0.5 ):
 
     #parse the number
     jetCone = float( (re.findall(r'[0-9]+', jetCollName))[0] )/10
+    print 'Using %s jet collection with matching R=%f'%(jetCollName,jetCone)
 
     #open root file to store the histograms
     rootFile=TFile(output,'recreate')
     histos={}
-    cands=['j','q']
-    for c in cands:
-        histos['n'+c]=TH1F('n'+c,';Multiplicity;Events',6,0,6)
-        histos[c+'pt']=TH1F(c+'pt',';Transverse momentum [GeV];Jets/quarks',50,0,500)
-        histos[c+'mass']=TH1F(c+'mass',';Mass [GeV];Jets/quarks',50,0,250)
-        histos[c+'eta']=TH1F(c+'eta',';Pseudo-rapidity;Jets/quarks',50,0,5)
-        histos[c+'mindr']=TH1F(c+'mindr',';min #Delta R;Jets/quarks',20,0,6)
-    histos['nq'].SetFillStyle(3002)
-    histos['nq'].SetFillColor(32)
-    histos['qpt'].SetFillStyle(3002)
-    histos['qpt'].SetFillColor(32)
-    histos['qeta'].SetFillStyle(3002)
-    histos['qeta'].SetFillColor(32)
-    histos['qmass'].SetFillStyle(3002)
-    histos['qmass'].SetFillColor(32)
-    histos['dptvspt']=TProfile('dptvspt',';Generated transverse momentum [GeV];Response;Jets',50,0,500,0,10)
-    histos['dptvseta']=TProfile('dptvseta',';Generated pseudo-rapidity;Response;Jets',50,0,5,0,10)
+    cats=['j','mj','v']
+    for c in cats:
+
+        histos[c+'n']        = TH1F(c+'n',       ';Multiplicity;Events',                     5,0,5)
+        histos[c+'pt']       = TH1F(c+'pt',      ';Transverse momentum [GeV];Jets/quarks',   100,0,500)
+        histos[c+'eta']      = TH1F(c+'eta',     ';Pseudo-rapidity;Jets/quarks',             50,0,5)
+        histos[c+'mass']     = TH1F(c+'mass',    ';Mass [GeV];Jets/quarks',                  200,0,500)
+        histos[c+'ptvsmass'] = TH2F(c+'ptvsmass',';Transverse momentum [GeV];Mass [GeV]',    100,0,500,200,0,500)
+
+        if c!='mj' : continue
+        histos[c+'dptvspt']  = TH2F(c+'dptvspt', ';Generated transverse momentum [GeV];p_{T} response;Jets', 50,0,500,100,0,5)
+        histos[c+'dmvspt']   = TH2F(c+'dmtvspt', ';Generated transverse momentum [GeV];Mass response;Jets',  50,0,500,100,0,5)
+        histos[c+'dptvseta'] = TH2F(c+'dptvseta', ';Generated pseudo-rapidity;p_{T} response;Jets',          50,0,5,  100,0,5)        
+        histos[c+'dmvseta']  = TH2F(c+'dmvseta', ';Generated pseudo-rapidity;Mass response;Jets',            50,0,5,  100,0,5)        
+
     for key in histos:
+        histos[key].Sumw2()
         histos[key].SetMarkerStyle(20)
         histos[key].SetMarkerColor(1)
         histos[key].SetLineColor(1)
+        if key[0]=='v':
+            histos[key].SetFillStyle(3002)
+            histos[key].SetFillColor(32)
 
     # create the LCReader and open the input file
     lcReader = IOIMPL.LCFactory.getInstance().createLCReader()
@@ -68,112 +72,76 @@ def analyze( dstFileName, genCollName, jetCollName, output, minPt=0.5 ):
         for collectionName, collection in event:
             if collectionName == genCollName : genHandle=collection
             if collectionName == jetCollName : jetHandle=collection
+ 
+        #search for prompt V->qq'
+        vqq=[]
+        for p in genHandle:
+            if math.fabs(p.getPDG())==23 or math.fabs(p.getPDG())==24 :
 
+                decStr=' -> %s -> '%p.getPDG()
 
-        #gen particles
-        resolvedQuarks=[]
-        matchedJets={}
-        if genHandle is None:
-            for j in jetHandle : matchedJets[j]=[j]
-        else:
-            for p in genHandle:
-                
-                #only quarks
-                if math.fabs(p.getPDG())>6: continue
+                vDecaysHad=False
+                for d in p.getDaughters():
+                    decStr=decStr+' %d '%d.getPDG()
+                    if not (math.fabs(d.getPDG())<6 or math.fabs(d.getPDG())>100): continue
+                    vDecaysHad=True
 
-                #only quarks from hard process or W/Z decays
-                isPrompt=False
+                vIsPrompt=False
                 for m in p.getParents() :
-                    if math.fabs(m.getPDG())==11 or math.fabs(m.getPDG())==23 or math.fabs(m.getPDG())==24: isPrompt=True
-                if not isPrompt: continue
-                
-                #require minimum pT
-                if p.getLorentzVec().Pt()<minPt : continue
-                resolvedQuarks.append(p)
+                    decStr = ' %d '%m.getPDG() + decStr
+                    if not (math.fabs(d.getPDG())==11 or math.fabs(d.getPDG())==25): continue
+                    vIsPrompt=True
+                if len(p.getParents())==0 : vIsPrompt=True
 
-                #find match and store
-                ijet=findRecoMatch(p,jetHandle,jetCone)
-                if ijet<0: continue
-                try:
-                    matchedJets[ijet].append(p)
-                except:
-                    matchedJets[ijet]=[p]
+                print '%s prompt=%s decaysHad=%s'%(decStr,vIsPrompt,vDecaysHad)
 
-        #check selected quarks (if DR<jetCone consider the sum of the two)
-        selQuarks=[]
-        for iq in xrange(0,len(resolvedQuarks)):
+                if not (vIsPrompt and vDecaysHad): continue
+                vqq.append(p)
 
-            mergedQuark=resolvedQuarks[iq].getLorentzVec()
-            for jq in xrange(iq+1,len(resolvedQuarks)):
-                if iq>=jq : continue
-                dR=resolvedQuarks[iq].getLorentzVec().DeltaR(resolvedQuarks[iq].getLorentzVec())
-                if dR>jetCone : continue
-                mergedQuark+=resolvedQuarks[jq].getLorentzVec()
-            selQuarks.append( mergedQuark )
+        hasVqq=(len(vqq)!=0)
 
-        nquarks=0
-        for q in selQuarks:
-            if q.Pt()<30 : continue
-            nquarks=nquarks+1
-            histos['qpt'].Fill(q.Pt())            
-            histos['qmass'].Fill(q.M())            
-            histos['qeta'].Fill(math.fabs(q.Eta()))
-        if nquarks==0 : continue
-        histos['nq'].Fill(nquarks)
-                    
-        #kinematics of the matched jets
-        njets=0
-        for j in matchedJets :
 
-            jet=jetHandle.at(j).getLorentzVec()
-            if jet.Pt()<30 : continue
+        #kinematics of the reconstructed jets
+        selJets=[]
+        for j in jetHandle:
+            if j.getLorentzVec().Pt()<30 or math.fabs(j.getLorentzVec().Eta())>3: continue
+
+            tags=['j']
+            if hasVqq : tags.append('mj')
+            for t in tags :
+                histos[t+'pt'].Fill(j.getLorentzVec().Pt())
+                histos[t+'eta'].Fill(math.fabs(j.getLorentzVec().Eta()))
+                histos[t+'mass'].Fill(j.getLorentzVec().M())
+                histos[t+'ptvsmass'].Fill(j.getLorentzVec().Pt(),j.getLorentzVec().M())
+
+            selJets.append(j)
+        histos['jn'].Fill(len(selJets))
+        if hasVqq : histos['mjn'].Fill(len(selJets))
+
+        #now consider only matched events with V->qq'
+        if not hasVqq: continue
+
+        #fill gen level plots
+        histos['vn'].Fill(len(vqq))
+        for v in vqq:
+            histos['vpt'].Fill(v.getLorentzVec().Pt())            
+            histos['veta'].Fill(math.fabs(v.getLorentzVec().Eta()))
+            histos['vmass'].Fill(v.getLorentzVec().M())            
+            histos['vptvsmass'].Fill(v.getLorentzVec().Pt(),v.getLorentzVec().M())            
+
+        #resolution for matched jets
+        matchedJets=[ findRecoMatch(v,jetHandle,jetCone) for v in vqq ]
+        for m in matchedJets :
+            v=m[0]
+            j=m[1]
+            if j is None or v is None : continue
+            dpt=j.getLorentzVec().Pt()/v.getLorentzVec().Pt()
+            dm=j.getLorentzVec().M()/v.getLorentzVec().M()
+            histos['mjdptvspt'].Fill(v.getLorentzVec().Pt(),dpt)
+            histos['mjdmvspt'].Fill(v.getLorentzVec().Pt(),dm)
+            histos['mjdptvseta'].Fill(math.fabs(v.getLorentzVec().Eta()),dpt)
+            histos['mjdmvseta'].Fill(math.fabs(v.getLorentzVec().Eta()),dm)
             
-            gen=TLorentzVector(0,0,0,0)
-            for p in matchedJets[j]:
-                gen+=p.getLorentzVec()
-            #if gen.Pt()/jet.Pt()<0.5 : continue
-
-            njets=njets+1
-            histos['jpt'].Fill(jet.Pt())            
-            histos['jmass'].Fill(jet.M())            
-            histos['jeta'].Fill(math.fabs(jet.Eta()))
-            histos['dptvspt'].Fill(gen.Pt(),jet.Pt()/gen.Pt())
-            histos['dptvseta'].Fill(math.fabs(gen.Eta()),jet.Pt()/gen.Pt())
-
-        histos['nj'].Fill(njets)
-
-#        #match possible V->qq' decays
-#            #for p in genOfInterest:
-#             #       if math.fabs(p.getPDG())!=math.fabs(mcp.getPDG()): continue
-#                    if p.getPDG()==mcp.getPDG() : continue
-#                    qqSystem=p.getLorentzVec()+mcp.getLorentzVec()
-#
-#                    deltaMZ=math.fabs(qqSystem.M()-91.1876)
-#                    deltaMW=math.fabs(qqSystem.M()-80.385)
-#                    if(deltaMZ<deltaMW) :
-#                        if(deltaMZ<100) : 
-#                            genZqq.append([p,mcp])
-#                            jjSystem=findRecoMatch(p,mcp,jetHandle)
-#                            if len(jjSystem)==1 : 
-#                                recoZjj.append(jjSystem)
-#                                print '%f %f'%(qqSystem.Pt(),jjSystem[0].getLorentzVec().Pt())
-#                    else:
-#                        if(deltaMW<100) : 
-#                            genWqq.append([p,mcp])
-#                            jjSystem=findRecoMatch(p,mcp,jetHandle)
-#                            if len(jjSystem)==1 : 
-#                                recoWjj.append(jjSystem)
-#                                print '%f %f'%(qqSystem.Pt(),jjSystem[0].getLorentzVec().Pt())
-#
-#        for jj in recoZjj:
-#            jjP4=jj[0].getLorentzVec()
-#            histos['mjj'].Fill(jjP4.M())
-#            histos['zmjj'].Fill(jjP4.M())
-#        for jj in recoWjj:
-#            jjP4=jj[0].getLorentzVec()
-#            histos['mjj'].Fill(jjP4.M())
-#            histos['wmjj'].Fill(jjP4.M())
-#
 
     # write and close the file
     rootFile.Write()
