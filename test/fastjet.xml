@@ -5,15 +5,13 @@
 	-->
 	<!-- ?xml-stylesheet type="text/xsl" href="marlin.xsl"? -->
 
-
-
 <marlin xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:noNamespaceSchemaLocation="http://ilcsoft.desy.de/marlin/marlin.xsd">
 	<execute>
-		<processor name="Kt4Jets" />
-		<processor name="Kt5Jets" />
 		<processor name="Kt075Jets" />
-		<processor name="Kt8Jets" />
+		<processor name="SelectedKt075Jets" />
+		<processor name="LooseKt075Jets" />
+		<processor name="TightKt075Jets" />
 		<processor name="MyLCIOOutputProcessor" />
 	</execute>
 
@@ -24,22 +22,6 @@
 		<parameter name="Verbosity"	options="DEBUG0-4,MESSAGE0-4,WARNING0-4,ERROR0-4,SILENT"> MESSAGE  </parameter>
 	</global>
 
-	<processor name="Kt4Jets" type="FastJetProcessor">
-		<parameter name="algorithm" type="StringVec">kt_algorithm 0.4</parameter>
-		<parameter name="clusteringMode" type="StringVec"> InclusiveIterativeNJets 4 10</parameter>
-		<parameter name="jetOut" type="string" lcioOutType="ReconstructedParticle">Kt4PF</parameter>
-		<parameter name="recParticleIn" type="string" lcioInType="ReconstructedParticle">PandoraPFOCollection</parameter>
-		<parameter name="recombinationScheme" type="string">E_scheme </parameter>
-	</processor>
-
-	<processor name="Kt5Jets" type="FastJetProcessor">
-		<parameter name="algorithm" type="StringVec">kt_algorithm 0.5</parameter>
-		<parameter name="clusteringMode" type="StringVec"> InclusiveIterativeNJets 4 10</parameter>
-		<parameter name="jetOut" type="string" lcioOutType="ReconstructedParticle">Kt5PF</parameter>
-		<parameter name="recParticleIn" type="string" lcioInType="ReconstructedParticle"> PandoraPFOCollection </parameter>
-		<parameter name="recombinationScheme" type="string">E_scheme </parameter>
-	</processor>
-
 	<processor name="Kt075Jets" type="FastJetProcessor">
 		<parameter name="algorithm" type="StringVec">kt_algorithm 0.75</parameter>
 		<parameter name="clusteringMode" type="StringVec"> InclusiveIterativeNJets 4 10</parameter>
@@ -48,13 +30,30 @@
 		<parameter name="recombinationScheme" type="string">E_scheme </parameter>
 	</processor>
 
-	<processor name="Kt8Jets" type="FastJetProcessor">
-		<parameter name="algorithm" type="StringVec">kt_algorithm 0.8</parameter>
+	<processor name="LooseKt075Jets" type="FastJetProcessor">
+		<parameter name="algorithm" type="StringVec">kt_algorithm 0.75</parameter>
 		<parameter name="clusteringMode" type="StringVec"> InclusiveIterativeNJets 4 10</parameter>
-		<parameter name="jetOut" type="string" lcioOutType="ReconstructedParticle">Kt8PF</parameter>
-		<parameter name="recParticleIn" type="string" lcioInType="ReconstructedParticle"> PandoraPFOCollection </parameter>
+		<parameter name="jetOut" type="string" lcioOutType="ReconstructedParticle">LooseKt075PF</parameter>
+		<parameter name="recParticleIn" type="string" lcioInType="ReconstructedParticle"> LooseSelectedPandoraPFOCollection </parameter>
 		<parameter name="recombinationScheme" type="string">E_scheme </parameter>
 	</processor>
+
+	<processor name="SelectedKt075Jets" type="FastJetProcessor">
+		<parameter name="algorithm" type="StringVec">kt_algorithm 0.75</parameter>
+		<parameter name="clusteringMode" type="StringVec"> InclusiveIterativeNJets 4 10</parameter>
+		<parameter name="jetOut" type="string" lcioOutType="ReconstructedParticle">SelectedKt075PF</parameter>
+		<parameter name="recParticleIn" type="string" lcioInType="ReconstructedParticle"> SelectedPandoraPFOCollection </parameter>
+		<parameter name="recombinationScheme" type="string">E_scheme </parameter>
+	</processor>
+
+	<processor name="TightKt075Jets" type="FastJetProcessor">
+		<parameter name="algorithm" type="StringVec">kt_algorithm 0.75</parameter>
+		<parameter name="clusteringMode" type="StringVec"> InclusiveIterativeNJets 4 10</parameter>
+		<parameter name="jetOut" type="string" lcioOutType="ReconstructedParticle">TightKt075PF</parameter>
+		<parameter name="recParticleIn" type="string" lcioInType="ReconstructedParticle"> TightSelectedPandoraPFOCollection </parameter>
+		<parameter name="recombinationScheme" type="string">E_scheme </parameter>
+	</processor>
+
 
 	<processor name="MyLCIOOutputProcessor" type="LCIOOutputProcessor">
 		<parameter name="LCIOOutputFile" type="string">outputfile.slcio </parameter>

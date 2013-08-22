@@ -21,14 +21,17 @@ def findRecoMatch(genP,jetHandle,cone=0.5):
         if dR>minDR : continue
         minDR=dR
         matchedJet=jet
-    #print '%d (%3.1f,%3.1f,%3.1f) \t (%3.1f,%3.1f,%3.1f) \t\t %3.1f'%(
-    #    genP.getPDG(),
-    #    genP.getLorentzVec().Pt(),genP.getLorentzVec().Eta(),genP.getLorentzVec().Phi(),
-    #    matchedJet.getLorentzVec().Pt(),matchedJet.getLorentzVec().Eta(),matchedJet.getLorentzVec().Phi(),
-    #    minDR
-    #    )
+
+    print '%d (%3.1f,%3.1f,%3.1f) \t (%3.1f,%3.1f,%3.1f) \t\t %3.1f'%(
+        genP.getPDG(),
+        genP.getLorentzVec().Pt(),genP.getLorentzVec().Eta(),genP.getLorentzVec().Phi(),
+        matchedJet.getLorentzVec().Pt(),matchedJet.getLorentzVec().Eta(),matchedJet.getLorentzVec().Phi(),
+        minDR
+        )
+
     if minDR>cone : matchedJet=None
     toReturn[1]=matchedJet
+
     return toReturn
 
 
@@ -93,12 +96,14 @@ def analyze( dstFileName, genCollName, jetCollName, output, minPt=0.5 ):
     
     # filling the tree
     #print 'Generated \t\t Reconstructed \t\t\t Delta'
+    ievent=0
     for event in lcReader:
-
+        ievent=ievent+1
+        print ievent
         genHandle=None
         jetHandle=None
         for collectionName, collection in event:
-            print collectionName
+            #print collectionName
             if collectionName == genCollName : genHandle=collection
             if collectionName == jetCollName : jetHandle=collection
             
@@ -144,8 +149,16 @@ def analyze( dstFileName, genCollName, jetCollName, output, minPt=0.5 ):
         histos['nmatches'].Fill(len(matchedJets))
         if len(matchedJets)==2:
             histos['sel'].Fill(2)
-            dijet=matchedJets[0].getLorentzVec()
+            dijet=TLorentzVector(matchedJets[0].getLorentzVec())
             dijet+=matchedJets[1].getLorentzVec()
+            
+            print '%d (%3.1f,%3.1f,%3.1f) \t (%3.1f,%3.1f,%3.1f) \t deltaM=%f'%(
+                genX[0].getPDG(),
+                genX[0].getLorentzVec().Pt(),genX[0].getLorentzVec().Eta(),genX[0].getLorentzVec().Phi(),
+                dijet.Pt(),dijet.Eta(),dijet.Phi(),
+                dijet.M()-genX[0].getLorentzVec().M()
+                )
+
             histos['mjj'].Fill(dijet.M())
             histos['dmjj'].Fill(dijet.M()/genX[0].getLorentzVec().M()-1)
 
