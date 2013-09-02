@@ -22,47 +22,41 @@ def findRecoMatch(genP,jetHandle,cone=0.5):
         minDR=dR
         matchedJet=jet
 
-    print '%d (%3.1f,%3.1f,%3.1f) \t (%3.1f,%3.1f,%3.1f) \t\t %3.1f'%(
-        genP.getPDG(),
-        genP.getLorentzVec().Pt(),genP.getLorentzVec().Eta(),genP.getLorentzVec().Phi(),
-        matchedJet.getLorentzVec().Pt(),matchedJet.getLorentzVec().Eta(),matchedJet.getLorentzVec().Phi(),
-        minDR
-        )
+    if not matchedJet is None:    
+        print '%d (%3.1f,%3.1f,%3.1f) \t (%3.1f,%3.1f,%3.1f) \t\t %3.1f'%(
+            genP.getPDG(),
+            genP.getLorentzVec().Pt(),genP.getLorentzVec().Eta(),genP.getLorentzVec().Phi(),
+            matchedJet.getLorentzVec().Pt(),matchedJet.getLorentzVec().Eta(),matchedJet.getLorentzVec().Phi(),
+            minDR
+            )
 
     if minDR>cone : matchedJet=None
     toReturn[1]=matchedJet
 
     return toReturn
 
-
-def findAllRecoMatch(genPcoll,jetHandle,cone=0.5):
-
-    toReturn=[]
-    if jetHandle is None or genPcoll is None: return toReturn
- 
-    for genP in genPcoll:
-        j=findRecoMatch(genP,jetHandle,cone)[1]
-        if j is None: continue
-
-        isAdded=False
-        for mj in toReturn:
-            dR=j.getLorentzVec().DeltaR(mj.getLorentzVec())
-            if dR<cone: continue
-            isAdded=True
-        if isAdded : continue
-
-        toReturn.append(j)
-
-    return toReturn
+"""
+"""
+def isSemiLepJet(genHandle,j,cone=0.5) :
+    isSemiLep=False
+    for p in genHandle:
+        if p.getGeneratorStatus() != 1 : continue
+        pid=math.fabs(p.getPDG())
+        if pid<11 or pid>16 : continue
+        dR=j.getLorentzVec().DeltaR(p.getLorentzVec())
+        if dR>cone : continue
+        isSemiLep=True
+    return isSemiLep
 
 
 def analyze( dstFileName, genCollName, jetCollName, output, minPt=0.5 ):
 
+    jetCone=0.5
     #parse the number
-    if jetCollName=="JetOut": jetCone=0.75
-    else :
-        jetCone = float( (re.findall(r'[0-9]+', jetCollName))[0] )/10
-        if jetCone==7.5 : jetCone=0.75 
+    #if jetCollName=="JetOut": jetCone=0.75
+    #else :
+    #    jetCone = float( (re.findall(r'[0-9]+', jetCollName))[0] )/10
+    #    if jetCone==7.5 : jetCone=0.75 
 
     print 'Using %s jet collection with matching R=%f'%(jetCollName,jetCone)
 
@@ -73,13 +67,24 @@ def analyze( dstFileName, genCollName, jetCollName, output, minPt=0.5 ):
     histos['sel'].GetXaxis().SetBinLabel(1,'RECO')
     histos['sel'].GetXaxis().SetBinLabel(2,'Gen X->qq')
     histos['sel'].GetXaxis().SetBinLabel(3,'Reco X->qq')
-    cats=['j1','j2']
-    for c in cats:
-        histos[c+'dr']       = TH1F(c+'dr',      ';#Delta R(jet #1,b);Jets',   40,0,4)
-        histos[c+'dpt']      = TH1F(c+'dpt',      ';#Delta p_{T}/p_{T};Jets',   50,-2,2)
     histos['nmatches'] = TH1F('nmatches',  ';Jet-b matches found;Events',  4,0,4)
-    histos['mjj']      = TH1F('mjj',       ';Dijet mass [GeV];Events',       100,0,250)
-    histos['dmjj']     = TH1F('dmjj',      ';#Delta m/m;Events',  50,-2,2)
+
+    cats=['j1','j2','j']
+    kin=['','30to50','50to100','100toInf']
+    reg=['','barrel','endcap']
+    for c in cats:
+        for k in kin:
+            for r in reg:
+                histos[c+'dr'+k+r]       = TH1F(c+'dr'+k+r,      ';#Delta R(jet #1,b);Jets',   40,0,2)
+                histos[c+'dpt'+k+r]      = TH1F(c+'dpt'+k+r,      ';#Delta p_{T}/p_{T};Jets',   100,-2,2)
+                histos[c+'den'+k+r]      = TH1F(c+'den'+k+r,      ';#Delta E/E;Jets',   100,-2,2)
+    
+    kin=['','30','50','100']
+    reg=['','bb','ee','eb']
+    for k in kin:
+        for r in reg:
+            histos['mjj'+k+r]      = TH1F('mjj'+k+r,       ';Dijet mass [GeV];Events',       100,0,250)
+            histos['dmjj'+k+r]     = TH1F('dmjj'+k+r,      ';#Delta m/m;Events',  50,-2,2)
 
     for key in histos:
         histos[key].Sumw2()
@@ -129,18 +134,34 @@ def analyze( dstFileName, genCollName, jetCollName, output, minPt=0.5 ):
                 vDecaysHad=False
                 iq=0
                 for d in p.getDaughters():
-                    if not (math.fabs(d.getPDG())<6 or math.fabs(d.getPDG())>100): continue
+                    #if not (math.fabs(d.getPDG())<6 or math.fabs(d.getPDG())>100): continue
+                    if not (math.fabs(d.getPDG())<6): continue
                     vDecaysHad=True
                     if vIsPrompt :
                         iq=iq+1
                         j=findRecoMatch(d,jetHandle,jetCone)[1]
                         if j is None: continue
+
+                        semiLepJet=isSemiLepJet(genHandle,j,jetCone)
+                        if semiLepJet: continue
+
                         if j not in matchedJets :
                             matchedJets.append(j)
-                            c='j%d'%iq
-                            histos[c+'dr'].Fill(j.getLorentzVec().DeltaR(d.getLorentzVec()))
-                            histos[c+'dpt'].Fill(j.getLorentzVec().Pt()/d.getLorentzVec().Pt()-1)
-
+                            cats=['j','j%d'%iq]
+                            reg=['']
+                            if math.fabs(j.getLorentzVec().Eta())<1.5 : reg.append('barrel')
+                            else : reg.append('endcap')
+                            kin=['']
+                            if j.getLorentzVec().Pt()>30 and j.getLorentzVec()<50 : kin.append('30to50')
+                            if j.getLorentzVec().Pt()>50 and j.getLorentzVec()<100 : kin.append('50to100')
+                            if j.getLorentzVec().Pt()>100 : kin.append('100toInf')
+                            for c in cats:
+                                for k in kin:
+                                    for r in reg:
+                                        histos[c+'dr'+k+r].Fill(j.getLorentzVec().DeltaR(d.getLorentzVec()))
+                                        histos[c+'dpt'+k+r].Fill(j.getLorentzVec().Pt()/d.getLorentzVec().Pt()-1)
+                                        histos[c+'den'+k+r].Fill(j.getLorentzVec().E()/d.getLorentzVec().E()-1)
+                                    
                 if vDecaysHad : genX.append(p)
 
         if len(genX)!=1 : continue
@@ -151,7 +172,23 @@ def analyze( dstFileName, genCollName, jetCollName, output, minPt=0.5 ):
             histos['sel'].Fill(2)
             dijet=TLorentzVector(matchedJets[0].getLorentzVec())
             dijet+=matchedJets[1].getLorentzVec()
+
+            if math.fabs(matchedJets[0].getLorentzVec().Eta())>3 or math.fabs(matchedJets[1].getLorentzVec().Eta())>3 : continue
+
+            kin=['']
+            if matchedJets[0].getLorentzVec().Pt()>30 and matchedJets[1].getLorentzVec().Pt()>30 : kin.append('30') 
+            if matchedJets[0].getLorentzVec().Pt()>50 and matchedJets[1].getLorentzVec().Pt()>50 : kin.append('50') 
+            if matchedJets[0].getLorentzVec().Pt()>100 and matchedJets[1].getLorentzVec().Pt()>100 : kin.append('100') 
             
+            reg=['']
+            regStr=''
+            if   math.fabs(matchedJets[0].getLorentzVec().Eta())<1.5 : regStr='b'
+            elif math.fabs(matchedJets[0].getLorentzVec().Eta())<3 :   regStr='e'
+            if   math.fabs(matchedJets[1].getLorentzVec().Eta())<1.5 : regStr=regStr+'b'
+            elif math.fabs(matchedJets[1].getLorentzVec().Eta())<3 :   regStr=regStr+'e'
+            if regStr=='be' : regStr='eb'
+            reg.append(regStr)
+
             print '%d (%3.1f,%3.1f,%3.1f) \t (%3.1f,%3.1f,%3.1f) \t deltaM=%f'%(
                 genX[0].getPDG(),
                 genX[0].getLorentzVec().Pt(),genX[0].getLorentzVec().Eta(),genX[0].getLorentzVec().Phi(),
@@ -159,8 +196,10 @@ def analyze( dstFileName, genCollName, jetCollName, output, minPt=0.5 ):
                 dijet.M()-genX[0].getLorentzVec().M()
                 )
 
-            histos['mjj'].Fill(dijet.M())
-            histos['dmjj'].Fill(dijet.M()/genX[0].getLorentzVec().M()-1)
+            for k in kin:
+                for r in reg:
+                    histos['mjj'+k+r].Fill(dijet.M())
+                    histos['dmjj'+k+r].Fill(dijet.M()/genX[0].getLorentzVec().M()-1)
 
 
     # write and close the file
