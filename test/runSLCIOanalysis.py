@@ -106,7 +106,7 @@ def analyze( dstFileName, genCollName, jetCollName, output, minPt=0.5 ):
     ievent=0
     for event in lcReader:
         ievent=ievent+1
-        #print ievent
+        print 'Event %d'%ievent
         
         genHandle=None
         jetHandle=None
@@ -123,14 +123,18 @@ def analyze( dstFileName, genCollName, jetCollName, output, minPt=0.5 ):
         genX=[]
         matchedJets=[]
         for p in genHandle:
-            if math.fabs(p.getPDG())==25  :
+
+            if math.fabs(p.getPDG())==24 or math.fabs(p.getPDG())==25:
+                decStr=''
+                decStr = decStr + ' %s ->'%p.getGeneratorStatus()
             #if math.fabs(p.getPDG())==25 or math.fabs(p.getPDG())==23 or math.fabs(p.getPDG())==24 :
             #if math.fabs(p.getPDG())==25 or math.fabs(p.getPDG())==24 :
                 vIsPrompt=True
-
+                
                 vDecaysHad=False
                 iq=0
                 for d in p.getDaughters():
+                    decStr = decStr + ' %d'%d.getPDG()
                     #if not (math.fabs(d.getPDG())<6 or math.fabs(d.getPDG())>100): continue
                     if not (math.fabs(d.getPDG())<6): continue
                     vDecaysHad=True
@@ -159,8 +163,9 @@ def analyze( dstFileName, genCollName, jetCollName, output, minPt=0.5 ):
                                         histos[c+'dr'+k+r].Fill(j.getLorentzVec().DeltaR(d.getLorentzVec()))
                                         histos[c+'dpt'+k+r].Fill(j.getLorentzVec().Pt()/d.getLorentzVec().Pt()-1)
                                         histos[c+'den'+k+r].Fill(j.getLorentzVec().E()/d.getLorentzVec().E()-1)
-                                    
+                print decStr                    
                 if vDecaysHad : genX.append(p)
+                
 
         if len(genX)!=1 : continue
         histos['sel'].Fill(1)
@@ -206,7 +211,12 @@ def analyze( dstFileName, genCollName, jetCollName, output, minPt=0.5 ):
             #    )
 
             #resolution in tight mass window
-            if dijet.M()>110 and dijet.M()<140 :
+            minWindow=110
+            maxWindow=140
+            if math.fabs(genX[0].getPDG())==24:
+                minWindow=65
+                maxWindow=95
+            if dijet.M()>minWindow and dijet.M()<maxWindow :
                 for iq in [0,1] :
                     cats=['j','j%d'%(iq+1)]
                     reg=['']
@@ -242,7 +252,7 @@ if __name__ == '__main__':
     (opt,args)=parser.parse_args()
 
     fToProcess=opt.input
-    if(fToProcess.find('cmst3')>0):
+    if(fToProcess.find('/store/')==0):
         print 'Copying input locally to tmp'
         locF='/tmp/%s'%os.path.basename(fToProcess)
         os.system('cmsStage %s %s'%(fToProcess,locF))
