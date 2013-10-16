@@ -5,15 +5,18 @@
 # Check https://twiki.cern.ch/twiki/bin/view/CMS/PFForwardCalorimeterStudies
 #
 
-# Run FastJet over a set of SLCIO files in castor
-
-python test/submitMarlinRun.py -i /castor/cern.ch/grid/ilc/prod/clic/1.4tev/h_nunu/SID/DST/00002466/000 -o /store/cmst3/user/psilva/PFcal/hbb_nunu_SID
+# Run FastJet over a set of SLCIO files in castor/eos (SLC5)
 
 python test/submitMarlinRun.py -i /castor/cern.ch/grid/ilc/prod/clic/1.4tev/h_nunu/ILD/DST/00002022/000 -o /store/cmst3/user/psilva/PFcal/hbb_nunu_ILD -s test/fastjet_newpfos.xml -l ${PWD}/FARMILD
 
-# Run simple analyzer over SLCIO files in EOS
+python test/submitMarlinRun.py -i /store/cmst3/user/psilva/PFcal/pp_WZ/DST/  -o /store/cmst3/user/psilva/PFcal/pp_WZ/DST/FJ -s test/fastjet_pp.xml -l ${PWD}/FARMWZ
+
+# Run simple analyzer over SLCIO files in EOS (SLC6)
 
 python test/submitSLCIOanalysis.py -s `pwd`/test/runSLCIOanalysis.py -o "-j SelectedKt075PF" -i /store/cmst3/user/psilva/PFcal/hbb_nunu_ILD -l `pwd`/hbb_nunu_ILD -q 8nh
+
+python test/submitSLCIOanalysis.py -s `pwd`/test/runSLCIOanalysis.py -o "-j Kt075PF" -i /store/cmst3/user/psilva/PFcal/pp_WZ/DST/FJ_v2 -l `pwd`/pp_WZ -q 8nh
+python test/submitSLCIOanalysis.py -s `pwd`/test/runSLCIOanalysis.py -o "-j Kt4PF"   -i /store/cmst3/user/psilva/PFcal/pp_WZ/DST/FJ_v2 -l `pwd`/pp_WZ_kt4 -q 8nh
 
 # Merge outputs and show plots
 

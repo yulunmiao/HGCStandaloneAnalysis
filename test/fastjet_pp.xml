@@ -26,7 +26,7 @@
 
 	<processor name="Kt4Jets" type="FastJetProcessor">
 		<parameter name="algorithm" type="StringVec">kt_algorithm 0.4</parameter>
-		<parameter name="clusteringMode" type="StringVec"> InclusiveIterativeNJets 4 10</parameter>
+		<parameter name="clusteringMode" type="StringVec">Inclusive 5</parameter>
 		<parameter name="jetOut" type="string" lcioOutType="ReconstructedParticle">Kt4PF</parameter>
 		<parameter name="recParticleIn" type="string" lcioInType="ReconstructedParticle">PandoraPFOs</parameter>
 		<parameter name="recombinationScheme" type="string">E_scheme </parameter>
@@ -34,7 +34,7 @@
 
 	<processor name="Kt5Jets" type="FastJetProcessor">
 		<parameter name="algorithm" type="StringVec">kt_algorithm 0.5</parameter>
-		<parameter name="clusteringMode" type="StringVec"> InclusiveIterativeNJets 4 10</parameter>
+		<parameter name="clusteringMode" type="StringVec">Inclusive 5</parameter>
 		<parameter name="jetOut" type="string" lcioOutType="ReconstructedParticle">Kt5PF</parameter>
 		<parameter name="recParticleIn" type="string" lcioInType="ReconstructedParticle"> PandoraPFOs </parameter>
 		<parameter name="recombinationScheme" type="string">E_scheme </parameter>
@@ -42,7 +42,7 @@
 
 	<processor name="Kt075Jets" type="FastJetProcessor">
 		<parameter name="algorithm" type="StringVec">kt_algorithm 0.75</parameter>
-		<parameter name="clusteringMode" type="StringVec"> InclusiveIterativeNJets 4 10</parameter>
+		<parameter name="clusteringMode" type="StringVec">Inclusive 5</parameter>
 		<parameter name="jetOut" type="string" lcioOutType="ReconstructedParticle">Kt075PF</parameter>
 		<parameter name="recParticleIn" type="string" lcioInType="ReconstructedParticle"> PandoraPFOs </parameter>
 		<parameter name="recombinationScheme" type="string">E_scheme </parameter>
@@ -50,7 +50,7 @@
 
 	<processor name="Kt8Jets" type="FastJetProcessor">
 		<parameter name="algorithm" type="StringVec">kt_algorithm 0.8</parameter>
-		<parameter name="clusteringMode" type="StringVec"> InclusiveIterativeNJets 4 10</parameter>
+		<parameter name="clusteringMode" type="StringVec">Inclusive 5</parameter>
 		<parameter name="jetOut" type="string" lcioOutType="ReconstructedParticle">Kt8PF</parameter>
 		<parameter name="recParticleIn" type="string" lcioInType="ReconstructedParticle"> PandoraPFOs </parameter>
 		<parameter name="recombinationScheme" type="string">E_scheme </parameter>

@@ -39,6 +39,7 @@ def findRecoMatch(genP,jetHandle,cone=0.5):
 """
 def isSemiLepJet(genHandle,j,cone=0.5) :
     isSemiLep=False
+    if j is None: return isSemiLep
     for p in genHandle:
         if p.getGeneratorStatus() != 1 : continue
         pid=math.fabs(p.getPDG())
@@ -63,30 +64,35 @@ def analyze( dstFileName, genCollName, jetCollName, output, minPt=0.5 ):
     #open root file to store the histograms
     rootFile=TFile(output,'recreate')
     histos={}
-    histos['sel'] = TH1F('sel',  ';Selection;Events',  3,0,3)
-    histos['sel'].GetXaxis().SetBinLabel(1,'RECO')
-    histos['sel'].GetXaxis().SetBinLabel(2,'Gen X->qq')
-    histos['sel'].GetXaxis().SetBinLabel(3,'Reco X->qq')
-    histos['nmatches'] = TH1F('nmatches',  ';Jet-b matches found;Events',  4,0,4)
+    histos['sel'] = TH1F('sel',  ';Selection;Events',  4,0,4)
+    histos['sel'].GetXaxis().SetBinLabel(1,'Total')
+    histos['sel'].GetXaxis().SetBinLabel(2,'Gen V')
+    histos['sel'].GetXaxis().SetBinLabel(3,'Gen V#rightarrowqq')
+    histos['sel'].GetXaxis().SetBinLabel(4,'Reco V#rightarrowqq')
 
-    cats=['j1','j2','j']
     kin=['','30to50','50to100','100toInf']
     reg=['','barrel','endcap']
-    sel=['','inm']
-    for c in cats:
-        for k in kin:
-            for r in reg:
-                for s in sel:
-                    histos[c+s+'dr'+k+r]       = TH1F(c+s+'dr'+k+r,      ';#Delta R(jet #1,b);Jets',   40,0,2)
-                    histos[c+s+'dpt'+k+r]      = TH1F(c+s+'dpt'+k+r,      ';#Delta p_{T}/p_{T};Jets',   100,-2,2)
-                    histos[c+s+'den'+k+r]      = TH1F(c+s+'den'+k+r,      ';#Delta E/E;Jets',   100,-2,2)
-    
-    kin=['','30','50','100']
-    reg=['','bb','ee','eb']
+    sel=['','nonu']
     for k in kin:
         for r in reg:
-            histos['mjj'+k+r]      = TH1F('mjj'+k+r,       ';Dijet mass [GeV];Events',       100,0,250)
-            histos['dmjj'+k+r]     = TH1F('dmjj'+k+r,      ';#Delta m/m;Events',  50,-2,2)
+            for s in sel:
+                histos['j'+s+'den'+k+r]  = TH1F(s+'den'+k+r, ';#DeltaE/E;Jets',           100,-2,2)
+                histos['j'+s+'dpt'+k+r]  = TH1F(s+'dpt'+k+r, ';#Deltap_{T}/p_{T};Jets',   100,-2,2)
+                histos['j'+s+'dphi'+k+r] = TH1F(s+'dphi'+k+r, ';|#Delta#phi| [rad];Jets', 25,0,0.5)
+                histos['j'+s+'deta'+k+r] = TH1F(s+'deta'+k+r, ';|#Delta#eta|;Jets',       25,0,0.5)
+                histos['j'+s+'dr'+k+r]   = TH1F(s+'dr'+k+r,  ';#DeltaR(jet,q);Jets',      25,0,0.5)
+    
+    bos=['','h','w','z']
+    kin=['','50','100']
+    reg=['','bb','ee','eb']
+    for ib in bos:
+        histos[ib+'mqq']      = TH1F(ib+'mqq',       ';Diquark mass [GeV];Events',       250,0,250)
+        histos[ib+'qpt']      = TH1F(ib+'qpt',       ';Quark transverse momentum [GeV];Events',       250,0,250)
+        histos[ib+'qeta']     = TH1F(ib+'qeta',     ';Quark pseudo-rapidity;Events',       50,0,3.0)
+        for k in kin:
+            for r in reg:
+                histos[ib+'mjj'+k+r]      = TH1F(ib+'mjj'+k+r,       ';Dijet mass [GeV];Events',       250,0,250)
+                histos[ib+'dmjj'+k+r]     = TH1F(ib+'dmjj'+k+r,      ';#Delta m/m;Events',  50,-2,2)
 
     for key in histos:
         histos[key].Sumw2()
@@ -116,125 +122,179 @@ def analyze( dstFileName, genCollName, jetCollName, output, minPt=0.5 ):
             if collectionName == jetCollName : jetHandle=collection
             
         if jetHandle is None : continue
-
-        histos['sel'].Fill(0)
-
-        #search for prompt X->qq'
-        genX=[]
-        matchedJets=[]
+        
+        #Hard process: status 3 particles 
+        #save only after at least one boson was found, otherwise incoming partons will be considered
+        genBosons=[]
+        promptQuarks=[]
         for p in genHandle:
+            if p.getGeneratorStatus()!=3 : continue            
+            if math.fabs(p.getPDG())==23 or math.fabs(p.getPDG())==24 or math.fabs(p.getPDG())==25:
+                genBosons.append(p)
+            if len(genBosons)==0: continue
+            if math.fabs(p.getPDG())>6 : continue
+            promptQuarks.append( p )
 
-            if math.fabs(p.getPDG())==24 or math.fabs(p.getPDG())==25:
-                decStr=''
-                decStr = decStr + ' %s ->'%p.getGeneratorStatus()
-            #if math.fabs(p.getPDG())==25 or math.fabs(p.getPDG())==23 or math.fabs(p.getPDG())==24 :
-            #if math.fabs(p.getPDG())==25 or math.fabs(p.getPDG())==24 :
-                vIsPrompt=True
-                
-                vDecaysHad=False
-                iq=0
-                for d in p.getDaughters():
-                    decStr = decStr + ' %d'%d.getPDG()
-                    #if not (math.fabs(d.getPDG())<6 or math.fabs(d.getPDG())>100): continue
-                    if not (math.fabs(d.getPDG())<6): continue
-                    vDecaysHad=True
-                    if vIsPrompt :
-                        iq=iq+1
-                        j=findRecoMatch(d,jetHandle,jetCone)[1]
-                        if j is None: continue
+        #if none found, check if from ILD official production (status is different)
+        if len(genBosons)==0 :
+            for p in genHandle:
+                #if math.fabs(p.getPDG())!=23 and math.fabs(p.getPDG())!=24 and math.fabs(p.getPDG())!=25: continue
+                if math.fabs(p.getPDG())!=25 : continue
+                if p.getGeneratorStatus()!=2 : continue
+                genBosons.append(p)
+                for d in p.getDaughters() :
+                    if math.fabs(d.getPDG())>6 : continue
+                    promptQuarks.append(d)
 
-                        semiLepJet=isSemiLepJet(genHandle,j,jetCone)
-                        if semiLepJet: continue
+        #match di-quarks to bosons, match- each quark to a reco jet (if available)
+        bosonDecays=[]
+        bosonRecoDecays=[]
+        goodBosonRecoFound=False
+        nPromptQuarks=len(promptQuarks)
+        matchedPromptQuarksIdx=[]
+        for b in genBosons:
 
-                        #save jet and compute its resolution
-                        if j not in matchedJets :
-                            matchedJets.append([j,d])
-                            cats=['j','j%d'%iq]
-                            reg=['']
-                            if math.fabs(j.getLorentzVec().Eta())<1.5 : reg.append('barrel')
-                            else : reg.append('endcap')
-                            kin=['']
-                            if j.getLorentzVec().Pt()>30 and j.getLorentzVec().Pt()<50 : kin.append('30to50')
-                            if j.getLorentzVec().Pt()>50 and j.getLorentzVec().Pt()<100 : kin.append('50to100')
-                            if j.getLorentzVec().Pt()>100 : kin.append('100toInf')
-                            for c in cats:
-                                for k in kin:
-                                    for r in reg:
-                                        histos[c+'dr'+k+r].Fill(j.getLorentzVec().DeltaR(d.getLorentzVec()))
-                                        histos[c+'dpt'+k+r].Fill(j.getLorentzVec().Pt()/d.getLorentzVec().Pt()-1)
-                                        histos[c+'den'+k+r].Fill(j.getLorentzVec().E()/d.getLorentzVec().E()-1)
-                print decStr                    
-                if vDecaysHad : genX.append(p)
-                
+            requireSameFlavor=( math.fabs(b.getPDG())==23 or math.fabs(b.getPDG())==25 )
+            bosonCharge=b.getCharge()
+            bosonMass=b.getLorentzVec().M()
 
-        if len(genX)!=1 : continue
+            for i in xrange(0,nPromptQuarks):
+                if i in matchedPromptQuarksIdx : continue
+                for j in xrange(i+1,nPromptQuarks):
+                    if j in matchedPromptQuarksIdx : continue
+
+                    #di-quark
+                    qqCharge=promptQuarks[i].getCharge()+promptQuarks[j].getCharge()
+                    qq=promptQuarks[i].getLorentzVec()+promptQuarks[j].getLorentzVec()
+                    drqq2b=qq.DeltaR(b.getLorentzVec())
+                    qqMass=qq.M()
+                    dm=math.fabs(qqMass-bosonMass)
+                    qqFlavor=math.fabs(promptQuarks[i].getPDG()+promptQuarks[j].getPDG())
+
+                    #total charge
+                    if int(qqCharge) != int(bosonCharge) : continue
+
+                    #check if both have the same flavor (Z/H do not mix different weak isospin components)
+                    if requireSameFlavor :
+                        if qqFlavor!=0 : continue
+
+                    #match direction
+                    if drqq2b>0.1 : continue
+
+                    bosName=['']
+                    if math.fabs(b.getPDG())==25 : bosName.append('h')
+                    if math.fabs(b.getPDG())==23 : bosName.append('z')
+                    if math.fabs(b.getPDG())==24 : bosName.append('w')
+                    for ibname in bosName : histos[ibname+'mqq'].Fill(qq.M())
+
+                    #match mass within 5 GeV
+                    if dm>2.5 : continue
+
+                    #acceptance cuts for individual quarks
+                    for ibname in bosName : 
+                        histos[ib+'qpt'].Fill( promptQuarks[i].getLorentzVec().Pt() )
+                        histos[ib+'qpt'].Fill( promptQuarks[j].getLorentzVec().Pt() )
+                        histos[ib+'qeta'].Fill( math.fabs( promptQuarks[i].getLorentzVec().Eta() ) )
+                        histos[ib+'qeta'].Fill( math.fabs( promptQuarks[j].getLorentzVec().Eta() ) )
+                    if promptQuarks[i].getLorentzVec().Pt()<20 : continue
+                    if promptQuarks[j].getLorentzVec().Pt()<20 : continue
+                    if math.fabs( promptQuarks[i].getLorentzVec().Eta() ) > 2.5 : continue
+                    if math.fabs( promptQuarks[j].getLorentzVec().Eta() ) > 2.5 : continue
+
+                    #ok to analyze this one
+                    bosonDecays.append([b,promptQuarks[i],promptQuarks[j]])
+                    j1=findRecoMatch(promptQuarks[i],jetHandle,jetCone)[1]
+                    j2=findRecoMatch(promptQuarks[j],jetHandle,jetCone)[1]
+                    if j1 is not None and j2 is not None: goodBosonRecoFound=True
+                    bosonRecoDecays.append([b,j1,j2])
+                    matchedPromptQuarksIdx.append(i)
+                    matchedPromptQuarksIdx.append(j)
+                    break
+
+        #event selection
+        histos['sel'].Fill(0)
+        if len(genBosons)==0 : continue
         histos['sel'].Fill(1)
+        if len(bosonDecays)==0: continue
+        histos['sel'].Fill(2)
+        if goodBosonRecoFound==True:  histos['sel'].Fill(3)
 
-        histos['nmatches'].Fill(len(matchedJets))
-        if len(matchedJets)==2:
+        #match the generated decays at reconstruction level
+        for i in xrange(0,len(bosonDecays)):
+            b=bosonDecays[i][0]
+            q1=bosonDecays[i][1]
+            q2=bosonDecays[i][2]
+            j1=bosonRecoDecays[i][1]
+            j2=bosonRecoDecays[i][2]
+            if j1 is None: continue
+            if j2 is None: continue
 
-            #further selection
-            j=[matchedJets[0][0],matchedJets[1][0]]
-            q=[matchedJets[0][1],matchedJets[1][1]]
-            if math.fabs(j[0].getLorentzVec().Eta())>3 or math.fabs(j[1].getLorentzVec().Eta())>3 : continue
-            histos['sel'].Fill(2)
-
-            dijet=TLorentzVector(j[0].getLorentzVec())
-            dijet+=j[1].getLorentzVec()
-
-            #mass resolution
-            kin=['']
-            if j[0].getLorentzVec().Pt()>30 and j[1].getLorentzVec().Pt()>30 : kin.append('30') 
-            if j[0].getLorentzVec().Pt()>50 and j[1].getLorentzVec().Pt()>50 : kin.append('50') 
-            if j[0].getLorentzVec().Pt()>100 and j[1].getLorentzVec().Pt()>100 : kin.append('100') 
-            
-            reg=['']
-            regStr=''
-            if   math.fabs(j[0].getLorentzVec().Eta())<1.5 : regStr='b'
-            elif math.fabs(j[0].getLorentzVec().Eta())<3 :   regStr='e'
-            if   math.fabs(j[1].getLorentzVec().Eta())<1.5 : regStr=regStr+'b'
-            elif math.fabs(j[1].getLorentzVec().Eta())<3 :   regStr=regStr+'e'
-            if regStr=='be' : regStr='eb'
-            reg.append(regStr)
-
-            for k in kin:
-                for r in reg:
-                    histos['mjj'+k+r].Fill(dijet.M())
-                    histos['dmjj'+k+r].Fill(dijet.M()/genX[0].getLorentzVec().M()-1)
+            dijet=j1.getLorentzVec()+j2.getLorentzVec()
+            dRjj=j1.getLorentzVec().DeltaR( j2.getLorentzVec() )
+            if dRjj < jetCone:
+                print 'Merged jets are not considered...'
+                continue
 
 
-            #print '%d (%3.1f,%3.1f,%3.1f) \t (%3.1f,%3.1f,%3.1f) \t deltaM=%f'%(
-            #    genX[0].getPDG(),
-            #    genX[0].getLorentzVec().Pt(),genX[0].getLorentzVec().Eta(),genX[0].getLorentzVec().Phi(),
-            #    dijet.Pt(),dijet.Eta(),dijet.Phi(),
-            #    dijet.M()-genX[0].getLorentzVec().M()
-            #    )
+            inMwindow = (math.fabs(dijet.M()-b.getLorentzVec().M())<15)
+            pt1=j1.getLorentzVec().Pt()
+            eta1=math.fabs(j1.getLorentzVec().Eta())
+            pt2=j2.getLorentzVec().Pt()
+            eta2=math.fabs(j2.getLorentzVec().Eta())
 
-            #resolution in tight mass window
-            minWindow=110
-            maxWindow=140
-            if math.fabs(genX[0].getPDG())==24:
-                minWindow=65
-                maxWindow=95
-            if dijet.M()>minWindow and dijet.M()<maxWindow :
-                for iq in [0,1] :
-                    cats=['j','j%d'%(iq+1)]
-                    reg=['']
-                    
-                    if math.fabs(j[iq].getLorentzVec().Eta())<1.5 : reg.append('barrel')
-                    else : reg.append('endcap')
-                    kin=['']
-                    if j[iq].getLorentzVec().Pt()>30 and j[iq].getLorentzVec().Pt()<50  : kin.append('30to50')
-                    if j[iq].getLorentzVec().Pt()>50 and j[iq].getLorentzVec().Pt()<100 : kin.append('50to100')
-                    if j[iq].getLorentzVec().Pt()>100                                   : kin.append('100toInf')
-                    for c in cats:
-                        for k in kin:
-                            for r in reg:
-                                histos[c+'inmdr'+k+r].Fill(j[iq].getLorentzVec().DeltaR(q[iq].getLorentzVec()))
-                                histos[c+'inmdpt'+k+r].Fill(j[iq].getLorentzVec().Pt()/q[iq].getLorentzVec().Pt()-1)
-                                histos[c+'inmden'+k+r].Fill(j[iq].getLorentzVec().E()/q[iq].getLorentzVec().E()-1)
+            jjKin=['']
+            if pt1>50 and pt2>50 : jjKin.append('50')
+            if pt1>100 and pt2>100 : jjKin.append('100')
+
+            jjReg='b'
+            if eta1>1.5: jjReg='e'
+            if eta2<=1.5: jjReg='b'+jjReg
+            if eta2>1.5: jjReg='e'+jjReg
+            if jjReg=='be' : jjReg='eb'
+            jjRegs=['',jjReg]
+
+            bosNames=['']
+            if math.fabs(b.getPDG())==25 : bosNames.append('h')
+            if math.fabs(b.getPDG())==23 : bosNames.append('z')
+            if math.fabs(b.getPDG())==24 : bosNames.append('w')
+                
+            for ib in bosNames:
+                for k in jjKin:
+                    for r in jjRegs:
+                        histos[ib+'mjj'+k+r].Fill(dijet.M())
+                        histos[ib+'dmjj'+k+r].Fill(dijet.M()/b.getLorentzVec().M()-1)
 
 
+            #individual jet resolutions
+            for qj in [[q1,j1],[q2,j2]]:
+                quark=qj[0]
+                jet=qj[1]
+                isJetSemiLep=isSemiLepJet(genHandle,jet,jetCone)
+
+                pt=quark.getLorentzVec().Pt()
+                eta=math.fabs(quark.getLorentzVec().Eta())
+                if pt<20 or eta>2.5 : continue
+                
+                jetKin=['']
+                if pt<50    : jetKin.append('30to50')
+                elif pt<100 : jetKin.append('50to100')
+                else        : jetKin.append('100toInf')
+
+                jetReg=['']
+                if eta<1.5 : jetReg.append('barrel')
+                else       : jetReg.append('endcap')
+                
+                jetSel=['']
+                if not isJetSemiLep : jetSel.append('nonu')
+
+                for k in jetKin:
+                    for r in jetReg:
+                        for s in jetSel:
+                            histos['j'+s+'den'+k+r].Fill(jet.getLorentzVec().E()/quark.getLorentzVec().E()-1)
+                            histos['j'+s+'dpt'+k+r].Fill(jet.getLorentzVec().Pt()/quark.getLorentzVec().Pt()-1)
+                            histos['j'+s+'dr'+k+r].Fill(quark.getLorentzVec().DeltaR(jet.getLorentzVec()))
+                            histos['j'+s+'deta'+k+r].Fill(math.fabs(quark.getLorentzVec().Eta()-jet.getLorentzVec().Eta()))
+                            histos['j'+s+'dphi'+k+r].Fill(math.fabs(quark.getLorentzVec().DeltaPhi(jet.getLorentzVec())))
 
     # write and close the file
     rootFile.Write()

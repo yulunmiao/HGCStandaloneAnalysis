@@ -7,7 +7,7 @@ import commands
 
 usage = 'usage: %prog [options]'
 parser = optparse.OptionParser(usage)
-parser.add_option('-q', '--queue'      ,    dest='queue'              , help='batch queue'                 , default='2nd')
+parser.add_option('-q', '--queue'      ,    dest='queue'              , help='batch queue'                 , default='1nw')
 parser.add_option('-R', '--R'          ,    dest='requirementtoBatch' , help='requirement for batch queue' , default='pool>30000')
 parser.add_option('-i', '--i'          ,    dest='input'              , help='input directory'             , default='/store/cmst3/user/psilva/PFcal/pp_WZ/HepEvt')
 parser.add_option('-o', '--out'        ,    dest='output'             , help='output directory'            , default='/store/cmst3/user/psilva/PFcal/pp_WZ/DST')
