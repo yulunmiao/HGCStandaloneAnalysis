@@ -15,8 +15,8 @@ python test/submitMarlinRun.py -i /store/cmst3/user/psilva/PFcal/pp_WZ/DST/  -o 
 
 python test/submitSLCIOanalysis.py -s `pwd`/test/runSLCIOanalysis.py -o "-j SelectedKt075PF" -i /store/cmst3/user/psilva/PFcal/hbb_nunu_ILD -l `pwd`/hbb_nunu_ILD -q 8nh
 
-python test/submitSLCIOanalysis.py -s `pwd`/test/runSLCIOanalysis.py -o "-j Kt075PF" -i /store/cmst3/user/psilva/PFcal/pp_WZ/DST/FJ_v2 -l `pwd`/pp_WZ -q 8nh
-python test/submitSLCIOanalysis.py -s `pwd`/test/runSLCIOanalysis.py -o "-j Kt4PF"   -i /store/cmst3/user/psilva/PFcal/pp_WZ/DST/FJ_v2 -l `pwd`/pp_WZ_kt4 -q 8nh
+python test/submitSLCIOanalysis.py -s `pwd`/test/runSLCIOanalysis.py -o "-j Kt4PF"   -i /store/cmst3/user/psilva/PFcal/pp_WZ/DST/FJ -l `pwd`/pp_WZ_AK4 -q 8nh
+python test/submitSLCIOanalysis.py -s `pwd`/test/runSLCIOanalysis.py -o "-j Kt4PF"   -i /store/cmst3/user/psilva/PFcal/pp_quarkGun/DST/FJ -l `pwd`/pp_quarkGun_AK4 -q 8nh
 
 # Merge outputs and show plots
 

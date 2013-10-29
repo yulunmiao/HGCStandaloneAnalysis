@@ -70,7 +70,7 @@ def analyze( dstFileName, genCollName, jetCollName, output, minPt=0.5 ):
     histos['sel'].GetXaxis().SetBinLabel(3,'Gen V#rightarrowqq')
     histos['sel'].GetXaxis().SetBinLabel(4,'Reco V#rightarrowqq')
 
-    kin=['','30to50','50to100','100toInf']
+    kin=['','30to40','40to50','50to75','75to100','100toInf']
     reg=['','barrel','endcap']
     sel=['','nonu']
     for k in kin:
@@ -120,7 +120,7 @@ def analyze( dstFileName, genCollName, jetCollName, output, minPt=0.5 ):
             #print collectionName
             if collectionName == genCollName : genHandle=collection
             if collectionName == jetCollName : jetHandle=collection
-            
+
         if jetHandle is None : continue
         
         #Hard process: status 3 particles 
@@ -145,6 +145,41 @@ def analyze( dstFileName, genCollName, jetCollName, output, minPt=0.5 ):
                 for d in p.getDaughters() :
                     if math.fabs(d.getPDG())>6 : continue
                     promptQuarks.append(d)
+        
+        #if still not found may be the quark/gluon gun: take all quarks status 2
+        if len(genBosons)==0 :
+            for p in genHandle:
+                if math.fabs(p.getPDG())!=21 : continue
+                if p.getGeneratorStatus()!=2 : continue
+                histos['qpt'].Fill( p.getLorentzVec().Pt() )
+                histos['qeta'].Fill( math.fabs( p.getLorentzVec().Eta() ) )
+                if math.fabs( p.getLorentzVec().Eta() ) > 2.5 : continue
+                jet=findRecoMatch(p,jetHandle,jetCone)[1]
+                if jet is None: continue
+
+                pt=p.getLorentzVec().Pt()
+                eta=math.fabs(p.getLorentzVec().Eta())
+                if pt<20 or eta>2.5 : continue
+                
+                jetKin=['']
+                if pt<40    : jetKin.append('30to40')
+                elif pt<50  : jetKin.append('40to50')
+                elif pt<75  : jetKin.append('50to75')
+                elif pt<100 : jetKin.append('75to100')
+                else        : jetKin.append('100toInf')
+
+                jetReg=['']
+                if eta<1.5 : jetReg.append('barrel')
+                else       : jetReg.append('endcap')
+                
+                for k in jetKin:
+                    for r in jetReg:
+                        histos['jden'+k+r].Fill(jet.getLorentzVec().E()/p.getLorentzVec().E()-1)
+                        histos['jdpt'+k+r].Fill(jet.getLorentzVec().Pt()/p.getLorentzVec().Pt()-1)
+                        histos['jdr'+k+r].Fill(p.getLorentzVec().DeltaR(jet.getLorentzVec()))
+                        histos['jdeta'+k+r].Fill(math.fabs(p.getLorentzVec().Eta()-jet.getLorentzVec().Eta()))
+                        histos['jdphi'+k+r].Fill(math.fabs(p.getLorentzVec().DeltaPhi(jet.getLorentzVec())))
+
 
         #match di-quarks to bosons, match- each quark to a reco jet (if available)
         bosonDecays=[]
@@ -243,8 +278,8 @@ def analyze( dstFileName, genCollName, jetCollName, output, minPt=0.5 ):
             eta2=math.fabs(j2.getLorentzVec().Eta())
 
             jjKin=['']
-            if pt1>50 and pt2>50 : jjKin.append('50')
-            if pt1>100 and pt2>100 : jjKin.append('100')
+            if pt1>50 or pt2>50 : jjKin.append('50')
+            if pt1>100 or pt2>100 : jjKin.append('100')
 
             jjReg='b'
             if eta1>1.5: jjReg='e'
@@ -276,8 +311,10 @@ def analyze( dstFileName, genCollName, jetCollName, output, minPt=0.5 ):
                 if pt<20 or eta>2.5 : continue
                 
                 jetKin=['']
-                if pt<50    : jetKin.append('30to50')
-                elif pt<100 : jetKin.append('50to100')
+                if pt<40    : jetKin.append('30to40')
+                elif pt<50  : jetKin.append('40to50')
+                elif pt<75  : jetKin.append('50to75')
+                elif pt<100 : jetKin.append('75to100')
                 else        : jetKin.append('100toInf')
 
                 jetReg=['']

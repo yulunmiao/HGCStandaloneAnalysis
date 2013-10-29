@@ -10,8 +10,8 @@
 <marlin xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:noNamespaceSchemaLocation="http://ilcsoft.desy.de/marlin/marlin.xsd">
 	<execute>
-		<processor name="Kt4Jets" />
-		<processor name="Kt5Jets" />
+		<processor name="AKt4Jets" />
+		<processor name="AKt5Jets" />
 		<processor name="Kt075Jets" />
 		<processor name="Kt8Jets" />
 		<processor name="MyLCIOOutputProcessor" />
@@ -24,16 +24,16 @@
 		<parameter name="Verbosity"	options="DEBUG0-4,MESSAGE0-4,WARNING0-4,ERROR0-4,SILENT"> MESSAGE  </parameter>
 	</global>
 
-	<processor name="Kt4Jets" type="FastJetProcessor">
-		<parameter name="algorithm" type="StringVec">kt_algorithm 0.4</parameter>
+	<processor name="AKt4Jets" type="FastJetProcessor">
+		<parameter name="algorithm" type="StringVec">antikt_algorithm 0.4</parameter>
 		<parameter name="clusteringMode" type="StringVec">Inclusive 5</parameter>
 		<parameter name="jetOut" type="string" lcioOutType="ReconstructedParticle">Kt4PF</parameter>
 		<parameter name="recParticleIn" type="string" lcioInType="ReconstructedParticle">PandoraPFOs</parameter>
 		<parameter name="recombinationScheme" type="string">E_scheme </parameter>
 	</processor>
 
-	<processor name="Kt5Jets" type="FastJetProcessor">
-		<parameter name="algorithm" type="StringVec">kt_algorithm 0.5</parameter>
+	<processor name="AKt5Jets" type="FastJetProcessor">
+		<parameter name="algorithm" type="StringVec">antikt_algorithm 0.5</parameter>
 		<parameter name="clusteringMode" type="StringVec">Inclusive 5</parameter>
 		<parameter name="jetOut" type="string" lcioOutType="ReconstructedParticle">Kt5PF</parameter>
 		<parameter name="recParticleIn" type="string" lcioInType="ReconstructedParticle"> PandoraPFOs </parameter>

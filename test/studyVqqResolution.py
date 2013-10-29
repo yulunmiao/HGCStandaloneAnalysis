@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 from ROOT import TFile, TF1, TH1F, TH2F,TCanvas, TProfile, TPaveText, TLorentzVector, TLegend,TGraphErrors, gStyle, gROOT
-from ROOT import RooRealVar,RooGaussian, RooChebychev, RooPolynomial, RooDataHist, RooAbsData, RooArgList, RooCBShape, RooLandau,RooAddPdf, RooAbsPdf, RooFit
+from ROOT import RooArgSet, RooRealVar,RooGaussian, RooDataHist, RooAbsData, RooArgList, RooCBShape, RooAddPdf, RooAbsPdf, RooFit
 import optparse
 import math
 
@@ -38,17 +38,10 @@ def studyVqqResolution(rootFile):
     gStyle.SetOptTitle(0)
     gStyle.SetStatFont(42)
 
-    c=TCanvas('c','c',600,600)
-    #histos['sel'].Draw('histtext')
-    #drawHeader()
-    #c.Modified()
-    #c.Update()
-    #c.SaveAs('selection.png')
-    #raw_input()
-
-    kin=['','30to50','50to100','100toInf']
+    kin=['','30to40','40to50','50to75','75to100','100toInf']
     for k in kin:        
-        c.Clear()
+        c=TCanvas('c','c',600,600)
+        c.cd()
         c.SetCanvasSize(1000,500)
         c.SetWindowSize(1000,500)
         c.Divide(2,1)
@@ -87,10 +80,22 @@ def studyVqqResolution(rootFile):
     for r in responseVars:
         barrelResponse=TGraphErrors()
         barrelResponse.SetName(r+'barrelresponse')
-        barrelResponse.SetMarkerStyle(20)
+        barrelResponse.SetLineWidth(2)
+        barrelResponse.SetFillStyle(0)
+        barrelCoreResponse=TGraphErrors()
+        barrelCoreResponse.SetName(r+'barrelcoreresponse')
+        barrelCoreResponse.SetLineWidth(2)
+        barrelCoreResponse.SetFillStyle(0)
         endcapResponse=TGraphErrors()
         endcapResponse.SetName(r+'endcapresponse')
-        endcapResponse.SetMarkerStyle(24)
+        endcapResponse.SetLineStyle(7)
+        endcapResponse.SetLineWidth(2)
+        endcapResponse.SetFillStyle(0)
+        endcapCoreResponse=TGraphErrors()
+        endcapCoreResponse.SetName(r+'endcapresponse')
+        endcapCoreResponse.SetLineStyle(7)
+        endcapCoreResponse.SetLineWidth(2)
+        endcapCoreResponse.SetFillStyle(0)
         for k in kin: 
             c.cd()
             c.Clear()
@@ -100,25 +105,57 @@ def studyVqqResolution(rootFile):
                 c.cd(i)
                 reg='barrel'
                 if i==2: reg='endcap' 
+
                 h=histos[r+k+reg]
                 x=RooRealVar("x", h.GetXaxis().GetTitle(), h.GetXaxis().GetXmin(), h.GetXaxis().GetXmax())
                 data=RooDataHist("data", "dataset with x", RooArgList(x), h)
                 frame=x.frame()
                 RooAbsData.plotOn( data, frame, RooFit.DataError(RooAbsData.SumW2) )
 
-                mean1=RooRealVar("mean1","cb_mean",0,-1,1);
-                sigma1=RooRealVar("sigma1","cb_sigma",0.1,0.,1.0);
+                mean1=RooRealVar("mean1","mean1",0,-0.5,0.5);
+                sigma1=RooRealVar("sigma1","sigma1",0.1,0.01,1.0);
                 gauss1=RooGaussian("g1","g",x,mean1,sigma1)
+                
+                if r=='dpt' or r=='den' :
+                    mean2=RooRealVar("mean2","mean2",0,-0.5,0.5);
+                    sigma2=RooRealVar("sigma2","sigma2",0.1,0.01,1.0);
+                    alphacb=RooRealVar("alphacb","alphacb",1,0.1,3);
+                    ncb=RooRealVar("ncb","ncb",4,1,100)
+                    gauss2 = RooCBShape("cb2","cb",x,mean2,sigma2,alphacb,ncb);
+                else:
+                    mean1.setRange(0,0.5)
+                    mean2=RooRealVar("mean2","mean",0,0,1);
+                    sigma2=RooRealVar("sigma2","sigma",0.1,0.01,1.0);
+                    gauss2=RooGaussian("g2","g",x,mean2,sigma2) ;
 
-                mean2=RooRealVar("mean2","mean",0,-1,1);
-                sigma2=RooRealVar("sigma2","sigma",0.1,0.,1.0);
-                gauss2=RooGaussian("g2","g",x,mean2,sigma2) ;
-
-                frac = RooRealVar("frac","fraction",0.9,0.0,1.0) 
+                frac = RooRealVar("frac","fraction",0.9,0.0,1.0)
+                if data.sumEntries()<100 :
+                    frac.setVal(1.0)
+                    frac.setConstant(True)
                 model = RooAddPdf("sum","g1+g2",RooArgList(gauss1,gauss2), RooArgList(frac))
 
-                model.fitTo(data)
-                
+                status=model.fitTo(data,RooFit.Save()).status()
+                if status!=0 : continue
+
+                model_cdf=model.createCdf(RooArgSet(x)) ;
+                cl=0.90
+                ul=0.5*(1.0+cl)
+                closestToCL=1.0
+                closestToUL=-1
+                closestToMedianCL=1.0
+                closestToMedian=-1
+                for ibin in xrange(1,h.GetXaxis().GetNbins()*10):
+                    xval=h.GetXaxis().GetXmin()+(ibin-1)*h.GetXaxis().GetBinWidth(ibin)/10.
+                    x.setVal(xval)
+                    cdfValToCL=math.fabs(model_cdf.getVal()-ul)
+                    if cdfValToCL<closestToCL:
+                        closestToCL=cdfValToCL
+                        closestToUL=xval
+                    cdfValToCL=math.fabs(model_cdf.getVal()-0.5)
+                    if cdfValToCL<closestToMedianCL:
+                        closestToMedianCL=cdfValToCL
+                        closestToMedian=xval
+
                 RooAbsPdf.plotOn(model,frame)
                 frame.Draw()
 
@@ -135,25 +172,37 @@ def studyVqqResolution(rootFile):
                 labels[ilab].AddText('['+reg+'] '+kinReg)
                 labels[ilab].Draw()
                 
+                resolutionVal=math.fabs(closestToUL-closestToMedian)
                 responseGr=barrelResponse
-                if i==2 : responseGr=endcapResponse
+                responseCoreGr=barrelCoreResponse
+                coreResolutionVal=sigma1.getVal()
+                coreResolutionErr=sigma1.getError()
+                if frac.getVal()<0.4 :
+                    coreResolutionVal=sigma2.getVal()
+                    coreResolutionErr=sigma2.getError()
+                if i==2 : 
+                    responseGr=endcapResponse
+                    responseCoreGr=endcapCoreResponse
                 if k!='' :
                     nrespPts=responseGr.GetN()
-                    resolutionVal=sigma1.getVal()
-                    resolutionErr=sigma1.getError()
-                    if math.fabs(mean2.getVal())<math.fabs(mean1.getVal()) :
-                        resolutionVal=sigma2.getVal()
-                        resolutionErr=sigma2.getError()
                     kinAvg=150
                     kinWidth=50
-                    if k=='30to50' : 
-                        kinAvg=40
-                        kinWidth=10
-                    elif k=='50to100' :
-                        kinAvg=75
-                        kinWidth=25
+                    if k=='30to40' : 
+                        kinAvg=35
+                        kinWidth=5
+                    if k=='40to50' : 
+                        kinAvg=45
+                        kinWidth=5
+                    if k=='50to75' : 
+                        kinAvg=62.5
+                        kinWidth=12.5
+                    elif k=='75to100' :
+                        kinAvg=87.5
+                        kinWidth=12.5
                     responseGr.SetPoint(nrespPts,kinAvg,resolutionVal)
-                    responseGr.SetPointError(nrespPts,kinWidth,resolutionErr)
+                    responseCoreGr.SetPoint(nrespPts,kinAvg,coreResolutionVal)
+                    responseCoreGr.SetPointError(nrespPts,kinWidth,coreResolutionErr)
+
                 labels.append( TPaveText(0.15,0.7,0.4,0.9,'brNDC') )
                 ilab=len(labels)-1
                 labels[ilab].SetName(r+k+'fitrestxt')
@@ -176,112 +225,129 @@ def studyVqqResolution(rootFile):
         
         cresp=TCanvas('cresp','cresp',500,500)
         cresp.cd()
-        barrelResponse.Draw('ap')
-        endcapResponse.Draw('p')
+        barrelResponse.Draw('al')
+        endcapResponse.Draw('l')
         barrelResponse.GetXaxis().SetTitle("Quark transverse momentum [GeV]") 
-        barrelResponse.GetYaxis().SetTitle("Resolution")
+        barrelResponse.GetYaxis().SetTitle("Resolution %3.2f C.L."%cl )
+        barrelResponse.GetYaxis().SetTitleOffset(1.2)
         drawHeader()
         leg=TLegend(0.6,0.92,0.9,0.98)
         leg.SetFillStyle(0)
         leg.SetBorderSize(0)
         leg.SetTextFont(42)
-        leg.AddEntry(barrelResponse,'barrel','p')
-        leg.AddEntry(endcapResponse,'endcap','p')
+        leg.AddEntry(barrelResponse,'barrel','f')
+        leg.AddEntry(endcapResponse,'endcap','f')
         leg.SetNColumns(2)
         leg.Draw()
         cresp.Modified()
         cresp.Update()
         cresp.SaveAs(r+'res_evol.png')
-      
 
-    return
-    c.Clear()
-    histos['mjj'].Rebin(10)
-    histos['mjj'].Draw()
+        cresp.Clear()
+        barrelCoreResponse.Draw('al')
+        endcapCoreResponse.Draw('l')
+        barrelCoreResponse.GetXaxis().SetTitle("Quark transverse momentum [GeV]") 
+        barrelCoreResponse.GetYaxis().SetTitle("Core resolution")
+        barrelCoreResponse.GetYaxis().SetTitleOffset(1.2)
+        drawHeader()
+        leg=TLegend(0.6,0.92,0.9,0.98)
+        leg.SetFillStyle(0)
+        leg.SetBorderSize(0)
+        leg.SetTextFont(42)
+        leg.AddEntry(barrelCoreResponse,'barrel','f')
+        leg.AddEntry(endcapCoreResponse,'endcap','f')
+        leg.SetNColumns(2)
+        leg.Draw()
+        cresp.Modified()
+        cresp.Update()
+        cresp.SaveAs(r+'rescore_evol.png')
+
+    kin=['','50','100']
     bosons=['h','z','w']
-    ic=1
-    leg=TLegend(0.15,0.75,0.5,0.9)
-    leg.SetFillStyle(0)
-    leg.SetBorderSize(0)
-    leg.SetTextFont(42)
-    leg.AddEntry(histos['mjj'],'inclusive','f')
-    for b in bosons:
-        if histos[b+'mjj'].Integral()<=0 : continue 
-        ic=ic+1
-        histos[b+'mjj'].Rebin(10)
-        histos[b+'mjj'].SetLineColor(ic)
-        histos[b+'mjj'].SetLineWidth(2)
-        histos[b+'mjj'].SetMarkerColor(ic)
-        histos[b+'mjj'].SetMarkerStyle(1)
-        histos[b+'mjj'].Draw('histsame')
-        leg.AddEntry(histos[b+'mjj'],b,"f")
-    leg.Draw()
-    drawHeader()
-    c.Modified()
-    c.Update()
-    c.SaveAs('mjj.png')
-    raw_input()
-
-    # resolutions
-    resFunc=TF1('resfunc','[0]*TMath::Gaus(x,[1],[2])+[3]*TMath::Gaus(x,[4],[5])',-2,2)
-    resFunc.SetLineColor(4)
-    resFunc.SetParName(0,'N_{1}')
-    resFunc.SetParName(1,'#mu_{1}')
-    resFunc.SetParName(2,'#sigma_{1}')
-    resFunc.SetParName(3,'N_{2}')
-    resFunc.SetParName(4,'#mu_{2}')
-    resFunc.SetParName(5,'#sigma_{2}')
-
-
-    allVars=['dpt','den','inmdpt','inmden']
-    kin=['30to50','50to100','100toInf']
-    reg=['','barrel','endcap']
-    for v in allVars:
-        c.Clear()
-        c.SetWindowSize(1500,1000)
-        c.Divide(len(kin),len(reg))
-        
-        i=0
-        for r in reg:
-            for k in kin:
-                i=i+1
-                p=c.cd(i)
-                h=histos[v+k+r]
-                h.Draw()
-                resFunc.SetParameter(0,h.GetMaximum())
-                if k!='' : resFunc.SetParLimits(0,h.GetMaximum()*0.8,h.GetMaximum())
-                else : resFunc.SetParLimits(0,h.GetMaximum()*0.2,h.GetMaximum()*1.2)
-                offset=h.GetXaxis().GetBinCenter(h.GetMaximumBin())
-                #if(math.fabs(h.GetMean())>0.2) : offset=h.GetMean()
-                resFunc.SetParameter(1,offset)
-                resFunc.SetParLimits(1,offset-2*h.GetMeanError(),offset+2*h.GetMeanError())
-                resFunc.SetParLimits(2,0.0,0.15)
-                resFunc.SetParameter(4,h.GetMaximumBin())
-                resFunc.SetParLimits(4,-1,1)
-                resFunc.SetParLimits(5,0.1,2)
-                h.Fit(resFunc,'RQ','',-2,2)
-                
-                if i==1 : drawHeader()
-                labels.append( TPaveText(0.1,0.9,0.5,0.8,'brNDC') )
-                ilab=len(labels)-1
-                labels[ilab].SetName(k+r+'txt')
-                labels[ilab].SetBorderSize(0)
-                labels[ilab].SetFillStyle(0)
-                labels[ilab].SetTextFont(42)
-                labels[ilab].SetTextAlign(12)
-                if r=='' : labels[ilab].AddText('[inclusive]')           
-                else     : labels[ilab].AddText('['+r+']')
-                kinReg=k.replace('to','-')
-                kinReg=kinReg.replace('Inf','#infty')
-                labels[ilab].AddText('p_{T} ' + kinReg)
-                labels[ilab].Draw()
-                p.Modified()
-                p.Update()
+    for k in kin:        
+    
+        c=TCanvas('c','c',600,600)
+        c.cd()
+        histos['mjj'+k].Rebin(5)
+        histos['mjj'+k].Draw()
+        ic=1
+        leg=TLegend(0.6,0.92,0.9,0.98)
+        leg.SetFillStyle(0)
+        leg.SetBorderSize(0)
+        leg.SetTextFont(42)
+        leg.AddEntry(histos['mjj'+k],'inclusive','f')
+        for b in bosons:
+            if histos[b+'mjj'+k].Integral()<=0 : continue 
+            ic=ic+1
+            histos[b+'mjj'+k].Rebin(5)
+            histos[b+'mjj'+k].SetLineColor(ic)
+            histos[b+'mjj'+k].SetLineWidth(2)
+            histos[b+'mjj'+k].SetMarkerColor(ic)
+            histos[b+'mjj'+k].SetMarkerStyle(1)
+            histos[b+'mjj'+k].Draw('histsame')
+            leg.AddEntry(histos[b+'mjj'+k],b,"f")
+        leg.SetNColumns(ic)
+        leg.Draw()
+        drawHeader()
+        labels.append( TPaveText(0.15,0.8,0.4,0.9,'brNDC') )
+        ilab=len(labels)-1
+        labels[ilab].SetName(k+'mjj')
+        labels[ilab].SetBorderSize(0)
+        labels[ilab].SetFillStyle(0)
+        labels[ilab].SetTextFont(42)
+        labels[ilab].SetTextAlign(12)
+        ptthreshold=30
+        if k!='' : ptthreshold=float(k)
+        labels[ilab].AddText('p_{T}>%3.0f GeV'%ptthreshold)
+        labels[ilab].Draw()
 
         c.Modified()
         c.Update()
-        c.SaveAs(v+'res.png')
-        raw_input()
+        c.SaveAs('mjj'+k+'.png')
+
+
+    kin=['','50','100']
+    region=['','bb','eb','ee']
+    for k in kin:        
+    
+        for r in region:
+
+            c=TCanvas('c','c',600,600)
+            c.cd()
+            histos['dmjj'+k+r].Rebin()
+            histos['dmjj'+k+r].Draw('hist')
+            drawHeader()
+            labels.append( TPaveText(0.15,0.8,0.4,0.9,'brNDC') )
+            ilab=len(labels)-1
+            labels[ilab].SetName(k+r+'dmjj')
+            labels[ilab].SetBorderSize(0)
+            labels[ilab].SetFillStyle(0)
+            labels[ilab].SetTextFont(42)
+            labels[ilab].SetTextAlign(12)
+            ptthreshold=30
+            if k!='' : ptthreshold=float(k)
+            regionTitle="inclusive"
+            if r == 'bb' : regionTitle='barrel-barrel'
+            if r == 'eb' : regionTitle='endcap-barrel'
+            if r == 'ee' : regionTitle='endcap-endcap'
+            labels[ilab].AddText('[%s] p_{T}>%3.0f GeV'%(regionTitle,ptthreshold))
+            labels[ilab].Draw()
+
+            c.Modified()
+            c.Update()
+            c.SaveAs('dmjj'+k+r+'.png')
+
+
+    c=TCanvas('c','c',600,600)
+    c.cd()
+    histos['sel'].Draw('histtext')
+    drawHeader()
+    c.Modified()
+    c.Update()
+    c.SaveAs('selection.png')
+
+
+    return
 
 
 if __name__ == '__main__':
