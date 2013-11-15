@@ -82,20 +82,14 @@ def studyVqqResolution(rootFile):
         barrelResponse.SetName(r+'barrelresponse')
         barrelResponse.SetLineWidth(2)
         barrelResponse.SetFillStyle(0)
-        barrelCoreResponse=TGraphErrors()
-        barrelCoreResponse.SetName(r+'barrelcoreresponse')
-        barrelCoreResponse.SetLineWidth(2)
-        barrelCoreResponse.SetFillStyle(0)
+        barrelResponse.SetMarkerStyle(20)
+        barrelCoreResponse=barrelResponse.Clone(r+'barrelcoreresponse')
         endcapResponse=TGraphErrors()
         endcapResponse.SetName(r+'endcapresponse')
-        endcapResponse.SetLineStyle(7)
         endcapResponse.SetLineWidth(2)
         endcapResponse.SetFillStyle(0)
-        endcapCoreResponse=TGraphErrors()
-        endcapCoreResponse.SetName(r+'endcapresponse')
-        endcapCoreResponse.SetLineStyle(7)
-        endcapCoreResponse.SetLineWidth(2)
-        endcapCoreResponse.SetFillStyle(0)
+        endcapResponse.SetMarkerStyle(24)
+        endcapCoreResponse=endcapResponse.Clone(r+'endcapresponse')
         for k in kin: 
             c.cd()
             c.Clear()
@@ -177,9 +171,11 @@ def studyVqqResolution(rootFile):
                 responseCoreGr=barrelCoreResponse
                 coreResolutionVal=sigma1.getVal()
                 coreResolutionErr=sigma1.getError()
-                if frac.getVal()<0.4 :
+                if frac.getVal()<0.7 and (sigma2.getVal()<sigma1.getVal()) :
                     coreResolutionVal=sigma2.getVal()
                     coreResolutionErr=sigma2.getError()
+
+
                 if i==2 : 
                     responseGr=endcapResponse
                     responseCoreGr=endcapCoreResponse
@@ -223,99 +219,162 @@ def studyVqqResolution(rootFile):
             c.Update()
             c.SaveAs(r+'res_'+k+'.png')
         
+        frame=TGraphErrors()
+        frame.SetPoint(0,0,0)
+        frame.SetPoint(1,200,0.3)
+        frame.SetMarkerStyle(1)
+        frame.SetFillStyle(0)
+        frame.SetName('frame')
         cresp=TCanvas('cresp','cresp',500,500)
         cresp.cd()
-        barrelResponse.Draw('al')
-        endcapResponse.Draw('l')
-        barrelResponse.GetXaxis().SetTitle("Quark transverse momentum [GeV]") 
-        barrelResponse.GetYaxis().SetTitle("Resolution %3.2f C.L."%cl )
-        barrelResponse.GetYaxis().SetTitleOffset(1.2)
+        frame.Draw('ap')
+        barrelResponse.Draw('pl')
+        endcapResponse.Draw('pl')
+        frame.GetXaxis().SetTitle("Quark transverse momentum [GeV]") 
+        frame.GetYaxis().SetTitle("Resolution %3.2f C.L."%cl )
+        frame.GetYaxis().SetTitleOffset(1.4)
+        frame.GetYaxis().SetNdivisions(10)
         drawHeader()
         leg=TLegend(0.6,0.92,0.9,0.98)
         leg.SetFillStyle(0)
         leg.SetBorderSize(0)
         leg.SetTextFont(42)
-        leg.AddEntry(barrelResponse,'barrel','f')
-        leg.AddEntry(endcapResponse,'endcap','f')
+        leg.AddEntry(barrelResponse,'barrel','fp')
+        leg.AddEntry(endcapResponse,'endcap','fp')
         leg.SetNColumns(2)
         leg.Draw()
         cresp.Modified()
         cresp.Update()
         cresp.SaveAs(r+'res_evol.png')
 
+        frameCore=frame.Clone('framecore')
         cresp.Clear()
-        barrelCoreResponse.Draw('al')
-        endcapCoreResponse.Draw('l')
-        barrelCoreResponse.GetXaxis().SetTitle("Quark transverse momentum [GeV]") 
-        barrelCoreResponse.GetYaxis().SetTitle("Core resolution")
-        barrelCoreResponse.GetYaxis().SetTitleOffset(1.2)
+        frameCore.Draw('ap')
+        barrelCoreResponse.Draw('pl')
+        endcapCoreResponse.Draw('pl')
+        frameCore.GetXaxis().SetTitle("Quark transverse momentum [GeV]") 
+        frameCore.GetYaxis().SetTitle("Core resolution")
+        frameCore.GetYaxis().SetTitleOffset(1.4)
+        frameCore.GetYaxis().SetNdivisions(10)
+        frameCore.GetYaxis().SetRangeUser(0,0.2)
         drawHeader()
         leg=TLegend(0.6,0.92,0.9,0.98)
         leg.SetFillStyle(0)
         leg.SetBorderSize(0)
         leg.SetTextFont(42)
-        leg.AddEntry(barrelCoreResponse,'barrel','f')
-        leg.AddEntry(endcapCoreResponse,'endcap','f')
+        leg.AddEntry(barrelCoreResponse,'barrel','fp')
+        leg.AddEntry(endcapCoreResponse,'endcap','fp')
         leg.SetNColumns(2)
         leg.Draw()
         cresp.Modified()
         cresp.Update()
         cresp.SaveAs(r+'rescore_evol.png')
 
-    kin=['','50','100']
     bosons=['h','z','w']
-    for k in kin:        
-    
-        c=TCanvas('c','c',600,600)
-        c.cd()
-        histos['mjj'+k].Rebin(5)
-        histos['mjj'+k].Draw()
-        ic=1
-        leg=TLegend(0.6,0.92,0.9,0.98)
-        leg.SetFillStyle(0)
-        leg.SetBorderSize(0)
-        leg.SetTextFont(42)
-        leg.AddEntry(histos['mjj'+k],'inclusive','f')
-        for b in bosons:
-            if histos[b+'mjj'+k].Integral()<=0 : continue 
-            ic=ic+1
-            histos[b+'mjj'+k].Rebin(5)
-            histos[b+'mjj'+k].SetLineColor(ic)
-            histos[b+'mjj'+k].SetLineWidth(2)
-            histos[b+'mjj'+k].SetMarkerColor(ic)
-            histos[b+'mjj'+k].SetMarkerStyle(1)
-            histos[b+'mjj'+k].Draw('histsame')
-            leg.AddEntry(histos[b+'mjj'+k],b,"f")
-        leg.SetNColumns(ic)
-        leg.Draw()
-        drawHeader()
-        labels.append( TPaveText(0.15,0.8,0.4,0.9,'brNDC') )
-        ilab=len(labels)-1
-        labels[ilab].SetName(k+'mjj')
-        labels[ilab].SetBorderSize(0)
-        labels[ilab].SetFillStyle(0)
-        labels[ilab].SetTextFont(42)
-        labels[ilab].SetTextAlign(12)
-        ptthreshold=30
-        if k!='' : ptthreshold=float(k)
-        labels[ilab].AddText('p_{T}>%3.0f GeV'%ptthreshold)
-        labels[ilab].Draw()
-
-        c.Modified()
-        c.Update()
-        c.SaveAs('mjj'+k+'.png')
-
-
     kin=['','50','100']
     region=['','bb','eb','ee']
     for k in kin:        
-    
         for r in region:
 
             c=TCanvas('c','c',600,600)
             c.cd()
-            histos['dmjj'+k+r].Rebin()
-            histos['dmjj'+k+r].Draw('hist')
+            histos['mjj'+k+r].Rebin()
+            histos['mjj'+k+r].Draw()
+            ic=1
+            leg=TLegend(0.6,0.92,0.9,0.98)
+            leg.SetFillStyle(0)
+            leg.SetBorderSize(0)
+            leg.SetTextFont(42)
+            leg.AddEntry(histos['mjj'+k+r],'inclusive','f')
+            for b in bosons:
+                if histos[b+'mjj'+k+r].Integral()<=0 : continue 
+                ic=ic+1
+                histos[b+'mjj'+k+r].Rebin()
+                histos[b+'mjj'+k+r].SetLineColor(ic)
+                histos[b+'mjj'+k+r].SetLineWidth(2)
+                histos[b+'mjj'+k+r].SetMarkerColor(ic)
+                histos[b+'mjj'+k+r].SetMarkerStyle(1)
+                histos[b+'mjj'+k+r].SetFillStyle(3000+ic)
+                histos[b+'mjj'+k+r].SetFillColor(ic)
+                histos[b+'mjj'+k+r].Draw('histsame')
+                leg.AddEntry(histos[b+'mjj'+k+r],b,"f")
+            leg.SetNColumns(ic)
+            leg.Draw()
+            drawHeader()
+            labels.append( TPaveText(0.65,0.8,0.9,0.9,'brNDC') )
+            ilab=len(labels)-1
+            labels[ilab].SetName(k+r+'mjj')
+            labels[ilab].SetBorderSize(0)
+            labels[ilab].SetFillStyle(0)
+            labels[ilab].SetTextFont(42)
+            labels[ilab].SetTextAlign(12)
+            regionTitle="inclusive"
+            if r == 'bb' : regionTitle='barrel-barrel'
+            if r == 'eb' : regionTitle='endcap-barrel'
+            if r == 'ee' : regionTitle='endcap-endcap'
+            labels[ilab].AddText(regionTitle)
+            ptthreshold=30
+            if k!='' : ptthreshold=float(k)
+            labels[ilab].AddText('p_{T}>%3.0f GeV'%ptthreshold)
+            labels[ilab].Draw()
+            
+            c.Modified()
+            c.Update()
+            c.SaveAs('mjj'+k+r+'.png')
+
+
+    massResolutionGrs=[]
+    for r in region:
+        massResolution=TGraphErrors()
+        massResolution.SetName(r+'dm')
+        massResolution.SetLineWidth(2)
+        massResolution.SetFillStyle(0)
+        massResolution.SetMarkerStyle(20+len(massResolutionGrs))
+        massResolution.SetMarkerColor(1+len(massResolutionGrs))
+        massResolution.SetLineColor(1+len(massResolutionGrs))
+        massResolution.SetFillColor(1+len(massResolutionGrs))
+        massResolutionGrs.append(massResolution)
+        
+        for k in kin:        
+
+            c=TCanvas('c','c',600,600)
+            c.cd()
+            h=histos['dmjj'+k+r]
+            x=RooRealVar("x", h.GetXaxis().GetTitle(), h.GetXaxis().GetXmin(), h.GetXaxis().GetXmax())
+            data=RooDataHist("data", "dataset with x", RooArgList(x), h)
+            frame=x.frame()
+            RooAbsData.plotOn( data, frame, RooFit.DataError(RooAbsData.SumW2) )
+            
+            mean1=RooRealVar("mean1","mean1",0,-0.5,0.5);
+            sigma1=RooRealVar("sigma1","sigma1",0.1,0.01,1.0);
+            gauss1=RooGaussian("g1","g",x,mean1,sigma1)
+            mean2=RooRealVar("mean2","mean2",0,-0.5,0.5);
+            sigma2=RooRealVar("sigma2","sigma2",0.1,0.01,1.0);
+            alphacb=RooRealVar("alphacb","alphacb",1,0.1,3);
+            ncb=RooRealVar("ncb","ncb",4,1,100)
+            gauss2 = RooCBShape("cb2","cb",x,mean2,sigma2,alphacb,ncb);
+            frac = RooRealVar("frac","fraction",0.9,0.0,1.0)
+            model = RooAddPdf("sum","g1+g2",RooArgList(gauss1,gauss2), RooArgList(frac))
+            status=model.fitTo(data,RooFit.Save()).status()
+            if status!=0 : continue
+            RooAbsPdf.plotOn(model,frame)
+            frame.Draw()
+
+            labels.append( TPaveText(0.6,0.65,0.85,0.9,'brNDC') )
+            ilab=len(labels)-1
+            labels[ilab].SetName(r+k+'dmfitrestxt')
+            labels[ilab].SetBorderSize(0)
+            labels[ilab].SetFillStyle(0)
+            labels[ilab].SetTextFont(42)
+            labels[ilab].SetTextAlign(12)
+            labels[ilab].AddText('Gaussian #1 (f=%3.3f)'%frac.getVal())
+            labels[ilab].AddText('#mu=%3.3f#pm%3.3f'%(mean1.getVal(),mean1.getError()))
+            labels[ilab].AddText('#sigma=%3.3f#pm%3.3f'%(sigma1.getVal(),sigma1.getError()))
+            labels[ilab].AddText('Gaussian #2 (f=%3.3f)'%(1-frac.getVal()))
+            labels[ilab].AddText('#mu=%3.3f#pm%3.3f'%(mean2.getVal(),mean2.getError()))
+            labels[ilab].AddText('#sigma=%3.3f#pm%3.3f'%(sigma2.getVal(),sigma2.getError()))
+            labels[ilab].Draw()
+
             drawHeader()
             labels.append( TPaveText(0.15,0.8,0.4,0.9,'brNDC') )
             ilab=len(labels)-1
@@ -324,18 +383,66 @@ def studyVqqResolution(rootFile):
             labels[ilab].SetFillStyle(0)
             labels[ilab].SetTextFont(42)
             labels[ilab].SetTextAlign(12)
-            ptthreshold=30
-            if k!='' : ptthreshold=float(k)
             regionTitle="inclusive"
             if r == 'bb' : regionTitle='barrel-barrel'
             if r == 'eb' : regionTitle='endcap-barrel'
             if r == 'ee' : regionTitle='endcap-endcap'
-            labels[ilab].AddText('[%s] p_{T}>%3.0f GeV'%(regionTitle,ptthreshold))
+            labels[ilab].AddText(regionTitle)
+            ptthreshold=30
+            if k!='' : ptthreshold=float(k)
+            labels[ilab].AddText('p_{T}>%3.0f GeV'%ptthreshold)
             labels[ilab].Draw()
 
             c.Modified()
             c.Update()
             c.SaveAs('dmjj'+k+r+'.png')
+
+            massResolution.SetTitle(regionTitle)
+            ip=massResolution.GetN()
+            x=40
+            xerr=10
+            if k=='50' :
+                x=75
+                xerr=25
+            elif k=='100':
+                x=150
+                xerr=50
+            y=sigma1.getVal()
+            yerr=sigma1.getError()
+            if frac.getVal()<0.8:
+                if sigma2.getVal()<sigma1.getVal():
+                    y=sigma2.getVal()
+                    ey=sigma2.getError()
+            massResolution.SetPoint(ip,x,y)
+            massResolution.SetPointError(ip,xerr,yerr)
+            
+
+    frame=TGraphErrors()
+    frame.SetPoint(0,0,0)
+    frame.SetPoint(1,200,0.2)
+    frame.SetMarkerStyle(1)
+    frame.SetFillStyle(0)
+    frame.SetName('dmframe')
+    cdmevol=TCanvas('cdmevol','cdmevol',500,500)
+    cdmevol.cd()
+    frame.Draw('ap')
+    leg=TLegend(0.6,0.92,0.9,0.98)
+    leg.SetFillStyle(0)
+    leg.SetBorderSize(0)
+    leg.SetTextFont(42)
+    for dmGr in massResolutionGrs :
+        dmGr.Draw('pl')
+        leg.AddEntry(dmGr,dmGr.GetTitle(),'fp')
+    frame.GetXaxis().SetTitle("Leading quark transverse momentum [GeV]") 
+    frame.GetYaxis().SetTitle("Core resolution")
+    frame.GetYaxis().SetTitleOffset(1.4)
+    frame.GetYaxis().SetNdivisions(10)
+    drawHeader()
+    leg.SetNColumns(2)
+    leg.Draw()
+    cdmevol.Modified()
+    cdmevol.Update()
+    cdmevol.SaveAs('dm_evol.png')
 
 
     c=TCanvas('c','c',600,600)
