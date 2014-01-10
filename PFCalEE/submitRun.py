@@ -1,0 +1,46 @@
+#!/usr/bin/env python
+
+import os,sys
+import optparse
+import commands
+
+usage = 'usage: %prog [options]'
+parser = optparse.OptionParser(usage)
+parser.add_option('-q', '--queue'      ,    dest='queue'              , help='batch queue'                  , default='2nw')
+parser.add_option('-v', '--version'    ,    dest='version'            , help='detector version'             , default=0,      type=int)
+parser.add_option('-g', '--gun'        ,    dest='gun'                , help='particle to shoot'            , default='e-')
+parser.add_option('-n', '--nevts'      ,    dest='nevts'              , help='number of events to generate' , default=1000,    type=int)
+(opt, args) = parser.parse_args()
+
+nevents=opt.nevts
+
+for en in [5,10,25,50,75,100,150,200,300,500]:
+
+    outDir='/afs/cern.ch/user/p/psilva/scratch0/PFCal/version_%d/%s/e_%d'%(opt.version,opt.gun,en)
+    os.system('mkdir -p %s'%outDir)
+
+    #wrapper
+    scriptFile = open('%s/runJob.sh'%(outDir), 'w')
+    scriptFile.write('#!/bin/bash\n')
+    scriptFile.write('source /afs/cern.ch/user/p/psilva/scratch0/PFCal/env.sh\n')
+    scriptFile.write('cd %s\n'%(outDir))
+    scriptFile.write('PFCalEE g4steer.mac %d\n'%opt.version)
+    scriptFile.write('echo "All done"\n')
+    scriptFile.close()
+
+    #write geant 4 macro
+    g4Macro = open('%s/g4steer.mac'%(outDir), 'w')
+    g4Macro.write('/control/verbose 0\n')
+    g4Macro.write('/control/saveHistory\n')
+    g4Macro.write('/run/verbose 0\n')
+    g4Macro.write('/event/verbose 0\n')
+    g4Macro.write('/tracking/verbose 0\n')
+    g4Macro.write('/gun/particle %s\n'%(opt.gun))    
+    g4Macro.write('/gun/energy %f GeV\n'%(en))
+    g4Macro.write('/run/beamOn %d\n'%(nevents))
+    g4Macro.close()
+
+    #submit
+    os.system('chmod u+rwx %s/runJob.sh'%outDir)
+    os.system("bsub -q %s \'%s/runJob.sh\'"%(opt.queue,outDir))
+    
