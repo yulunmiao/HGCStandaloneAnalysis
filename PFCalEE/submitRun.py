@@ -15,13 +15,13 @@ parser.add_option('-o', '--out'        ,    dest='out'                , help='ou
 
 for en in [5,10,25,50,75,100,150,200,300,500]:
 
-    outDir='%s/version_%d/%s/e_%d'%(opt.outopt.version,opt.gun,en)
-    os.system('mkdir -p %s'%outDir)
+    outDir='%s/version_%d/%s/e_%d'%(opt.out,opt.version,opt.gun,en)
+    os.system('mkdir -p %s'%(outDir))
 
     #wrapper
     scriptFile = open('%s/runJob.sh'%(outDir), 'w')
     scriptFile.write('#!/bin/bash\n')
-    scriptFile.write('source /afs/cern.ch/user/p/psilva/scratch0/PFCal/env.sh\n')
+    scriptFile.write('source %s/g4env.sh\n'%(opt.out))
     scriptFile.write('cd %s\n'%(outDir))
     scriptFile.write('PFCalEE g4steer.mac %d\n'%opt.version)
     scriptFile.write('echo "All done"\n')
