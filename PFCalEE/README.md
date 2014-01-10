@@ -1,7 +1,11 @@
 # PFCalEE
 
 Geant4 simulation of a Si-base sampling calorimeter
+
+Check https://twiki.cern.ch/twiki/bin/view/CMS/HGCalPerformanceStudiesWithG4
+
 Geometry implementation is instantiated by detector versions in an enum - cf. src/DetectorConstruction.cc and src/SamplingSection.cc
+
 A small ntuple is stored with the energy deposits - cf. src/EventAction.cc
 
 ## Setup the environment (SLC6)
