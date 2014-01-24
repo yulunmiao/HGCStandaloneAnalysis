@@ -17,6 +17,11 @@ EXTRALIBS += $(shell $(ROOTSYS)/bin/root-config --glibs)
 .PHONY: all
 all: lib bin
 
+dictionary:
+	rootcint -v -f src/dict.cc -c include/HGCSSSimHit.hh include/LinkDef.h
+	sed "s/include\/HGCSSSimHit/HGCSSSimHit/" src/dict.h > include/dict.h
+	rm src/dict.h
+
 include $(G4INSTALL)/config/binmake.gmk
 
 visclean:
