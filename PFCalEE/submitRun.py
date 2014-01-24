@@ -13,7 +13,9 @@ parser.add_option('-n', '--nevts'      ,    dest='nevts'              , help='nu
 parser.add_option('-o', '--out'        ,    dest='out'                , help='output directory'             , default=os.getcwd() )
 (opt, args) = parser.parse_args()
 
-for en in [5,10,25,50,75,100,150,200,300,500]:
+#for en in [5,10,25,50,75,100,150,200,300,500]:
+#for en in [5,10,25,50,75,100]:
+for en in [150,200,300,500]:
 
     outDir='%s/version_%d/%s/e_%d'%(opt.out,opt.version,opt.gun,en)
     os.system('mkdir -p %s'%(outDir))
