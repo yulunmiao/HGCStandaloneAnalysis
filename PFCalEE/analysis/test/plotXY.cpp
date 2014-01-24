@@ -104,7 +104,7 @@ int main(int argc, char** argv){//main
     lTree->SetBranchAddress("muFrac",&muFrac);
     lTree->SetBranchAddress("hadFrac",&hadFrac);
     lTree->SetBranchAddress("avgTime",&avgTime);
-    lTree->SetBranchAddress("nhits",&nSiHits);
+    lTree->SetBranchAddress("nSiHits",&nSiHits);
     lTree->SetBranchAddress("HGCSSSimHitVec",&hitvec);
     
     const unsigned nEvts = (pNevts > lTree->GetEntries()/30. || pNevts==0) ? static_cast<unsigned>(lTree->GetEntries()/30.) : pNevts;
