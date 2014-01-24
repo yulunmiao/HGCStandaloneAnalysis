@@ -19,6 +19,8 @@
 #include "G4FieldManager.hh"
 #include "G4TransportationManager.hh"
 
+#include "TransverseGeometry.hh"
+
 using namespace std;
 
 //
@@ -119,7 +121,7 @@ void DetectorConstruction::UpdateCalorSize(){
   m_CalorSizeX=0;
   for(size_t i=0; i<m_caloStruct.size(); i++)
     m_CalorSizeX=m_CalorSizeX+m_caloStruct[i].Total_thick;
-  m_CalorSizeYZ=200;
+  m_CalorSizeYZ=SIZE_X;
 
   m_WorldSizeX=m_CalorSizeX*1.1;  
   m_WorldSizeYZ=m_CalorSizeYZ*1.1;
