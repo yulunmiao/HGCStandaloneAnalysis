@@ -3,8 +3,13 @@
 
 #include "G4VUserDetectorConstruction.hh"
 #include "globals.hh"
+#include "G4ThreeVector.hh"
 
 #include <iomanip>
+#include <vector>
+
+#include "G4SiHit.hh"
+#include "TransverseGeometry.hh"
 
 class SamplingSection
 {
@@ -18,6 +23,7 @@ public:
     PCB_thick=PCB;   PCB_X0=0; PCB_vol=0;
     Air_thick=Air;   Air_X0=0; Air_vol=0;
     Total_thick=Pb+Cu+Si+PCB+Air;
+    Si_HitVec_size_max = 0;
     resetCounters();
   }
 
@@ -25,7 +31,7 @@ public:
   ~SamplingSection() { }
   
   //
-  void add(G4double den, G4double dl, G4double globalTime,G4int pdgId,G4VPhysicalVolume* vol);
+  void add(G4double den, G4double dl, G4double globalTime,G4int pdgId,G4VPhysicalVolume* vol, G4ThreeVector position,G4int layerId);
   
   //reset
   inline void resetCounters()
@@ -36,6 +42,13 @@ public:
     Si_gFlux=0; Si_eFlux=0; Si_muFlux=0; Si_hadFlux=0; 
     PCB_den=0; PCB_dl=0;
     Air_den=0; Air_dl=0;
+    //reserve some space based on first event....
+    if (Si_HitVec.size() > Si_HitVec_size_max) {
+      Si_HitVec_size_max = 2*Si_HitVec.size();
+      G4cout << "-- SamplingSection::resetCounters(), space reserved for HitVec vector increased to " << Si_HitVec_size_max << G4endl;
+    }
+    Si_HitVec.clear();
+    Si_HitVec.reserve(Si_HitVec_size_max);
   }
   
   //
@@ -49,7 +62,7 @@ public:
   G4double getPhotonFraction();
   G4double getElectronFraction();
   G4double getAverageTime();
-
+  const G4SiHitVec & getSiHitVec() const;
   //
   void report(bool header=false);
 
@@ -61,6 +74,10 @@ public:
   G4VPhysicalVolume* Pb_vol,  *Cu_vol,  *Si_vol,  *PCB_vol,  *Air_vol;
   G4double           Si_gFlux, Si_eFlux, Si_muFlux, Si_hadFlux, Si_time;
   G4double Total_thick;
+  G4SiHitVec Si_HitVec;
+  unsigned Si_HitVec_size_max;
+
+
 };
 
 #endif
