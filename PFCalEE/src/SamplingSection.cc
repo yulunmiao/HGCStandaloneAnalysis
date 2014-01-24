@@ -3,19 +3,35 @@
 #include "SamplingSection.hh"
 
 //
-void SamplingSection::add(G4double den, G4double dl, G4double globalTime, G4int pdgId, G4VPhysicalVolume* vol)
+void SamplingSection::add(G4double den, G4double dl, 
+			  G4double globalTime, G4int pdgId, 
+			  G4VPhysicalVolume* vol, 
+			  G4ThreeVector position,
+			  G4int layerId)
 {
   if(Pb_vol && vol->GetName()==Pb_vol->GetName())        { Pb_den+=den;  Pb_dl+=dl;  }
   else if(Cu_vol && vol->GetName()==Cu_vol->GetName())   { Cu_den+=den;  Cu_dl+=dl;  }
   else if(Si_vol && vol->GetName()==Si_vol->GetName())   
     { 
       Si_den+=den;  Si_dl+=dl;  Si_time+=den*globalTime;
-      
+
       //discriminate further by particle type
       if(abs(pdgId)==22)      Si_gFlux += den;
       else if(abs(pdgId)==11) Si_eFlux += den;
       else if(abs(pdgId)==13) Si_muFlux += den;
       else                    Si_hadFlux += den;
+
+      //add hit
+      G4SiHit lHit;
+      lHit.energy = den;
+      lHit.time = globalTime;
+      lHit.pdgId = pdgId;
+      lHit.layer = layerId;
+      lHit.hit_x = position.x();
+      lHit.hit_y = position.y();
+      lHit.hit_z = position.z();
+      Si_HitVec.push_back(lHit);
+     
     }
   else if(PCB_vol && vol->GetName()==PCB_vol->GetName()) { PCB_den+=den; PCB_dl+=dl; }
   else if(Air_vol && vol->GetName()==Air_vol->GetName()) { Air_den+=den; Air_dl+=dl; }
@@ -25,11 +41,13 @@ void SamplingSection::add(G4double den, G4double dl, G4double globalTime, G4int 
 //
 void SamplingSection::report(bool header)
 {
-  if(header) G4cout << "E/[MeV]\t  Si\tAbsorber\tTotal\tSi g frac\tSi e frac\tSi mu frac\tSi had frac\tSi <t>" << G4endl;
+  if(header) G4cout << "E/[MeV]\t  Si\tAbsorber\tTotal\tSi g frac\tSi e frac\tSi mu frac\tSi had frac\tSi <t> \t nG4SiHits" << G4endl;
   G4cout << std::setprecision(3) << "\t  " << getMeasuredEnergy(false) << "\t" << getAbsorbedEnergy() << "\t\t" << getTotalEnergy() << "\t"
 	 << getPhotonFraction() << "\t" << getElectronFraction() << "\t" << getMuonFraction() << "\t" << getHadronicFraction() << "\t"
-	 << getAverageTime()
+	 << getAverageTime() << "\t"
+	 << Si_HitVec.size() << "\t"
 	 << G4endl; 
+
 }
 
 G4double SamplingSection::getAverageTime()
@@ -94,4 +112,9 @@ G4double SamplingSection::getAbsorbedEnergy()
 G4double SamplingSection::getTotalEnergy()
 {
   return Air_den+getMeasuredEnergy(false)+getAbsorbedEnergy();
+}
+
+const G4SiHitVec & SamplingSection::getSiHitVec() const
+{
+  return Si_HitVec;
 }
