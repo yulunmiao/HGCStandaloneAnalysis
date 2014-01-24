@@ -18,6 +18,8 @@ EventAction::EventAction()
   printModulo = 5;
   outF_=TFile::Open("PFcal.root","RECREATE");
   //ntuple_=new TNtuple("CaloStack","CaloStack","event:volNb:volX0:volX0trans:den:denWeight:denAbs:denTotal:gFrac:eFrac:muFrac:hadFrac:avgTime:nhits");
+  // ntuple_->Branch("dendydz",dendydz_,"dendydz[81]/F");
+  //cellSize_=4;
   tree_=new TTree("HGCSSTree","HGC Standalone simulation tree");
   tree_->Branch("event",&event_[0]);
   tree_->Branch("volNb",&event_[1]);
@@ -36,7 +38,6 @@ EventAction::EventAction()
   tree_->Branch("HGCSSSimHitVec","std::vector<HGCSSSimHit>",&hitvec_);
 
   hitGeom_.PrintGeometry(G4cout);
-
 }
 
 //
@@ -62,10 +63,15 @@ void EventAction::BeginOfEventAction(const G4Event* evt)
 }
 
 //
-void EventAction::Detect(G4double edep, G4double stepl,G4double globalTime, G4int pdgId, G4VPhysicalVolume *volume, G4ThreeVector position)
+void EventAction::Detect(G4double edep, G4double stepl,G4double globalTime, G4int pdgId, G4VPhysicalVolume *volume, const G4ThreeVector & position)
 {
   for(size_t i=0; i<detector_->size(); i++) (*detector_)[i].add(edep,stepl,globalTime,pdgId,volume,position,i);
 }
+
+  //void EventAction::Detect(G4double edep, G4double stepl,G4double globalTime, G4int pdgId, G4VPhysicalVolume *volume, int iyiz)
+  //{
+  //for(size_t i=0; i<detector_->size(); i++) (*detector_)[i].add(edep,stepl,globalTime,pdgId,volume,iyiz);
+  //}
 
 //
 void EventAction::EndOfEventAction(const G4Event* evt)
@@ -106,6 +112,10 @@ void EventAction::EndOfEventAction(const G4Event* evt)
       }
       //ntuple_->Fill(event_);
       tree_->Fill();
+
+      //for(size_t iyiz=0; iyiz<81; iyiz++) dendydz_[iyiz]=(*detector_)[i].getMeasuredEnergyInPos(iyiz);
+      //ntuple_->Fill(event_);
+
       if(debug) (*detector_)[i].report( (i==0) );
       (*detector_)[i].resetCounters();
     }

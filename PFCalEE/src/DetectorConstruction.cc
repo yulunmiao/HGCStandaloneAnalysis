@@ -54,6 +54,16 @@ DetectorConstruction::DetectorConstruction(G4int ver) : version_(ver)
 	for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(1.2*5.612*mm,0.0*mm,siWidth*mm,1.0*mm,1.0*mm) );
 	break;
       }
+    case v_HGCALEE: case v_HGCALEE_Si500:
+      {
+	G4cout << "[DetectorConstruction] starting v_HGCALEE" << G4endl;
+	float siWidth(0.200);
+	if(version_==v_HGCALEE_Si500) siWidth=0.500;
+	for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(1.6*mm,3.0*mm,siWidth*mm,1.0*mm,1.0*mm) );
+	for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(3.3*mm,3.0*mm,siWidth*mm,1.0*mm,1.0*mm) );
+	for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(5.6*mm,3.0*mm,siWidth*mm,1.0*mm,1.0*mm) );
+	break;
+      }
     case v_UNIFORM: case v_UNIFORM_Si60 : case v_UNIFORM_Si80: case v_UNIFORM_Si120: case v_UNIFORM_Si200: case v_UNIFORM_Si300: case v_UNIFORM_Si500:
       {
 	float siWidth(0.300);

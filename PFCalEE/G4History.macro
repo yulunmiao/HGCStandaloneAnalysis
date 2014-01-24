@@ -5,3 +5,4 @@
 /gun/energy 10 GeV
 /gun/direction 1 0 0
 /run/beamOn 10
+/vis/scene/notifyHandlers scene-0

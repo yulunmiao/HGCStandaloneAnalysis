@@ -6,14 +6,17 @@
 void SamplingSection::add(G4double den, G4double dl, 
 			  G4double globalTime, G4int pdgId, 
 			  G4VPhysicalVolume* vol, 
-			  G4ThreeVector position,
+			  const G4ThreeVector & position,
 			  G4int layerId)
+//void SamplingSection::add(G4double den, G4double dl, G4double globalTime, G4int pdgId, G4VPhysicalVolume* vol, int iyiz)
 {
   if(Pb_vol && vol->GetName()==Pb_vol->GetName())        { Pb_den+=den;  Pb_dl+=dl;  }
   else if(Cu_vol && vol->GetName()==Cu_vol->GetName())   { Cu_den+=den;  Cu_dl+=dl;  }
   else if(Si_vol && vol->GetName()==Si_vol->GetName())   
     { 
       Si_den+=den;  Si_dl+=dl;  Si_time+=den*globalTime;
+
+      //Si_dendydz[iyiz] += den;
 
       //discriminate further by particle type
       if(abs(pdgId)==22)      Si_gFlux += den;

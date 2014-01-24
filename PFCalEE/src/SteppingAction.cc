@@ -30,10 +30,19 @@ void SteppingAction::UserSteppingAction(const G4Step* aStep)
   G4double edep = aStep->GetTotalEnergyDeposit();
   G4double stepl = 0.;
   if (aStep->GetTrack()->GetDefinition()->GetPDGCharge() != 0.) stepl = aStep->GetStepLength();
+
+  //const G4ThreeVector &pos=aStep->GetPreStepPoint()->GetPosition();
+
+  //Int_t iz=Int_t(pos.z()/eventAction_->GetCellSize())+4;
+  //if(iz<0) iz=0; if(iz>8) iz=8;
+  //Int_t iy=Int_t(pos.y()/eventAction_->GetCellSize())+4;
+  //if(iy<0) iy=0; if(iy>8) iy=8;
+  //Int_t iyiz(iz+iy*9);
+
   G4int pdgId=aStep->GetTrack()->GetDefinition()->GetPDGEncoding(); 
   G4double globalTime=aStep->GetTrack()->GetGlobalTime();
 
-  G4ThreeVector position = thePreStepPoint->GetPosition();
+  const G4ThreeVector & position = thePreStepPoint->GetPosition();
   // get local hit position using touchable with theGlobalPos
   //G4ThreeVector LocalHitPos = theTouchable->GetHistory()->GetTopTransform().TransformPoint(position);
  
@@ -42,4 +51,5 @@ void SteppingAction::UserSteppingAction(const G4Step* aStep)
   //G4cout << "Local position " << LocalHitPos << G4endl;
   
   eventAction_->Detect(edep,stepl,globalTime,pdgId,volume,position);
+  //eventAction_->Detect(edep,stepl,globalTime,pdgId,volume,iyiz);
 }
