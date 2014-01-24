@@ -1,5 +1,5 @@
 # name of the library
-LIBNAME = PFCalEEAnalysis
+LIBNAME = PFCalEEuserlib
 
 #Necessary to use shell built-in commands
 SHELL=bash
@@ -8,11 +8,10 @@ SHELL=bash
 USERINCLUDES += -I$(ROOTSYS)/include/
 USERINCLUDES += -I$(ROOFITSYS)/include/
 #USERINCLUDES += -I$(CMS_PATH)/$(SCRAM_ARCH)/external/boost/1.47.0/include/
-USERINCLUDES += -Iinclude/ -I../userlib/include/
+USERINCLUDES += -Iinclude/
 
 # Define libraries to link
 USERLIBS += $(shell root-config --glibs) #-lGenVector -lTreePlayer -lTMVA
-USERLIBS += -L../userlib/lib -lPFCalEEuserlib
 #USERLIBS += -L$(CMS_PATH)/$(SCRAM_ARCH)/external/boost/1.47.0/lib/ -lboost_regex -lboost_program_options -lboost_filesystem
 
 #CXXFLAGS = -Wall -W -Wno-unused-function -Wno-parentheses -Wno-char-subscripts -Wno-unused-parameter -O2 
@@ -50,7 +49,9 @@ EXES=$(wildcard $(BASEDIR)/test/*.cpp)
 OBJS=$(subst $(SRCDIR), $(OBJDIR),$(subst cc,$(OBJ_EXT),$(SRCS)))
 BINS=$(subst $(TESTDIR), $(EXEDIR),$(subst .$(TEST_EXT),,$(EXES)))
 
-all: lib $(BINS)
+all: lib 
+
+#$(BINS)
 
 docs: all
 	doxygen Doxyfile
@@ -66,6 +67,11 @@ $(LIBDIR)/lib$(LIBNAME).so:  $(OBJS) $(LIBDEPENDS)
 	$(LD) $(LDFLAGS) -o $(LIBDIR)/lib$(LIBNAME).so $(OBJS) $(LIBS)
 
 lib: $(LIBDIR)/lib$(LIBNAME).so
+
+dictionary:
+	rootcint -v -f src/dict.cc -c include/HGCSSSimHit.hh include/LinkDef.h
+	sed "s/include\/HGCSSSimHit/HGCSSSimHit/" src/dict.h > include/dict.h
+	rm src/dict.h
 
 # info:
 # 	@echo "LIBS: " $(LIBS)

@@ -11,20 +11,22 @@ ifndef G4INSTALL
   G4INSTALL = ../../..
 endif
 
-CPPFLAGS += $(shell $(ROOTSYS)/bin/root-config --cflags) 
-EXTRALIBS += $(shell $(ROOTSYS)/bin/root-config --glibs)
+CPPFLAGS += -Iuserlib/include/ $(shell $(ROOTSYS)/bin/root-config --cflags)
+EXTRALIBS += $(shell $(ROOTSYS)/bin/root-config --glibs) -Luserlib/lib -lPFCalEEuserlib
 
-.PHONY: all
-all: lib bin
+SUBDIRS = userlib
 
-dictionary:
-	rootcint -v -f src/dict.cc -c include/HGCSSSimHit.hh include/LinkDef.h
-	sed "s/include\/HGCSSSimHit/HGCSSSimHit/" src/dict.h > include/dict.h
-	rm src/dict.h
+.PHONY: $(SUBDIRS) all
+all: $(SUBDIRS) lib bin
 
 include $(G4INSTALL)/config/binmake.gmk
+
+$(SUBDIRS):
+	$(MAKE) -C $@
 
 visclean:
 	rm -f g4*.prim g4*.eps g4*.wrl
 	rm -f .DAWN_*
 
+userclean:
+	$(MAKE) -C userlib/ clean

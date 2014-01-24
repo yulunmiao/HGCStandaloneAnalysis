@@ -35,7 +35,7 @@ public:
 
   void SetPrintModulo(G4int    val)  {printModulo = val;};
   void Add( std::vector<SamplingSection> *newDetector ) { detector_=newDetector; }
-  Float_t GetCellSize() { return cellSize_; }
+  //Float_t GetCellSize() { return cellSize_; }
 
 private:
   RunAction*  runAct;

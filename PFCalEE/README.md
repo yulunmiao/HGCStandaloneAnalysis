@@ -9,11 +9,12 @@ Geometry implementation is instantiated by detector versions in an enum - cf. sr
 A small ntuple is stored with the energy deposits - cf. src/EventAction.cc 
 
 When changing the ttree content, adding homemade classes rather than
-simple objects, the dictionary for root to understand the classes need
-to be remade. Use "make dictionary" before make. Follow instructions
-in https://twiki.cern.ch/twiki/bin/view/Sandbox/AnnemarieMagnanSandbox
+simple objects, the classes should be added to userlib. The dictionary
+for root to understand the classes also need to be remade. Use "make
+dictionary" before make, inside of userlib/. Follow instructions in
+https://twiki.cern.ch/twiki/bin/view/Sandbox/AnnemarieMagnanSandbox
 for what needs to be put in the homemade classes for root to
-understand them (see also example in class HGCSSSimHit)
+understand them (see also example in class userlib/include/HGCSSSimHit.hh).
 
 ## Setup the environment (SLC6)
 
