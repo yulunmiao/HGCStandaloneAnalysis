@@ -30,3 +30,7 @@ python submitRun.py -v 13
 Si width scan on Calice_Pb
 
 for i in `seq 14 19`; do python submitRun.py -v ${i}; done
+
+HGCALEE
+
+for i in `seq 20 21`; do python submitRun.py -v ${i}; done

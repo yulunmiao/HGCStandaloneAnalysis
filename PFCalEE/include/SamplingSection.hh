@@ -25,7 +25,7 @@ public:
   ~SamplingSection() { }
   
   //
-  void add(G4double den, G4double dl, G4double globalTime,G4int pdgId,G4VPhysicalVolume* vol);
+  void add(G4double den, G4double dl, G4double globalTime,G4int pdgId,G4VPhysicalVolume* vol, int iyiz);
   
   //reset
   inline void resetCounters()
@@ -33,6 +33,7 @@ public:
     Pb_den=0;  Pb_dl=0;
     Cu_den=0;  Cu_dl=0;
     Si_den=0;  Si_dl=0; Si_time=0;
+    for(size_t i=0; i<81; i++) Si_dendydz[i]=0;
     Si_gFlux=0; Si_eFlux=0; Si_muFlux=0; Si_hadFlux=0; 
     PCB_den=0; PCB_dl=0;
     Air_den=0; Air_dl=0;
@@ -40,6 +41,7 @@ public:
   
   //
   G4double getMeasuredEnergy(bool weighted=true);
+  G4double getMeasuredEnergyInPos(int iyiz) { return Si_dendydz[iyiz]; }
   G4double getAbsorbedEnergy();
   G4double getTotalEnergy();
   G4double getAbsorberX0();  
@@ -56,7 +58,7 @@ public:
   //members
   G4double           Pb_thick, Cu_thick, Si_thick, PCB_thick, Air_thick;
   G4double           Pb_X0,    Cu_X0,    Si_X0,    PCB_X0,    Air_X0;
-  G4double           Pb_den,   Cu_den,   Si_den,   PCB_den,   Air_den;
+  G4double           Pb_den,   Cu_den,   Si_den,   PCB_den,   Air_den, Si_dendydz[81];
   G4double           Pb_dl,    Cu_dl,    Si_dl,    PCB_dl,    Air_dl;
   G4VPhysicalVolume* Pb_vol,  *Cu_vol,  *Si_vol,  *PCB_vol,  *Air_vol;
   G4double           Si_gFlux, Si_eFlux, Si_muFlux, Si_hadFlux, Si_time;

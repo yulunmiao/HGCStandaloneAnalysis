@@ -22,9 +22,10 @@ public:
   virtual ~EventAction();
   void BeginOfEventAction(const G4Event*);
   void EndOfEventAction(const G4Event*);
-  void Detect(G4double edep, G4double stepl,G4double globalTime, G4int pdgId, G4VPhysicalVolume *volume);
+  void Detect(G4double edep, G4double stepl,G4double globalTime, G4int pdgId, G4VPhysicalVolume *volume,int iyiz);
   void SetPrintModulo(G4int    val)  {printModulo = val;};
   void Add( std::vector<SamplingSection> *newDetector ) { detector_=newDetector; }
+  Float_t GetCellSize() { return cellSize_; }
 
 private:
   RunAction*  runAct;
@@ -32,7 +33,7 @@ private:
   G4int     evtNb_,printModulo;
   TFile *outF_;
   TNtuple *ntuple_;
-  Float_t event_[15];
+  Float_t event_[15], dendydz_[81], cellSize_;
   EventActionMessenger*  eventMessenger;
 };
 
