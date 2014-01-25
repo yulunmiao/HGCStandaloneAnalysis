@@ -37,7 +37,6 @@ EventAction::EventAction()
   tree_->Branch("nSiHits",&event_[13]);
   tree_->Branch("HGCSSSimHitVec","std::vector<HGCSSSimHit>",&hitvec_);
 
-  hitGeom_.PrintGeometry(G4cout);
 }
 
 //
@@ -100,9 +99,14 @@ void EventAction::EndOfEventAction(const G4Event* evt)
 
       for (unsigned iSiHit(0); iSiHit<event_[13];++iSiHit){
 	G4SiHit lSiHit = (*detector_)[i].getSiHitVec()[iSiHit];
-	hitGeom_.SetHit(lSiHit);
-	HGCSSSimHit lHit(lSiHit,hitGeom_.cellid());
-	isInserted = lHitMap.insert(std::pair<unsigned,HGCSSSimHit>(hitGeom_.cellid(),lHit));
+	HGCSSSimHit lHit(lSiHit);
+
+	//print geometry just once for the record
+	if (evtNb_ == 0 && i==0 && iSiHit==0){
+	  lHit.PrintGeometry(G4cout);
+	}
+
+	isInserted = lHitMap.insert(std::pair<unsigned,HGCSSSimHit>(lHit.cellid(),lHit));
 	if (!isInserted.second) isInserted.first->second.Add(lSiHit);
       }
       std::map<unsigned,HGCSSSimHit>::iterator lIter = lHitMap.begin();

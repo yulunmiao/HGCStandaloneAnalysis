@@ -50,10 +50,16 @@ EXES=$(wildcard $(BASEDIR)/test/*.cpp)
 OBJS=$(subst $(SRCDIR), $(OBJDIR),$(subst cc,$(OBJ_EXT),$(SRCS)))
 BINS=$(subst $(TESTDIR), $(EXEDIR),$(subst .$(TEST_EXT),,$(EXES)))
 
-all: lib $(BINS)
+SUBDIRS = ../userlib
+
+.PHONY: $(SUBDIRS) all
+all: $(SUBDIRS) lib $(BINS)
 
 docs: all
 	doxygen Doxyfile
+
+$(SUBDIRS):
+	$(MAKE) -C $@
 
 $(EXEDIR)/%:  $(TESTDIR)/%.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
 	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
@@ -76,4 +82,7 @@ lib: $(LIBDIR)/lib$(LIBNAME).so
 
 clean:
 	rm -rf $(OBJS) $(LIBDIR)/lib$(LIBNAME).so $(BINS)
+
+userclean:
+	$(MAKE) -C userlib/ clean
 

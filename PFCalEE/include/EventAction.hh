@@ -13,7 +13,6 @@
 #include "SamplingSection.hh"
 #include "G4SiHit.hh"
 #include "HGCSSSimHit.hh"
-#include "TransverseGeometry.hh"
 
 #include <vector>
 #include <map>
@@ -46,7 +45,6 @@ private:
   TTree *tree_;
   Float_t event_[16];
   HGCSSSimHitVec hitvec_;
-  TransverseGeometry hitGeom_;
   //  Float_t event_[15], dendydz_[81], cellSize_;
   EventActionMessenger*  eventMessenger;
 

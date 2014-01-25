@@ -13,7 +13,6 @@
 
 #include "HGCSSSimHit.hh"
 #include "HGCSSParameters.hh"
-#include "TransverseGeometry.hh"
 
 int main(int argc, char** argv){//main  
 
@@ -123,19 +122,17 @@ int main(int argc, char** argv){//main
       for (unsigned iH(0); iH<(*hitvec).size(); ++iH){//loop on hits
 	HGCSSSimHit lHit = (*hitvec)[iH];
 	lHit.layer(layer);
-	TransverseGeometry lGeom;
-	lGeom.SetHit(lHit);
-	double posx = lGeom.get_x();
-	double posy = lGeom.get_y();
+	double posx = lHit.get_x();
+	double posy = lHit.get_y();
 	if (debug) {
 	  std::cout << " --  Hit " << iH << " --" << std::endl
 		    << " --  position x,y " << posx << "," << posy << std::endl;
 	  lHit.Print(std::cout);
 	}
-	double weightedE = lHit.energy()*lGeom.weight();
+	double weightedE = lHit.energy()*lHit.weight();
 	if (weightedE > Emax[iE]) Emax[iE] = weightedE ;
 	p_xy[iE][layer]->Fill(posx,posy,weightedE);
-	Etot[layer] += lHit.energy()*lGeom.weight();
+	Etot[layer] += lHit.energy()*lHit.weight();
       }//loop on hits
       p_Etot[iE][layer]->Fill(Etot[layer]);
     }//loop on entries

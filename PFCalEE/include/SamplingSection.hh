@@ -9,7 +9,6 @@
 #include <vector>
 
 #include "G4SiHit.hh"
-#include "TransverseGeometry.hh"
 
 class SamplingSection
 {
