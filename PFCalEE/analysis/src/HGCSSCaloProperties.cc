@@ -48,7 +48,7 @@ bool ShowerProfile::buildShowerProfile(Float_t eElec, TString version)
   if (!CaloStack) return false;
 
   Float_t event,volNb,volX0,den,denWeight;
-  std::vector<HGCSSSimHit> *hitvec;
+  std::vector<HGCSSSimHit> *hitvec = 0;
   CaloStack->SetBranchAddress("event",&event);
   CaloStack->SetBranchAddress("volNb",&volNb);
   CaloStack->SetBranchAddress("volX0trans",&volX0);
@@ -56,7 +56,7 @@ bool ShowerProfile::buildShowerProfile(Float_t eElec, TString version)
   CaloStack->SetBranchAddress("den", &den);
   CaloStack->SetBranchAddress("denWeight", &denWeight);
   CaloStack->SetBranchAddress("HGCSSSimHitVec",&hitvec);
-
+   
   CaloStack->GetEntry(0);
   Float_t curEvent(event);
   

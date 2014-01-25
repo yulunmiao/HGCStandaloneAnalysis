@@ -20,6 +20,12 @@ understand them (see also example in class userlib/include/HGCSSSimHit.hh).
 
 source g4env.sh
 
+## Compile
+mkdir userlib/lib
+mkdir userlib/obj
+make
+
+
 ## Submit in parallel the runs submitRun.py. Some examples are:
 
 Absorber width scan

@@ -43,6 +43,9 @@ DOCDIR= $(BASEDIR)/docs
 OBJ_EXT=o
 TEST_EXT=cpp
 
+#make lib/obj directories
+
+
 # Build a list of srcs and bins to build
 SRCS=$(wildcard $(BASEDIR)/src/*.cc)
 EXES=$(wildcard $(BASEDIR)/test/*.cpp)

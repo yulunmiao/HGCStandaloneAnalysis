@@ -29,7 +29,7 @@ int main()
 
   //size_t versions[]={0,1,2,3,4,5,6,13};
   //size_t versions[]={7,8,9,10,11,12};
-  size_t versions[]={18};
+  size_t versions[]={0,20,21};
   // size_t versions[]={14,15,16,17,18,19};
   size_t nversions( sizeof(versions)/sizeof(size_t) );
 
@@ -64,6 +64,8 @@ int main()
     if(i==17) binLabel="Si 200#mu";
     if(i==18) binLabel="Si 300#mu";
     if(i==19) binLabel="Si 500#mu";
+    if(i==20) binLabel="HGCal EE";
+    if(i==21) binLabel="HGCal EE Si 500#mu";
 
     TString ver("version_"); ver+=i;
 
