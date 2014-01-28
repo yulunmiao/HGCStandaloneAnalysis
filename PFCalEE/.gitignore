@@ -1,0 +1,8 @@
+
+PLOTS/
+LSFJOB_*
+*.d
+*.so
+bin
+obj
+*.root
