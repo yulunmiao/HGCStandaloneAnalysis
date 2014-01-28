@@ -19,7 +19,7 @@
 #include "G4FieldManager.hh"
 #include "G4TransportationManager.hh"
 
-#include "TransverseGeometry.hh"
+#include "HGCSSSimHit.hh"
 
 using namespace std;
 

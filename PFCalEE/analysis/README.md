@@ -1,8 +1,9 @@
-###########################
-## Example analysis #######
-###########################
+## Example analysis
 
 #to compile
+mkdir lib
+mkdir bin
+mkdir obj
 
 make
 

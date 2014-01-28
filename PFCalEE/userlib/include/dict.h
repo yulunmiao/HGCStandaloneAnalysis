@@ -32,6 +32,7 @@ extern void G__set_cpp_environmentdict();
 #include "TObject.h"
 #include "TMemberInspector.h"
 #include "HGCSSSimHit.hh"
+#include "HGCSSRecoHit.hh"
 #include <algorithm>
 namespace std { }
 using namespace std;
@@ -54,6 +55,11 @@ extern G__linked_taginfo G__dictLN_HGCSSSimHit;
 extern G__linked_taginfo G__dictLN_vectorlEHGCSSSimHitcOallocatorlEHGCSSSimHitgRsPgR;
 extern G__linked_taginfo G__dictLN_vectorlEHGCSSSimHitcOallocatorlEHGCSSSimHitgRsPgRcLcLiterator;
 extern G__linked_taginfo G__dictLN_reverse_iteratorlEvectorlEHGCSSSimHitcOallocatorlEHGCSSSimHitgRsPgRcLcLiteratorgR;
+extern G__linked_taginfo G__dictLN_HGCSSRecoHit;
+extern G__linked_taginfo G__dictLN_vectorlEHGCSSRecoHitcOallocatorlEHGCSSRecoHitgRsPgR;
+extern G__linked_taginfo G__dictLN_vectorlEHGCSSRecoHitcOallocatorlEHGCSSRecoHitgRsPgRcLcLiterator;
+extern G__linked_taginfo G__dictLN_reverse_iteratorlEvectorlEHGCSSRecoHitcOallocatorlEHGCSSRecoHitgRsPgRcLcLiteratorgR;
 
 /* STUB derived class for protected member access */
 typedef vector<HGCSSSimHit,allocator<HGCSSSimHit> > G__vectorlEHGCSSSimHitcOallocatorlEHGCSSSimHitgRsPgR;
+typedef vector<HGCSSRecoHit,allocator<HGCSSRecoHit> > G__vectorlEHGCSSRecoHitcOallocatorlEHGCSSRecoHitgRsPgR;
