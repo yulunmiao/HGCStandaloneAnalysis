@@ -195,6 +195,24 @@ bool ShowerProfile::buildShowerProfile(Float_t eElec, TString version)
       enCounter[ Int_t(volNb) ] = std::pair<Float_t,Float_t>(volX0,den);
       totalRawEn += den;
       totalEn    += denWeight;
+      
+      //acquire
+      Float_t maxRhoToAcquire(10000);
+      Float_t totEnInHits(0);
+      for (unsigned iH(0); iH<(*hitvec).size(); ++iH){//loop on hits                                                                                                                                                                              
+	HGCSSSimHit lHit = (*hitvec)[iH];
+	lHit.layer(unsigned(volNb));
+	TransverseGeometry lGeom;
+	lGeom.SetHit(lHit);
+	double hitEn = lHit.energy();
+	double posx = lGeom.get_x();
+	double posy = lGeom.get_y();
+	double rho=sqrt(posx*posx+posy*posy);
+	if(rho>maxRhoToAcquire) continue;
+	totEnInHits += hitEn;
+      }
+      cout << totEnInHits << " " << den << endl;
+      enCounterAcquired[ Int_t(volNb) ] = std::pair<Float_t,Float_t>(volX0,totEnInHits);
     }
   fIn->Close();
   
