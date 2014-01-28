@@ -17,10 +17,7 @@ parser.add_option('-o', '--out'        ,    dest='out'                , help='ou
 
 nevents=opt.nevts
 
-for en in [50, 75,100,150,200,300,500]:
-#for en in [5,10,25,50,75,100,150,200,300,500]:
-#for en in [5,10,25,50,75,100]:
-#for en in [150,200,300,500]:
+for en in [5,10,25,50,75,100,150,200,300,500]:
 
     outDir='%s/version_%d/%s/e_%d'%(opt.out,opt.version,opt.gun,en)
     if opt.alpha>0 : outDir='%s_%3.3f'%(outDir,opt.alpha) 
