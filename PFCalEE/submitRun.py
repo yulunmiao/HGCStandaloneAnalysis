@@ -13,6 +13,7 @@ parser.add_option('-a', '--alpha'      ,    dest='alpha'              , help='in
 parser.add_option('-g', '--gun'        ,    dest='gun'                , help='particle to shoot'            , default='e-')
 parser.add_option('-n', '--nevts'      ,    dest='nevts'              , help='number of events to generate' , default=1000,    type=int)
 parser.add_option('-o', '--out'        ,    dest='out'                , help='output directory'             , default=os.getcwd() )
+parser.add_option('-S', '--no-submit'  ,    action="store_true",  dest='nosubmit'           , help='Do not submit batch job.')
 (opt, args) = parser.parse_args()
 
 nevents=opt.nevts
@@ -41,6 +42,7 @@ for en in [5,10,25,50,75,100,150,200,300,500]:
     g4Macro.write('/run/verbose 0\n')
     g4Macro.write('/event/verbose 0\n')
     g4Macro.write('/tracking/verbose 0\n')
+    g4Macro.write('/generator/select particleGun\n')
     g4Macro.write('/gun/particle %s\n'%(opt.gun))    
     g4Macro.write('/gun/energy %f GeV\n'%(en))
     g4Macro.write('/gun/direction %f %f %f\n'%(math.cos(opt.alpha),math.sin(opt.alpha),0.))
@@ -49,5 +51,6 @@ for en in [5,10,25,50,75,100,150,200,300,500]:
 
     #submit
     os.system('chmod u+rwx %s/runJob.sh'%outDir)
-    os.system("bsub -q %s \'%s/runJob.sh\'"%(opt.queue,outDir))
-    
+    if opt.nosubmit : os.system('echo bsub -q %s %s/runJob.sh'%(opt.queue,outDir)) 
+    else: os.system("bsub -q %s \'%s/runJob.sh\'"%(opt.queue,outDir))
+
