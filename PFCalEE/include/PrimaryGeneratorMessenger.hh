@@ -50,11 +50,14 @@ public:
   virtual ~PrimaryGeneratorMessenger();
     
   void SetNewValue(G4UIcommand*, G4String);
-    
+  G4String GetCurrentValue(G4UIcommand* command);  
+
 private:
   PrimaryGeneratorAction* Action;
-  G4UIdirectory*          gunDir; 
+  G4UIdirectory*          dir; 
   G4UIcmdWithAString*     RndmCmd;
+  G4UIcmdWithAString*     select;
+
 };
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
