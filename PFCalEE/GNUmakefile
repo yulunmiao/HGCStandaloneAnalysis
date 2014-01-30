@@ -17,7 +17,17 @@ EXTRALIBS += $(shell $(ROOTSYS)/bin/root-config --glibs) -Luserlib/lib -lPFCalEE
 .PHONY: $(SUBDIRS) all
 all: $(SUBDIRS) lib bin
 
+#use this line to also use pythia6
+#all : $(SUBDIRS) pythia6 lib bin
+
 include $(G4INSTALL)/config/binmake.gmk
+
+ # if you want to use Pythia library, uncomment out the next lines.
+#
+#  G4LIB_USE_PYTHIA := 1
+#ifdef G4LIB_USE_PYTHIA
+#    CPPFLAGS += -DG4LIB_USE_PYTHIA
+#endif
 
 INCFLAGS += -I$(HEPMC_DIR)/include/
 
@@ -29,6 +39,15 @@ endif
 
 
 SUBDIRS = userlib
+
+#pythia stuff
+#FCFLAGS += -c
+#pythia6: $(G4TMPDIR)/libPythia6.so
+#$(G4TMPDIR)/libPythia6.so: $(G4TMPDIR)/pythia6.o
+#        $(FC) -shared -Wl,-soname,libPythia6.so -o $(G4TMPDIR)/libPythia6.so $(G4TMPDIR)/pythia6.o
+#$(G4TMPDIR)/pythia6.o:
+#        $(FC) $(FCFLAGS) $(PYTHIA6)/pythia-$(PYTHIA6_VERSION).f -o $(G4TMPDIR)/pythia6.o
+
 
 $(SUBDIRS):
 	$(MAKE) -C $@
