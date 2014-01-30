@@ -14,12 +14,21 @@ endif
 CPPFLAGS += -Iuserlib/include/ $(shell $(ROOTSYS)/bin/root-config --cflags)
 EXTRALIBS += $(shell $(ROOTSYS)/bin/root-config --glibs) -Luserlib/lib -lPFCalEEuserlib
 
-SUBDIRS = userlib
-
 .PHONY: $(SUBDIRS) all
 all: $(SUBDIRS) lib bin
 
 include $(G4INSTALL)/config/binmake.gmk
+
+INCFLAGS += -I$(HEPMC_DIR)/include/
+
+ifdef G4LIB_USE_PYTHIA
+      LDLIBS1 += -L$(HEPMC_DIR)/lib -lHepMC -lHepMCfio -L$(G4TMPDIR) -lPythia6 -lg2c
+else
+      LDLIBS1 += -L$(HEPMC_DIR)/lib -lHepMC -lHepMCfio #$(G4TMPDIR)/HEPEvtcom.o
+endif
+
+
+SUBDIRS = userlib
 
 $(SUBDIRS):
 	$(MAKE) -C $@
