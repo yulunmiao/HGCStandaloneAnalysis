@@ -95,12 +95,13 @@ int main(int argc, char** argv){//main
   
   TH2F *p_xy[nGenEn][nLayers];
   TH1F *p_Etot[nGenEn][nLayers];
+  TH1F *p_Efrac[nGenEn][nLayers];
   TH1F *p_time[nGenEn][nLayers];
   TH1F *p_Etotal[nGenEn];
   TH1F *p_Ereco[nGenEn];
   TH1F *p_nSimHits[nGenEn];
   TH1F *p_nRecHits[nGenEn];
-  
+
   bool isG4Tree = true;
 
   for (unsigned iE(0); iE<nGenEn; ++iE){
@@ -147,6 +148,9 @@ int main(int argc, char** argv){//main
       lName.str("");
       Etot[iL] = 0;
       lName.str("");
+      lName << "p_Efrac_" << genEn[iE] << "_" << iL;
+      p_Efrac[iE][iL] = new TH1F(lName.str().c_str(),";integrated E_{layer}/E_{total}",101,0,1.01);
+      lName.str("");
       lName << "p_time_" << genEn[iE] << "_" << iL;
       p_time[iE][iL] = new TH1F(lName.str().c_str(),";G4 time (ns)",200,0,2);
     }
@@ -174,7 +178,7 @@ int main(int argc, char** argv){//main
     std::vector<HGCSSRecoHit> * rechitvec = 0;
 
     if (isG4Tree){
-      lTree->SetBranchAddress("event",&event);
+      //lTree->SetBranchAddress("event",&event);
       lTree->SetBranchAddress("volNb",&volNb);
       lTree->SetBranchAddress("volX0",&volX0);
       lTree->SetBranchAddress("HGCSSSimHitVec",&simhitvec);
@@ -214,6 +218,7 @@ int main(int argc, char** argv){//main
       for (unsigned iH(0); iH<(*simhitvec).size(); ++iH){//loop on hits
 	HGCSSSimHit lHit = (*simhitvec)[iH];
 	unsigned layer = lHit.layer();
+	if (isG4Tree && layer==volNb+1) layer = volNb;
 	double posx = lHit.get_x();
 	double posy = lHit.get_y();
 	if (debug>1) {
@@ -225,6 +230,7 @@ int main(int argc, char** argv){//main
 	p_xy[iE][layer]->Fill(posx,posy,weightedE);
 	p_time[iE][layer]->Fill(lHit.time());
 	Etot[layer] += weightedE;
+	Etotal += weightedE;
       }//loop on hits
       if (!isG4Tree){
 	Ereco = 0;
@@ -243,9 +249,11 @@ int main(int argc, char** argv){//main
       }
       if (!isG4Tree || (isG4Tree && (volNb == nLayers-1))){
 	if (debug) std::cout << " -- Filling histograms..." << std::endl;
+	double Etmp = 0;
 	for (unsigned iL(0);iL<nLayers;++iL){
 	  p_Etot[iE][iL]->Fill(Etot[iL]);
-	  Etotal += Etot[iL];
+	  Etmp += Etot[iL];
+	  p_Efrac[iE][iL]->Fill(Etmp/Etotal);
 	  Etot[iL] = 0;
 	}
 	p_Etotal[iE]->Fill(Etotal);
@@ -258,6 +266,7 @@ int main(int argc, char** argv){//main
       p_xy[iE][iL]->Write();
       p_time[iE][iL]->Write();
       p_Etot[iE][iL]->Write();
+      p_Efrac[iE][iL]->Write();
     }
     p_Etotal[iE]->Write();
     p_nSimHits[iE]->Write();
