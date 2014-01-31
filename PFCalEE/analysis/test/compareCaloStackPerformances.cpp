@@ -19,75 +19,20 @@
 #include "Math/BrentMinimizer1D.h"
 
 #include <map>
-#include <iostream>
-#include <string>
 
 #include "HGCSSCaloProperties.hh"
 
-using namespace std;
-
-
 //
-void printHelp()
+int main()
 {
-  printf("-h       --> print this\n");
-  printf("-i       --> input directory with the simulations\n");
-  printf("-v       --> csv list with versions to compare\n");
-  printf("-e       --> csv list with energies\n");
-  printf("-d       --> activate printouts\n");
-  printf("command line example: compareCaloStackPerformances -i /afs/cern.ch/user/a/amagnan/SLHC/PFCal/PFCalEE -d -v 20 -e 5\n");
-}
-
-//
-int main(int argc, char** argv)
-{  
-  
-  bool debug(false);
-  TString inputDir("/afs/cern.ch/user/a/amagnan/SLHC/PFCal/PFCalEE");
-  std::vector<Int_t> versions;
-  std::vector<TString> genEn;
+  setStyle();
 
   //size_t versions[]={0,1,2,3,4,5,6,13};
   //size_t versions[]={7,8,9,10,11,12};
-  //  size_t versions[]={0,20,21};
+  size_t versions[]={0,20,21};
   // size_t versions[]={14,15,16,17,18,19};
+  size_t nversions( sizeof(versions)/sizeof(size_t) );
 
-  //parse command line
-  for(int i=1;i<argc;i++)
-    {
-      string arg(argv[i]);
-      if(arg.find("-h")!=string::npos) { printHelp();    return 0; }
-      if(arg.find("-d")!=string::npos) { debug=true; }
-      if(arg.find("-i")!=string::npos) { inputDir=argv[i+1]; i++; gSystem->ExpandPathName(inputDir); cout << "Input directory: " << inputDir << endl; }     
-      if(arg.find("-v")!=string::npos) {
-	TString csvListStr(argv[i+1]); 
-	i++; 
-	TObjArray *csvList = csvListStr.Tokenize(",");
-	for(Int_t itkn=0; itkn<csvList->GetEntriesFast(); itkn++)
-	  {
-	    TString name(csvList->At(itkn)->GetName() );
-	    versions.push_back(  name.Atoi() );
-	  }
-	cout << "Will study the following detector versions: " << csvListStr << endl;
-      }
-      if(arg.find("-e")!=string::npos) { 
-	TString csvListStr(argv[i+1]); 
-	i++; 
-	TObjArray *csvList = csvListStr.Tokenize(",");
-	for(Int_t itkn=0; itkn<csvList->GetEntriesFast(); itkn++)
-	  {
-	    TString name(csvList->At(itkn)->GetName() );
-	    genEn.push_back( name.Atof() );
-	  }
-	cout << "Will study the following energies: " << csvListStr << endl;
-      } 
-    }
- 
-  size_t nversions( versions.size() );
-  if(genEn.size()==0 || nversions==0) { printHelp(); return 0; }
-
-  setStyle();
-  
   std::vector<TH1F *> stochGr, constGr;
   for(size_t i=0; i<4; i++)
     {
@@ -95,11 +40,10 @@ int main(int argc, char** argv)
       TH1F *h=new TH1F("stochgr"+pf,";Detector version;(#sigma/E)_{stochastic}",nversions,0,nversions); h->SetMarkerStyle(20+i); h->SetDirectory(0); stochGr.push_back(h);
       h=new TH1F("constgr"+pf,";Detector version;(#sigma/E)_{cte}",nversions,0,nversions);              h->SetMarkerStyle(20+i); h->SetDirectory(0); constGr.push_back(h);
     }  
- 
 
   for(size_t iv=0; iv<nversions; iv++){
     size_t i=versions[iv];
-    
+   
     TString binLabel("CALICE");
     if(i==1) binLabel="Pb CALICE";
     if(i==2) binLabel="Uniform (1.0X_{0})";
@@ -127,7 +71,7 @@ int main(int argc, char** argv)
 
     CaloProperties props(ver);
     props.characterizeCalo();
-    
+
     for(size_t ialgo=0; ialgo<3; ialgo++)
       {
 	stochGr[ialgo]->SetTitle(props.resCurve_[ialgo]->GetTitle());
@@ -140,7 +84,6 @@ int main(int argc, char** argv)
 	constGr[ialgo]->SetBinError            (iv+1,props.constTerms_[ialgo].second);
       }
   }
-  
 
   TCanvas *csum=new TCanvas("csum","csum",1200,600);
   csum->Divide(2,1);
@@ -174,14 +117,13 @@ int main(int argc, char** argv)
 	  if(i==0 && ialgo==0) drawHeader();
 	}
     }
-  
   csum->cd(1);
   leg->Draw();
   csum->cd();
   csum->Modified();
   csum->Update();
   csum->SaveAs("PLOTS/CaloPerformanceSummary.png");
-  
+
   return 0;
-  
- }//main
+
+}//main

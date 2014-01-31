@@ -14,6 +14,19 @@
 #include "HGCSSSimHit.hh"
 #include "HGCSSParameters.hh"
 
+double getWeight(unsigned layer,std::string aVersion){
+  if (layer<10) return 1;
+  if (aVersion.find("20")!= aVersion.npos || aVersion.find("21") != aVersion.npos){
+    if (layer < 20) return 0.8/0.5;
+    else return 1.2/0.5;
+  }
+  else {
+    if (layer < 20) return 0.8/0.4;
+    else return 1.2/0.4;
+  }
+}
+
+
 int main(int argc, char** argv){//main  
 
   if (argc < 2) {
@@ -60,7 +73,9 @@ int main(int argc, char** argv){//main
     }
     
     std::ostringstream input;
-    input << "/afs/cern.ch/user/a/amagnan/SLHC/PFCal/PFCalEE/version_18/e-/e_" << genEn[iE] << "/PFcal.root";
+    std::string pVersion = "version_18";
+
+    input << "/afs/cern.ch/user/a/amagnan/SLHC/PFCal/PFCalEE/" << pVersion << "/e-/e_" << genEn[iE] << "/PFcal.root";
     TFile *inputFile = TFile::Open(input.str().c_str());
 
     if (!inputFile) {
@@ -129,10 +144,10 @@ int main(int argc, char** argv){//main
 		    << " --  position x,y " << posx << "," << posy << std::endl;
 	  lHit.Print(std::cout);
 	}
-	double weightedE = lHit.energy()*lHit.weight();
+	double weightedE = lHit.energy()*getWeight(layer,pVersion);
 	if (weightedE > Emax[iE]) Emax[iE] = weightedE ;
 	p_xy[iE][layer]->Fill(posx,posy,weightedE);
-	Etot[layer] += lHit.energy()*lHit.weight();
+	Etot[layer] += weightedE;
       }//loop on hits
       p_Etot[iE][layer]->Fill(Etot[layer]);
     }//loop on entries
