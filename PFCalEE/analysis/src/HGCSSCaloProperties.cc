@@ -61,7 +61,7 @@ bool ShowerProfile::buildShowerProfile(Float_t eElec, TString version)
   Float_t curEvent(event);
   
   //energy deposits counter <vol number, < absorber X0, En> >
-  std::map<Int_t, std::pair<Float_t,Float_t> > enCounter,enCounterAcquired;
+  std::map<Int_t, std::pair<Float_t,Float_t> > enCounter;
   Float_t totalRawEn(0), totalEn(0), totalEnFit(0);
 
   //for debugging of the fit function
@@ -85,7 +85,7 @@ bool ShowerProfile::buildShowerProfile(Float_t eElec, TString version)
 	    it++)
 	  {
 	    //float ien=it->second.second;
-	    float ien=enCounterAcquired[it->first].second;
+	    float ien=enCounter[it->first].second;
 
 	    overburden += it->second.first;
 	    Int_t np=showerProf->GetN();
@@ -153,8 +153,9 @@ bool ShowerProfile::buildShowerProfile(Float_t eElec, TString version)
 		it++)
 	      {
 		overburden += it->second.first;
-		h_enVsOverburden     ->Fill( overburden,          it->second.second);
-		h_enVsDistToShowerMax->Fill( overburden-showerMax,it->second.second);
+		Float_t ien=enCounter[it->first].second;
+		h_enVsOverburden     ->Fill( overburden,          ien);
+		h_enVsDistToShowerMax->Fill( overburden-showerMax,ien);
 	      }
 	    
 	    //show fits for 10 events for debug purposes
@@ -186,7 +187,6 @@ bool ShowerProfile::buildShowerProfile(Float_t eElec, TString version)
 	   
 	//clear energy counters for new event
 	enCounter.clear();
-	enCounterAcquired.clear();
 	totalRawEn=0;
 	totalEn=0;
 	totalEnFit=0;
@@ -196,13 +196,15 @@ bool ShowerProfile::buildShowerProfile(Float_t eElec, TString version)
       }
       
       //account for energy deposit
-      enCounter[ Int_t(volNb) ] = std::pair<Float_t,Float_t>(volX0,den);
-      totalRawEn += den;
-      totalEn    += denWeight;
+      //enCounter[ Int_t(volNb) ] = std::pair<Float_t,Float_t>(volX0,den);
+      //totalRawEn += den;
+      //totalEn    += denWeight;
       
-      //acquire
+      //account for energy deposit with spatial constraints
       //Float_t maxRhoToAcquire(10000);
-      Float_t maxRhoToAcquire(7);
+      Float_t maxRhoToAcquire(22);
+      //Float_t maxRhoToAcquire(7);
+      //Float_t maxRhoToAcquire(2.5);
       Float_t totEnInHits(0);
       for (unsigned iH(0); iH<(*hitvec).size(); ++iH){//loop on hits 	
 	HGCSSSimHit lHit = (*hitvec)[iH];
@@ -214,8 +216,9 @@ bool ShowerProfile::buildShowerProfile(Float_t eElec, TString version)
 	if(rho>maxRhoToAcquire) continue;
 	totEnInHits += hitEn;
       }
-
-      enCounterAcquired[ Int_t(volNb) ] = std::pair<Float_t,Float_t>(volX0,totEnInHits);
+      totalRawEn += totEnInHits;
+      if(den>0) totalEn += totEnInHits*(denWeight/den);
+      enCounter[ Int_t(volNb) ] = std::pair<Float_t,Float_t>(volX0,totEnInHits);
     }
   fIn->Close();
   
