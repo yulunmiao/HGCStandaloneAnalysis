@@ -47,7 +47,7 @@
 
 PhysicsList::PhysicsList():  G4VUserPhysicsList()
 {
-  defaultCutValue = 1.0*mm;
+  defaultCutValue = 0.05*mm;
   SetVerboseLevel(1);
 }
 
@@ -215,8 +215,8 @@ void PhysicsList::SetCuts()
   // because some processes for e+/e- need cut values for gamma
   //
   SetCutValue(defaultCutValue, "gamma");
-  SetCutValue(defaultCutValue/10, "e-");
-  SetCutValue(defaultCutValue/10, "e+");
+  SetCutValue(defaultCutValue, "e-");
+  SetCutValue(defaultCutValue, "e+");
   SetCutValue(defaultCutValue, "proton");
 
   if (verboseLevel>0) DumpCutValuesTable();
