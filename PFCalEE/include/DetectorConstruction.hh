@@ -24,17 +24,19 @@ class DetectorConstruction : public G4VUserDetectorConstruction
 {
 public:
 
-  enum DetectorVersion { v_CALICE, v_CALICE_Pb, v_UNIFORM, v_UNIFORM_08, v_UNIFORM_05, v_UNIFORM_03, v_JV,
-			 v_UNIFORM_Si60, v_UNIFORM_Si80, v_UNIFORM_Si120, v_UNIFORM_Si200, v_UNIFORM_Si300, v_UNIFORM_Si500, v_VJ,
-			 v_CALICE_Pb_Si60, v_CALICE_Pb_Si80, v_CALICE_Pb_Si120, v_CALICE_Pb_Si200, v_CALICE_Pb_Si300, v_CALICE_Pb_Si500,
-			 v_HGCALEE, v_HGCALEE_Si500,
-
-			 v_HGCAL_CONCEPT=100,
-			 v_HGCAL_CONCEPT_thickSi,
-			 v_HGCAL_CONCEPT_thinSi,
-			 v_HGCAL_CONCEPT_CALICE,
-			 v_HGCAL_CONCEPT_fineSampling,
-			 v_HGCAL_CONCEPT_coarseSampling
+  enum DetectorVersion { 
+    v_CALICE=0,
+    v_HGCALEE_Si80=1,
+    v_HGCALEE_Si120=2,
+    v_HGCALEE_Si200=3,
+    v_HGCALEE_Si500=4,
+    v_HGCALEE_gap1=5,
+    v_HGCALEE_CALICE=6,
+    v_HGCALEE_inverted=7,
+    v_HGCALEE_concept=8,
+    v_HGCALEE_W=9,
+    v_HGCALEE_gap4=10,
+    v_HGCALEE_prePCB=11
   };
 
   /**
@@ -83,6 +85,9 @@ private:
 
   //detector version
   int version_;
+
+  //add a pre PCB plate
+  bool addPrePCB_;
 
   /**
      @short compute the calor dimensions

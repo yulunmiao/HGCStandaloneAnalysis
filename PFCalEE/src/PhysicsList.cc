@@ -215,8 +215,8 @@ void PhysicsList::SetCuts()
   // because some processes for e+/e- need cut values for gamma
   //
   SetCutValue(defaultCutValue, "gamma");
-  SetCutValue(defaultCutValue, "e-");
-  SetCutValue(defaultCutValue, "e+");
+  SetCutValue(defaultCutValue/10, "e-");
+  SetCutValue(defaultCutValue/10, "e+");
   SetCutValue(defaultCutValue, "proton");
 
   if (verboseLevel>0) DumpCutValuesTable();

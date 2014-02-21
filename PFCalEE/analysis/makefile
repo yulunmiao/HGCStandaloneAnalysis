@@ -11,7 +11,7 @@ USERINCLUDES += -I$(ROOFITSYS)/include/
 USERINCLUDES += -Iinclude/ -I../userlib/include/
 
 # Define libraries to link
-USERLIBS += $(shell root-config --glibs) #-lGenVector -lTreePlayer -lTMVA
+USERLIBS += $(shell root-config --glibs) -lRooFit #-lGenVector -lTreePlayer -lTMVA
 USERLIBS += -L../userlib/lib -lPFCalEEuserlib
 #USERLIBS += -L$(CMS_PATH)/$(SCRAM_ARCH)/external/boost/1.47.0/lib/ -lboost_regex -lboost_program_options -lboost_filesystem
 

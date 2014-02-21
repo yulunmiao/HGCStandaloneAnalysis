@@ -17,9 +17,11 @@ parser.add_option('-e', '--eos'        ,    dest='eos'                , help='sa
 parser.add_option('-S', '--no-submit'  ,    action="store_true",  dest='nosubmit'           , help='Do not submit batch job.')
 (opt, args) = parser.parse_args()
 
-nevents=opt.nevts
 
-for en in [5,10,20,25,50,75,100,150,200,300]: #,500]:
+for en in [5,10,20,25,50,75,100,150,200,300,500]: 
+
+    nevents=opt.nevts
+    if en>150: nevents=nevents/2
 
     outDir='%s/version_%d/%s/e_%d'%(opt.out,opt.version,opt.gun,en)
     if opt.alpha>0 : outDir='%s_%3.3f'%(outDir,opt.alpha) 
@@ -34,6 +36,7 @@ for en in [5,10,20,25,50,75,100,150,200,300]: #,500]:
     if len(opt.eos)>0:
         outTag='version_%d_e%d'%(opt.version,en)
         scriptFile.write('cmsStage -f PFcal.root %s/HGcal_%s.root\n'%(opt.eos,outTag))
+        scriptFile.write('rm PFcal.root\n')
     scriptFile.write('echo "All done"\n')
     scriptFile.close()
 

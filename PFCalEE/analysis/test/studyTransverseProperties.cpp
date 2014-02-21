@@ -29,14 +29,14 @@ void printHelp()
   printf("-v       --> version\n");
   printf("-e       --> csv list with energies\n");
   printf("-d       --> activate printouts\n");
-  printf("command line example: plotXY -i /afs/cern.ch/user/a/amagnan/SLHC/PFCal/PFCalEE -d -v 20 -e 5\n");
+  printf("command line example studyTransverseProperties -i /store/cmst3/group/hgcal/Geant4 -d -v 3 -e 5\n");
 }
 
 //
 int main(int argc, char** argv){//main  
 
   bool debug(false);
-  TString inputDir("/afs/cern.ch/user/a/amagnan/SLHC/PFCal/PFCalEE");
+  TString inputDir("/store/cmst3/group/hgcal/Geant4");
   TString version("version_");
   std::vector<TString> genEn;
   TString gun("e-");
@@ -84,7 +84,8 @@ int main(int argc, char** argv){//main
     std::cout << "[Starting " << genEn[iE] << " GeV] " << std::endl;
 
     //check inputs
-    TString fName(inputDir+version+"/"+gun+"/e_"); fName += genEn[iE]; fName += "/PFcal.root";
+    TString fName("root://eoscms//eos/cms/store/cmst3/group/hgcal/Geant4/HGcal_"); fName+=version+"_e"; fName += genEn[iE]; fName += ".root";
+    //    TString fName(inputDir+version+"/"+gun+"/e_"); fName += genEn[iE]; fName += "/PFcal.root";
     TFile *inputFile = TFile::Open(fName);
     if (!inputFile || inputFile->IsZombie()) {
       std::cout << "[Error] input file " << fName << " cannot be opened or corrupted" << std::endl;

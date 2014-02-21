@@ -23,6 +23,10 @@
 #include "TMath.h"
 #include "TSpline.h"
 
+#include "RooDataSet.h"
+#include "RooRealVar.h"
+#include "RooArgSet.h"
+
 #include "Math/WrappedTF1.h"
 #include "Math/BrentMinimizer1D.h"
 
@@ -61,6 +65,8 @@ public:
   TH2F         *h_enVsOverburden, *h_enVsDistToShowerMax, *h_enfracVsOverburden;
   TGraphErrors *gr_raw,            *gr_centered, *gr_frac;
   TGraphErrors *gr_unc,            *gr_relUnc;
+  RooRealVar *rooRawEn,*rooEn;
+  RooDataSet *data;
 };
 
 /**
