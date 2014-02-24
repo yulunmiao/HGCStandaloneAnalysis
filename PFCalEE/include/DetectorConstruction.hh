@@ -50,6 +50,8 @@ public:
    */
   std::vector<SamplingSection> m_caloStruct;
   std::vector<SamplingSection> *getStructure() { return &m_caloStruct; }
+  const std::vector<G4LogicalVolume*>  & getSiLogVol() {return m_logicSi; }
+
 
   /**
      @short define the calorimeter materials
@@ -109,6 +111,8 @@ private:
   G4LogicalVolume*   m_logicWorld;    //pointer to the logical World
   G4VPhysicalVolume* m_physWorld;     //pointer to the physical World  
   
+  std::vector<G4LogicalVolume*>   m_logicSi;    //pointer to the logical Si volumes
+
   DetectorMessenger* m_detectorMessenger;  //pointer to the Messenger
 };
 

@@ -25,7 +25,7 @@ double xLayer(const unsigned layer) {
   double wa = 0.1+4;
   double W1 = 10*(w1b+wa);
   double W2 = 10*(w2b+wa);
-  double W3 = 10*(w3b+wa);
+  //double W3 = 10*(w3b+wa);
 
   double totalWidth = 10*(w1b+w2b+w3b)+30*wa;
   unsigned il = layer%10+1;
@@ -99,21 +99,21 @@ double getEta(double ypos, std::string etaStr, const double xLaymm){
 
 double getWeight(unsigned layer,std::string aVersion){
   if (layer<10) return 1;
-  if (aVersion.find("20")!= aVersion.npos || 
-      aVersion.find("21") != aVersion.npos ||
-      aVersion.find("22") != aVersion.npos ||
-      aVersion.find("23") != aVersion.npos){
-    if (layer < 20) return 1.43;
-    //return 0.8/0.5;
-    else if (layer<30) return 2.15;
-    //return 1.2/0.5;
-    else return 1;
-  }
-  else {
-    if (layer < 20) return 0.8/0.4;
-    else if (layer < 30) return 1.2/0.4;
-    else return 1;
-  }
+  //if (aVersion.find("20")!= aVersion.npos || 
+  //aVersion.find("21") != aVersion.npos ||
+  //aVersion.find("22") != aVersion.npos ||
+  //aVersion.find("23") != aVersion.npos){
+  else if (layer < 20) //return 1.43;
+    return 0.8/0.5;
+  else if (layer<30) //return 2.15;
+    return 1.2/0.5;
+  else return 1;
+  //}
+  //else {
+  //  if (layer < 20) return 0.8/0.4;
+  //  else if (layer < 30) return 1.2/0.4;
+  //  else return 1;
+  //}
 }
 
 
@@ -133,14 +133,14 @@ int main(int argc, char** argv){//main
     return 1;
   }
 
-  bool applyWeight = false;
-  bool saveTxtOutput = true;
+  bool applyWeight = true;
+  bool saveTxtOutput = false;
   bool doFiducialCuts = false;
 
   const unsigned nLayers = 30;
-  const unsigned nEcalLayers = 30;
+  //const unsigned nEcalLayers = 30;
   const double signalRegionInX=20;
-  const double Emip = 0.0548;//MeV
+  //const double Emip = 0.0548;//MeV
 
   const unsigned nOcc = 1;//4;
   const unsigned occThreshold[nOcc] = {1};//,5,10,20};
@@ -161,8 +161,8 @@ int main(int argc, char** argv){//main
 
   std::cout << " -- N layers = " << nLayers << std::endl;
 
-  //unsigned genEn[]={5,10,20,25,50,75,100,125,150,175,200,250,300,500};
-  unsigned genEn[]={5,20,50,100,150,200};
+  unsigned genEn[]={5,10,20,25,50,75,100,125,150,175,200,250,300,500};
+  //unsigned genEn[]={5,20,50,100,150,200};
   //unsigned genEn[]={100};
   const unsigned nGenEn=sizeof(genEn)/sizeof(unsigned);
   
@@ -807,13 +807,14 @@ int main(int argc, char** argv){//main
 	  p_EvsLayer[iE] = new TH2F(lName.str().c_str(),";layer;E (MeV)",nLayers,0,nLayers,1000,0,3*Emax);
 	  lName.str("");
 	  lName << "p_Etotal_" << genEn[iE];
-	  p_Etotal[iE] = new TH1F(lName.str().c_str(),";G4 Etotal (MeV)",1000,0.1*Etotal,2*Etotal);
+	  p_Etotal[iE] = new TH1F(lName.str().c_str(),";G4 Etotal (MIP)",1000,0.1*Etotal,2*Etotal);
 	  p_Etotal[iE]->StatOverflows();
 	  lName.str("");
 	  lName << "p_nSimHits_" << genEn[iE];
 	  p_nSimHits[iE] = new TH1F(lName.str().c_str(),"; nSimHits",1000,static_cast<unsigned>(nTotal/10.),nTotal*10);
 	}
 
+	double EtotCheck = 0;
 	for (unsigned iL(0);iL<nLayers;++iL){//loop on layers
 	  if (debug) std::cout << " -- Layer " << iL << " total E = " << Etot[iL] << std::endl;
 	  p_Etot[iE][iL]->Fill(Etot[iL]);
@@ -821,6 +822,7 @@ int main(int argc, char** argv){//main
 	  Etmp += Etot[iL];
 	  if (Etotal > 0) p_Efrac[iE][iL]->Fill(Etmp/Etotal);
 	  else p_Efrac[iE][iL]->Fill(0);
+	  EtotCheck+= Etot[iL];
 	  Etot[iL] = 0;
 
 	  //////////////////////////////////////////////////////////////////////
@@ -841,6 +843,11 @@ int main(int argc, char** argv){//main
 	}//loop on layers
 	p_Etotal[iE]->Fill(Etotal);
 	p_nSimHits[iE]->Fill(nTotal);
+
+	if (fabs(Etotal-EtotCheck)>0.0001) {
+	  std::cout << " -- Etot Check failed ! "
+		    <<  Etotal << " " << EtotCheck << std::endl;
+	}
 
 	if (saveEventByEvent && nTotalSignal > nMaxHits){
 	  std::ostringstream evtName;

@@ -35,27 +35,29 @@
 #define PhysicsList_h 1
 
 #include "G4VUserPhysicsList.hh"
+//for hadronic processes
+#include "QGSP_FTFP_BERT.hh"
 #include "globals.hh"
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-class PhysicsList: public G4VUserPhysicsList
+class PhysicsList: public QGSP_FTFP_BERT //G4VUserPhysicsList
 {
 public:
   PhysicsList();
   virtual ~PhysicsList();
 
   // Construct particle and physics
-  void ConstructParticle();
-  void ConstructProcess();
+  //void ConstructParticle();
+  //void ConstructProcess();
  
   void SetCuts();
    
 private:
 
   // these methods Construct physics processes and register them
-  void ConstructDecay();
-  void ConstructEM();
+  //void ConstructDecay();
+  //void ConstructEM();
 };
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......

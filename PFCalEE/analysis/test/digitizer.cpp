@@ -115,7 +115,7 @@ int main(int argc, char** argv){//main
 	    << " -- thresholds: " << threshStr << std::endl
 	    << " -- Mip to ADC conversion: " << pMipToADC << " ADC counts / MIP." << std::endl;
 	    
-  double pMipEnergy = 0.056; //from muon deposits at 25 GeV, in version_20...
+  double pMipEnergy = 0.0548; //from muon deposits at 25 GeV, in version_20...
   double pMaxTime = 2.0;//ns
   unsigned debug = 0;
   unsigned pSeed = 0;

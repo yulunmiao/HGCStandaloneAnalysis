@@ -35,7 +35,7 @@
 #/vis/viewer/set/viewpointThetaPhi 0. 0.
 #
 # Specify zoom value:
-/vis/viewer/zoom 1.
+/vis/viewer/zoom 30.
 #
 # Specify style (surface or wireframe):
 /vis/viewer/set/style wireframe
@@ -49,9 +49,9 @@
 #/vis/scene/add/trajectories rich
 
 /vis/modeling/trajectories/create/drawByCharge
-/vis/modeling/trajectories/drawByCharge-0/set 1 red
-/vis/modeling/trajectories/drawByCharge-0/set -1 red
-/vis/modeling/trajectories/drawByCharge-0/set 0 yellow
+#/vis/modeling/trajectories/drawByCharge-0/set 1 red
+#/vis/modeling/trajectories/drawByCharge-0/set -1 red
+#/vis/modeling/trajectories/drawByCharge-0/set 0 yellow
 
 /vis/modeling/trajectories/drawByCharge-0/default/setDrawStepPts true
 #/vis/modeling/trajectories/drawByCharge-0/default/setStepPtsSize 1
@@ -61,8 +61,9 @@
 /vis/scene/add/hits
 #
 # To draw only gammas:
-#/vis/filtering/trajectories/create/particleFilter
-#/vis/filtering/trajectories/particleFilter-0/add gamma
+/vis/filtering/trajectories/create/particleFilter
+/vis/filtering/trajectories/particleFilter-0/add e-
+/vis/filtering/trajectories/particleFilter-0/add e+
 #/vis/filtering/trajectories/particleFilter-0/add pi+
 #/vis/filtering/trajectories/particleFilter-0/add pi-
 #

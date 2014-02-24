@@ -5,8 +5,6 @@
 
 #include "DetectorConstruction.hh"
 #include "PhysicsList.hh"
-//for hadronic processes
-#include "QGSP_BERT.hh"
 
 #include "PrimaryGeneratorAction.hh"
 #include "RunAction.hh"
@@ -47,13 +45,7 @@ int main(int argc,char** argv)
   std::cout << "-- Running version " << version << std::endl;
 
   runManager->SetUserInitialization(new DetectorConstruction(version));
-  //runManager->SetUserInitialization(new PhysicsList);
-  G4VUserPhysicsList* physics = new QGSP_BERT();
-  physics->SetCutValue(0.01*mm, "gamma");
-  physics->SetCutValue(0.01*mm, "e-");
-  physics->SetCutValue(0.01*mm, "e+");
-  physics->DumpCutValuesTable();
-  runManager->SetUserInitialization(physics);
+  runManager->SetUserInitialization(new PhysicsList);
 
   // Set user action classes
   runManager->SetUserAction(new PrimaryGeneratorAction);
@@ -83,7 +75,7 @@ int main(int argc,char** argv)
   G4UImanager* UImanager = G4UImanager::GetUIpointer();
   G4String fileName;
   if (argc>1) fileName = argv[1];
-  if (argc!=1 && fileName != "vis")   // batch mode
+  if (argc!=1)   // batch mode
     {    
       std::cout << " ====================================== " << std::endl
 		<< " ========  Running batch mode ========= " << std::endl

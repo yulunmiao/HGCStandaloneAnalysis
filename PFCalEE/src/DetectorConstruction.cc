@@ -222,6 +222,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
       if(thick>0){
 	G4Box *solid = new G4Box(baseName+"box", thick/2, m_CalorSizeYZ/2, m_CalorSizeYZ/2 );
 	G4LogicalVolume *logi  = new G4LogicalVolume(solid, m_materials["Si"], baseName+"log");
+	m_logicSi.push_back(logi);
 	m_caloStruct[i].Si_vol = new G4PVPlacement(0, G4ThreeVector(xOffset+xOverburden+thick/2,0,0), logi, baseName+"phys", m_logicWorld, false, 0);
 	m_caloStruct[i].Si_X0 = m_materials["Si"]->GetRadlen();
 	G4cout << "************ Si  " << i << " " << m_caloStruct[i].Si_X0 << " " << m_caloStruct[i].Si_thick << G4endl;
@@ -229,7 +230,12 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 	simpleBoxVisAtt->SetVisibility(true);
 	logi->SetVisAttributes(simpleBoxVisAtt);
 	xOverburden = xOverburden + thick;
+	//add region to be able to set specific cuts for it
+	G4Region* aRegion = new G4Region(baseName+"Reg");
+	m_logicSi[i]->SetRegion(aRegion);
+	aRegion->AddRootLogicalVolume(m_logicSi[i]);
       }
+
 
       sprintf(nameBuf,"PCB%d",int(i+1)); 
       baseName=nameBuf;

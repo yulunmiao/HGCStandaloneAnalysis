@@ -33,7 +33,7 @@ int plotE(){//main
     //"scenario_0/PedroPU/eta30/",
     //"scenario_0/PedroPU/eta35/"
     //"scenario_0/SimpleSignal/eta25/"
-    ""
+    ""//"noWeights/"
   };
   
   const unsigned nV = 1;
@@ -56,10 +56,12 @@ int plotE(){//main
   const unsigned nLayers = 30;
   
   //unsigned genEn[]={5,10,20,25,50,75,100,125,150,175,200,250,300,500};
-  unsigned genEn[]={5,20,25,50,75,100,125,150,175,200,300,500};
+  unsigned genEn[]={5,20,50,100,150,200};
   //unsigned genEn[]={10};
   const unsigned nGenEn=sizeof(genEn)/sizeof(unsigned);
-  
+  //unsigned rebin[10] = {12,10,10,10,8,6,6,6,6,6};
+  unsigned rebin[6] = {12,10,6,6,6,6};
+
   //canvas so they are created only once
   TCanvas *mycL = new TCanvas("mycL","mycL",1500,1000);
   TCanvas *mycF = new TCanvas("mycF","mycF",1500,750);
@@ -94,7 +96,6 @@ int plotE(){//main
 	  return 1;
 	}
 	
-	unsigned rebin[10] = {12,10,10,10,8,6,6,6,6,6};
 	TH1F *p_Efrac[nGenEn][nLayers];
 	TH1F *p_Etotal[nGenEn];
 	TH1F *p_Ereco[nGenEn];
@@ -160,6 +161,7 @@ int plotE(){//main
 	  lName.str("");
 	  lName << "p_Etotal_" << genEn[iE];
 	  p_Etotal[iE] = (TH1F*)gDirectory->Get(lName.str().c_str());
+	  p_Etotal[iE]->Sumw2();
 	  if (!p_Etotal[iE]){
 	    std::cout << " -- ERROR, pointer for histogram Etotal is null. Exiting..." << std::endl;
 	    return 1;
@@ -290,13 +292,13 @@ int plotE(){//main
 	  char buf[500];
 	  sprintf(buf,"<E> = %3.3f MIP",p_Etotal[iE]->GetMean()/Emip);
 	  lat.DrawLatex(p_Etotal[iE]->GetMean()-5*p_Etotal[iE]->GetRMS(),p_Etotal[iE]->GetMaximum()*0.9,buf);
-	  sprintf(buf,"RMS = %3.3f MIP",p_Etotal[iE]->GetRMS()/Emip);
+	  sprintf(buf,"RMS = %3.3f #pm %3.1f MIP",p_Etotal[iE]->GetRMS()/Emip,p_Etotal[iE]->GetRMSError()/Emip);
 	  lat.DrawLatex(p_Etotal[iE]->GetMean()-5*p_Etotal[iE]->GetRMS(),p_Etotal[iE]->GetMaximum()*0.8,buf);
 	  sprintf(buf,"RMS/mean = %3.3f",p_Etotal[iE]->GetRMS()/p_Etotal[iE]->GetMean());
 	  lat.DrawLatex(p_Etotal[iE]->GetMean()-5*p_Etotal[iE]->GetRMS(),p_Etotal[iE]->GetMaximum()*0.7,buf);
-	  sprintf(buf,"<Efit> = %3.3f MIP",fitResult->GetParameter(1)/Emip);
+	  sprintf(buf,"<Efit> = %3.3f MIP +/- %3.3f",fitResult->GetParameter(1)/Emip,fitResult->GetParError(1)/Emip);
 	  lat.DrawLatex(p_Etotal[iE]->GetMean()-5*p_Etotal[iE]->GetRMS(),p_Etotal[iE]->GetMaximum()*0.6,buf);
-	  sprintf(buf,"RMSfit = %3.3f MIP",fitResult->GetParameter(2)/Emip);
+	  sprintf(buf,"RMSfit = %3.3f MIP +/- %3.3f",fitResult->GetParameter(2)/Emip,fitResult->GetParError(2)/Emip);
 	  lat.DrawLatex(p_Etotal[iE]->GetMean()-5*p_Etotal[iE]->GetRMS(),p_Etotal[iE]->GetMaximum()*0.5,buf);
 	  sprintf(buf,"RMS/meanfit = %3.3f",fitResult->GetParameter(2)/fitResult->GetParameter(1));
 	  lat.DrawLatex(p_Etotal[iE]->GetMean()-5*p_Etotal[iE]->GetRMS(),p_Etotal[iE]->GetMaximum()*0.4,buf);
