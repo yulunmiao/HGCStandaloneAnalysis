@@ -30,7 +30,10 @@ public:
   ~SamplingSection() { }
   
   //
-  void add(G4double den, G4double dl, G4double globalTime,G4int pdgId,G4VPhysicalVolume* vol, const G4ThreeVector & position,G4int layerId);
+  void add(G4double den, G4double dl, G4double globalTime,G4int pdgId,G4VPhysicalVolume* vol, 
+	   const G4ThreeVector & position,
+	   G4int trackID, G4int parentID,
+	   G4int layerId);
   //void add(G4double den, G4double dl, G4double globalTime,G4int pdgId,G4VPhysicalVolume* vol, int iyiz);
   
   //reset
@@ -65,6 +68,8 @@ public:
   G4double getElectronFraction();
   G4double getAverageTime();
   const G4SiHitVec & getSiHitVec() const;
+  void trackParticleHistory(const G4SiHitVec & incoming);
+
   //
   void report(bool header=false);
 

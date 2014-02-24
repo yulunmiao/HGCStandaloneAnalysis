@@ -7,6 +7,7 @@ void SamplingSection::add(G4double den, G4double dl,
 			  G4double globalTime, G4int pdgId, 
 			  G4VPhysicalVolume* vol, 
 			  const G4ThreeVector & position,
+			  G4int trackID, G4int parentID,
 			  G4int layerId)
 //void SamplingSection::add(G4double den, G4double dl, G4double globalTime, G4int pdgId, G4VPhysicalVolume* vol, int iyiz)
 {
@@ -33,6 +34,8 @@ void SamplingSection::add(G4double den, G4double dl,
       lHit.hit_x = position.x();
       lHit.hit_y = position.y();
       lHit.hit_z = position.z();
+      lHit.trackId = trackID;
+      lHit.parentId = parentID;
       Si_HitVec.push_back(lHit);
      
     }
@@ -120,4 +123,21 @@ G4double SamplingSection::getTotalEnergy()
 const G4SiHitVec & SamplingSection::getSiHitVec() const
 {
   return Si_HitVec;
+}
+
+void SamplingSection::trackParticleHistory(const G4SiHitVec & incoming)
+{
+  for (unsigned iP(0); iP<Si_HitVec.size(); ++iP){//loop on g4hits
+    G4int parId = Si_HitVec[iP].parentId;
+    for (unsigned iI(0); iI<incoming.size(); ++iI){//loop on previous layer
+      G4int trId = incoming[iI].trackId;
+      if (trId == parId) Si_HitVec[iP].parentId = incoming[iI].parentId;
+
+    }//loop on previous layer
+
+
+  }//loop on g4hits
+
+
+  //  return Si_HitVec;
 }

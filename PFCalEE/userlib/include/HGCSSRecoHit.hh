@@ -14,6 +14,7 @@ public:
   HGCSSRecoHit():
     energy_(0),
     adcCounts_(0),
+    zpos_(0),
     layer_(0),
     cellid_(0),
     noiseFrac_(0)
@@ -37,6 +38,10 @@ public:
 
   inline void adcCounts(const unsigned & adcCounts){
     adcCounts_ = adcCounts;
+  };
+
+  inline double zpos() const {
+    return zpos_;
   };
 
   inline unsigned layer() const {
@@ -111,6 +116,7 @@ private:
 
   double energy_;
   unsigned adcCounts_;
+  double zpos_;
   unsigned layer_;
   unsigned cellid_;
   double noiseFrac_;

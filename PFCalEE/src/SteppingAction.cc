@@ -24,12 +24,12 @@ void SteppingAction::UserSteppingAction(const G4Step* aStep)
   const G4StepPoint *thePreStepPoint = aStep->GetPreStepPoint();
   // get TouchableHandle
   G4TouchableHandle theTouchable = thePreStepPoint->GetTouchableHandle();
-
+  const G4Track* aTrack = aStep->GetTrack();
 
   G4VPhysicalVolume* volume = theTouchable->GetVolume();
   G4double edep = aStep->GetTotalEnergyDeposit();
   G4double stepl = 0.;
-  if (aStep->GetTrack()->GetDefinition()->GetPDGCharge() != 0.) stepl = aStep->GetStepLength();
+  if (aTrack->GetDefinition()->GetPDGCharge() != 0.) stepl = aStep->GetStepLength();
 
   //const G4ThreeVector &pos=aStep->GetPreStepPoint()->GetPosition();
 
@@ -39,8 +39,8 @@ void SteppingAction::UserSteppingAction(const G4Step* aStep)
   //if(iy<0) iy=0; if(iy>8) iy=8;
   //Int_t iyiz(iz+iy*9);
 
-  G4int pdgId=aStep->GetTrack()->GetDefinition()->GetPDGEncoding(); 
-  G4double globalTime=aStep->GetTrack()->GetGlobalTime();
+  G4int pdgId=aTrack->GetDefinition()->GetPDGEncoding(); 
+  G4double globalTime=aTrack->GetGlobalTime();
 
   const G4ThreeVector & position = thePreStepPoint->GetPosition();
   // get local hit position using touchable with theGlobalPos
@@ -49,7 +49,10 @@ void SteppingAction::UserSteppingAction(const G4Step* aStep)
   //G4cout << "Pre   position " << volume->GetName() << " " << position << G4endl;
   //G4cout << "Post  position " << aStep->GetPostStepPoint()->GetTouchableHandle()->GetVolume()->GetName() << " " << aStep->GetPostStepPoint()->GetPosition() << G4endl;
   //G4cout << "Local position " << LocalHitPos << G4endl;
-  
-  eventAction_->Detect(edep,stepl,globalTime,pdgId,volume,position);
+  G4int trackID = aTrack->GetTrackID();
+  G4int parentID = aTrack->GetParentID();
+
+
+  eventAction_->Detect(edep,stepl,globalTime,pdgId,volume,position,trackID,parentID);
   //eventAction_->Detect(edep,stepl,globalTime,pdgId,volume,iyiz);
 }

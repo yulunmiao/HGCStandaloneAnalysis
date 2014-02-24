@@ -19,8 +19,6 @@
 #include "G4FieldManager.hh"
 #include "G4TransportationManager.hh"
 
-#include "HGCSSSimHit.hh"
-
 using namespace std;
 
 //
@@ -54,14 +52,21 @@ DetectorConstruction::DetectorConstruction(G4int ver) : version_(ver)
 	for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(1.2*5.612*mm,0.0*mm,siWidth*mm,1.0*mm,1.0*mm) );
 	break;
       }
-    case v_HGCALEE: case v_HGCALEE_Si500:
+    case v_HGCALEE: case v_HGCALEE_Si500: case v_HGCALEE_SiDummy: case v_HGCAL:
       {
-	G4cout << "[DetectorConstruction] starting v_HGCALEE" << G4endl;
+	G4cout << "[DetectorConstruction] starting v_HGCAL " << version_ << G4endl;
 	float siWidth(0.200);
 	if(version_==v_HGCALEE_Si500) siWidth=0.500;
-	for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(1.6*mm,3.0*mm,siWidth*mm,1.0*mm,1.0*mm) );
-	for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(3.3*mm,3.0*mm,siWidth*mm,1.0*mm,1.0*mm) );
-	for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(5.6*mm,3.0*mm,siWidth*mm,1.0*mm,1.0*mm) );
+	//add 1um silicon to track incoming particles
+	if(version_==v_HGCALEE_SiDummy) m_caloStruct.push_back( SamplingSection(0,0,0.001*mm,0,0) );
+	for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(1.6*mm,3.0*mm,siWidth*mm,2.0*mm,2.0*mm) );
+	for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(3.3*mm,3.0*mm,siWidth*mm,2.0*mm,2.0*mm) );
+	for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(5.6*mm,3.0*mm,siWidth*mm,2.0*mm,2.0*mm) );
+	if (version_==v_HGCAL){
+	  //add HCAL
+	  for(int i=0; i<12; i++) m_caloStruct.push_back( SamplingSection(52*mm,3.0*mm,0.3*mm,2.0*mm,2.0*mm) );
+	  for(int i=0; i<18; i++) m_caloStruct.push_back( SamplingSection(34.5*mm,0*mm,0.3*mm,2.0*mm,2.0*mm) );
+	}
 	break;
       }
     case v_UNIFORM: case v_UNIFORM_Si60 : case v_UNIFORM_Si80: case v_UNIFORM_Si120: case v_UNIFORM_Si200: case v_UNIFORM_Si300: case v_UNIFORM_Si500:
@@ -117,12 +122,16 @@ void DetectorConstruction::DefineMaterials()
     nistManager->FindOrBuildMaterial("G4_Pb",false);
   m_materials["Cu"] = nistManager->FindOrBuildMaterial("G4_Cu",false); 
   m_materials["Si"] = nistManager->FindOrBuildMaterial("G4_Si",false);
-  m_materials["PCB"] = new G4Material("G10",1.700 * g/cm3,4 );
+  m_materials["Zn"] = nistManager->FindOrBuildMaterial("G4_Zn",false);
+  m_materials["PCB"] = new G4Material("G10",1.700*g/cm3,4);
   m_materials["PCB"]->AddElement(nistManager->FindOrBuildElement(14), 1);
   m_materials["PCB"]->AddElement(nistManager->FindOrBuildElement(8) , 2);
   m_materials["PCB"]->AddElement(nistManager->FindOrBuildElement(6) , 3);
   m_materials["PCB"]->AddElement(nistManager->FindOrBuildElement(1) , 3);
   m_materials["Air"]=nistManager->FindOrBuildMaterial("G4_AIR",false);
+  m_materials["Brass"]= new G4Material("Brass",8.5*g/cm3,2);
+  m_materials["Brass"]->AddMaterial(m_materials["Cu"]  , 70*perCent);
+  m_materials["Brass"]->AddMaterial(m_materials["Zn"]  , 30*perCent);
 }
 
 //
@@ -131,7 +140,8 @@ void DetectorConstruction::UpdateCalorSize(){
   m_CalorSizeX=0;
   for(size_t i=0; i<m_caloStruct.size(); i++)
     m_CalorSizeX=m_CalorSizeX+m_caloStruct[i].Total_thick;
-  m_CalorSizeYZ=SIZE_X;
+  m_CalorSizeYZ=200;
+  if (version_==v_HGCAL) m_CalorSizeYZ=500;
 
   m_WorldSizeX=m_CalorSizeX*1.1;  
   m_WorldSizeYZ=m_CalorSizeYZ*1.1;
@@ -148,32 +158,63 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   G4PhysicalVolumeStore::GetInstance()->Clean();
   G4LogicalVolumeStore::GetInstance()->Clean();
   G4SolidStore::GetInstance()->Clean();
-   
+
+  //world
+  G4double expHall_x = 5*m;
+  G4double expHall_y = 2*m;
+  G4double expHall_z = 2*m;
+  
+  G4Box* experimentalHall_box = new G4Box("expHall_box",expHall_x,expHall_y,expHall_z);
+
+  G4LogicalVolume* experimentalHall_log = new G4LogicalVolume(experimentalHall_box, m_materials["Air"],"expHall_log");
+  G4VPhysicalVolume* experimentalHall_phys
+    = new G4PVPlacement(0,                       // no rotation
+			G4ThreeVector(0.,0.,0.), // translation position
+			experimentalHall_log,    // its logical volume
+			"expHall",               // its name
+			0,                       // its mother volume
+			false,                   // no boolean operations
+			0);                      // its copy number
+
   //detector's World
   m_solidWorld = new G4Box("Wbox",m_WorldSizeX/2,m_WorldSizeYZ/2,m_WorldSizeYZ/2);
   m_logicWorld = new G4LogicalVolume(m_solidWorld, m_materials["Air"], "Wlog");
-  m_physWorld = new G4PVPlacement(0, G4ThreeVector(), m_logicWorld, "Wphys", 0, false, 0);
+  m_physWorld = new G4PVPlacement(0, G4ThreeVector(), m_logicWorld, "Wphys", experimentalHall_log, false, 0);
+
+
 
   //build the stack
   char nameBuf[10];
   G4double xOffset(-m_CalorSizeX/2), xOverburden(0.);
+
   for(size_t i=0; i<m_caloStruct.size(); i++)
     {
-      sprintf(nameBuf,"Abs%d",int(i+1)); 
+      sprintf(nameBuf,"Abs%d",int(i)); 
       std::string baseName(nameBuf);
       G4double thick = m_caloStruct[i].Pb_thick;
       if(thick>0){
 	G4Box *solid          = new G4Box(baseName+"box", thick/2, m_CalorSizeYZ/2, m_CalorSizeYZ/2 );
-	G4LogicalVolume *logi = new G4LogicalVolume(solid, m_materials["Abs"], baseName+"log");
+	G4LogicalVolume *logi;
+	if (thick < 20) {
+	  //ECAL
+	  logi = new G4LogicalVolume(solid, m_materials["Abs"], baseName+"log");
+	  m_caloStruct[i].Pb_X0 = m_materials["Abs"]->GetRadlen();
+	  G4cout << "************ Abs " << i << " " << m_caloStruct[i].Pb_X0 << " " << m_caloStruct[i].Pb_thick << " " << m_materials["Abs"]->GetDensity() << G4endl;
+	}
+	else {
+	  //HCAL
+	  logi = new G4LogicalVolume(solid, m_materials["Brass"], baseName+"log");
+	  m_caloStruct[i].Pb_X0 = m_materials["Brass"]->GetRadlen();
+	  G4cout << "************ Abs " << i << " " << m_caloStruct[i].Pb_X0 << " " << m_caloStruct[i].Pb_thick << " " << m_materials["Brass"]->GetDensity() << G4endl;
+	}
 	m_caloStruct[i].Pb_vol= new G4PVPlacement(0, G4ThreeVector(xOffset+xOverburden+thick/2,0,0), logi, baseName+"phys", m_logicWorld, false, 0);
-	m_caloStruct[i].Pb_X0 = m_materials["Abs"]->GetRadlen();
 	G4VisAttributes *simpleBoxVisAtt= new G4VisAttributes(G4Colour::Gray());
 	simpleBoxVisAtt->SetVisibility(true);
 	logi->SetVisAttributes(simpleBoxVisAtt);
 	xOverburden = xOverburden + thick;
       }
       
-      sprintf(nameBuf,"Cu%d",int(i+1)); 
+      sprintf(nameBuf,"Cu%d",int(i)); 
       baseName=nameBuf;
       thick = m_caloStruct[i].Cu_thick;
       if(thick>0){
@@ -187,7 +228,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 	xOverburden = xOverburden + thick;
       }
 
-      sprintf(nameBuf,"Si%d",int(i+1)); 
+      sprintf(nameBuf,"Si%d",int(i)); 
       baseName=nameBuf;
       thick = m_caloStruct[i].Si_thick;
       if(thick>0){
@@ -195,14 +236,14 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 	G4LogicalVolume *logi  = new G4LogicalVolume(solid, m_materials["Si"], baseName+"log");
 	m_caloStruct[i].Si_vol = new G4PVPlacement(0, G4ThreeVector(xOffset+xOverburden+thick/2,0,0), logi, baseName+"phys", m_logicWorld, false, 0);
 	m_caloStruct[i].Si_X0 = m_materials["Si"]->GetRadlen();
-	G4cout << "************" << m_caloStruct[i].Si_X0 << " " << m_caloStruct[i].Si_thick << G4endl;
+	G4cout << "************ Si  " << i << " " << m_caloStruct[i].Si_X0 << " " << m_caloStruct[i].Si_thick << G4endl;
 	G4VisAttributes *simpleBoxVisAtt = new G4VisAttributes(G4Colour::White());
 	simpleBoxVisAtt->SetVisibility(true);
 	logi->SetVisAttributes(simpleBoxVisAtt);
 	xOverburden = xOverburden + thick;
       }
 
-      sprintf(nameBuf,"PCB%d",int(i+1)); 
+      sprintf(nameBuf,"PCB%d",int(i)); 
       baseName=nameBuf;
       thick = m_caloStruct[i].PCB_thick;
       if(thick>0){
@@ -216,7 +257,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 	xOverburden = xOverburden + thick;
       }
 
-      sprintf(nameBuf,"Air%d",int(i+1)); 
+      sprintf(nameBuf,"Air%d",int(i)); 
       baseName=nameBuf;
       thick = m_caloStruct[i].Air_thick;
       if(thick>0){
@@ -235,7 +276,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   //
   m_logicWorld->SetVisAttributes (G4VisAttributes::Invisible);
 
-  return m_physWorld;
+  //return m_physWorld;
+  return experimentalHall_phys;
 }
 
 //
@@ -244,10 +286,10 @@ void DetectorConstruction::SetMagField(G4double fieldValue)
 
   if(fieldValue<=0) return; 
 
-  //apply a global uniform magnetic field along Z axis
+  //apply a global uniform magnetic field along X axis
   G4FieldManager* fieldMgr = G4TransportationManager::GetTransportationManager()->GetFieldManager();
   if(m_magField) delete m_magField;                //delete the existing magn field
-  m_magField = new G4UniformMagField(G4ThreeVector(0.,0.,fieldValue));
+  m_magField = new G4UniformMagField(G4ThreeVector(fieldValue,0.,0.));
   fieldMgr->SetDetectorField(m_magField);
   fieldMgr->CreateChordFinder(m_magField);
   fieldMgr->SetDetectorField(m_magField);  

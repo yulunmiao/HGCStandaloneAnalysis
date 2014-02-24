@@ -22,29 +22,36 @@ parser.add_option('-S', '--no-submit'  ,    action="store_true",  dest='nosubmit
 
 nevents=opt.Nevts
 
-for version in [20]:
-    
-    for en in [5,10,25,50,75,100,150,200,300,500]:
-    #for en in [5,10,25,50,75,100]:
-    #for en in [150,200,300,500]:
-        
-        inDir='%s/../version_%d/e-/e_%d/'%(os.getcwd(),version,en)
-        outDir='%s/version_%d/scenario_%d/e-/e_%d'%(opt.out,version,opt.scenario,en)
-        outlog='%s/digitizer.log'%(outDir)
-        os.system('mkdir -p %s'%outDir)
+myg4dir="/afs/cern.ch/work/a/amagnan/public/HGCalEEGeant4/"
 
-        #wrapper
-        scriptFile = open('%s/runJob.sh'%(outDir), 'w')
-        scriptFile.write('#!/bin/bash\n')
-        scriptFile.write('cd  %s/../\n'%(os.getcwd()))
-        scriptFile.write('source g4env.sh\n')
-        scriptFile.write('cd %s\n'%(outDir))
-        scriptFile.write('%s/bin/digitizer %d %s %s %s %s %s %d %d %d | tee %s\n'%(os.getcwd(),opt.Nevts,inDir,outDir,opt.granularity,opt.noise,opt.threshold,opt.MipToADC,opt.seed,opt.debug,outlog))
-        scriptFile.write('echo "All done"\n')
-        scriptFile.close()
+for version in [20]:
+    #for particle in ["Gamma","GammaPU","PU"]:
+    for particle in ["PedroPU"]: #"SimplePU"]:
+        for eta in [30,35]:
+        #for eta in [20,25,30,35]:
+            #for en in [5,10,25,50,75,100,150,200,300,500]:
+            for en in [0,1,2,3,4,5,6,7,8,9]:
+            #for en in [5,10,25,50,75,100]:
+            #for en in [150,200,300,500]:
         
+                inDir='%s/version_%d/%s/eta%d/e_%d/'%(myg4dir,version,particle,eta,en)
+                outDir='%s/version_%d/scenario_%d/%s/eta%d/e_%d/'%(opt.out,version,opt.scenario,particle,eta,en)
+                outlog='%s/digitizer.log'%(outDir)
+                os.system('mkdir -p %s'%outDir)
+
+                #wrapper
+                scriptFile = open('%s/runJob.sh'%(outDir), 'w')
+                scriptFile.write('#!/bin/bash\n')
+                scriptFile.write('cd  %s/../\n'%(os.getcwd()))
+                scriptFile.write('source g4env.sh\n')
+                scriptFile.write('cd %s\n'%(outDir))
+                scriptFile.write('%s/bin/digitizer %d %s %s %s %s %s %d %d %d | tee %s\n'%(os.getcwd(),opt.Nevts,inDir,outDir,opt.granularity,opt.noise,opt.threshold,opt.MipToADC,opt.seed,opt.debug,outlog))
+                scriptFile.write('echo "All done"\n')
+                scriptFile.close()
+                
         #submit
-        os.system('chmod u+rwx %s/runJob.sh'%outDir)
+                os.system('chmod u+rwx %s/runJob.sh'%outDir)
         #
-        if opt.nosubmit : os.system('echo bsub -q %s %s/runJob.sh'%(opt.queue,outDir)) 
-        else: os.system("bsub -q %s \'%s/runJob.sh\'"%(opt.queue,outDir))
+                if opt.nosubmit : os.system('echo bsub -q %s %s/runJob.sh'%(opt.queue,outDir)) 
+                else: os.system("bsub -q %s \'%s/runJob.sh\'"%(opt.queue,outDir))
+                

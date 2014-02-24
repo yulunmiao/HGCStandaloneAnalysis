@@ -28,7 +28,9 @@ public:
   void BeginOfEventAction(const G4Event*);
   void EndOfEventAction(const G4Event*);
 
-  void Detect(G4double edep, G4double stepl,G4double globalTime, G4int pdgId, G4VPhysicalVolume *volume, const G4ThreeVector & position);
+  void Detect(G4double edep, G4double stepl,G4double globalTime, G4int pdgId, 
+	      G4VPhysicalVolume *volume, const G4ThreeVector & position,
+	      G4int trackID, G4int parentID);
 
   //void Detect(G4double edep, G4double stepl,G4double globalTime, G4int pdgId, G4VPhysicalVolume *volume,int iyiz);
 

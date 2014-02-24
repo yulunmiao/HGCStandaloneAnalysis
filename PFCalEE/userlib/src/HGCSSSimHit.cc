@@ -7,17 +7,18 @@
 HGCSSSimHit::HGCSSSimHit(const G4SiHit & aSiHit){
   energy_ = aSiHit.energy;
   time_ = aSiHit.time;
+  zpos_ = aSiHit.hit_x;
   layer_ = aSiHit.layer;
 
   //coordinates in mm
   //double z = aSiHit.hit_x;
-  double x = aSiHit.hit_y;
-  double y = aSiHit.hit_z;
+  double y = aSiHit.hit_y;
+  double x = aSiHit.hit_z;
   //cellid encoding:
   bool x_side = x>0 ? true : false;
   bool y_side = y>0 ? true : false;
-  unsigned x_cell = static_cast<unsigned>(fabs(x)/(CELL_SIZE_X*GRANULARITY[layer_]));
-  unsigned y_cell = static_cast<unsigned>(fabs(y)/(CELL_SIZE_Y*GRANULARITY[layer_]));
+  unsigned x_cell = static_cast<unsigned>(fabs(x)/(CELL_SIZE_X*getGranularity()));
+  unsigned y_cell = static_cast<unsigned>(fabs(y)/(CELL_SIZE_Y*getGranularity()));
 
   encodeCellId(x_side,y_side,x_cell,y_cell);
 
@@ -69,16 +70,8 @@ void HGCSSSimHit::PrintGeometry(std::ostream & aOs) const{
   aOs << " =========================================================== " << std::endl
       << " ============= Printing of Transverse Geometry ============= " << std::endl
       << " =========================================================== " << std::endl
-      << " = SIZE_X " << SIZE_X << " mm" << std::endl
-      << " = SIZE_Y " << SIZE_Y << " mm" << std::endl
-      << " = N_LAYERS " << N_LAYERS << std::endl
       << " = CELL_SIZE_X " << CELL_SIZE_X << " mm" << std::endl
       << " = CELL_SIZE_Y " << CELL_SIZE_Y << " mm" << std::endl
-      << " = N_CELLS_XY_MAX " << N_CELLS_XY_MAX << " per layer" << std::endl
-    ;
-  for (unsigned iL(0); iL<N_LAYERS; ++iL){
-    aOs << " == LAYER " << iL << " GRANULARITY " << GRANULARITY[iL] << " N_CELLS " << SIZE_X/(CELL_SIZE_X*GRANULARITY[iL])*SIZE_Y/(CELL_SIZE_Y*GRANULARITY[iL]) << std::endl;
-  }
-  aOs << " =========================================================== " << std::endl
+      << " =========================================================== " << std::endl
       << " =========================================================== " << std::endl;
 }

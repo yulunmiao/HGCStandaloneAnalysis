@@ -7,6 +7,7 @@
 HGCSSRecoHit::HGCSSRecoHit(const HGCSSSimHit & aSimHit, const unsigned granularity){
   energy_ = aSimHit.energy();
   adcCounts_ = 0;
+  zpos_ = aSimHit.zpos();
   layer_ = aSimHit.layer();
   noiseFrac_ = 0;
 

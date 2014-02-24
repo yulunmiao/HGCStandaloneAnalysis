@@ -5,6 +5,9 @@
 
 #include "DetectorConstruction.hh"
 #include "PhysicsList.hh"
+//for hadronic processes
+#include "QGSP_BERT.hh"
+
 #include "PrimaryGeneratorAction.hh"
 #include "RunAction.hh"
 #include "EventAction.hh"
@@ -21,6 +24,12 @@
 
 int main(int argc,char** argv)
 {
+#ifdef G4VIS_USE
+  std::cout << " -- G4VIS_USE is set " << std::endl;
+#else
+  std::cout << " -- G4VIS_USE is not set " << std::endl;
+#endif
+
   // Choose the Random engine
   CLHEP::HepRandom::setTheEngine(new CLHEP::RanecuEngine);
   
@@ -36,10 +45,17 @@ int main(int argc,char** argv)
   int version=DetectorConstruction::v_UNIFORM_03;
   //int version=DetectorConstruction::v_CALICE;
   //int version=DetectorConstruction::v_CALICE_Pb;
+  //int version=DetectorConstruction::v_HGCAL;
   if(argc>2) version=atoi(argv[2]);
+
+  std::cout << "-- Running version " << version << std::endl;
+
   runManager->SetUserInitialization(new DetectorConstruction(version));
-  runManager->SetUserInitialization(new PhysicsList);
-    
+  //runManager->SetUserInitialization(new PhysicsList);
+  G4VUserPhysicsList* physics = new QGSP_BERT();
+  runManager->SetUserInitialization(physics);
+
+
   // Set user action classes
   runManager->SetUserAction(new PrimaryGeneratorAction);
   runManager->SetUserAction(new RunAction);
@@ -66,15 +82,21 @@ int main(int argc,char** argv)
 
   // Get the pointer to the User Interface manager
   G4UImanager* UImanager = G4UImanager::GetUIpointer();
-
-  if (argc!=1)   // batch mode
-    {
+  G4String fileName;
+  if (argc>1) fileName = argv[1];
+  if (argc!=1 && fileName != "vis")   // batch mode
+    {    
+      std::cout << " ====================================== " << std::endl
+		<< " ========  Running batch mode ========= " << std::endl
+		<< " ====================================== " << std::endl;
       G4String command = "/control/execute ";
-      G4String fileName = argv[1];
       UImanager->ApplyCommand(command+fileName);
     }
   else
     {
+      std::cout << " ====================================== " << std::endl
+		<< " ====  Running interactive display ==== " << std::endl
+		<< " ====================================== " << std::endl;
 #ifdef G4UI_USE
       G4UIExecutive* ui = new G4UIExecutive(argc, argv);
 #ifdef G4VIS_USE

@@ -62,9 +62,11 @@ void EventAction::BeginOfEventAction(const G4Event* evt)
 }
 
 //
-void EventAction::Detect(G4double edep, G4double stepl,G4double globalTime, G4int pdgId, G4VPhysicalVolume *volume, const G4ThreeVector & position)
+void EventAction::Detect(G4double edep, G4double stepl,G4double globalTime, 
+			 G4int pdgId, G4VPhysicalVolume *volume, const G4ThreeVector & position, 
+			 G4int trackID, G4int parentID)
 {
-  for(size_t i=0; i<detector_->size(); i++) (*detector_)[i].add(edep,stepl,globalTime,pdgId,volume,position,i);
+  for(size_t i=0; i<detector_->size(); i++) (*detector_)[i].add(edep,stepl,globalTime,pdgId,volume,position,trackID,parentID,i);
 }
 
   //void EventAction::Detect(G4double edep, G4double stepl,G4double globalTime, G4int pdgId, G4VPhysicalVolume *volume, int iyiz)
@@ -96,6 +98,8 @@ void EventAction::EndOfEventAction(const G4Event* evt)
       hitvec_.clear();
       std::map<unsigned,HGCSSSimHit> lHitMap;
       std::pair<std::map<unsigned,HGCSSSimHit>::iterator,bool> isInserted;
+      //get ID of parents among incoming particles.
+      //if (i>0) (*detector_)[i].trackParticleHistory((*detector_)[i-1].getSiHitVec());
 
       for (unsigned iSiHit(0); iSiHit<event_[13];++iSiHit){
 	G4SiHit lSiHit = (*detector_)[i].getSiHitVec()[iSiHit];

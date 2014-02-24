@@ -9,20 +9,8 @@
 
 #include "G4SiHit.hh"
 
-static const float SIZE_X=200;//mm
-static const float SIZE_Y=SIZE_X;
 static const float CELL_SIZE_X=2.5;//mm
 static const float CELL_SIZE_Y=CELL_SIZE_X;
-static const unsigned N_CELLS_XY_MAX=SIZE_X/CELL_SIZE_X*SIZE_Y/CELL_SIZE_Y;
-static const unsigned N_LAYERS=30;
-static const unsigned GRANULARITY[N_LAYERS]={
-  1,1,1,1,1,
-  1,1,1,1,1,
-  1,1,1,1,1,
-  1,1,1,1,1,
-  1,1,1,1,1,
-  1,1,1,1,1
-};
 
 class HGCSSSimHit{
 
@@ -30,6 +18,7 @@ public:
   HGCSSSimHit():
     energy_(0),
     time_(0),
+    zpos_(0),
     layer_(0),
     cellid_(0),
     nGammas_(0),
@@ -37,6 +26,7 @@ public:
     nMuons_(0),
     nHadrons_(0)
   {
+    
   };
   HGCSSSimHit(const G4SiHit & aSiHit);
 
@@ -48,6 +38,10 @@ public:
 
   inline double time() const {
     return time_;
+  };
+
+  inline double zpos() const {
+    return zpos_;
   };
 
   inline unsigned layer() const {
@@ -132,7 +126,7 @@ public:
   };
 
   inline unsigned getGranularity() const{
-    return GRANULARITY[layer_];
+    return 1;
   };
 
   void PrintGeometry(std::ostream & aOs) const ;
@@ -143,6 +137,7 @@ private:
 
   double energy_;
   double time_;
+  double zpos_;
   unsigned layer_;
   unsigned cellid_;
   unsigned nGammas_;

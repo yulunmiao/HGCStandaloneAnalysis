@@ -115,7 +115,7 @@ int main(int argc, char** argv){//main
 	    << " -- thresholds: " << threshStr << std::endl
 	    << " -- Mip to ADC conversion: " << pMipToADC << " ADC counts / MIP." << std::endl;
 	    
-  double pMipEnergy = 0.0559; //from muon deposits at 25 GeV, in version_20...
+  double pMipEnergy = 0.056; //from muon deposits at 25 GeV, in version_20...
   double pMaxTime = 2.0;//ns
   unsigned debug = 0;
   unsigned pSeed = 0;
@@ -139,7 +139,9 @@ int main(int argc, char** argv){//main
 	    << " ----------------------------------------" << std::endl;
   
 
-  const unsigned nLayers = N_LAYERS;
+  const unsigned nLayers = 30; //30
+  const double xWidth = 200; //200
+
   unsigned granularity[nLayers];
   double pNoiseInMips[nLayers];
   unsigned pThreshInADC[nLayers];
@@ -149,11 +151,11 @@ int main(int argc, char** argv){//main
     pThreshInADC[iL] = static_cast<unsigned>(5*pNoiseInMips[iL]*pMipToADC+0.5);
   }
 
-  extractParameterFromStr<unsigned[nLayers]>(granulStr,granularity);
+  extractParameterFromStr<unsigned[(unsigned)nLayers]>(granulStr,granularity);
   extractParameterFromStr<double[nLayers]>(noiseStr,pNoiseInMips);
-  extractParameterFromStr<unsigned[nLayers]>(threshStr,pThreshInADC);
+  extractParameterFromStr<unsigned[(unsigned)nLayers]>(threshStr,pThreshInADC);
 
-  unsigned nbCells = 0;
+  //unsigned nbCells = 0;
 
   std::cout << " -- Granularities and noise are setup like this:" << std::endl;
   for (unsigned iL(0); iL<nLayers; ++iL){
@@ -162,10 +164,10 @@ int main(int argc, char** argv){//main
     std::cout << iL << " : " << granularity[iL] << ", " << pNoiseInMips[iL] << " mips, " << pThreshInADC[iL] << " adc - ";
     if (iL%5==4) std::cout << std::endl;
     
-    nbCells += N_CELLS_XY_MAX/(granularity[iL]*granularity[iL]);
+    //nbCells += N_CELLS_XY_MAX/(granularity[iL]*granularity[iL]);
   }
         
-  std::cout << " -- Total number of cells = " << nbCells << std::endl;
+  //std::cout << " -- Total number of cells = " << nbCells << std::endl;
 
   TRandom3 *lRndm = new TRandom3();
   lRndm->SetSeed(pSeed);
@@ -249,17 +251,17 @@ int main(int argc, char** argv){//main
   /////////////////////////////////////////////////////////////
 
 
-  const unsigned nEvts = (pNevts > inputTree->GetEntries()/30. || pNevts==0) ? static_cast<unsigned>(inputTree->GetEntries()/30.) : pNevts;
+  const unsigned nEvts = (pNevts > inputTree->GetEntries()/nLayers || pNevts==0) ? static_cast<unsigned>(inputTree->GetEntries()/nLayers) : pNevts;
 
-  std::cout << "- Processing = " << nEvts  << " events out of " << inputTree->GetEntries()/30. << std::endl;
+  std::cout << "- Processing = " << nEvts  << " events out of " << inputTree->GetEntries()/nLayers << std::endl;
 
   //create map used to assemble hits per event.
   std::map<unsigned,HGCSSRecoHit> lHitMap;
   std::pair<std::map<unsigned,HGCSSRecoHit>::iterator,bool> isInserted;
 
-  for (unsigned ientry(0); ientry<nEvts*30; ++ientry){//loop on entries
+  for (unsigned ientry(0); ientry<nEvts*nLayers; ++ientry){//loop on entries
 
-    unsigned ievt =  ientry/30;
+    unsigned ievt =  ientry/nLayers;
 
     inputTree->GetEntry(ientry);
     lEvent = event;
@@ -274,7 +276,9 @@ int main(int argc, char** argv){//main
 
     for (unsigned iH(0); iH<(*hitvec).size(); ++iH){//loop on hits
       HGCSSSimHit lHit = (*hitvec)[iH];
-      lSimHits.push_back(lHit);
+
+      //do not save hits with 0 energy...
+      if (lHit.energy()>0) lSimHits.push_back(lHit);
 
       //C-AMM: TO DO ?
       //discard simhits not in the right time window
@@ -297,8 +301,8 @@ int main(int argc, char** argv){//main
     }
 
     //create digihits, everywhere to have also pure noise.
-    for (unsigned iX(0); iX<SIZE_X/(CELL_SIZE_X*granularity[layer])/2;++iX){
-      for (unsigned iY(0); iY<SIZE_Y/(CELL_SIZE_Y*granularity[layer])/2;++iY){
+    for (unsigned iX(0); iX<xWidth/(CELL_SIZE_X*granularity[layer])/2;++iX){
+      for (unsigned iY(0); iY<xWidth/(CELL_SIZE_Y*granularity[layer])/2;++iY){
 	HGCSSRecoHit lNoiseHit;
 	lNoiseHit.layer(layer);
 	lNoiseHit.encodeCellId(true,true,iX,iY,granularity[layer]);

@@ -27,7 +27,8 @@ public:
   enum DetectorVersion { v_CALICE, v_CALICE_Pb, v_UNIFORM, v_UNIFORM_08, v_UNIFORM_05, v_UNIFORM_03, v_JV,
 			 v_UNIFORM_Si60, v_UNIFORM_Si80, v_UNIFORM_Si120, v_UNIFORM_Si200, v_UNIFORM_Si300, v_UNIFORM_Si500, v_VJ,
 			 v_CALICE_Pb_Si60, v_CALICE_Pb_Si80, v_CALICE_Pb_Si120, v_CALICE_Pb_Si200, v_CALICE_Pb_Si300, v_CALICE_Pb_Si500,
-			 v_HGCALEE, v_HGCALEE_Si500 };
+			 v_HGCALEE, v_HGCALEE_Si500,v_HGCALEE_SiDummy,
+			 v_HGCAL};
 
   /**
      @short CTOR
