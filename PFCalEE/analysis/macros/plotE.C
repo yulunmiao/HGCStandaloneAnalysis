@@ -37,7 +37,7 @@ int plotE(){//main
   };
   
   const unsigned nV = 1;
-  TString version[nV] = {"0"};//,"0"};
+  TString version[nV] = {"3"};//,"0"};
   
   const double Emip = 0.0548;//in MeV
   
@@ -56,7 +56,7 @@ int plotE(){//main
   const unsigned nLayers = 30;
   
   //unsigned genEn[]={5,10,20,25,50,75,100,125,150,175,200,250,300,500};
-  unsigned genEn[]={5,10,25,50,75,100,200,300,500};
+  unsigned genEn[]={5,20,25,50,75,100,125,150,175,200,300,500};
   //unsigned genEn[]={10};
   const unsigned nGenEn=sizeof(genEn)/sizeof(unsigned);
   
@@ -254,7 +254,7 @@ int plotE(){//main
 	mycF->Print((saveName.str()+".pdf").c_str());
       
 	mycE->Clear();
-	mycE->Divide(5,2);
+	mycE->Divide(4,3);
       
 	gStyle->SetOptStat(0);
 
@@ -288,16 +288,21 @@ int plotE(){//main
 	  TF1 *fitResult = p_Etotal[iE]->GetFunction("gaus");
 	  TLatex lat;
 	  char buf[500];
-	  sprintf(buf,"<E> = %3.1f MeV",p_Etotal[iE]->GetMean());
+	  sprintf(buf,"<E> = %3.3f MIP",p_Etotal[iE]->GetMean()/Emip);
 	  lat.DrawLatex(p_Etotal[iE]->GetMean()-5*p_Etotal[iE]->GetRMS(),p_Etotal[iE]->GetMaximum()*0.9,buf);
-	  sprintf(buf,"RMS = %3.1f MeV",p_Etotal[iE]->GetRMS());
+	  sprintf(buf,"RMS = %3.3f MIP",p_Etotal[iE]->GetRMS()/Emip);
 	  lat.DrawLatex(p_Etotal[iE]->GetMean()-5*p_Etotal[iE]->GetRMS(),p_Etotal[iE]->GetMaximum()*0.8,buf);
-	  sprintf(buf,"<Efit> = %3.1f MeV",fitResult->GetParameter(1));
+	  sprintf(buf,"RMS/mean = %3.3f",p_Etotal[iE]->GetRMS()/p_Etotal[iE]->GetMean());
 	  lat.DrawLatex(p_Etotal[iE]->GetMean()-5*p_Etotal[iE]->GetRMS(),p_Etotal[iE]->GetMaximum()*0.7,buf);
-	  sprintf(buf,"RMSfit = %3.1f MeV",fitResult->GetParameter(2));
+	  sprintf(buf,"<Efit> = %3.3f MIP",fitResult->GetParameter(1)/Emip);
 	  lat.DrawLatex(p_Etotal[iE]->GetMean()-5*p_Etotal[iE]->GetRMS(),p_Etotal[iE]->GetMaximum()*0.6,buf);
-	  sprintf(buf,"chi2/NDF = %3.1f/%d = %3.1f",fitResult->GetChisquare(),fitResult->GetNDF(),fitResult->GetChisquare()/fitResult->GetNDF());
-          lat.DrawLatex(p_Etotal[iE]->GetMean()-5*p_Etotal[iE]->GetRMS(),p_Etotal[iE]->GetMaximum()*0.5,buf);
+	  sprintf(buf,"RMSfit = %3.3f MIP",fitResult->GetParameter(2)/Emip);
+	  lat.DrawLatex(p_Etotal[iE]->GetMean()-5*p_Etotal[iE]->GetRMS(),p_Etotal[iE]->GetMaximum()*0.5,buf);
+	  sprintf(buf,"RMS/meanfit = %3.3f",fitResult->GetParameter(2)/fitResult->GetParameter(1));
+	  lat.DrawLatex(p_Etotal[iE]->GetMean()-5*p_Etotal[iE]->GetRMS(),p_Etotal[iE]->GetMaximum()*0.4,buf);
+
+	  sprintf(buf,"chi2/NDF = %3.3f/%d = %3.3f",fitResult->GetChisquare(),fitResult->GetNDF(),fitResult->GetChisquare()/fitResult->GetNDF());
+          lat.DrawLatex(p_Etotal[iE]->GetMean()-5*p_Etotal[iE]->GetRMS(),p_Etotal[iE]->GetMaximum()*0.3,buf);
 
 
 	  Int_t np=calib->GetN();

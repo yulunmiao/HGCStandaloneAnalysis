@@ -133,7 +133,7 @@ int main(int argc, char** argv){//main
     return 1;
   }
 
-  bool applyWeight = true;
+  bool applyWeight = false;
   bool saveTxtOutput = true;
   bool doFiducialCuts = false;
 
@@ -142,11 +142,11 @@ int main(int argc, char** argv){//main
   const double signalRegionInX=20;
   const double Emip = 0.0548;//MeV
 
-  const unsigned nOcc = 4;
-  const unsigned occThreshold[nOcc] = {1,5,10,20};
+  const unsigned nOcc = 1;//4;
+  const unsigned occThreshold[nOcc] = {1};//,5,10,20};
 
-  const unsigned nSmear = 10;
-  const double smearFrac[nSmear] = {0,0.01,0.02,0.03,0.04,0.05,0.07,0.10,0.15,0.20};
+  const unsigned nSmear = 1;
+  const double smearFrac[nSmear] = {0};//,0.01,0.02,0.03,0.04,0.05,0.07,0.10,0.15,0.20};
 
   bool saveEventByEvent = false;
   bool overlayPU = false;
@@ -161,7 +161,8 @@ int main(int argc, char** argv){//main
 
   std::cout << " -- N layers = " << nLayers << std::endl;
 
-  unsigned genEn[]={5,10,20,25,50,75,100,125,150,175,200,250,300,500};
+  //unsigned genEn[]={5,10,20,25,50,75,100,125,150,175,200,250,300,500};
+  unsigned genEn[]={5,20,50,100,150,200};
   //unsigned genEn[]={100};
   const unsigned nGenEn=sizeof(genEn)/sizeof(unsigned);
   

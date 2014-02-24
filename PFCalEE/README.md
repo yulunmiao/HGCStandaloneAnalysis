@@ -26,30 +26,6 @@ mkdir userlib/obj
 make
 
 
-## Submit in parallel the runs submitRun.py. Some examples are:
+## Submit in parallel the runs submitRun.py
 
-Absorber width scan
-
-for i in `seq 0 6`; do python submitRun.py -v ${i} -g mu-; done
-for i in `seq 0 6`; do python submitRun.py -v ${i}; done
-
-Si width scan Uniform 1xX0
-
-for i in `seq 7 12`; do python submitRun.py -v ${i}; done
-
-VJ version
-
-python submitRun.py -v 13
-
-Si width scan on Calice_Pb
-
-for i in `seq 14 19`; do python submitRun.py -v ${i}; done
-
-HGCALEE
-
-for i in `seq 20 21`; do python submitRun.py -v ${i}; done
-
-python submitRun.py -v 20 -g mu-
-python submitRun.py -v 20 -g e+
-python submitRun.py -v 20 -g pi-
-
+for i in `seq 0 11`; do python submitRun.py -v ${i} -e /store/cmst3/group/hgcal/Geant4 -o ~/work/ntuples -g e-; done

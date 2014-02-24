@@ -47,7 +47,7 @@
 
 PhysicsList::PhysicsList():  G4VUserPhysicsList()
 {
-  defaultCutValue = 1.0*mm;
+  defaultCutValue = 0.01*mm;
   SetVerboseLevel(1);
 }
 
@@ -133,7 +133,7 @@ void PhysicsList::ConstructEM()
       ph->RegisterProcess(new G4GammaConversion,     particle);
       
     } else if (particleName == "e-") {
-      //electron
+     //electron
       ph->RegisterProcess(new G4eMultipleScattering, particle);
       ph->RegisterProcess(new G4eIonisation,         particle);
       ph->RegisterProcess(new G4eBremsstrahlung,     particle);      

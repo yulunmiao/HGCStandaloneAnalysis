@@ -22,46 +22,47 @@
 using namespace std;
 
 //
-DetectorConstruction::DetectorConstruction(G4int ver) : version_(ver)
+DetectorConstruction::DetectorConstruction(G4int ver) : version_(ver), addPrePCB_(false)
 {
   //radiation lengths: cf. http://pdg.lbl.gov/2012/AtomicNuclearProperties/
-  //W 0.3504 cm
-  //Pb 0.5612 cm
+  //W 3.504 cm
+  //Pb 5.612 cm
+  //Cu 14.36 cm
 
   switch(version_)
     {
       //cf. http://arxiv.org/abs/0805.4833
     case v_CALICE:
-      G4cout << "[DetectorConstruction] starting v_CALICE (10x0.4+10x0.8+10x1.2)X_0 with Tungsten" << G4endl;
-      for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(0.4*3.504*mm,0.0*mm,0.525*mm,1.0*mm,2.5*mm) );
-      for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(0.8*3.504*mm,0.0*mm,0.525*mm,1.0*mm,2.5*mm) );
-      for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(1.2*3.504*mm,0.0*mm,0.525*mm,1.0*mm,2.5*mm) );
-      break;
-    case v_CALICE_Pb: case v_CALICE_Pb_Si60: case v_CALICE_Pb_Si80: case v_CALICE_Pb_Si120: case v_CALICE_Pb_Si200: case v_CALICE_Pb_Si300: case v_CALICE_Pb_Si500:
       {
-	float siWidth(0.525);
-	if(version_==v_CALICE_Pb_Si60)  siWidth=0.060;
-	if(version_==v_CALICE_Pb_Si80)  siWidth=0.080;
-	if(version_==v_CALICE_Pb_Si120) siWidth=0.120;
-	if(version_==v_CALICE_Pb_Si200) siWidth=0.200;
-	if(version_==v_CALICE_Pb_Si300) siWidth=0.300;
-	if(version_==v_CALICE_Pb_Si500) siWidth=0.500;
-	G4cout << "[DetectorConstruction] starting v_CALICE_Pb (10x0.4+10x0.8+10x1.2)X_0 with Lead Si width=" << siWidth << G4endl;
-	for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(0.4*5.612*mm,0.0*mm,siWidth*mm,1.0*mm,1.0*mm) );
-	for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(0.8*5.612*mm,0.0*mm,siWidth*mm,1.0*mm,1.0*mm) );
-	for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(1.2*5.612*mm,0.0*mm,siWidth*mm,1.0*mm,1.0*mm) );
+	G4cout << "[DetectorConstruction] starting v_CALICE (10x0.4+10x0.8+10x1.2)X_0 with Tungsten" << G4endl;
+	for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(0.4*3.504*mm,0.0*mm,0.525*mm,1.0*mm,2.5*mm) );
+	for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(0.8*3.504*mm,0.0*mm,0.525*mm,1.0*mm,2.5*mm) );
+	for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(1.2*3.504*mm,0.0*mm,0.525*mm,1.0*mm,2.5*mm) );
 	break;
       }
-    case v_HGCALEE: case v_HGCALEE_Si500: case v_HGCALEE_SiDummy: case v_HGCAL:
+    case v_HGCALEE_Si80: case v_HGCALEE_Si120: case v_HGCALEE_Si200: case v_HGCALEE_Si500: case v_HGCALEE_gap1: case  v_HGCALEE_CALICE: case v_HGCALEE_inverted: case v_HGCALEE_concept: case v_HGCALEE_W: case v_HGCALEE_gap4: case v_HGCAL:
       {
-	G4cout << "[DetectorConstruction] starting v_HGCAL " << version_ << G4endl;
-	float siWidth(0.200);
-	if(version_==v_HGCALEE_Si500) siWidth=0.500;
+	float siWidth(0.200), gap(2),pad(1);
+	float pb1(1.63), pb2(3.32), pb3(5.56), cu(3.0);
+	int n1(10),n2(10),n3(10);
+	if(version_==v_HGCALEE_Si80)     {siWidth=0.08;                               }
+	if(version_==v_HGCALEE_Si120)    {siWidth=0.120;                              }
+	if(version_==v_HGCALEE_Si500)    {siWidth=0.500;                              }
+	if(version_==v_HGCALEE_gap1)     {gap=1;                                      }
+	if(version_==v_HGCALEE_gap4)     {gap=4;                                      }
+	if(version_==v_HGCALEE_CALICE)   {pb1=1.07;                                   }
+	if(version_==v_HGCALEE_inverted) {pb2=1.63; pb1=3.32;                         }
+	if(version_==v_HGCALEE_W)        {pb1=0.70;  pb2=2.10; pb3=3.50;}
+	if(version_==v_HGCALEE_prePCB)   {addPrePCB_=true;}
+	G4cout << "[DetectorConstruction] starting v_HGCALEE with Si width=" << siWidth << " and gap " << gap << G4endl;
+	
 	//add 1um silicon to track incoming particles
-	if(version_==v_HGCALEE_SiDummy) m_caloStruct.push_back( SamplingSection(0,0,0.001*mm,0,0) );
-	for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(1.6*mm,3.0*mm,siWidth*mm,2.0*mm,2.0*mm) );
-	for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(3.3*mm,3.0*mm,siWidth*mm,2.0*mm,2.0*mm) );
-	for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(5.6*mm,3.0*mm,siWidth*mm,2.0*mm,2.0*mm) );
+	//if(version_==v_HGCALEE_SiDummy) m_caloStruct.push_back( SamplingSection(0,0,0.001*mm,0,0) );
+	if(version_==v_HGCALEE_concept) m_caloStruct.push_back( SamplingSection(0.0*mm,cu*mm,siWidth*mm,pad*mm,gap*mm) );
+	for(int i=0; i<n1; i++)         m_caloStruct.push_back( SamplingSection(pb1*mm,cu*mm,siWidth*mm,pad*mm,gap*mm) );
+	for(int i=0; i<n2; i++)         m_caloStruct.push_back( SamplingSection(pb2*mm,cu*mm,siWidth*mm,pad*mm,gap*mm) );
+	for(int i=0; i<n3; i++)         m_caloStruct.push_back( SamplingSection(pb3*mm,cu*mm,siWidth*mm,pad*mm,gap*mm) );
+
 	if (version_==v_HGCAL){
 	  //add HCAL
 	  for(int i=0; i<12; i++) m_caloStruct.push_back( SamplingSection(52*mm,3.0*mm,0.3*mm,2.0*mm,2.0*mm) );
@@ -69,41 +70,8 @@ DetectorConstruction::DetectorConstruction(G4int ver) : version_(ver)
 	}
 	break;
       }
-    case v_UNIFORM: case v_UNIFORM_Si60 : case v_UNIFORM_Si80: case v_UNIFORM_Si120: case v_UNIFORM_Si200: case v_UNIFORM_Si300: case v_UNIFORM_Si500:
-      {
-	float siWidth(0.300);
-	if(version_==v_UNIFORM_Si60)  siWidth=0.060;
-	if(version_==v_UNIFORM_Si80)  siWidth=0.080;
-	if(version_==v_UNIFORM_Si200) siWidth=0.20;
-	if(version_==v_UNIFORM_Si500) siWidth=0.500;
-	G4cout << "[DetectorConstruction] starting v_UNIFORM (26x1)X_0 with Lead and Si width = " << siWidth << " mm" << G4endl;
-	for(int i=0; i<26; i++) m_caloStruct.push_back( SamplingSection(5.612*mm,3.0*mm,siWidth*mm,1.0*mm,1.0*mm) );
-      }
-      break;
-    case v_UNIFORM_08:
-      G4cout << "[DetectorConstruction] starting v_UNIFORM (33x0.8)X_0 with Lead" << G4endl;
-      for(int i=0; i<33; i++) m_caloStruct.push_back( SamplingSection(0.8*5.612*mm,3.0*mm,0.300*mm,1.0*mm,1.0*mm) );
-      break;
-    case v_UNIFORM_05:
-      G4cout << "[DetectorConstruction] starting v_UNIFORM (52x0.5)X_0 with Lead" << G4endl;
-      for(int i=0; i<52; i++) m_caloStruct.push_back( SamplingSection(0.54*5.612*mm,3.0*mm,0.300*mm,1.0*mm,1.0*mm) );
-      break;
-    case v_UNIFORM_03:
-      G4cout << "[DetectorConstruction] starting v_UNIFORM (87x0.3)X_0 with Lead" << G4endl;
-      for(int i=0; i<87; i++) m_caloStruct.push_back( SamplingSection(0.3*5.612*mm,3.0*mm,0.300*mm,1.0*mm,1.0*mm) );
-      break;
-    case v_JV:
-      G4cout << "[DetectorConstruction] starting v_JV" << G4endl;
-      for(int i=0; i<6; i++) m_caloStruct.push_back( SamplingSection(1.0*5.612*mm,3.0*mm,0.300*mm,1.0*mm,1.0*mm) );
-      for(int i=0; i<15; i++) m_caloStruct.push_back( SamplingSection(0.66*5.612*mm,3.0*mm,0.300*mm,1.0*mm,1.0*mm) );
-      for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(1.0*5.612*mm,3.0*mm,0.300*mm,1.0*mm,1.0*mm) );
-      break;
-    case v_VJ:
-      G4cout << "[DetectorConstruction] starting v_VJ" << G4endl;
-      for(int i=0; i<15; i++) m_caloStruct.push_back( SamplingSection(0.66*5.612*mm,3.0*mm,0.300*mm,1.0*mm,1.0*mm) );
-      for(int i=0; i<16; i++) m_caloStruct.push_back( SamplingSection(1.0*5.612*mm,3.0*mm,0.300*mm,1.0*mm,1.0*mm) );
-      break;
     }
+
   DefineMaterials();
   UpdateCalorSize();
   SetMagField(0);
@@ -117,7 +85,7 @@ DetectorConstruction::~DetectorConstruction() { delete m_detectorMessenger;}
 void DetectorConstruction::DefineMaterials()
 { 
   G4NistManager* nistManager = G4NistManager::Instance();
-  m_materials["Abs"] = (version_== v_CALICE) ? 
+  m_materials["Abs"] = (version_== v_CALICE || version_==v_HGCALEE_W) ? 
     nistManager->FindOrBuildMaterial("G4_W",false) :
     nistManager->FindOrBuildMaterial("G4_Pb",false);
   m_materials["Cu"] = nistManager->FindOrBuildMaterial("G4_Cu",false); 
@@ -189,7 +157,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 
   for(size_t i=0; i<m_caloStruct.size(); i++)
     {
-      sprintf(nameBuf,"Abs%d",int(i)); 
+      sprintf(nameBuf,"Abs%d",int(i+1)); 
       std::string baseName(nameBuf);
       G4double thick = m_caloStruct[i].Pb_thick;
       if(thick>0){
@@ -214,7 +182,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 	xOverburden = xOverburden + thick;
       }
       
-      sprintf(nameBuf,"Cu%d",int(i)); 
+      sprintf(nameBuf,"Cu%d",int(i+1)); 
       baseName=nameBuf;
       thick = m_caloStruct[i].Cu_thick;
       if(thick>0){
@@ -228,7 +196,27 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 	xOverburden = xOverburden + thick;
       }
 
-      sprintf(nameBuf,"Si%d",int(i)); 
+      //add PCB to shield from delta-rays?
+      if(addPrePCB_)
+	{
+	  sprintf(nameBuf,"PCB%d",int(i+1));
+	  baseName=nameBuf;
+	  thick = m_caloStruct[i].PCB_thick;
+	  if(thick>0){
+	    G4Box *solid = new G4Box(baseName+"box", thick/2, m_CalorSizeYZ/2, m_CalorSizeYZ/2 );
+	    G4LogicalVolume *logi  = new G4LogicalVolume(solid, m_materials["PCB"], baseName+"log");
+	    m_caloStruct[i].PCB_vol = new G4PVPlacement(0, G4ThreeVector(xOffset+xOverburden+thick/2,0,0), logi, baseName+"phys", m_logicWorld, false, 0);
+	    m_caloStruct[i].PCB_X0 = m_materials["PCB"]->GetRadlen();
+	    G4VisAttributes *simpleBoxVisAtt = new G4VisAttributes(G4Colour::Blue());
+	    simpleBoxVisAtt->SetVisibility(true);
+	    logi->SetVisAttributes(simpleBoxVisAtt);
+	    xOverburden = xOverburden + thick;
+	  }
+	}
+
+
+      sprintf(nameBuf,"Si%d",int(i+1)); 
+
       baseName=nameBuf;
       thick = m_caloStruct[i].Si_thick;
       if(thick>0){
@@ -243,7 +231,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 	xOverburden = xOverburden + thick;
       }
 
-      sprintf(nameBuf,"PCB%d",int(i)); 
+      sprintf(nameBuf,"PCB%d",int(i+1)); 
       baseName=nameBuf;
       thick = m_caloStruct[i].PCB_thick;
       if(thick>0){
@@ -257,7 +245,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 	xOverburden = xOverburden + thick;
       }
 
-      sprintf(nameBuf,"Air%d",int(i)); 
+      sprintf(nameBuf,"Air%d",int(i+1)); 
       baseName=nameBuf;
       thick = m_caloStruct[i].Air_thick;
       if(thick>0){

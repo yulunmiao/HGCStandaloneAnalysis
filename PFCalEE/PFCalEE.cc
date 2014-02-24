@@ -40,12 +40,8 @@ int main(int argc,char** argv)
   G4RunManager * runManager = new G4RunManager;
 
   // Set mandatory initialization classes
-  //int version=DetectorConstruction::v_UNIFORM;
-  //int version=DetectorConstruction::v_PFCALEE;
-  int version=DetectorConstruction::v_UNIFORM_03;
-  //int version=DetectorConstruction::v_CALICE;
-  //int version=DetectorConstruction::v_CALICE_Pb;
-  //int version=DetectorConstruction::v_HGCAL;
+  int version=DetectorConstruction::v_HGCALEE_concept;
+
   if(argc>2) version=atoi(argv[2]);
 
   std::cout << "-- Running version " << version << std::endl;
@@ -53,8 +49,11 @@ int main(int argc,char** argv)
   runManager->SetUserInitialization(new DetectorConstruction(version));
   //runManager->SetUserInitialization(new PhysicsList);
   G4VUserPhysicsList* physics = new QGSP_BERT();
+  physics->SetCutValue(0.01*mm, "gamma");
+  physics->SetCutValue(0.01*mm, "e-");
+  physics->SetCutValue(0.01*mm, "e+");
+  physics->DumpCutValuesTable();
   runManager->SetUserInitialization(physics);
-
 
   // Set user action classes
   runManager->SetUserAction(new PrimaryGeneratorAction);

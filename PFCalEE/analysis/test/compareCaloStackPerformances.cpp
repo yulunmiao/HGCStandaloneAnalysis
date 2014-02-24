@@ -27,10 +27,39 @@ int main()
 {
   setStyle();
 
-  //size_t versions[]={0,1,2,3,4,5,6,13};
-  //size_t versions[]={7,8,9,10,11,12};
-  size_t versions[]={0,20,21};
-  // size_t versions[]={14,15,16,17,18,19};
+  enum DetectorVersion { v_CALICE=0,
+                         v_HGCALEE_Si80=1,
+                         v_HGCALEE_Si120=2,
+                         v_HGCALEE_Si200=3,
+                         v_HGCALEE_Si500=4,
+                         v_HGCALEE_gap1=5,
+                         v_HGCALEE_CALICE=6,
+                         v_HGCALEE_inverted=7,
+                         v_HGCALEE_concept=8,
+			 v_HGCALEE_W=9,
+			 v_HGCALEE_gap4=10 
+  };
+  /*
+  size_t versions[]={
+    v_CALICE,
+    v_HGCALEE_CALICE,
+    v_HGCALEE_Si80,
+    v_HGCALEE_Si120,
+    v_HGCALEE_Si200,
+    v_HGCALEE_Si500,
+    v_HGCALEE_W,
+    v_HGCALEE_inverted,
+    v_HGCALEE_concept,
+    v_HGCALEE_gap1,
+    v_HGCALEE_gap4
+  };
+  */
+    size_t versions[]={v_HGCALEE_Si200}; 
+
+  //  size_t versions[]={v_HGCALEE_Si200};
+  //size_t versions[]={v_CALICE,v_HGCALEE_Si200, v_HGCALEE_Si500,v_HGCALEE_CALICE, v_HGCALEE_W};
+  //size_t versions[]={v_HGCALEE_Si80,v_HGCALEE_Si120,v_HGCALEE_Si200,v_HGCALEE_Si500};
+  //size_t versions[]={v_HGCALEE_Si200,v_HGCALEE_gap1,v_HGCALEE_concept,v_HGCALEE_inverted};
   size_t nversions( sizeof(versions)/sizeof(size_t) );
 
   std::vector<TH1F *> stochGr, constGr;
@@ -45,27 +74,16 @@ int main()
     size_t i=versions[iv];
    
     TString binLabel("CALICE");
-    if(i==1) binLabel="Pb CALICE";
-    if(i==2) binLabel="Uniform (1.0X_{0})";
-    if(i==3) binLabel="Uniform (0.8X_{0})";
-    if(i==4) binLabel="Uniform (0.5X_{0})";
-    if(i==5) binLabel="Uniform (0.3X_{0})";
-    if(i==6) binLabel="JV";
-    if(i==7) binLabel ="Si 60#mu";
-    if(i==8) binLabel ="Si 80#mu";
-    if(i==9) binLabel ="Si 120#mu";
-    if(i==10) binLabel="Si 200#mu";
-    if(i==11) binLabel="Si 300#mu";
-    if(i==12) binLabel="Si 500#mu";
-    if(i==13) binLabel="VJ";
-    if(i==14) binLabel ="Si 60#mu";
-    if(i==15) binLabel ="Si 80#mu";
-    if(i==16) binLabel ="Si 120#mu";
-    if(i==17) binLabel="Si 200#mu";
-    if(i==18) binLabel="Si 300#mu";
-    if(i==19) binLabel="Si 500#mu";
-    if(i==20) binLabel="HGCal EE";
-    if(i==21) binLabel="HGCal EE Si 500#mu";
+    if(i==v_HGCALEE_Si80)     binLabel="Si 80 #mum";
+    if(i==v_HGCALEE_Si120)    binLabel="Si 120 #mum";
+    if(i==v_HGCALEE_Si200)    binLabel="Si 200 #mum";
+    if(i==v_HGCALEE_Si500)    binLabel="Si 500 #mum";
+    if(i==v_HGCALEE_gap1)     binLabel="Air gap 1mm";
+    if(i==v_HGCALEE_CALICE)   binLabel="#splitline{CALICE-like}{sampling}";
+    if(i==v_HGCALEE_inverted) binLabel="Inverted";
+    if(i==v_HGCALEE_concept)  binLabel="Concept";
+    if(i==v_HGCALEE_W)        binLabel="W absorber";
+    if(i==v_HGCALEE_gap4)     binLabel="Air gap 4mm";
 
     TString ver("version_"); ver+=i;
 
@@ -105,10 +123,10 @@ int main()
 	{	  
 	  TH1F *gr=(i==0 ? constGr[ialgo] : stochGr[ialgo]);
 	  gr->Draw(ialgo==0 ? "e1" : "e1same");
-	  gr->GetYaxis()->SetTitleOffset(1.0);
+	  gr->GetYaxis()->SetTitleOffset(1.4);
 	  gr->GetYaxis()->SetTitleSize(0.05);
 	  gr->GetYaxis()->SetLabelSize(0.04);
-	  gr->GetYaxis()->SetRangeUser(0,0.3);
+	  gr->GetYaxis()->SetRangeUser(0,i==0 ? 0.05 : 0.5);
 	  gr->GetYaxis()->SetNdivisions(10);
 	  gr->GetXaxis()->SetTitleSize(0.05);
 	  gr->GetXaxis()->SetLabelSize(0.04);
@@ -123,6 +141,7 @@ int main()
   csum->Modified();
   csum->Update();
   csum->SaveAs("PLOTS/CaloPerformanceSummary.png");
+  csum->SaveAs("PLOTS/CaloPerformanceSummary.root");
 
   return 0;
 
