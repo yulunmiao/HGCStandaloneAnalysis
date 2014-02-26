@@ -31,7 +31,7 @@
 int main(int argc, char** argv){//main
 
 
-  TFile *inputFile = TFile::Open("root://eoscms//eos/cms/store/user/amagnan/HGCalEEGeant4/HGcal_version3_e50.root");
+  TFile *inputFile = TFile::Open("root://eoscms//eos/cms/store/user/amagnan/HGCalEEGeant4/mu-/HGcal_version3_e50.root");
   if (!inputFile) {
     std::cout << " -- Error, input file cannot be opened. Exiting..." << std::endl;
     return 1;
@@ -44,9 +44,9 @@ int main(int argc, char** argv){//main
   
   TCanvas *myc = new TCanvas("myc","myc",500,500);
   
-  TH2F *p_nHits = new TH2F("nHits","; layer; Number of hits",30,0,30,20,0,20);
-  TH1F *p_hitEnergy = new TH1F("hitEnergy",";E (MeV)",500,0,1);
-  TH1F *p_hitEnergySel = new TH1F("hitEnergySel",";E (MeV)",100,0.01,0.5);
+  TH2F *p_nHits = new TH2F("nHits","; layer; Number of hits; Events",30,0,30,20,0,20);
+  TH1F *p_hitEnergy = new TH1F("hitEnergy",";E (MeV);SimHits",250,0,1);
+  TH1F *p_hitEnergySel = new TH1F("hitEnergySel",";E (MeV);SimHits",100,0.01,0.5);
 
   std::vector<HGCSSSimHit> * simhitvec = 0;
   float volNb = 0;
@@ -94,7 +94,7 @@ int main(int argc, char** argv){//main
   gStyle->SetOptStat(1111110);
   gStyle->SetOptFit(1111);
   p_hitEnergy->Draw();
-  p_hitEnergy->Fit("landau","","",0.035,1);
+  p_hitEnergy->Fit("landau","R+","",0.035,1);
   
   myc->Update();
   myc->Print("PLOTS/version_3/mu-/mipDepositAll.png");

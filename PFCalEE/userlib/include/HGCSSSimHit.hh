@@ -40,10 +40,6 @@ public:
     return time_;
   };
 
-  inline double zpos() const {
-    return zpos_;
-  };
-
   inline unsigned layer() const {
     return layer_;
   };
@@ -123,6 +119,10 @@ public:
     if (sign > 0)
       return get_y_cell()*sign*CELL_SIZE_Y*getGranularity()+CELL_SIZE_Y*getGranularity()/2;
     else return get_y_cell()*sign*CELL_SIZE_Y*getGranularity()-CELL_SIZE_Y*getGranularity()/2;
+  };
+
+  inline double get_z() const {
+    return zpos_;
   };
 
   inline unsigned getGranularity() const{

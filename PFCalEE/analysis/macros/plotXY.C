@@ -27,7 +27,7 @@ int plotXY(){//main
   //TString scenario[nS] = {"0","1","2","3","4","5","6"};
   const unsigned nS = 1;
   std::string scenario[nS] = {
-    ""
+    "mu-/"
     //"pi+/PU/eta20/",
     //"pi+/PU/eta25/",
     //"pi+/PU/eta30/"
@@ -62,7 +62,7 @@ int plotXY(){//main
     
       //if (scenario[iS].find("PU") != scenario[iS].npos) isPU = true;
 
-      TString plotDir = "../PLOTS/version_"+version[iV]+"/"+scenario[iS]+"/";
+      TString plotDir = "../PLOTS/version"+version[iV]+"/"+scenario[iS]+"/";
       //plotDir += "noWeights/";
       //TString plotDir = "../PLOTS/version_"+version[iV]+"/scenario_"+scenario[iS]+"/";
       //TString plotDir = "../PLOTS/version_"+version[iV]+"/";

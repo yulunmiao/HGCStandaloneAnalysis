@@ -18,27 +18,27 @@
 #include "HGCSSRecoHit.hh"
 #include "HGCSSParameters.hh"
 
-double xLayer(const unsigned layer) {
-  double w1b = 1.6+3+0.1;
-  double w2b = 3.3+3+0.1;
-  double w3b = 5.6+3+0.1;
-  double wa = 0.1+4;
-  double W1 = 10*(w1b+wa);
-  double W2 = 10*(w2b+wa);
-  //double W3 = 10*(w3b+wa);
+// double zlayer(const unsigned layer) {
+//   double w1b = 1.6+3+0.1;
+//   double w2b = 3.3+3+0.1;
+//   double w3b = 5.6+3+0.1;
+//   double wa = 0.1+4;
+//   double W1 = 10*(w1b+wa);
+//   double W2 = 10*(w2b+wa);
+//   //double W3 = 10*(w3b+wa);
 
-  double totalWidth = 10*(w1b+w2b+w3b)+30*wa;
-  unsigned il = layer%10+1;
+//   double totalWidth = 10*(w1b+w2b+w3b)+30*wa;
+//   unsigned il = layer%10+1;
 
-  double offset = layer/10==0 ? (il*w1b + (il-1)*wa) :
-    ( layer/10==1 ? W1 + il*w2b + (il-1)*wa :
-      W1 + W2 + il*w3b + (il-1)*wa );
+//   double offset = layer/10==0 ? (il*w1b + (il-1)*wa) :
+//     ( layer/10==1 ? W1 + il*w2b + (il-1)*wa :
+//       W1 + W2 + il*w3b + (il-1)*wa );
 
-  return -totalWidth/2. + offset; //in mm
+//   return -totalWidth/2. + offset; //in mm
   
-}
+// }
 
-double getBinWidth(const double etaMin,const double etaMax, std::string etaStr, const double xLaymm){
+double getBinWidth(const double etaMin,const double etaMax, std::string etaStr, const double zlaymm){
   double eta0 = 0;
   if (etaStr.find("eta20")!=etaStr.npos) eta0 = 2.0;
   else if (etaStr.find("eta25")!=etaStr.npos) eta0 = 2.5;
@@ -49,7 +49,7 @@ double getBinWidth(const double etaMin,const double etaMax, std::string etaStr, 
     exit(1);
   }
 
-  double xDist = 310+xLaymm/10.;//distance in cm from beam spot to layer.
+  double xDist = 310+zlaymm/10.;//distance in cm from beam spot to layer.
   double theta0 = 2*atan(exp(-eta0));
   double y0 = tan(theta0)*xDist;//cm
 
@@ -71,7 +71,7 @@ double getBinWidth(const double etaMin,const double etaMax, std::string etaStr, 
 
 }
 
-double getEta(double ypos, std::string etaStr, const double xLaymm){
+double getEta(double ypos, std::string etaStr, const double zlaymm){
   double eta0 = 0;
   if (etaStr.find("20")!=etaStr.npos) eta0 = 2.0;
   else if (etaStr.find("25")!=etaStr.npos) eta0 = 2.5;
@@ -87,7 +87,7 @@ double getEta(double ypos, std::string etaStr, const double xLaymm){
   double theta0 = 2*atan(exp(-eta0));
   double y0 = tan(theta0)*xDist0;//mm
   //find theta at center of layer.
-  double xDist = 3100+xLaymm;//distance from beam spot to layer in mm
+  double xDist = 3100+zlaymm;//distance from beam spot to layer in mm
   double tanTheta = (y0+ypos)/xDist;
   double theta = atan(tanTheta);
   double eta = -log(tan(theta/2.));
@@ -129,6 +129,7 @@ int main(int argc, char** argv){//main
 	      << argv[0] << " <nEvts to process (0=all)>"
 	      << " <full path to input file>"
 	      << " <file name (PFcal.root, or DigiPFcal.root)>" 
+	      << " <optional: list of energies: 5,10,25>"
 	      << " <optional: debug (default=0)>"
 	      << " <optional: overlayPU (default=0)>"
 	      << " <optional: saveEventByEvent (default=0)>"
@@ -142,7 +143,7 @@ int main(int argc, char** argv){//main
   bool saveTxtOutput = false;
   bool doFiducialCuts = false;
 
-  const unsigned nLayers = 60;
+  const unsigned nLayers = 30;
   const unsigned nEcalLayers = 30;
   const double signalRegionInX=20;
   //const double Emip = 0.0548;//MeV
@@ -161,27 +162,42 @@ int main(int argc, char** argv){//main
   bool saveLLR = false;
   double etaMinLLR = 3.8;
   double etaMaxLLR = 3.9;
-  double llrBinWidth[nLayers];
-
 
   std::cout << " -- N layers = " << nLayers << std::endl;
 
-  unsigned genEn[]={5,10,25,40,50,60,80,100,200,300,400,500,1000,2000};
+  unsigned tmpEn[]={5,10,25,40,50,60,80,100,200,300,400,500,1000,2000};
   //unsigned genEn[]={5,20,50,100,150,200};
-  //unsigned genEn[]={100};
-  const unsigned nGenEn=sizeof(genEn)/sizeof(unsigned);
+  unsigned tmpSize = sizeof(tmpEn)/sizeof(unsigned);
+  std::vector<unsigned> genEn;
+
+  std::vector<std::string> enVec;
+  std::string genEnStr;
+  if (argc >4) {
+    genEnStr = argv[4];
+    boost::split( enVec, genEnStr, boost::is_any_of(","));
+    for (unsigned iE(0); iE<enVec.size();++iE){
+      unsigned tmpE = 0;
+      std::istringstream(enVec[iE])>>tmpE;
+      genEn.push_back(tmpE);
+    }
+  } else {
+    for (unsigned iE(0); iE<tmpSize;++iE){
+      genEn.push_back(tmpEn[iE]);
+    }
+  }
+  const unsigned nGenEn=genEn.size();
   
   const unsigned pNevts = atoi(argv[1]);
   std::string filePath = argv[2];
   std::string fileName = argv[3];//"PFcal.root";
   unsigned debug = 0;
-  if (argc >4) debug = atoi(argv[4]);
+  if (argc >5) debug = atoi(argv[5]);
   bool doChargedPions = false;
   bool doNeutralPions = false;
-  if (argc>5) overlayPU = atoi(argv[5]);
-  if (argc>6) saveEventByEvent = atoi(argv[6]);
-  if (argc>7) doChargedPions = atoi(argv[7]);
-  if (argc>8) doNeutralPions = atoi(argv[8]);
+  if (argc>6) overlayPU = atoi(argv[6]);
+  if (argc>7) saveEventByEvent = atoi(argv[7]);
+  if (argc>8) doChargedPions = atoi(argv[8]);
+  if (argc>9) doNeutralPions = atoi(argv[9]);
 
   std::cout << " -- Input parameters: " << std::endl
 	    << " -- Input file path: " << filePath << std::endl
@@ -204,7 +220,7 @@ int main(int argc, char** argv){//main
     pEOS = true;
   }
    
-  pEOS = false;
+  //pEOS = false;
 
   if (pEOS) boost::split( pathVec, filePath, boost::is_any_of("/_"));
   else  boost::split( pathVec, filePath, boost::is_any_of("/"));
@@ -214,19 +230,23 @@ int main(int argc, char** argv){//main
   std::string pEta("");
 
   for (unsigned i(0);i<pathVec.size();++i){
-    std::string lTmp = pathVec[i];
+    std::string lTmp = pathVec[pEOS? pathVec.size()-i-1 : i];
     if (lTmp.find("version") != lTmp.npos) {
       pVersion = lTmp;
     }
     else if (lTmp.find("scenario") != lTmp.npos) {
       pScenario = lTmp;
     }
+    else if (pEOS && pVersion.size()!=0 && lTmp.find("HGcal")!=lTmp.npos){
+      continue;
+    }
     else if (pVersion.size()!=0 && pParticle.size()==0)  {
       pParticle = lTmp;
+      if (pEOS) break;
     }
     else if (lTmp.find("eta") != lTmp.npos) {
       pEta = lTmp;
-      break;
+      if (!pEOS) break;
     }
     else if (pVersion.size()!=0) {
       break;
@@ -234,11 +254,9 @@ int main(int argc, char** argv){//main
   }
 
   plotDir += pVersion;
-  if (pEOS) plotDir += "";
-  else plotDir += "/";
+  plotDir += "/";
   plotDir += pScenario;
-  if (pEOS) plotDir += "_";
-  else plotDir += "/";
+  plotDir += "/";
   plotDir += pParticle;
   if (overlayPU) plotDir += "/PU";
   if (!doNeutralPions && doChargedPions) plotDir += "_pipm";
@@ -260,12 +278,10 @@ int main(int argc, char** argv){//main
   TFile *outputFile = TFile::Open(plotDir+"/CalibHistos.root","RECREATE");
 
   if (!outputFile) {
-    std::cout << " -- Error, output file " << plotDir << "/CalibHistos.root cannot be opened. Please create output directory : " << plotDir << ". Exiting..." << std::endl;
+    std::cout << " -- Error, output file " << plotDir << "/CalibHistos.root cannot be opened. Please create output directory : " << plotDir << "  Exiting..." << std::endl;
     return 1;
   }
 
-
-  double xLay[nLayers];
 
   TH2F *p_xy[nGenEn][nLayers];
   TH3F *p_xyz[nGenEn];
@@ -275,16 +291,14 @@ int main(int argc, char** argv){//main
   TH3F *p_recoxyz[nGenEn];
   TH2F *p_recoxy_evt[nLayers];
 
-  std::cout << " -- Checking layer-eta conversion:" << std::endl;
+  //std::cout << " -- Checking layer-eta conversion:" << std::endl;
 
   for (unsigned iL(0); iL<nLayers; ++iL){
     p_recoxy_evt[iL] = 0;
     p_xy_evt[iL] = 0;
-    xLay[iL] = xLayer(iL);
-    llrBinWidth[iL] = getBinWidth(etaMinLLR,etaMaxLLR,"eta35",xLay[iL]);
-    std::cout << iL << " " << xLay[iL] << " " 
-	      << llrBinWidth[iL] << " y=0@eta3 " 
-	      << getEta(0,"eta30",xLay[iL]) << std::endl;
+    //std::cout << iL << " " << zlay[iL] << " " 
+    //<< llrBinWidth[iL] << " y=0@eta3 " 
+    //<< getEta(0,"eta30",zlay[iL]) << std::endl;
   }
 
   TH3F *p_recoxyz_evt = 0;
@@ -443,9 +457,12 @@ int main(int argc, char** argv){//main
     gStyle->SetOptStat(1111111);
     double Etot[nLayers];
     double eLLR[nLayers];
+    double zlay[nLayers];
+
     for (unsigned iL(0);iL<nLayers;++iL){
       Etot[iL] = 0;
       eLLR[iL] = 0;
+      zlay[iL] = 0;
     }
     double Etotal[2] = {0,0};
     unsigned nTotal = 0;
@@ -575,6 +592,7 @@ int main(int argc, char** argv){//main
 	  
 	  double posx = lHit.get_x();
 	  double posy = lHit.get_y();
+	  double posz = lHit.get_z();
 	  //double posx = lHit.get_y();
 	  //double posy = lHit.get_x();
 	  double energy = lHit.energy();
@@ -604,11 +622,11 @@ int main(int argc, char** argv){//main
 	  //restrict in y and x to have just the influence of the eta bin wanted
 	  //(at high eta, surface of the cone in x is smaller than detector size)
 	  if (fabs(posx)<signalRegionInX/2.){
-	    double lEtaTmp = getEta(posy,pEta,xLay[layer]);
+	    double lEtaTmp = getEta(posy,pEta,posz);
 	    p_Edensity[iE][layer]->Fill(lEtaTmp,energy);
 	  }
-	  Etot[layer] += weightedE;
-	  if (debug>1) std::cout << "-hit" << iH << "-" << layer << " " << weightedE << " " << Etot[layer];
+	  Etot[layer] += energy;
+	  if (debug>1) std::cout << "-hit" << iH << "-" << layer << " " << energy << " " << Etot[layer];
 	  if (layer<nEcalLayers) Etotal[0] += weightedE;
 	  else Etotal[1] += weightedE;
 	}//loop on hits
@@ -680,6 +698,7 @@ int main(int argc, char** argv){//main
 
 	double posx = lHit.get_x();
 	double posy = lHit.get_y();
+	double posz = lHit.get_z();
 	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//!!!!!! WARNING, quick and dirty fix !!!!!!!!!!!!!!!!!!
@@ -725,14 +744,17 @@ int main(int argc, char** argv){//main
 	}
 	p_time[iE][layer]->Fill(lHit.time());
 	if (fabs(posx)<signalRegionInX/2.){
-	  double lEtaTmp = getEta(posy,pEta,xLay[layer]);
+	  double lEtaTmp = getEta(posy,pEta,posz);
 	  p_Edensity[iE][layer]->Fill(lEtaTmp,energy);
 	  if (lEtaTmp>=etaMinLLR && lEtaTmp<etaMaxLLR) eLLR[layer]+=energy;
 	}
-	Etot[layer] += weightedE;
-	if (debug>1) std::cout << "-hit" << iH << "-" << layer << " " << weightedE << " " << Etot[layer];
+	Etot[layer] += energy;
+	if (debug>1) std::cout << "-hit" << iH << "-" << layer << " " << energy << " " << Etot[layer];
 	if (layer<nEcalLayers) Etotal[0] += weightedE;
 	else Etotal[1] += weightedE;
+
+	zlay[layer] = posz;
+
       }//loop on hits
 
       nTotal += (*simhitvec).size();
@@ -859,7 +881,8 @@ int main(int argc, char** argv){//main
 	  //For LLR study
 	  //get total density in one eta bin
 	  if (saveLLR){// && iL>0 && iL<30){
-	    double density = eLLR[iL]/signalRegionInX*1/llrBinWidth[iL];
+	    double llrBinWidth = getBinWidth(etaMinLLR,etaMaxLLR,"eta35",zlay[iL]);
+	    double density = eLLR[iL]/signalRegionInX*1/llrBinWidth;
 	    if (isG4Tree) edensity << static_cast<unsigned>(ievt/nLayers);
 	    else edensity << ievt;
 	    edensity << " " << iL << " " << density << std::endl;
@@ -874,11 +897,6 @@ int main(int argc, char** argv){//main
 	p_Etotal[iE][1]->Fill(Etotal[1]);
 	p_HCALvsECAL[iE]->Fill(Etotal[0],Etotal[1]);
 	p_nSimHits[iE]->Fill(nTotal);
-
-	if (fabs(Etotal[0]+Etotal[1]-EtotCheck)>0.0001) {
-	  std::cout << " -- Etot Check failed ! "
-		    <<  Etotal[0] << "+" << Etotal[1] << " != " << EtotCheck << std::endl;
-	}
 
 	if (saveEventByEvent && nTotalSignal > nMaxHits){
 	  std::ostringstream evtName;
