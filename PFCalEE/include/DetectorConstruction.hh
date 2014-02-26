@@ -74,10 +74,10 @@ public:
   /**
      @short getters
    */
-  G4double GetCalorSizeYZ() { return m_CalorSizeYZ; }
-  G4double GetCalorSizeX()  { return m_CalorSizeX; }
-  G4double GetWorldSizeYZ() { return m_WorldSizeYZ; }
-  G4double GetWorldSizeX()  { return m_WorldSizeX; }
+  G4double GetCalorSizeXY() { return m_CalorSizeXY; }
+  G4double GetCalorSizeZ()  { return m_CalorSizeZ; }
+  G4double GetWorldSizeXY() { return m_WorldSizeXY; }
+  G4double GetWorldSizeZ()  { return m_WorldSizeZ; }
 
   /**
      @short build the detector
@@ -104,8 +104,8 @@ private:
 
   std::vector<G4Material* > m_SensitiveMaterial;
   
-  G4double           m_CalorSizeYZ, m_CalorSizeX;
-  G4double           m_WorldSizeYZ, m_WorldSizeX;
+  G4double           m_CalorSizeXY, m_CalorSizeZ;
+  G4double           m_WorldSizeXY, m_WorldSizeZ;
             
   G4Box*             m_solidWorld;    //pointer to the solid World 
   G4LogicalVolume*   m_logicWorld;    //pointer to the logical World

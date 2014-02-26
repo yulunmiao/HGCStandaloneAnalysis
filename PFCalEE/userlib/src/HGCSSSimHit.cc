@@ -7,13 +7,13 @@
 HGCSSSimHit::HGCSSSimHit(const G4SiHit & aSiHit){
   energy_ = aSiHit.energy;
   time_ = aSiHit.time;
-  zpos_ = aSiHit.hit_x;
+  zpos_ = aSiHit.hit_z;
   layer_ = aSiHit.layer;
 
   //coordinates in mm
   //double z = aSiHit.hit_x;
   double y = aSiHit.hit_y;
-  double x = aSiHit.hit_z;
+  double x = aSiHit.hit_x;
   //cellid encoding:
   bool x_side = x>0 ? true : false;
   bool y_side = y>0 ? true : false;

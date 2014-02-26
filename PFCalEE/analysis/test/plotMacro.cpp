@@ -30,7 +30,7 @@
 
 int main(int argc, char** argv){//main
   
-  TString genEn = "10";
+  TString genEn = "50";
   const double Emip = 0.0559;//in MeV
 
 

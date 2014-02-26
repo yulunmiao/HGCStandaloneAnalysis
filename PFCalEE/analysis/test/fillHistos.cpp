@@ -103,11 +103,16 @@ double getWeight(unsigned layer,std::string aVersion){
   //aVersion.find("21") != aVersion.npos ||
   //aVersion.find("22") != aVersion.npos ||
   //aVersion.find("23") != aVersion.npos){
-  else if (layer < 20) //return 1.43;
-    return 0.8/0.5;
-  else if (layer<30) //return 2.15;
-    return 1.2/0.5;
-  else return 1;
+  else if (layer < 20) return 1.264;
+    //return 0.8/0.5;
+  else if (layer<30) return 2.029;
+    //return 1.2/0.5;
+  else if (layer < 42)
+    return 1;
+  else if (layer < 60)
+    return 0.23/0.33;
+
+  return 1;
   //}
   //else {
   //  if (layer < 20) return 0.8/0.4;
@@ -137,8 +142,8 @@ int main(int argc, char** argv){//main
   bool saveTxtOutput = false;
   bool doFiducialCuts = false;
 
-  const unsigned nLayers = 30;
-  //const unsigned nEcalLayers = 30;
+  const unsigned nLayers = 60;
+  const unsigned nEcalLayers = 30;
   const double signalRegionInX=20;
   //const double Emip = 0.0548;//MeV
 
@@ -161,7 +166,7 @@ int main(int argc, char** argv){//main
 
   std::cout << " -- N layers = " << nLayers << std::endl;
 
-  unsigned genEn[]={5,10,20,25,50,75,100,125,150,175,200,250,300,500};
+  unsigned genEn[]={5,10,25,40,50,60,80,100,200,300,400,500,1000,2000};
   //unsigned genEn[]={5,20,50,100,150,200};
   //unsigned genEn[]={100};
   const unsigned nGenEn=sizeof(genEn)/sizeof(unsigned);
@@ -194,7 +199,15 @@ int main(int argc, char** argv){//main
 
   TString plotDir = "PLOTS/";
   std::vector<std::string> pathVec;
-  boost::split( pathVec, filePath, boost::is_any_of("/_"));
+  bool pEOS = false;
+  if (filePath.find("eos") != filePath.npos) {
+    pEOS = true;
+  }
+   
+  pEOS = false;
+
+  if (pEOS) boost::split( pathVec, filePath, boost::is_any_of("/_"));
+  else  boost::split( pathVec, filePath, boost::is_any_of("/"));
   std::string pVersion("");
   std::string pScenario("");
   std::string pParticle("");
@@ -221,11 +234,11 @@ int main(int argc, char** argv){//main
   }
 
   plotDir += pVersion;
-  plotDir += "";
-  //plotDir += "/";
+  if (pEOS) plotDir += "";
+  else plotDir += "/";
   plotDir += pScenario;
-  //plotDir += "/";
-  plotDir += "_";
+  if (pEOS) plotDir += "_";
+  else plotDir += "/";
   plotDir += pParticle;
   if (overlayPU) plotDir += "/PU";
   if (!doNeutralPions && doChargedPions) plotDir += "_pipm";
@@ -237,7 +250,7 @@ int main(int argc, char** argv){//main
   const double totalWidth=(pVersion.find("23")==pVersion.npos) ? 200 : 500;
 
   bool isMB = false;
-  if (pParticle.find("Pedro")!=pParticle.npos) isMB=true;
+  if (pParticle.find("PedroPU")!=pParticle.npos) isMB=true;
 
   if (!applyWeight) plotDir += "noWeights/";
   //plotDir += "simpleWeights/";
@@ -279,7 +292,8 @@ int main(int argc, char** argv){//main
   TH1F *p_Etot[nGenEn][nLayers];
   TH1F *p_Efrac[nGenEn][nLayers];
   TH1F *p_time[nGenEn][nLayers];
-  TH1F *p_Etotal[nGenEn];
+  TH1F *p_Etotal[nGenEn][2];
+  TH2F *p_HCALvsECAL[nGenEn];
 
   TH1F *p_Ereco[nGenEn][nSmear];
   TH1F *p_nSimHits[nGenEn];
@@ -331,10 +345,14 @@ int main(int argc, char** argv){//main
     input << filePath ;
     //if (filePath.find("pi+")!=filePath.npos) input << "/pt_" ;
     //HGcal_version_8_e50.root
-    //input << "/e_" ;
-    //input << genEn[iE] << "/" << fileName ;
-    input << "_e" ;
-    input << genEn[iE] << fileName;
+    if (pEOS) {
+      input << "_e" ;
+      input << genEn[iE] << fileName;
+    }
+    else {
+      input << "/e_" ;
+      input << genEn[iE] << "/" << fileName ;
+    }
     TFile *inputFile = TFile::Open(input.str().c_str());
 
     if (!inputFile) {
@@ -429,7 +447,7 @@ int main(int argc, char** argv){//main
       Etot[iL] = 0;
       eLLR[iL] = 0;
     }
-    double Etotal = 0;
+    double Etotal[2] = {0,0};
     unsigned nTotal = 0;
     unsigned nTotalSignal = 0;
     double Ereco[nSmear];
@@ -447,7 +465,8 @@ int main(int argc, char** argv){//main
       p_recoxyz[iE] = new TH3F(lName.str().c_str(),";layer;x(mm);y(mm)",nLayers,0,nLayers,50,-250,250,50,-250,250);
     }
     else p_recoxyz[iE] = 0;
-    p_Etotal[iE] = 0;
+    p_Etotal[iE][0] = 0;
+    p_Etotal[iE][1] = 0;
     p_nSimHits[iE] = 0;
     p_EvsLayer[iE] = 0;
     p_nRecHits[iE] = 0;
@@ -590,7 +609,8 @@ int main(int argc, char** argv){//main
 	  }
 	  Etot[layer] += weightedE;
 	  if (debug>1) std::cout << "-hit" << iH << "-" << layer << " " << weightedE << " " << Etot[layer];
-	  Etotal += weightedE;
+	  if (layer<nEcalLayers) Etotal[0] += weightedE;
+	  else Etotal[1] += weightedE;
 	}//loop on hits
 
 
@@ -711,7 +731,8 @@ int main(int argc, char** argv){//main
 	}
 	Etot[layer] += weightedE;
 	if (debug>1) std::cout << "-hit" << iH << "-" << layer << " " << weightedE << " " << Etot[layer];
-	Etotal += weightedE;
+	if (layer<nEcalLayers) Etotal[0] += weightedE;
+	else Etotal[1] += weightedE;
       }//loop on hits
 
       nTotal += (*simhitvec).size();
@@ -806,9 +827,17 @@ int main(int argc, char** argv){//main
 	  lName << "p_EvsLayer_" << genEn[iE];
 	  p_EvsLayer[iE] = new TH2F(lName.str().c_str(),";layer;E (MeV)",nLayers,0,nLayers,1000,0,3*Emax);
 	  lName.str("");
-	  lName << "p_Etotal_" << genEn[iE];
-	  p_Etotal[iE] = new TH1F(lName.str().c_str(),";G4 Etotal (MIP)",1000,0.1*Etotal,2*Etotal);
-	  p_Etotal[iE]->StatOverflows();
+	  lName << "p_Etotal_" << genEn[iE] << "_ECAL";
+	  p_Etotal[iE][0] = new TH1F(lName.str().c_str(),";G4 Etotal ECAL (MeV)",1000,0.1*Etotal[0],2*Etotal[0]);
+	  p_Etotal[iE][0]->StatOverflows();
+	  lName.str("");
+	  lName << "p_Etotal_" << genEn[iE] << "_HCAL";
+	  p_Etotal[iE][1] = new TH1F(lName.str().c_str(),";G4 Etotal HCAL (MeV)",1000,0.1*std::max(Etotal[1],0.),2*std::max(Etotal[1],1.));
+	  p_Etotal[iE][1]->StatOverflows();
+	  lName.str("");
+	  lName << "p_HCALvsECAL_" << genEn[iE];
+	  p_HCALvsECAL[iE] = new TH2F(lName.str().c_str(),";G4 Etotal ECAL (MeV); G4 Etotal HCAL (MeV)",1000,0,5*Etotal[0],1000,0,5*std::max(Etotal[1],1.));
+	  p_HCALvsECAL[iE]->StatOverflows();
 	  lName.str("");
 	  lName << "p_nSimHits_" << genEn[iE];
 	  p_nSimHits[iE] = new TH1F(lName.str().c_str(),"; nSimHits",1000,static_cast<unsigned>(nTotal/10.),nTotal*10);
@@ -820,7 +849,7 @@ int main(int argc, char** argv){//main
 	  p_Etot[iE][iL]->Fill(Etot[iL]);
 	  p_EvsLayer[iE]->Fill(iL,Etot[iL]);
 	  Etmp += Etot[iL];
-	  if (Etotal > 0) p_Efrac[iE][iL]->Fill(Etmp/Etotal);
+	  if (Etotal[0]+Etotal[1] > 0) p_Efrac[iE][iL]->Fill(Etmp/(Etotal[0]+Etotal[1]));
 	  else p_Efrac[iE][iL]->Fill(0);
 	  EtotCheck+= Etot[iL];
 	  Etot[iL] = 0;
@@ -841,12 +870,14 @@ int main(int argc, char** argv){//main
 	  //////////////////////////////////////////////////////////////////////
 
 	}//loop on layers
-	p_Etotal[iE]->Fill(Etotal);
+	p_Etotal[iE][0]->Fill(Etotal[0]);
+	p_Etotal[iE][1]->Fill(Etotal[1]);
+	p_HCALvsECAL[iE]->Fill(Etotal[0],Etotal[1]);
 	p_nSimHits[iE]->Fill(nTotal);
 
-	if (fabs(Etotal-EtotCheck)>0.0001) {
+	if (fabs(Etotal[0]+Etotal[1]-EtotCheck)>0.0001) {
 	  std::cout << " -- Etot Check failed ! "
-		    <<  Etotal << " " << EtotCheck << std::endl;
+		    <<  Etotal[0] << "+" << Etotal[1] << " != " << EtotCheck << std::endl;
 	}
 
 	if (saveEventByEvent && nTotalSignal > nMaxHits){
@@ -869,7 +900,8 @@ int main(int argc, char** argv){//main
 	  outputEvt->Close();
 	}
 
-	Etotal = 0;
+	Etotal[0] = 0;
+	Etotal[1] = 0;
 	nTotal = 0;
 	nTotalSignal = 0;
 	firstEvent = false;
@@ -894,7 +926,9 @@ int main(int argc, char** argv){//main
     }
     p_xyz[iE]->Write();
     p_EvsLayer[iE]->Write();
-    p_Etotal[iE]->Write();
+    p_Etotal[iE][0]->Write();
+    p_Etotal[iE][1]->Write();
+    p_HCALvsECAL[iE]->Write();
     p_nSimHits[iE]->Write();
     if (!isG4Tree) {
       for (unsigned iSmear(0); iSmear<nSmear;++iSmear){
@@ -904,12 +938,20 @@ int main(int argc, char** argv){//main
       p_recoxyz[iE]->Write();
     }
 
-    std::cout << " -- Summary of energies: " << std::endl
-	      << " ---- SimHits: entries " << p_Etotal[iE]->GetEntries() 
-	      << " mean " << p_Etotal[iE]->GetMean() 
-	      << " rms " << p_Etotal[iE]->GetRMS() 
-	      << " underflows " << p_Etotal[iE]->GetBinContent(0)
-	      << " overflows " << p_Etotal[iE]->GetBinContent(p_Etotal[iE]->GetNbinsX()+1)
+    std::cout << " -- Summary of energies ECAL: " << std::endl
+	      << " ---- SimHits: entries " << p_Etotal[iE][0]->GetEntries() 
+	      << " mean " << p_Etotal[iE][0]->GetMean() 
+	      << " rms " << p_Etotal[iE][0]->GetRMS() 
+	      << " underflows " << p_Etotal[iE][0]->GetBinContent(0)
+	      << " overflows " << p_Etotal[iE][0]->GetBinContent(p_Etotal[iE][0]->GetNbinsX()+1)
+	      << std::endl;
+
+    std::cout << " -- Summary of energies HCAL: " << std::endl
+	      << " ---- SimHits: entries " << p_Etotal[iE][1]->GetEntries() 
+	      << " mean " << p_Etotal[iE][1]->GetMean() 
+	      << " rms " << p_Etotal[iE][1]->GetRMS() 
+	      << " underflows " << p_Etotal[iE][1]->GetBinContent(0)
+	      << " overflows " << p_Etotal[iE][1]->GetBinContent(p_Etotal[iE][1]->GetNbinsX()+1)
 	      << std::endl;
     if (!isG4Tree) {
       std::cout << " ---- RecHits: entries " << p_Ereco[iE][0]->GetEntries() 
@@ -956,12 +998,14 @@ int main(int argc, char** argv){//main
  }
 
   std::cout << "\\hline \n";
-  std::cout << " Energy (GeV) & Esim (RMS) "
+  std::cout << " Energy (GeV) & Eecal (RMS) & Ehcal (RMS) "
     // << " & nSimHits (RMS) "
 	    << "\\\\ \n"; 
   for (unsigned iE(0); iE<nGenEn; ++iE){//loop on energies
     std::cout << genEn[iE] << " & "
-	      << p_Etotal[iE]->GetMean() << " (" << p_Etotal[iE]->GetRMS() 
+	      << p_Etotal[iE][0]->GetMean() << " (" << p_Etotal[iE][0]->GetRMS() 
+	      << ") & "
+	      << p_Etotal[iE][1]->GetMean() << " (" << p_Etotal[iE][1]->GetRMS() 
       //<< ") & "
       //<< p_nSimHits[iE]->GetMean() << " (" << p_nSimHits[iE]->GetRMS() 
 	      << ") \\\\ \n ";

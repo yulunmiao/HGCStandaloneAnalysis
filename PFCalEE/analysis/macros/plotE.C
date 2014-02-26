@@ -33,7 +33,8 @@ int plotE(){//main
     //"scenario_0/PedroPU/eta30/",
     //"scenario_0/PedroPU/eta35/"
     //"scenario_0/SimpleSignal/eta25/"
-    ""//"noWeights/"
+    "Pedro/",//"noWeights/",
+    //"e-/"
   };
   
   const unsigned nV = 1;
@@ -55,19 +56,23 @@ int plotE(){//main
   
   const unsigned nLayers = 30;
   
-  //unsigned genEn[]={5,10,20,25,50,75,100,125,150,175,200,250,300,500};
-  unsigned genEn[]={5,20,50,100,150,200};
+  unsigned genEn[]={5,10,20,25,50,75,100,125,150,175,200,300,500};
+  //unsigned genEn[]={5,20,50,100,150,200};
   //unsigned genEn[]={10};
   const unsigned nGenEn=sizeof(genEn)/sizeof(unsigned);
-  //unsigned rebin[10] = {12,10,10,10,8,6,6,6,6,6};
-  unsigned rebin[6] = {12,10,6,6,6,6};
+  unsigned rebin[14] = {12,10,10,10,10,
+			8,6,6,6,6,
+			6,6,6,6};
+  //unsigned rebin[6] = {12,10,6,6,6,6};
 
   //canvas so they are created only once
   TCanvas *mycL = new TCanvas("mycL","mycL",1500,1000);
   TCanvas *mycF = new TCanvas("mycF","mycF",1500,750);
   TCanvas *mycE = new TCanvas("mycE","mycE",1500,1000);
   TCanvas *mycPU = new TCanvas("mycPU","mycPU",1500,1000);
-  
+
+  mycE->Divide(5,3);
+
   const unsigned nCanvas = 4;  
   TCanvas *myc[nCanvas];
   for (unsigned iC(0);iC<nCanvas;++iC){
@@ -109,7 +114,7 @@ int plotE(){//main
 	bool isG4File = false;
 	for (unsigned iE(0); iE<nGenEn; ++iE){
 	  
-	  if (scenario[iS].find("Pedro")!=scenario[iS].npos) genEn[iE]=iE;
+	  if (scenario[iS].find("PedroPU")!=scenario[iS].npos) genEn[iE]=iE;
 	  
 	  std::cout << "- Processing energy : " << genEn[iE] 
 		    << std::endl;
@@ -133,7 +138,7 @@ int plotE(){//main
 	    lName << "p_Efrac_" << genEn[iE] << "_" << iL;
 	    p_Efrac[iE][iL] = (TH1F*)gDirectory->Get(lName.str().c_str());
 	    if (!p_Efrac[iE][iL]) {
-	      std::cout << " -- ERROR, pointer for histogram Efrac is null for layer: " << iL << ". Exiting..." << std::endl;
+	      std::cout << " -- ERROR, pointer for histogram Efrac is null for energy " << genEn[iE] << " layer: " << iL << ". Exiting..." << std::endl;
 	      return 1;
 	    }
 
@@ -159,13 +164,13 @@ int plotE(){//main
 	  }
 
 	  lName.str("");
-	  lName << "p_Etotal_" << genEn[iE];
+	  lName << "p_Etotal_" << genEn[iE] << "_ECAL";
 	  p_Etotal[iE] = (TH1F*)gDirectory->Get(lName.str().c_str());
-	  p_Etotal[iE]->Sumw2();
 	  if (!p_Etotal[iE]){
 	    std::cout << " -- ERROR, pointer for histogram Etotal is null. Exiting..." << std::endl;
 	    return 1;
 	  }
+	  p_Etotal[iE]->Sumw2();
     
 	  std::cout << " --- Sim E = entries " << p_Etotal[iE]->GetEntries() 
 		    << " mean " << p_Etotal[iE]->GetMean() 
@@ -255,8 +260,6 @@ int plotE(){//main
 	mycF->Print((saveName.str()+".png").c_str());
 	mycF->Print((saveName.str()+".pdf").c_str());
       
-	mycE->Clear();
-	mycE->Divide(4,3);
       
 	gStyle->SetOptStat(0);
 
@@ -282,7 +285,7 @@ int plotE(){//main
 	  //plot total E
 	  mycE->cd(iE+1);
 	  gStyle->SetOptFit(0);
-	  //p_Etotal[iE]->GetXaxis()->SetRangeUser(p_Etotal[iE]->GetMean()-5*p_Etotal[iE]->GetRMS(),p_Etotal[iE]->GetMean()+5*p_Etotal[iE]->GetRMS());
+	  p_Etotal[iE]->GetXaxis()->SetRangeUser(p_Etotal[iE]->GetMean()-10*p_Etotal[iE]->GetRMS(),p_Etotal[iE]->GetMean()+10*p_Etotal[iE]->GetRMS());
 	  p_Etotal[iE]->Draw();
 	  p_Etotal[iE]->Fit("gaus","LR+","",
 			    p_Etotal[iE]->GetMean()-1.5*p_Etotal[iE]->GetRMS(),

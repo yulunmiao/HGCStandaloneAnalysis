@@ -54,8 +54,8 @@ DetectorMessenger::DetectorMessenger(
        
   MagFieldCmd = new G4UIcmdWithADoubleAndUnit("/N03/det/setField",this);  
   MagFieldCmd->SetGuidance("Define magnetic field.");
-  MagFieldCmd->SetGuidance("Magnetic field will be in X direction.");
-  MagFieldCmd->SetParameterName("Bx",false);
+  MagFieldCmd->SetGuidance("Magnetic field will be in Z direction.");
+  MagFieldCmd->SetParameterName("Bz",false);
   MagFieldCmd->SetUnitCategory("Magnetic flux density");
   MagFieldCmd->AvailableForStates(G4State_PreInit,G4State_Idle);  
 }
