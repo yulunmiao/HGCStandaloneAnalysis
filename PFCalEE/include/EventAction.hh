@@ -45,7 +45,7 @@ private:
   TFile *outF_;
   //TNtuple *ntuple_;
   TTree *tree_;
-  Float_t event_[16];
+  Float_t event_[17];
   HGCSSSimHitVec hitvec_;
   //  Float_t event_[15], dendydz_[81], cellSize_;
   EventActionMessenger*  eventMessenger;

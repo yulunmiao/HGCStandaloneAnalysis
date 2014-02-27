@@ -24,6 +24,8 @@ public:
     nGammas_(0),
     nElectrons_(0),
     nMuons_(0),
+    nNeutrons_(0),
+    nProtons_(0),
     nHadrons_(0)
   {
     
@@ -64,11 +66,18 @@ public:
     return nMuons_;
   };
 
+  inline unsigned nNeutrons() const {
+    return nNeutrons_;
+  };
+
+  inline unsigned nProtons() const {
+    return nProtons_;
+  };
   inline unsigned nHadrons() const {
     return nHadrons_;
   };
   inline unsigned numberOfParticles() const {
-    return nGammas_+nElectrons_+nMuons_+nHadrons_;
+    return nGammas_+nElectrons_+nMuons_+nNeutrons_+nProtons_+nHadrons_;
   };
 
   inline double gFrac() const {
@@ -81,6 +90,14 @@ public:
 
   inline  double muFrac() const {
     return nMuons_/numberOfParticles();
+  };
+
+  inline double neutronFrac() const {
+    return nNeutrons_/numberOfParticles();
+  };
+
+  inline double protonFrac() const {
+    return nProtons_/numberOfParticles();
   };
 
   inline double hadFrac() const {
@@ -143,6 +160,8 @@ private:
   unsigned nGammas_;
   unsigned nElectrons_;
   unsigned nMuons_;
+  unsigned nNeutrons_;
+  unsigned nProtons_;
   unsigned nHadrons_;
 
   ClassDef(HGCSSSimHit,1);

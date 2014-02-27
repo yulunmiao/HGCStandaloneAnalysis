@@ -8,11 +8,11 @@
 /run/verbose 2
 #
 # Use this open statement to create an OpenGL view:
-#/vis/open OGL 600x600-0+0
+/vis/open OGL 600x600-0+0
 
 # Use this open statement to create a .prim file suitable for
 # viewing in DAWN:
-/vis/open DAWNFILE
+#/vis/open DAWNFILE
 #
 # Use this open statement to create a .heprep file suitable for
 # viewing in HepRApp:
@@ -31,17 +31,17 @@
 /vis/drawVolume
 #
 # Specify view angle:
-/vis/viewer/set/viewpointThetaPhi 0. 0.
+/vis/viewer/set/viewpointThetaPhi 60. 30.
 #/vis/viewer/set/viewpointThetaPhi 0. 0.
 #
 # Specify zoom value:
-/vis/viewer/zoom 30.
+/vis/viewer/zoom 1.
 #
 # Specify style (surface or wireframe):
 /vis/viewer/set/style wireframe
 #
 # Draw coordinate axes:
-#/vis/scene/add/axes 0 0 0 1 m
+/vis/scene/add/axes 0 0 0 2 m
 #
 # Draw smooth trajectories at end of event, showing trajectory points
 # as markers 2 pixels wide:
@@ -61,9 +61,9 @@
 /vis/scene/add/hits
 #
 # To draw only gammas:
-/vis/filtering/trajectories/create/particleFilter
-/vis/filtering/trajectories/particleFilter-0/add e-
-/vis/filtering/trajectories/particleFilter-0/add e+
+#/vis/filtering/trajectories/create/particleFilter
+#/vis/filtering/trajectories/particleFilter-0/add e-
+#/vis/filtering/trajectories/particleFilter-0/add e+
 #/vis/filtering/trajectories/particleFilter-0/add pi+
 #/vis/filtering/trajectories/particleFilter-0/add pi-
 #
@@ -80,8 +80,8 @@
 /vis/modeling/trajectories/drawByParticleID-0/set gamma red
 /vis/modeling/trajectories/drawByParticleID-0/set pi+ green
 /vis/modeling/trajectories/drawByParticleID-0/set pi- green
-/vis/modeling/trajectories/drawByParticleID-0/set mu+ black
-/vis/modeling/trajectories/drawByParticleID-0/set mu- black
+/vis/modeling/trajectories/drawByParticleID-0/set mu+ cyan
+/vis/modeling/trajectories/drawByParticleID-0/set mu- cyan
 #cyan, magenta, gray,white,yellow
 
 # To superimpose all of the events from a given run:

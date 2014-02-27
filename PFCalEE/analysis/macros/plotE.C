@@ -33,13 +33,15 @@ int plotE(){//main
     //"scenario_0/PedroPU/eta30/",
     //"scenario_0/PedroPU/eta35/"
     //"scenario_0/SimpleSignal/eta25/"
-    "Pedro/",//"noWeights/",
-    //"e-/"
+    //"Pedro/",//"noWeights/",
+    "pi+/"
   };
   
   const unsigned nV = 1;
-  TString version[nV] = {"3"};//,"0"};
+  TString version[nV] = {"23"};//,"0"};
   
+  TString pDetector = "ECALHCAL";
+
   const double Emip = 0.0548;//in MeV
   
   const unsigned MAX = 8;
@@ -54,9 +56,11 @@ int plotE(){//main
   std::ostringstream saveName;
   bool isPU = false;
   
-  const unsigned nLayers = 30;
+  const unsigned nLayers = 60;
   
-  unsigned genEn[]={5,10,20,25,50,75,100,125,150,175,200,300,500};
+  unsigned genEn[]={40,50,60,80,100,200,300,400,500,1000,2000};
+
+  //unsigned genEn[]={5,10,20,25,50,75,100,125,150,175,200,300,500};
   //unsigned genEn[]={5,20,50,100,150,200};
   //unsigned genEn[]={10};
   const unsigned nGenEn=sizeof(genEn)/sizeof(unsigned);
@@ -100,7 +104,7 @@ int plotE(){//main
 	  std::cout << " -- Error, input file " << plotDir << "/CalibHistos.root cannot be opened. Exiting..." << std::endl;
 	  return 1;
 	}
-	
+
 	TH1F *p_Efrac[nGenEn][nLayers];
 	TH1F *p_Etotal[nGenEn];
 	TH1F *p_Ereco[nGenEn];
@@ -164,7 +168,7 @@ int plotE(){//main
 	  }
 
 	  lName.str("");
-	  lName << "p_Etotal_" << genEn[iE] << "_ECAL";
+	  lName << "p_Etotal_" << genEn[iE] << "_" << pDetector;
 	  p_Etotal[iE] = (TH1F*)gDirectory->Get(lName.str().c_str());
 	  if (!p_Etotal[iE]){
 	    std::cout << " -- ERROR, pointer for histogram Etotal is null. Exiting..." << std::endl;
@@ -292,22 +296,24 @@ int plotE(){//main
 			    p_Etotal[iE]->GetMean()+1.5*p_Etotal[iE]->GetRMS());
 	  TF1 *fitResult = p_Etotal[iE]->GetFunction("gaus");
 	  TLatex lat;
+	  double latx = std::max(0.,p_Etotal[iE]->GetMean()-5*p_Etotal[iE]->GetRMS());
+	  double laty = p_Etotal[iE]->GetMaximum();
 	  char buf[500];
 	  sprintf(buf,"<E> = %3.3f MIP",p_Etotal[iE]->GetMean()/Emip);
-	  lat.DrawLatex(p_Etotal[iE]->GetMean()-5*p_Etotal[iE]->GetRMS(),p_Etotal[iE]->GetMaximum()*0.9,buf);
+	  lat.DrawLatex(latx,laty*0.9,buf);
 	  sprintf(buf,"RMS = %3.3f #pm %3.1f MIP",p_Etotal[iE]->GetRMS()/Emip,p_Etotal[iE]->GetRMSError()/Emip);
-	  lat.DrawLatex(p_Etotal[iE]->GetMean()-5*p_Etotal[iE]->GetRMS(),p_Etotal[iE]->GetMaximum()*0.8,buf);
+	  lat.DrawLatex(latx,laty*0.8,buf);
 	  sprintf(buf,"RMS/mean = %3.3f",p_Etotal[iE]->GetRMS()/p_Etotal[iE]->GetMean());
-	  lat.DrawLatex(p_Etotal[iE]->GetMean()-5*p_Etotal[iE]->GetRMS(),p_Etotal[iE]->GetMaximum()*0.7,buf);
+	  lat.DrawLatex(latx,laty*0.7,buf);
 	  sprintf(buf,"<Efit> = %3.3f MIP +/- %3.3f",fitResult->GetParameter(1)/Emip,fitResult->GetParError(1)/Emip);
-	  lat.DrawLatex(p_Etotal[iE]->GetMean()-5*p_Etotal[iE]->GetRMS(),p_Etotal[iE]->GetMaximum()*0.6,buf);
+	  lat.DrawLatex(latx,laty*0.6,buf);
 	  sprintf(buf,"RMSfit = %3.3f MIP +/- %3.3f",fitResult->GetParameter(2)/Emip,fitResult->GetParError(2)/Emip);
-	  lat.DrawLatex(p_Etotal[iE]->GetMean()-5*p_Etotal[iE]->GetRMS(),p_Etotal[iE]->GetMaximum()*0.5,buf);
+	  lat.DrawLatex(latx,laty*0.5,buf);
 	  sprintf(buf,"RMS/meanfit = %3.3f",fitResult->GetParameter(2)/fitResult->GetParameter(1));
-	  lat.DrawLatex(p_Etotal[iE]->GetMean()-5*p_Etotal[iE]->GetRMS(),p_Etotal[iE]->GetMaximum()*0.4,buf);
+	  lat.DrawLatex(latx,laty*0.4,buf);
 
 	  sprintf(buf,"chi2/NDF = %3.3f/%d = %3.3f",fitResult->GetChisquare(),fitResult->GetNDF(),fitResult->GetChisquare()/fitResult->GetNDF());
-          lat.DrawLatex(p_Etotal[iE]->GetMean()-5*p_Etotal[iE]->GetRMS(),p_Etotal[iE]->GetMaximum()*0.3,buf);
+          lat.DrawLatex(latx,laty*0.3,buf);
 
 
 	  Int_t np=calib->GetN();
@@ -323,7 +329,7 @@ int plotE(){//main
 	}//loop on energies
 
 	saveName.str("");
-	saveName << plotDir << "/SimG4Etotal";
+	saveName << plotDir << "/SimG4Etotal_" << pDetector;
 	mycE->Update();
 	mycE->Print((saveName.str()+".png").c_str());
 	mycE->Print((saveName.str()+".pdf").c_str());
@@ -366,7 +372,7 @@ int plotE(){//main
 	  }//loop on energies
 
 	  saveName.str("");
-	  saveName << plotDir << "/DigiEreco_smear" << smearOption;
+	  saveName << plotDir << "/DigiEreco_smear" << smearOption << "_" << pDetector;
 	  mycE->Update();
 	  mycE->Print((saveName.str()+".png").c_str());
 	  mycE->Print((saveName.str()+".pdf").c_str());
@@ -386,6 +392,7 @@ int plotE(){//main
 	      type[i] += "_smear";
 	      type[i] += smearOption;
 	    }
+	    type[i] += "_"+pDetector;
 
 	    std::cout << "- Processing type : " << type[i] << std::endl;
 
@@ -418,6 +425,8 @@ int plotE(){//main
 	      lat.DrawLatex(70+i/2*150,gr->GetYaxis()->GetXmax()*(0.8-i/2*0.25),buf);
 	      sprintf(buf,"b = %3.3f #pm %3.3f",fitFunc->GetParameter(1),fitFunc->GetParError(1));
 	      lat.DrawLatex(70+i/2*150,gr->GetYaxis()->GetXmax()*(0.7-i/2*0.25),buf);
+	      sprintf(buf,"chi2/NDF = %3.3f/%d = %3.3f",fitFunc->GetChisquare(),fitFunc->GetNDF(),fitFunc->GetChisquare()/fitFunc->GetNDF());
+	      lat.DrawLatex(70+i/2*150,gr->GetYaxis()->GetXmax()*(0.6-i/2*0.25),buf);
 	    }
 	    else
 	      {
@@ -457,6 +466,8 @@ int plotE(){//main
 		lat.DrawLatex(i/2*0.125-0.075,gr->GetYaxis()->GetXmax()*(0.9-i/2*0.1-i/4*0.3),buf);
 		sprintf(buf,"c=%3.3f #pm %3.3f",sigmaConst[iSm][iS][i],sigmaConstErr[iSm][iS][i]);
 		lat.DrawLatex(i/2*0.125-0.075,gr->GetYaxis()->GetXmax()*(0.8-i/2*0.1-i/4*0.3),buf);
+		sprintf(buf,"chi2/NDF = %3.3f/%d = %3.3f",fitFunc2->GetChisquare(),fitFunc2->GetNDF(),fitFunc2->GetChisquare()/fitFunc2->GetNDF());
+		lat.DrawLatex(i/2*0.125-0.075,gr->GetYaxis()->GetXmax()*(0.7-i/2*0.1-i/4*0.3),buf);
 		//if (i>3){
 		//sprintf(buf,"n=%3.3f #pm %3.3f",sigmaNoise[iSm][iS][i],sigmaNoiseErr[iSm][iS][i]);
 		//lat.DrawLatex(i/2*0.125-0.075,gr->GetYaxis()->GetXmax()*(0.7-i/2*0.1-i/4*0.3),buf);
@@ -495,85 +506,87 @@ int plotE(){//main
     }
   }
 
-  mycF->Clear();
-  mycF->cd();
-  double x[10] = {0,1,2,3,4,5,7,10,15,20};
-  double y[nSmear];
-  double xerr[nSmear];
-  double yerr[nSmear];
+  if (nSmear > 1){
 
-  double s[nSmear];
-  double serr[nSmear];
-
-  for (unsigned iSm(0); iSm<nSmear; ++iSm){//loop on smear
-    xerr[iSm] = 0;
-    y[iSm] = sigmaConst[iSm][0][7];
-    yerr[iSm] = sigmaConstErr[iSm][0][7];
-    //offset to have on same plot
-    s[iSm] = sigmaStoch[iSm][0][7]-0.2;
-    serr[iSm] = sigmaStochErr[iSm][0][7];
+    mycF->Clear();
+    mycF->cd();
+    double x[10] = {0,1,2,3,4,5,7,10,15,20};
+    double y[nSmear];
+    double xerr[nSmear];
+    double yerr[nSmear];
+    
+    double s[nSmear];
+    double serr[nSmear];
+    
+    for (unsigned iSm(0); iSm<nSmear; ++iSm){//loop on smear
+      xerr[iSm] = 0;
+      y[iSm] = sigmaConst[iSm][0][7];
+      yerr[iSm] = sigmaConstErr[iSm][0][7];
+      //offset to have on same plot
+      s[iSm] = sigmaStoch[iSm][0][7]-0.2;
+      serr[iSm] = sigmaStochErr[iSm][0][7];
+    }
+    TGraphErrors *gr = new TGraphErrors(nSmear,x,y,xerr,yerr);
+    TGraphErrors *grs = new TGraphErrors(nSmear,x,s,xerr,serr);
+    
+    gr->GetXaxis()->SetTitle("Smearing factor (%)");
+    gr->GetYaxis()->SetTitle("Constant term");
+    gr->SetTitle("Single photons in HGCAL-EE");
+    
+    gr->SetMarkerStyle(20);
+    
+    gr->SetMarkerColor(1);
+    gr->SetLineColor(1);
+    
+    gr->SetMinimum(0);
+    gr->SetMaximum(0.04);
+    gr->Draw("AP");
+    
+    TF1 *BE = new TF1("BE","sqrt([0]*[0] + pow(x/100.*1/sqrt([1]),2))",0,20);
+    BE->SetParameters(y[0],100);
+    BE->SetParLimits(0,1,1);
+    BE->SetLineColor(1);
+    gr->Fit("BE");
+    
+    //grBE->Draw("P");
+    
+    grs->SetMarkerStyle(22);
+    grs->SetMarkerColor(2);
+    grs->SetLineColor(2);
+    grs->Draw("P");
+    grs->Fit("pol0");
+    TF1 *pol0 = grs->GetFunction("pol0");
+    
+    TGaxis *ys = new TGaxis(22,0,22,0.04,0.2,0.24,510,"+L");
+    
+    ys->SetTextColor(2);
+    ys->SetLabelColor(2);
+    ys->SetLineColor(2);
+    ys->SetTitle("Sampling term");
+    ys->Draw();
+    
+    TLatex lat;
+    lat.SetTextColor(2);
+    char buf[500];
+    sprintf(buf,"<s> = %1.3f #pm %1.3f",pol0->GetParameter(0)+0.2,pol0->GetParError(0));
+    lat.DrawLatex(3,0.037,buf);
+    
+    lat.SetTextColor(1);
+    sprintf(buf,"c #propto c_{0} #oplus #frac{x}{#sqrt{n}}, n=%3.1f #pm %3.1f",BE->GetParameter(1),BE->GetParError(1));
+    lat.DrawLatex(8,0.005,buf);
+    
+    //TLegend *leg = new TLegend(0.5,0.12,0.89,0.3);
+    //leg->SetFillColor(10);
+    //leg->AddEntry(gr,"Standalone simulation","P");
+    //leg->Draw("same");
+    
+    
+    saveName.str("");
+    saveName << "../PLOTS/version_" << version[0] << "/" << scenario[0] << "/Intercalibration";
+    mycF->Update();
+    mycF->Print((saveName.str()+".png").c_str());
+    mycF->Print((saveName.str()+".pdf").c_str());
   }
-  TGraphErrors *gr = new TGraphErrors(nSmear,x,y,xerr,yerr);
-  TGraphErrors *grs = new TGraphErrors(nSmear,x,s,xerr,serr);
-
-  gr->GetXaxis()->SetTitle("Smearing factor (%)");
-  gr->GetYaxis()->SetTitle("Constant term");
-  gr->SetTitle("Single photons in HGCAL-EE");
-
-  gr->SetMarkerStyle(20);
-
-  gr->SetMarkerColor(1);
-  gr->SetLineColor(1);
-
-  gr->SetMinimum(0);
-  gr->SetMaximum(0.04);
-  gr->Draw("AP");
-
-  TF1 *BE = new TF1("BE","sqrt([0]*[0] + pow(x/100.*1/sqrt([1]),2))",0,20);
-  BE->SetParameters(y[0],100);
-  BE->SetParLimits(0,1,1);
-  BE->SetLineColor(1);
-  gr->Fit("BE");
-
-  //grBE->Draw("P");
-
-  grs->SetMarkerStyle(22);
-  grs->SetMarkerColor(2);
-  grs->SetLineColor(2);
-  grs->Draw("P");
-  grs->Fit("pol0");
-  TF1 *pol0 = grs->GetFunction("pol0");
-
-  TGaxis *ys = new TGaxis(22,0,22,0.04,0.2,0.24,510,"+L");
-  
-  ys->SetTextColor(2);
-  ys->SetLabelColor(2);
-  ys->SetLineColor(2);
-  ys->SetTitle("Sampling term");
-  ys->Draw();
-
-  TLatex lat;
-  lat.SetTextColor(2);
-  char buf[500];
-  sprintf(buf,"<s> = %1.3f #pm %1.3f",pol0->GetParameter(0)+0.2,pol0->GetParError(0));
-  lat.DrawLatex(3,0.037,buf);
-
-  lat.SetTextColor(1);
-  sprintf(buf,"c #propto c_{0} #oplus #frac{x}{#sqrt{n}}, n=%3.1f #pm %3.1f",BE->GetParameter(1),BE->GetParError(1));
-  lat.DrawLatex(8,0.005,buf);
-
-  //TLegend *leg = new TLegend(0.5,0.12,0.89,0.3);
-  //leg->SetFillColor(10);
-  //leg->AddEntry(gr,"Standalone simulation","P");
-  //leg->Draw("same");
-
-
-  saveName.str("");
-  saveName << "../PLOTS/version_" << version[0] << "/" << scenario[0] << "/Intercalibration";
-  mycF->Update();
-  mycF->Print((saveName.str()+".png").c_str());
-  mycF->Print((saveName.str()+".pdf").c_str());
-  
 
   return 0;
   

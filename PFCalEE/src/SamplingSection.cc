@@ -23,7 +23,10 @@ void SamplingSection::add(G4double den, G4double dl,
       if(abs(pdgId)==22)      Si_gFlux += den;
       else if(abs(pdgId)==11) Si_eFlux += den;
       else if(abs(pdgId)==13) Si_muFlux += den;
-      else                    Si_hadFlux += den;
+      else if (abs(pdgId)==2112) Si_neutronFlux += den;
+      else {
+	Si_hadFlux += den;
+      }
 
       //add hit
       G4SiHit lHit;
@@ -80,6 +83,12 @@ G4double SamplingSection::getMuonFraction()
 }
 
 //
+G4double SamplingSection::getNeutronFraction()
+{
+  return Si_den > 0 ? Si_neutronFlux/Si_den : 0;
+}
+
+//
 G4double SamplingSection::getHadronicFraction()
 {
   return Si_den > 0 ? Si_hadFlux/Si_den : 0;
@@ -97,6 +106,15 @@ G4double SamplingSection::getAbsorberX0()
 {
   // G4cout << Pb_thick << " " << Pb_X0 << G4endl;
   return Pb_thick*Pb_X0+Cu_thick*Cu_X0;
+}
+
+//
+G4double SamplingSection::getAbsorberLambda()
+{
+  G4double lTrans(0);
+  if(Pb_L0>0) lTrans += Pb_thick/Pb_L0;
+  if(Cu_L0>0) lTrans += Cu_thick/Cu_L0;
+  return lTrans;
 }
 
 //

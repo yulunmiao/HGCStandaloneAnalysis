@@ -218,18 +218,34 @@ void PhysicsList::SetCuts()
   // because some processes for e+/e- need cut values for gamma
   //
 
-   SetCutValue(1*mm, "gamma");
-   SetCutValue(1*mm, "e-");
-   SetCutValue(1*mm, "e+");
-   SetCutValue(1*mm, "proton");
+  SetCutValue(0.7*mm, "gamma");
+  SetCutValue(0.7*mm, "e-");
+  SetCutValue(0.7*mm, "e+");
+  SetCutValue(0.7*mm, "proton");
+  //SetCutValue(defaultCutValue, "gamma");
+  //SetCutValue(defaultCutValue, "e-");
+  //SetCutValue(defaultCutValue, "e+");
+  //SetCutValue(defaultCutValue, "proton");
 
-   //set smaller cut only for Si
+   //set smaller cut for Si
    const std::vector<G4LogicalVolume*> & logSi = ((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->getSiLogVol();
 
   for(size_t i=0; i<logSi.size(); i++)
     {
       //sprintf(nameBuf,"Si%dReg",int(i+1)); 
       G4Region* reg = logSi[i]->GetRegion();
+      G4ProductionCuts* cuts = new G4ProductionCuts;
+      cuts->SetProductionCut(defaultCutValue);
+      reg->SetProductionCuts(cuts);    
+    }
+
+   //set smaller cut for Cu just before Si
+  const std::vector<G4LogicalVolume*> & logCu = ((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->getAbsLogVol();
+  
+  for(size_t i=0; i<logCu.size(); i++)
+    {
+      //sprintf(nameBuf,"Si%dReg",int(i+1)); 
+      G4Region* reg = logCu[i]->GetRegion();
       G4ProductionCuts* cuts = new G4ProductionCuts;
       cuts->SetProductionCut(defaultCutValue);
       reg->SetProductionCuts(cuts);    

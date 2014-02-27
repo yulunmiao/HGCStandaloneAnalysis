@@ -208,7 +208,11 @@ int main(int argc, char** argv){//main
   HGCSSRecoHitVec lRecoHits;
   unsigned maxSimHits = 0;
   unsigned lEvent = 0;
+  float lVolX0 = 0;
+  float lVolLambda = 0;
   outputTree->Branch("event",&lEvent);
+  outputTree->Branch("volX0",&lVolX0);
+  outputTree->Branch("volLambda",&lVolLambda);
   if (pSaveSims) outputTree->Branch("HGCSSSimHitVec","std::vector<HGCSSSimHit>",&lSimHits);
   if (pSaveDigis) outputTree->Branch("HGCSSDigiHitVec","std::vector<HGCSSRecoHit>",&lDigiHits);
   outputTree->Branch("HGCSSRecoHitVec","std::vector<HGCSSRecoHit>",&lRecoHits);
@@ -219,7 +223,7 @@ int main(int argc, char** argv){//main
   //input
   /////////////////////////////////////////////////////////////
 
-  std::string inputStr = inFilePath + "/PFcal.root";
+  std::string inputStr = inFilePath ;
   TFile *inputFile = TFile::Open(inputStr.c_str());
   
   if (!inputFile) {
@@ -238,12 +242,16 @@ int main(int argc, char** argv){//main
   //input tree
   /////////////////////////////////////////////////////////////
 
-  float event;
-  float volNb;
+  float event=0;
+  float volNb=0;
+  float volX0=0;
+  //float volLambda = 0;
   std::vector<HGCSSSimHit> * hitvec = 0;
 
   inputTree->SetBranchAddress("event",&event);
   inputTree->SetBranchAddress("volNb",&volNb);
+  inputTree->SetBranchAddress("volX0trans",&volX0);
+  //inputTree->SetBranchAddress("volLambda",&volLambda);
   inputTree->SetBranchAddress("HGCSSSimHitVec",&hitvec);
     
   /////////////////////////////////////////////////////////////
@@ -265,6 +273,8 @@ int main(int argc, char** argv){//main
 
     inputTree->GetEntry(ientry);
     lEvent = event;
+    lVolX0 = volX0;
+    //lVolLambda = volLambda;
     unsigned layer = volNb;
     
     if (debug>1) {

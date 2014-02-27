@@ -37,7 +37,8 @@ public:
     v_HGCALEE_W=9,
     v_HGCALEE_gap4=10,
     v_HGCALEE_prePCB=11,
-    v_HGCAL=20
+    v_HGCAL=20,
+    v_HGCALHE=21
   };
 
   /**
@@ -51,6 +52,7 @@ public:
   std::vector<SamplingSection> m_caloStruct;
   std::vector<SamplingSection> *getStructure() { return &m_caloStruct; }
   const std::vector<G4LogicalVolume*>  & getSiLogVol() {return m_logicSi; }
+  const std::vector<G4LogicalVolume*>  & getAbsLogVol() {return m_logicAbs; }
 
 
   /**
@@ -112,6 +114,7 @@ private:
   G4VPhysicalVolume* m_physWorld;     //pointer to the physical World  
   
   std::vector<G4LogicalVolume*>   m_logicSi;    //pointer to the logical Si volumes
+  std::vector<G4LogicalVolume*>   m_logicAbs;    //pointer to the logical absorber volumes situated just before the si
 
   DetectorMessenger* m_detectorMessenger;  //pointer to the Messenger
 };

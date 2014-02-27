@@ -17,41 +17,61 @@ parser.add_option('-r', '--randomseed' ,    dest='seed'               , help='ra
 parser.add_option('-d', '--debug'      ,    dest='debug'              , help='debug output' , default=0,    type=int)
 parser.add_option('-s', '--scenario'   ,    dest='scenario'           , help='Integer describing scenario.' , default=0,    type=int)
 parser.add_option('-o', '--out'        ,    dest='out'                , help='output directory'             , default=os.getcwd() )
+parser.add_option('-e', '--eos'        ,    dest='eos'                , help='eos path to save root file to EOS',         default='')
 parser.add_option('-S', '--no-submit'  ,    action="store_true",  dest='nosubmit'           , help='Do not submit batch job.')
 (opt, args) = parser.parse_args()
 
 nevents=opt.Nevts
 
-myg4dir="/afs/cern.ch/work/a/amagnan/public/HGCalEEGeant4/"
+#myg4dir="/afs/cern.ch/work/a/amagnan/public/HGCalEEGeant4/"
+myg4dir="root://eoscms//eos/cms/store/cmst3/group/hgcal/Geant4"
 
-for version in [20]:
+
+for version in [3]:
     #for particle in ["Gamma","GammaPU","PU"]:
-    for particle in ["PedroPU"]: #"SimplePU"]:
-        for eta in [30,35]:
+    for particle in ["e-"]: #"SimplePU"]:
+        #for eta in [30,35]:
         #for eta in [20,25,30,35]:
-            #for en in [5,10,25,50,75,100,150,200,300,500]:
-            for en in [0,1,2,3,4,5,6,7,8,9]:
+        eosDir='%s/%s'%(opt.eos,particle)
+        for en in [5,10,20,25,50,75,100,125,150,175,200,300,500]:
+            #for en in [0,1,2,3,4,5,6,7,8,9]:
             #for en in [5,10,25,50,75,100]:
             #for en in [150,200,300,500]:
-        
-                inDir='%s/version_%d/%s/eta%d/e_%d/'%(myg4dir,version,particle,eta,en)
-                outDir='%s/version_%d/scenario_%d/%s/eta%d/e_%d/'%(opt.out,version,opt.scenario,particle,eta,en)
-                outlog='%s/digitizer.log'%(outDir)
-                os.system('mkdir -p %s'%outDir)
-
+            
+            inDir='%s/HGcal_version_%d_e_%d.root'%(myg4dir,version,en)
+            outDir='%s/version_%d/scenario_%d/%s/e_%d/'%(opt.out,version,opt.scenario,particle,en)
+            outlog='%s/digitizer.log'%(outDir)
+            os.system('mkdir -p %s'%outDir)
+            
                 #wrapper
-                scriptFile = open('%s/runJob.sh'%(outDir), 'w')
-                scriptFile.write('#!/bin/bash\n')
-                scriptFile.write('cd  %s/../\n'%(os.getcwd()))
-                scriptFile.write('source g4env.sh\n')
-                scriptFile.write('cd %s\n'%(outDir))
-                scriptFile.write('%s/bin/digitizer %d %s %s %s %s %s %d %d %d | tee %s\n'%(os.getcwd(),opt.Nevts,inDir,outDir,opt.granularity,opt.noise,opt.threshold,opt.MipToADC,opt.seed,opt.debug,outlog))
-                scriptFile.write('echo "All done"\n')
-                scriptFile.close()
-                
+            scriptFile = open('%s/runJob.sh'%(outDir), 'w')
+            scriptFile.write('#!/bin/bash\n')
+            scriptFile.write('source  %s/../g4env.sh\n'%(os.getcwd()))
+            scriptFile.write('localdir=`pwd`\n')
+            scriptFile.write('echo "--Local directory is " $localdir >> %s\n'%outlog)
+            scriptFile.write('%s/bin/digitizer %d %s $localdir %s %s %s %d %d %d | tee %s\n'%(os.getcwd(),opt.Nevts,inDir,opt.granularity,opt.noise,opt.threshold,opt.MipToADC,opt.seed,opt.debug,outlog))
+            scriptFile.write('ls * >> %s\n'%outlog)
+            if len(opt.eos)>0:
+                outTag='version%d_scenario%d_e%d'%(version,opt.scenario,en)
+                scriptFile.write('grep "alias eos=" /afs/cern.ch/project/eos/installation/cms/etc/setup.sh | sed "s/alias /export my/" > eosenv.sh\n')
+                scriptFile.write('source eosenv.sh\n')
+                scriptFile.write('$myeos mkdir -p %s\n'%eosDir)
+                scriptFile.write('myfilepath=`ls DigiPFcal*.root`\n')
+                scriptFile.write('echo " --- Root file name to copy to EOS is: "$myfilepath>> %s\n'%outlog)
+                scriptFile.write('cmsStage -f $myfilepath %s/HGcal_%s.root\n'%(eosDir,outTag))
+                scriptFile.write('if (( "$?" != "0" )); then\n')
+                scriptFile.write('echo " --- Problem with copy of file $myfilepath to EOS. Keeping locally." >> %s\n'%outlog)
+                scriptFile.write('else\n')
+                scriptFile.write('echo " --- File $myfilepath successfully copied to EOS: %s/HGcal_%s.root" >> %s\n'%(eosDir,outTag,outlog))
+                scriptFile.write('rm $myfilepath\n')
+                scriptFile.write('fi\n')
+            scriptFile.write('cp * %s/\n'%(outDir))
+            scriptFile.write('echo "All done"\n')
+            scriptFile.close()
+            
         #submit
-                os.system('chmod u+rwx %s/runJob.sh'%outDir)
+            os.system('chmod u+rwx %s/runJob.sh'%outDir)
         #
-                if opt.nosubmit : os.system('echo bsub -q %s %s/runJob.sh'%(opt.queue,outDir)) 
-                else: os.system("bsub -q %s \'%s/runJob.sh\'"%(opt.queue,outDir))
+            if opt.nosubmit : os.system('echo bsub -q %s %s/runJob.sh'%(opt.queue,outDir)) 
+            else: os.system("bsub -q %s \'%s/runJob.sh\'"%(opt.queue,outDir))
                 

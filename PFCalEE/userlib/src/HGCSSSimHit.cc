@@ -25,10 +25,14 @@ HGCSSSimHit::HGCSSSimHit(const G4SiHit & aSiHit){
   nGammas_= 0;
   nElectrons_ = 0;
   nMuons_ = 0;
+  nNeutrons_ = 0;
+  nProtons_ = 0;
   nHadrons_ = 0;
   if(abs(aSiHit.pdgId)==22) nGammas_++;
   else if(abs(aSiHit.pdgId)==11) nElectrons_++;
   else if(abs(aSiHit.pdgId)==13) nMuons_++;
+  else if(abs(aSiHit.pdgId)==2112) nNeutrons_++;
+  else if(abs(aSiHit.pdgId)==2212) nProtons_++;
   else nHadrons_++;
 }
 
@@ -52,6 +56,8 @@ void HGCSSSimHit::Add(const G4SiHit & aSiHit){
   if(abs(aSiHit.pdgId)==22) nGammas_++;
   else if(abs(aSiHit.pdgId)==11) nElectrons_++;
   else if(abs(aSiHit.pdgId)==13) nMuons_++;
+  else if(abs(aSiHit.pdgId)==2112) nNeutrons_++;
+  else if(abs(aSiHit.pdgId)==2212) nProtons_++;
   else nHadrons_++;
 
   energy_ += aSiHit.energy;
@@ -61,7 +67,13 @@ void HGCSSSimHit::Print(std::ostream & aOs) const{
   aOs << "====================================" << std::endl
       << " = Layer " << layer_ << " cellid " << cellid_ << std::endl
       << " = Energy " << energy_ << " time " << time_ << std::endl
-      << " = g " << nGammas_ << " e " << nElectrons_ << " mu " << nMuons_ << " had " << nHadrons_ << std::endl
+      << " = g " << nGammas_ 
+      << " e " << nElectrons_ 
+      << " mu " << nMuons_ 
+      << " neutron " << nNeutrons_ 
+      << " proton " << nProtons_ 
+      << " had " << nHadrons_ 
+      << std::endl
       << "====================================" << std::endl;
 
 }

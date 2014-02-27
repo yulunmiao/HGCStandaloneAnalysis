@@ -31,7 +31,7 @@
 int main(int argc, char** argv){//main
   
   TString genEn = "50";
-  const double Emip = 0.0559;//in MeV
+  const double Emip = 0.0548;//in MeV
 
 
   TFile *inputFile = TFile::Open("DigiFiles/version_20/scenario_0/e-/e_"+genEn+"/DigiPFcal.root");

@@ -46,7 +46,7 @@ int main(int argc, char** argv){//main
   
   TH2F *p_nHits = new TH2F("nHits","; layer; Number of hits; Events",30,0,30,20,0,20);
   TH1F *p_hitEnergy = new TH1F("hitEnergy",";E (MeV);SimHits",250,0,1);
-  TH1F *p_hitEnergySel = new TH1F("hitEnergySel",";E (MeV);SimHits",100,0.01,0.5);
+  TH1F *p_hitEnergySel = new TH1F("hitEnergySel",";E (MeV);SimHits",250,0,1);
 
   std::vector<HGCSSSimHit> * simhitvec = 0;
   float volNb = 0;
@@ -59,7 +59,7 @@ int main(int argc, char** argv){//main
 
     lTree->GetEntry(ievt);
     
-    if (ievt/30%100==0) std::cout << std::endl << "entry " << ievt << " volNb = " << volNb << " : ";
+    if (ievt%30000==0) std::cout << "entry " << ievt << " volNb = " << volNb << std::endl;
 
     unsigned nHits = 0;
     double energySel = 0;
@@ -69,11 +69,19 @@ int main(int argc, char** argv){//main
       if (energy>0) {
 	p_hitEnergy->Fill(energy);
 	nHits++;
-	if (nHits==1) energySel = energy;
       }
     }//loop on hits
+
     p_nHits->Fill(volNb,nHits);
-    if (nHits==1) p_hitEnergySel->Fill(energySel);
+
+    if (nHits>0 && nHits<2) {
+      for (unsigned iH(0); iH<(*simhitvec).size(); ++iH){//loop on hits
+	HGCSSSimHit lHit = (*simhitvec)[iH];
+	double energy = lHit.energy();
+	if (energy>0) p_hitEnergySel->Fill(energy);
+      }
+    }
+
 
   }//loop on entries
 
@@ -106,7 +114,7 @@ int main(int argc, char** argv){//main
   gStyle->SetOptStat(1111110);
   gStyle->SetOptFit(1111);
   p_hitEnergySel->Draw();
-  p_hitEnergySel->Fit("landau","LR+","",0.02,0.5);
+  p_hitEnergySel->Fit("landau","LR+","",0.02,1);
   
   myc->Update();
   myc->Print("PLOTS/version_3/mu-/mipDepositSel.png");

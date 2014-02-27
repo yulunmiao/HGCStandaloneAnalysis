@@ -97,7 +97,10 @@ double getEta(double ypos, std::string etaStr, const double zlaymm){
 
 }
 
-double getWeight(unsigned layer,std::string aVersion){
+double getWeight(unsigned layer,std::string aVersion, double volX0ref, double volX0){
+  if (aVersion==21){
+    return volX0/volX0ref;
+  }
   if (layer<10) return 1;
   //if (aVersion.find("20")!= aVersion.npos || 
   //aVersion.find("21") != aVersion.npos ||
@@ -107,10 +110,10 @@ double getWeight(unsigned layer,std::string aVersion){
     //return 0.8/0.5;
   else if (layer<30) return 2.029;
     //return 1.2/0.5;
-  else if (layer < 42)
-    return 1;
+  //else if (layer < 42)
+  //return 1;
   else if (layer < 60)
-    return 0.23/0.33;
+    return volX0/volX0ref;
 
   return 1;
   //}
@@ -132,7 +135,7 @@ int main(int argc, char** argv){//main
 	      << " <optional: list of energies: 5,10,25>"
 	      << " <optional: debug (default=0)>"
 	      << " <optional: overlayPU (default=0)>"
-	      << " <optional: saveEventByEvent (default=0)>"
+	      << " <optional: saveEventByEventThresh (default=0)>"
 	      << " <optional: doChargedPionsOnly (default=0)>"
 	      << " <optional: doNeutralPionsOnly (default=0)>"
 	      << std::endl;
@@ -143,10 +146,11 @@ int main(int argc, char** argv){//main
   bool saveTxtOutput = false;
   bool doFiducialCuts = false;
 
-  const unsigned nLayers = 30;
+  const unsigned nLayers = 60;
   const unsigned nEcalLayers = 30;
   const double signalRegionInX=20;
   //const double Emip = 0.0548;//MeV
+  const double HcalToEcalConv = 1/0.16;
 
   const unsigned nOcc = 1;//4;
   const unsigned occThreshold[nOcc] = {1};//,5,10,20};
@@ -164,6 +168,7 @@ int main(int argc, char** argv){//main
   double etaMaxLLR = 3.9;
 
   std::cout << " -- N layers = " << nLayers << std::endl;
+
 
   unsigned tmpEn[]={5,10,25,40,50,60,80,100,200,300,400,500,1000,2000};
   //unsigned genEn[]={5,20,50,100,150,200};
@@ -195,7 +200,11 @@ int main(int argc, char** argv){//main
   bool doChargedPions = false;
   bool doNeutralPions = false;
   if (argc>6) overlayPU = atoi(argv[6]);
-  if (argc>7) saveEventByEvent = atoi(argv[7]);
+  unsigned saveEvtThresh = 0;
+  if (argc>7) {
+    saveEvtThresh = atoi(argv[7]);
+    if (saveEvtThresh>0) saveEventByEvent = true;
+  }
   if (argc>8) doChargedPions = atoi(argv[8]);
   if (argc>9) doNeutralPions = atoi(argv[9]);
 
@@ -210,7 +219,7 @@ int main(int argc, char** argv){//main
   if (doChargedPions) std::cout << " -- Using hits from charged pions only" << std::endl;
   if (doNeutralPions) std::cout << " -- Using hits from neutral pions only" << std::endl;
 
-  unsigned nMaxHits = 10000;
+  unsigned nMaxHits = saveEvtThresh;//10000;
   if (saveEventByEvent) std::cout << " -- saving event by event for events with nHits above " << nMaxHits <<std::endl;
 
   TString plotDir = "PLOTS/";
@@ -220,7 +229,7 @@ int main(int argc, char** argv){//main
     pEOS = true;
   }
    
-  //pEOS = false;
+  pEOS = false;
 
   if (pEOS) boost::split( pathVec, filePath, boost::is_any_of("/_"));
   else  boost::split( pathVec, filePath, boost::is_any_of("/"));
@@ -306,7 +315,7 @@ int main(int argc, char** argv){//main
   TH1F *p_Etot[nGenEn][nLayers];
   TH1F *p_Efrac[nGenEn][nLayers];
   TH1F *p_time[nGenEn][nLayers];
-  TH1F *p_Etotal[nGenEn][2];
+  TH1F *p_Etotal[nGenEn][3];
   TH2F *p_HCALvsECAL[nGenEn];
 
   TH1F *p_Ereco[nGenEn][nSmear];
@@ -388,17 +397,22 @@ int main(int argc, char** argv){//main
     unsigned event = 0;
     float volNb = 0;
     float volX0 = 0;
+    float volX0ref = 0;
+    //float volLambda = 0;
     std::vector<HGCSSSimHit> * simhitvec = 0;
     std::vector<HGCSSRecoHit> * rechitvec = 0;
 
     if (isG4Tree){
       //lTree->SetBranchAddress("event",&event);
       lTree->SetBranchAddress("volNb",&volNb);
-      lTree->SetBranchAddress("volX0",&volX0);
+      lTree->SetBranchAddress("volX0trans",&volX0);
+      //lTree->SetBranchAddress("volLambda",&volLambda);
       lTree->SetBranchAddress("HGCSSSimHitVec",&simhitvec);
     }
     else {
       lTree->SetBranchAddress("event",&event);
+      lTree->SetBranchAddress("volX0",&volX0);
+      //lTree->SetBranchAddress("volLambda",&volLambda);
       lTree->SetBranchAddress("HGCSSSimHitVec",&simhitvec);
       lTree->SetBranchAddress("HGCSSRecoHitVec",&rechitvec);
     }
@@ -464,7 +478,7 @@ int main(int argc, char** argv){//main
       eLLR[iL] = 0;
       zlay[iL] = 0;
     }
-    double Etotal[2] = {0,0};
+    double Etotal[3] = {0,0,0};
     unsigned nTotal = 0;
     unsigned nTotalSignal = 0;
     double Ereco[nSmear];
@@ -484,6 +498,7 @@ int main(int argc, char** argv){//main
     else p_recoxyz[iE] = 0;
     p_Etotal[iE][0] = 0;
     p_Etotal[iE][1] = 0;
+    p_Etotal[iE][2] = 0;
     p_nSimHits[iE] = 0;
     p_EvsLayer[iE] = 0;
     p_nRecHits[iE] = 0;
@@ -525,10 +540,12 @@ int main(int argc, char** argv){//main
       
       lTree->GetEntry(ievt);
 
+      if (volNb==0) volX0ref = volX0;
+      else if (volNb == nEcalLayers) volX0ref = volX0;
+
       if (debug){
 	if (isG4Tree) {
-	  std::cout << "... Processing layer " << volNb << " with " << (*simhitvec).size() << " simhits, weight = " << getWeight(volNb,pVersion) << std::endl;
-	  Etot[static_cast<unsigned>(volNb)] = 0;
+	  std::cout << "... Processing layer " << volNb << " with " << (*simhitvec).size() << " simhits, X0 = " << volX0 << " weight = " << getWeight(volNb,pVersion,volX0ref,volX0) << std::endl;
 	}
 	else {
 	  std::cout << "... Size of hit vectors: sim = " <<  (*simhitvec).size() << ", reco = " << (*rechitvec).size()<< std::endl;
@@ -602,7 +619,7 @@ int main(int argc, char** argv){//main
 	    lHit.Print(std::cout);
 	  }
 	  double weightedE = energy;
-	  if (applyWeight) weightedE *= getWeight(layer,pVersion);
+	  if (applyWeight) weightedE *= getWeight(layer,pVersion,volX0ref,volX0);
 	  //reject lower region for boundary effects
 	  if (doFiducialCuts){
 	    if ( (pVersion.find("23") != pVersion.npos && posy < -200) ||
@@ -627,8 +644,14 @@ int main(int argc, char** argv){//main
 	  }
 	  Etot[layer] += energy;
 	  if (debug>1) std::cout << "-hit" << iH << "-" << layer << " " << energy << " " << Etot[layer];
-	  if (layer<nEcalLayers) Etotal[0] += weightedE;
-	  else Etotal[1] += weightedE;
+	  if (layer<nEcalLayers) {
+	    Etotal[0] += weightedE;
+	    Etotal[2] += weightedE;
+	  }
+	  else {
+	    Etotal[1] += weightedE;
+	    Etotal[2] += weightedE*HcalToEcalConv;
+	  }
 	}//loop on hits
 
 
@@ -664,7 +687,7 @@ int main(int argc, char** argv){//main
 	      if (energy > occThreshold[iO]) p_occupancy[iO][layer]->Fill(posx,posy);
 	    }
 	    double weightedE = energy;
-	    if (applyWeight)  weightedE *= getWeight(layer,pVersion);
+	    if (applyWeight)  weightedE *= getWeight(layer,pVersion,volX0ref,volX0);
 	    for (unsigned iSmear(0); iSmear<nSmear;++iSmear){
 	      double smearFactor = lRndm.Gaus(0,smearFrac[iSmear]);
 	      Ereco[iSmear] += weightedE*(1+smearFactor);
@@ -725,7 +748,7 @@ int main(int argc, char** argv){//main
 	}
 
 	double weightedE = energy;
-	if (applyWeight) weightedE *= getWeight(layer,pVersion);
+	if (applyWeight) weightedE *= getWeight(layer,pVersion,volX0ref,volX0);
 
 	if (doFiducialCuts){
 	  //reject lower region for boundary effects
@@ -750,9 +773,15 @@ int main(int argc, char** argv){//main
 	}
 	Etot[layer] += energy;
 	if (debug>1) std::cout << "-hit" << iH << "-" << layer << " " << energy << " " << Etot[layer];
-	if (layer<nEcalLayers) Etotal[0] += weightedE;
-	else Etotal[1] += weightedE;
-
+	if (layer<nEcalLayers) {
+	  Etotal[0] += weightedE;
+	  Etotal[2] += weightedE;
+	}
+	else {
+	  Etotal[1] += weightedE;
+	  Etotal[2] += weightedE*HcalToEcalConv;
+	}
+	
 	zlay[layer] = posz;
 
       }//loop on hits
@@ -792,7 +821,7 @@ int main(int argc, char** argv){//main
 	    if (energy > occThreshold[iO]) p_occupancy[iO][layer]->Fill(posx,posy);
 	  }
 	  double weightedE = energy;
-	  if (applyWeight)  weightedE *= getWeight(layer,pVersion);
+	  if (applyWeight)  weightedE *= getWeight(layer,pVersion,volX0ref,volX0);
 	  for (unsigned iSmear(0); iSmear<nSmear;++iSmear){
 	    double smearFactor = lRndm.Gaus(0,smearFrac[iSmear]);
 	    Ereco[iSmear] += weightedE*(1+smearFactor);
@@ -850,22 +879,25 @@ int main(int argc, char** argv){//main
 	  p_EvsLayer[iE] = new TH2F(lName.str().c_str(),";layer;E (MeV)",nLayers,0,nLayers,1000,0,3*Emax);
 	  lName.str("");
 	  lName << "p_Etotal_" << genEn[iE] << "_ECAL";
-	  p_Etotal[iE][0] = new TH1F(lName.str().c_str(),";G4 Etotal ECAL (MeV)",1000,0.1*Etotal[0],2*Etotal[0]);
+	  p_Etotal[iE][0] = new TH1F(lName.str().c_str(),";G4 Etotal ECAL (MeV)",1000,0,2*Etotal[2]);
 	  p_Etotal[iE][0]->StatOverflows();
 	  lName.str("");
 	  lName << "p_Etotal_" << genEn[iE] << "_HCAL";
-	  p_Etotal[iE][1] = new TH1F(lName.str().c_str(),";G4 Etotal HCAL (MeV)",1000,0.1*std::max(Etotal[1],0.),2*std::max(Etotal[1],1.));
+	  p_Etotal[iE][1] = new TH1F(lName.str().c_str(),";G4 Etotal HCAL (MeV)",1000,0,2*Etotal[2]);
 	  p_Etotal[iE][1]->StatOverflows();
 	  lName.str("");
+	  lName << "p_Etotal_" << genEn[iE] << "_ECALHCAL";
+	  p_Etotal[iE][2] = new TH1F(lName.str().c_str(),";G4 Etotal ECAL+HCAL (MeV)",1000,0,2*Etotal[2]);
+	  p_Etotal[iE][2]->StatOverflows();
+	  lName.str("");
 	  lName << "p_HCALvsECAL_" << genEn[iE];
-	  p_HCALvsECAL[iE] = new TH2F(lName.str().c_str(),";G4 Etotal ECAL (MeV); G4 Etotal HCAL (MeV)",1000,0,5*Etotal[0],1000,0,5*std::max(Etotal[1],1.));
+	  p_HCALvsECAL[iE] = new TH2F(lName.str().c_str(),";G4 Etotal ECAL (MeV); G4 Etotal HCAL (MeV)",1000,0,3*Etotal[2],1000,0,3*Etotal[2]);
 	  p_HCALvsECAL[iE]->StatOverflows();
 	  lName.str("");
 	  lName << "p_nSimHits_" << genEn[iE];
 	  p_nSimHits[iE] = new TH1F(lName.str().c_str(),"; nSimHits",1000,static_cast<unsigned>(nTotal/10.),nTotal*10);
 	}
 
-	double EtotCheck = 0;
 	for (unsigned iL(0);iL<nLayers;++iL){//loop on layers
 	  if (debug) std::cout << " -- Layer " << iL << " total E = " << Etot[iL] << std::endl;
 	  p_Etot[iE][iL]->Fill(Etot[iL]);
@@ -873,7 +905,6 @@ int main(int argc, char** argv){//main
 	  Etmp += Etot[iL];
 	  if (Etotal[0]+Etotal[1] > 0) p_Efrac[iE][iL]->Fill(Etmp/(Etotal[0]+Etotal[1]));
 	  else p_Efrac[iE][iL]->Fill(0);
-	  EtotCheck+= Etot[iL];
 	  Etot[iL] = 0;
 
 	  //////////////////////////////////////////////////////////////////////
@@ -895,10 +926,11 @@ int main(int argc, char** argv){//main
 	}//loop on layers
 	p_Etotal[iE][0]->Fill(Etotal[0]);
 	p_Etotal[iE][1]->Fill(Etotal[1]);
+	p_Etotal[iE][2]->Fill(Etotal[2]);
 	p_HCALvsECAL[iE]->Fill(Etotal[0],Etotal[1]);
 	p_nSimHits[iE]->Fill(nTotal);
 
-	if (saveEventByEvent && nTotalSignal > nMaxHits){
+	if (saveEventByEvent && nTotalSignal >= nMaxHits){
 	  std::ostringstream evtName;
 	  evtName << plotDir << "/CalibHistos_E" << genEn[iE] << "_evt" << lEvt << ".root";
 	  TFile *outputEvt = TFile::Open(evtName.str().c_str(),"RECREATE");
@@ -906,6 +938,9 @@ int main(int argc, char** argv){//main
 	  if (!outputEvt) {
 	    std::cout << " -- Error, output file for evt " << lEvt << " cannot be opened. Please create output directory : " << plotDir << ". Exiting..." << std::endl;
 	    return 1;
+	  }
+	  else {
+	    std::cout << " -- Opening event file for evt " << lEvt << std::endl;
 	  }
 	  outputEvt->cd();
 	  
@@ -920,6 +955,7 @@ int main(int argc, char** argv){//main
 
 	Etotal[0] = 0;
 	Etotal[1] = 0;
+	Etotal[2] = 0;
 	nTotal = 0;
 	nTotalSignal = 0;
 	firstEvent = false;
@@ -946,6 +982,7 @@ int main(int argc, char** argv){//main
     p_EvsLayer[iE]->Write();
     p_Etotal[iE][0]->Write();
     p_Etotal[iE][1]->Write();
+    p_Etotal[iE][2]->Write();
     p_HCALvsECAL[iE]->Write();
     p_nSimHits[iE]->Write();
     if (!isG4Tree) {
@@ -970,6 +1007,14 @@ int main(int argc, char** argv){//main
 	      << " rms " << p_Etotal[iE][1]->GetRMS() 
 	      << " underflows " << p_Etotal[iE][1]->GetBinContent(0)
 	      << " overflows " << p_Etotal[iE][1]->GetBinContent(p_Etotal[iE][1]->GetNbinsX()+1)
+	      << std::endl;
+
+    std::cout << " -- Summary of energies ECAL+HCAL: " << std::endl
+	      << " ---- SimHits: entries " << p_Etotal[iE][2]->GetEntries() 
+	      << " mean " << p_Etotal[iE][2]->GetMean() 
+	      << " rms " << p_Etotal[iE][2]->GetRMS() 
+	      << " underflows " << p_Etotal[iE][2]->GetBinContent(0)
+	      << " overflows " << p_Etotal[iE][2]->GetBinContent(p_Etotal[iE][2]->GetNbinsX()+1)
 	      << std::endl;
     if (!isG4Tree) {
       std::cout << " ---- RecHits: entries " << p_Ereco[iE][0]->GetEntries() 
@@ -1016,7 +1061,7 @@ int main(int argc, char** argv){//main
  }
 
   std::cout << "\\hline \n";
-  std::cout << " Energy (GeV) & Eecal (RMS) & Ehcal (RMS) "
+  std::cout << " Energy (GeV) & Eecal (RMS) & Ehcal (RMS) & Etot (RMS) "
     // << " & nSimHits (RMS) "
 	    << "\\\\ \n"; 
   for (unsigned iE(0); iE<nGenEn; ++iE){//loop on energies
@@ -1024,7 +1069,9 @@ int main(int argc, char** argv){//main
 	      << p_Etotal[iE][0]->GetMean() << " (" << p_Etotal[iE][0]->GetRMS() 
 	      << ") & "
 	      << p_Etotal[iE][1]->GetMean() << " (" << p_Etotal[iE][1]->GetRMS() 
-      //<< ") & "
+	      << ") & "
+	      << p_Etotal[iE][2]->GetMean() << " (" << p_Etotal[iE][2]->GetRMS() 
+        //<< ") & "
       //<< p_nSimHits[iE]->GetMean() << " (" << p_nSimHits[iE]->GetRMS() 
 	      << ") \\\\ \n ";
   }

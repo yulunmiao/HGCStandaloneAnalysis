@@ -62,11 +62,14 @@ public:
   G4double getTotalEnergy();
   G4double getAbsorberX0();  
   G4double getX0transversed();
+  G4double getAbsorberLambda();
   G4double getHadronicFraction();
+  G4double getNeutronFraction();
   G4double getMuonFraction();
   G4double getPhotonFraction();
   G4double getElectronFraction();
   G4double getAverageTime();
+
   const G4SiHitVec & getSiHitVec() const;
   void trackParticleHistory(const G4SiHitVec & incoming);
 
@@ -76,10 +79,11 @@ public:
   //members
   G4double           Pb_thick, Cu_thick, Si_thick, PCB_thick, Air_thick;
   G4double           Pb_X0,    Cu_X0,    Si_X0,    PCB_X0,    Air_X0;
+  G4double           Pb_L0,    Cu_L0;
   G4double           Pb_den,   Cu_den,   Si_den,   PCB_den,   Air_den, Si_dendydz[81];
   G4double           Pb_dl,    Cu_dl,    Si_dl,    PCB_dl,    Air_dl;
   G4VPhysicalVolume* Pb_vol,  *Cu_vol,  *Si_vol,  *PCB_vol,  *Air_vol;
-  G4double           Si_gFlux, Si_eFlux, Si_muFlux, Si_hadFlux, Si_time;
+  G4double           Si_gFlux, Si_eFlux, Si_muFlux, Si_neutronFlux, Si_hadFlux, Si_time;
   G4double Total_thick;
   G4SiHitVec Si_HitVec;
   unsigned Si_HitVec_size_max;

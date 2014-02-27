@@ -9,7 +9,7 @@ usage = 'usage: %prog [options]'
 parser = optparse.OptionParser(usage)
 parser.add_option('-q', '--queue'      ,    dest='queue'              , help='batch queue'                  , default='2nw')
 parser.add_option('-v', '--version'    ,    dest='version'            , help='detector version'             , default=0,      type=int)
-parser.add_option('-a', '--alpha'      ,    dest='alpha'              , help='incidence angle'              , default=0,      type=float)
+parser.add_option('-a', '--alpha'      ,    dest='alpha'              , help='incidence angle in rad'              , default=0,      type=float)
 parser.add_option('-g', '--gun'        ,    dest='gun'                , help='particle to shoot'            , default='e-')
 parser.add_option('-n', '--nevts'      ,    dest='nevts'              , help='number of events to generate' , default=1000,    type=int)
 parser.add_option('-o', '--out'        ,    dest='out'                , help='output directory'             , default=os.getcwd() )
@@ -20,8 +20,8 @@ parser.add_option('-S', '--no-submit'  ,    action="store_true",  dest='nosubmit
 
 #for en in [5,10,25,40,50,60,80,100,200,300,400,500,1000,2000]:
 #for en in [188,307,503,829]:
-#for en in [5,10,20,25,50,75,100,125,150,175,200,300,500]: 
-for en in [50]: 
+for en in [5,10,20,25,50,75,100,125,150,175,200,300,500]: 
+#for en in [50]: 
 
     nevents=opt.nevts
     if en>150: nevents=nevents/2

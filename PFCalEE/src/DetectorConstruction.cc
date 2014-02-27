@@ -70,6 +70,13 @@ DetectorConstruction::DetectorConstruction(G4int ver) : version_(ver), addPrePCB
 	}
 	break;
       }
+    case v_HGCALHE:
+      {
+	//add only HCAL
+	for(int i=0; i<12; i++) m_caloStruct.push_back( SamplingSection(52*mm,3.0*mm,0.3*mm,2.0*mm,2.0*mm) );
+	for(int i=0; i<18; i++) m_caloStruct.push_back( SamplingSection(34.5*mm,0*mm,0.3*mm,2.0*mm,2.0*mm) );
+
+      }
     }
 
   DefineMaterials();
@@ -167,12 +174,14 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 	  //ECAL
 	  logi = new G4LogicalVolume(solid, m_materials["Abs"], baseName+"log");
 	  m_caloStruct[i].Pb_X0 = m_materials["Abs"]->GetRadlen();
+	  m_caloStruct[i].Pb_L0 = m_materials["Abs"]->GetNuclearInterLength();
 	  G4cout << "************ Abs " << i << " " << m_caloStruct[i].Pb_X0 << " " << m_caloStruct[i].Pb_thick << " " << m_materials["Abs"]->GetDensity() << G4endl;
 	}
 	else {
 	  //HCAL
 	  logi = new G4LogicalVolume(solid, m_materials["Brass"], baseName+"log");
 	  m_caloStruct[i].Pb_X0 = m_materials["Brass"]->GetRadlen();
+	  m_caloStruct[i].Pb_L0 = m_materials["Brass"]->GetNuclearInterLength();
 	  G4cout << "************ Abs " << i << " " << m_caloStruct[i].Pb_X0 << " " << m_caloStruct[i].Pb_thick << " " << m_materials["Brass"]->GetDensity() << G4endl;
 	}
 	m_caloStruct[i].Pb_vol= new G4PVPlacement(0, G4ThreeVector(0.,0.,zOffset+zOverburden+thick/2), logi, baseName+"phys", m_logicWorld, false, 0);
@@ -188,12 +197,18 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
       if(thick>0){
 	G4Box *solid = new G4Box(baseName+"box",  m_CalorSizeXY/2, m_CalorSizeXY/2, thick/2 );
 	G4LogicalVolume *logi  = new G4LogicalVolume(solid, m_materials["Cu"], baseName+"log");
+	m_logicAbs.push_back(logi);
 	m_caloStruct[i].Cu_vol = new G4PVPlacement(0, G4ThreeVector(0.,0.,zOffset+zOverburden+thick/2), logi, baseName+"phys", m_logicWorld, false, 0);
 	m_caloStruct[i].Cu_X0 = m_materials["Cu"]->GetRadlen();
+	m_caloStruct[i].Cu_L0 = m_materials["Cu"]->GetNuclearInterLength();
 	G4VisAttributes *simpleBoxVisAtt = new G4VisAttributes(G4Colour::Black());
 	simpleBoxVisAtt->SetVisibility(true);
 	logi->SetVisAttributes(simpleBoxVisAtt);
 	zOverburden = zOverburden + thick;
+	//add region to be able to set specific cuts for it
+	G4Region* aRegion = new G4Region(baseName+"Reg");
+	m_logicAbs[i]->SetRegion(aRegion);
+	aRegion->AddRootLogicalVolume(m_logicAbs[i]);
       }
 
       //add PCB to shield from delta-rays?

@@ -35,6 +35,8 @@ EventAction::EventAction()
   tree_->Branch("hadFrac",&event_[11]);
   tree_->Branch("avgTime",&event_[12]);
   tree_->Branch("nSiHits",&event_[13]);
+  tree_->Branch("volLambda",&event_[14]);
+  tree_->Branch("neutronFrac",&event_[15]);
   tree_->Branch("HGCSSSimHitVec","std::vector<HGCSSSimHit>",&hitvec_);
 
 }
@@ -95,6 +97,8 @@ void EventAction::EndOfEventAction(const G4Event* evt)
       event_[11]=(*detector_)[i].getHadronicFraction();
       event_[12]=(*detector_)[i].getAverageTime();
       event_[13]=(*detector_)[i].getSiHitVec().size();
+      event_[14]=(*detector_)[i].getAbsorberLambda();
+      event_[15]=(*detector_)[i].getNeutronFraction();
       hitvec_.clear();
       std::map<unsigned,HGCSSSimHit> lHitMap;
       std::pair<std::map<unsigned,HGCSSSimHit>::iterator,bool> isInserted;

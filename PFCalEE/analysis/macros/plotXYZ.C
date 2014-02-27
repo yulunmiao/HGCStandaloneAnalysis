@@ -23,25 +23,26 @@ int plotXYZ(){//main
 
   //const unsigned nS = 7;
   //TString scenario[nS] = {"0","1","2","3","4","5","6"};
-  const unsigned nS = 2;
+  const unsigned nS = 1;
   std::string scenario[nS] = {
-    "quark_u/eta30/",
-    "quark_u/PU/eta30/"
+    //"quark_u/eta30/",
+    //"quark_u/PU/eta30/"
+    "mu-"
   };
   
   const unsigned nV = 1;
-  TString version[nV] = {"23"};
+  TString version[nV] = {"3"};
   const double Emip = 0.0548;//in MeV
 
-  const unsigned mipThresh = 10;
+  const unsigned mipThresh = 0;
 
-  const unsigned nEvts = 1000;
-  unsigned event[nEvts];// = {190};//,6,12};
-  for (unsigned ievt(0); ievt<nEvts; ++ievt){//loop on events
-    event[ievt] = ievt;
-  }
+  const unsigned nEvts = 1;
+  unsigned event[nEvts] = {54};//,6,12};
+  //for (unsigned ievt(0); ievt<nEvts; ++ievt){//loop on events
+  //  event[ievt] = ievt;
+  // }
 
-  const unsigned nLayers = 60;
+  const unsigned nLayers = 30;
   const unsigned nEcalLayers = 30;
 
   TCanvas *mycECAL = new TCanvas("mycECAL","mycECAL",1500,1000);
@@ -64,7 +65,7 @@ int plotXYZ(){//main
   for (unsigned iV(0); iV<nV;++iV){//loop on versions
     for (unsigned iS(0); iS<nS;++iS){//loop on scenarios
     
-      TString plotDir = "../PLOTS/version_"+version[iV]+"/"+scenario[iS]+"/";
+      TString plotDir = "../PLOTS/version"+version[iV]+"/"+scenario[iS]+"/";
       
 
       bool isRECO = false;
@@ -74,7 +75,7 @@ int plotXYZ(){//main
 
       for (unsigned ievt(0); ievt<nEvts; ++ievt){//loop on events
 	std::ostringstream lName;
-	lName << plotDir << "CalibHistos_E100_evt" << event[ievt] << ".root";
+	lName << plotDir << "CalibHistos_E50_evt" << event[ievt] << ".root";
 	TFile *inputFile = TFile::Open(lName.str().c_str());
 	if (!inputFile) {
 	  std::cout << " -- Error, input file " << lName.str() << " cannot be opened. Going to next..." << std::endl;
