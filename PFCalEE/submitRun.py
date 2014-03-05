@@ -4,6 +4,9 @@ import os,sys
 import optparse
 import commands
 import math
+import random
+
+random.seed()
 
 usage = 'usage: %prog [options]'
 parser = optparse.OptionParser(usage)
@@ -18,10 +21,10 @@ parser.add_option('-S', '--no-submit'  ,    action="store_true",  dest='nosubmit
 (opt, args) = parser.parse_args()
 
 
-#for en in [5,10,25,40,50,60,80,100,200,300,400,500,1000,2000]:
+#for en in [5,10,25,40,50,60,80,100,150,200,300,400,500,1000]:
 #for en in [188,307,503,829]:
-for en in [5,10,20,25,50,75,100,125,150,175,200,300,500]: 
-#for en in [50]: 
+#for en in [5,10,20,25,50,75,100,125,150,175,200,300,500]: 
+for en in [100]: 
 
     nevents=opt.nevts
     if en>150: nevents=nevents/2
@@ -67,6 +70,8 @@ for en in [5,10,20,25,50,75,100,125,150,175,200,300,500]:
     g4Macro.write('/event/verbose 0\n')
     g4Macro.write('/tracking/verbose 0\n')
     #g4Macro.write('/N03/det/setField 3.8 T\n')
+    g4Macro.write('/N03/det/setModel 0\n')
+    g4Macro.write('/random/setSeeds %d %d\n'%( random.uniform(0,100000), random.uniform(0,100000) ) )
     g4Macro.write('/generator/select particleGun\n')
     g4Macro.write('/gun/particle %s\n'%(opt.gun))    
     g4Macro.write('/gun/energy %f GeV\n'%(en))

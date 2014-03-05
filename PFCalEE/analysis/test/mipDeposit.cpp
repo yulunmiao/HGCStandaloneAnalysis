@@ -31,7 +31,10 @@
 int main(int argc, char** argv){//main
 
 
-  TFile *inputFile = TFile::Open("root://eoscms//eos/cms/store/user/amagnan/HGCalEEGeant4/mu-/HGcal_version3_e50.root");
+  TString lSuffix = "version23_e100";
+  TString plotBase = "PLOTS/version23/mu-/";
+
+  TFile *inputFile = TFile::Open("root://eoscms//eos/cms/store/user/amagnan/HGCalHEGeant4Cor/mu-/HGcal_"+lSuffix+".root");
   if (!inputFile) {
     std::cout << " -- Error, input file cannot be opened. Exiting..." << std::endl;
     return 1;
@@ -43,10 +46,15 @@ int main(int argc, char** argv){//main
   }
   
   TCanvas *myc = new TCanvas("myc","myc",500,500);
-  
-  TH2F *p_nHits = new TH2F("nHits","; layer; Number of hits; Events",30,0,30,20,0,20);
-  TH1F *p_hitEnergy = new TH1F("hitEnergy",";E (MeV);SimHits",250,0,1);
-  TH1F *p_hitEnergySel = new TH1F("hitEnergySel",";E (MeV);SimHits",250,0,1);
+
+  const unsigned nLayers = 54;//33;
+  const unsigned nHcalSiLayers = 0;//24;  
+
+  TH2F *p_nHits = new TH2F("nHits","; layer; Number of hits; Events",nLayers,0,nLayers,20,0,20);
+  TH1F *p_hitEnergy_si = new TH1F("hitEnergy_si",";E (MeV);SimHits",250,0,1);
+  TH1F *p_hitEnergySel_si = new TH1F("hitEnergySel_si",";E (MeV);SimHits",250,0,1);
+  TH1F *p_hitEnergy_scint = new TH1F("hitEnergy_scint",";E (MeV);SimHits",500,0,100);
+  TH1F *p_hitEnergySel_scint = new TH1F("hitEnergySel_scint",";E (MeV);SimHits",1000,0,10);
 
   std::vector<HGCSSSimHit> * simhitvec = 0;
   float volNb = 0;
@@ -67,7 +75,8 @@ int main(int argc, char** argv){//main
       HGCSSSimHit lHit = (*simhitvec)[iH];
       double energy = lHit.energy();
       if (energy>0) {
-	p_hitEnergy->Fill(energy);
+	if (volNb < nHcalSiLayers) p_hitEnergy_si->Fill(energy);
+	else p_hitEnergy_scint->Fill(energy);
 	nHits++;
       }
     }//loop on hits
@@ -78,10 +87,12 @@ int main(int argc, char** argv){//main
       for (unsigned iH(0); iH<(*simhitvec).size(); ++iH){//loop on hits
 	HGCSSSimHit lHit = (*simhitvec)[iH];
 	double energy = lHit.energy();
-	if (energy>0) p_hitEnergySel->Fill(energy);
+	if (energy>0){
+	  if (volNb < nHcalSiLayers) p_hitEnergySel_si->Fill(energy);
+	  else  p_hitEnergySel_scint->Fill(energy);
+	}
       }
     }
-
 
   }//loop on entries
 
@@ -92,34 +103,59 @@ int main(int argc, char** argv){//main
   p_nHits->Draw("colz");
 
   myc->Update();
-  myc->Print("PLOTS/version_3/mu-/mipHits.png");
-  myc->Print("PLOTS/version_3/mu-/mipHits.pdf");
-  myc->Print("PLOTS/version_3/mu-/mipHits.C");
+  myc->Print(plotBase+"/mipHits.png");
+  myc->Print(plotBase+"/mipHits.pdf");
+  myc->Print(plotBase+"/mipHits.C");
 
 
   myc->cd();
   gPad->SetLogy(1);
   gStyle->SetOptStat(1111110);
   gStyle->SetOptFit(1111);
-  p_hitEnergy->Draw();
-  p_hitEnergy->Fit("landau","R+","",0.035,1);
-  
+  p_hitEnergy_si->Draw();
+  p_hitEnergy_si->Fit("landau","R+","",0.035,1);
+
   myc->Update();
-  myc->Print("PLOTS/version_3/mu-/mipDepositAll.png");
-  myc->Print("PLOTS/version_3/mu-/mipDepositAll.pdf");
-  myc->Print("PLOTS/version_3/mu-/mipDepositAll.C");
+  myc->Print(plotBase+"/mipDepositAll_si.png");
+  myc->Print(plotBase+"/mipDepositAll_si.pdf");
+  myc->Print(plotBase+"/mipDepositAll_si.C");
 
   myc->cd();
   gPad->SetLogy(1);
   gStyle->SetOptStat(1111110);
   gStyle->SetOptFit(1111);
-  p_hitEnergySel->Draw();
-  p_hitEnergySel->Fit("landau","LR+","",0.02,1);
+  p_hitEnergySel_si->Draw();
+  p_hitEnergySel_si->Fit("landau","LR+","",0.02,1);
+
+  myc->Update();
+  myc->Print(plotBase+"/mipDepositSel_si.png");
+  myc->Print(plotBase+"/mipDepositSel_si.pdf");
+  myc->Print(plotBase+"/mipDepositSel_si.C");
+
+
+  myc->cd();
+  gPad->SetLogy(1);
+  gStyle->SetOptStat(1111110);
+  gStyle->SetOptFit(1111);
+  p_hitEnergy_scint->Draw();
+  p_hitEnergy_scint->Fit("landau","R+","",0.035,1);
   
   myc->Update();
-  myc->Print("PLOTS/version_3/mu-/mipDepositSel.png");
-  myc->Print("PLOTS/version_3/mu-/mipDepositSel.pdf");
-  myc->Print("PLOTS/version_3/mu-/mipDepositSel.C");
+  myc->Print(plotBase+"/mipDepositAll_scint.png");
+  myc->Print(plotBase+"/mipDepositAll_scint.pdf");
+  myc->Print(plotBase+"/mipDepositAll_scint.C");
+
+  myc->cd();
+  gPad->SetLogy(1);
+  gStyle->SetOptStat(1111110);
+  gStyle->SetOptFit(1111);
+  p_hitEnergySel_scint->Draw();
+  p_hitEnergySel_scint->Fit("landau","LR+","",0.02,1);
+  
+  myc->Update();
+  myc->Print(plotBase+"/mipDepositSel_scint.png");
+  myc->Print(plotBase+"/mipDepositSel_scint.pdf");
+  myc->Print(plotBase+"/mipDepositSel_scint.C");
 
 
 

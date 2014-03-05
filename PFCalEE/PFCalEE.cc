@@ -39,13 +39,15 @@ int main(int argc,char** argv)
 
   // Set mandatory initialization classes
   //int version=DetectorConstruction::v_HGCALEE_concept;
-  int version=DetectorConstruction::v_HGCALHE;
+  int version=DetectorConstruction::v_HGCAL;
+  int model=DetectorConstruction::m_FULLSECTION;
 
   if(argc>2) version=atoi(argv[2]);
+  if(argc>3) model=atoi(argv[3]);
 
-  std::cout << "-- Running version " << version << std::endl;
+  std::cout << "-- Running version " << version << " model " << model << std::endl;
 
-  runManager->SetUserInitialization(new DetectorConstruction(version));
+  runManager->SetUserInitialization(new DetectorConstruction(version,model));
   runManager->SetUserInitialization(new PhysicsList);
 
   // Set user action classes

@@ -11,6 +11,7 @@ SteppingAction::SteppingAction()
 {
   eventAction_ = (EventAction*)G4RunManager::GetRunManager()->GetUserEventAction();               
   eventAction_->Add(  ((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->getStructure() );
+  saturationEngine = new G4EmSaturation();
 }
 
 //
@@ -28,6 +29,15 @@ void SteppingAction::UserSteppingAction(const G4Step* aStep)
 
   G4VPhysicalVolume* volume = theTouchable->GetVolume();
   G4double edep = aStep->GetTotalEnergyDeposit();
+
+  //correct with Birk's law for scintillator material
+  if (volume->GetName().find("Scint")!=volume->GetName().npos) {
+    G4double attEdep = saturationEngine->VisibleEnergyDeposition(aTrack->GetDefinition(), aTrack->GetMaterialCutsCouple(), aStep->GetStepLength(), edep, 0.);  // this is the attenuated visible energy
+    //std::cout << " -- Correcting energy for scintillator: " << edep << " " << attEdep;
+    edep = attEdep;
+    //std::cout << " " << edep  << std::endl;
+  }
+
   G4double stepl = 0.;
   if (aTrack->GetDefinition()->GetPDGCharge() != 0.) stepl = aStep->GetStepLength();
 

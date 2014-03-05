@@ -9,6 +9,7 @@
 #include <map>
 #include <string>
 
+class G4CSGSolid;
 class G4Box;
 class G4LogicalVolume;
 class G4VPhysicalVolume;
@@ -38,13 +39,21 @@ public:
     v_HGCALEE_gap4=10,
     v_HGCALEE_prePCB=11,
     v_HGCAL=20,
-    v_HGCALHE=21
+    v_HGCALHE=21,
+    v_HGCALHEScint=22,
+    v_HGCALHE_CALICE=23
+  };
+
+  enum DetectorModel {
+    m_SIMPLE_20=0,
+    m_SIMPLE_50=1,
+    m_FULLSECTION=2
   };
 
   /**
      @short CTOR
    */
-  DetectorConstruction(G4int ver=DetectorConstruction::v_CALICE);
+  DetectorConstruction(G4int ver=DetectorConstruction::v_CALICE, G4int mod=DetectorConstruction::m_SIMPLE_20);
 
   /**
      @short calorimeter structure (sampling sections)
@@ -68,6 +77,12 @@ public:
   G4UniformMagField* m_magField;      //pointer to the magnetic field
 
   /**
+     @short set detector model
+   */
+
+  void SetDetModel(G4int model);
+
+  /**
      @short DTOR
    */
   ~DetectorConstruction();
@@ -84,12 +99,15 @@ public:
   /**
      @short build the detector
    */
+
   G4VPhysicalVolume* Construct();
 
 private:
 
   //detector version
   int version_;
+  //integer to define detector model
+  int model_;
 
   //add a pre PCB plate
   bool addPrePCB_;
@@ -104,12 +122,16 @@ private:
    */
   G4VPhysicalVolume* ConstructCalorimeter();     
 
+  G4CSGSolid *constructSolid (std::string baseName, G4double thick);
+ 
   std::vector<G4Material* > m_SensitiveMaterial;
   
   G4double           m_CalorSizeXY, m_CalorSizeZ;
+  G4double           m_minRadius,m_maxRadius;
   G4double           m_WorldSizeXY, m_WorldSizeZ;
+
             
-  G4Box*             m_solidWorld;    //pointer to the solid World 
+  G4CSGSolid*        m_solidWorld;    //pointer to the solid World 
   G4LogicalVolume*   m_logicWorld;    //pointer to the logical World
   G4VPhysicalVolume* m_physWorld;     //pointer to the physical World  
   

@@ -38,7 +38,7 @@ for version in [3]:
             #for en in [5,10,25,50,75,100]:
             #for en in [150,200,300,500]:
             
-            inDir='%s/HGcal_version_%d_e_%d.root'%(myg4dir,version,en)
+            inDir='%s/HGcal_version_%d_e%d.root'%(myg4dir,version,en)
             outDir='%s/version_%d/scenario_%d/%s/e_%d/'%(opt.out,version,opt.scenario,particle,en)
             outlog='%s/digitizer.log'%(outDir)
             os.system('mkdir -p %s'%outDir)
