@@ -38,8 +38,8 @@ int main(int argc,char** argv)
   G4RunManager * runManager = new G4RunManager;
 
   // Set mandatory initialization classes
-  //int version=DetectorConstruction::v_HGCALEE_concept;
-  int version=DetectorConstruction::v_HGCAL;
+  int version=DetectorConstruction::v_HGCALEE_concept;
+  //int version=DetectorConstruction::v_HGCAL;
   int model=DetectorConstruction::m_FULLSECTION;
 
   if(argc>2) version=atoi(argv[2]);
