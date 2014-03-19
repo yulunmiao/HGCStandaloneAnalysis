@@ -12,6 +12,7 @@ usage = 'usage: %prog [options]'
 parser = optparse.OptionParser(usage)
 parser.add_option('-q', '--queue'      ,    dest='queue'              , help='batch queue'                  , default='2nw')
 parser.add_option('-v', '--version'    ,    dest='version'            , help='detector version'             , default=0,      type=int)
+parser.add_option('-m', '--model'    ,    dest='model'            , help='detector model'             , default=0,      type=int)
 parser.add_option('-a', '--alpha'      ,    dest='alpha'              , help='incidence angle in rad'              , default=0,      type=float)
 parser.add_option('-g', '--gun'        ,    dest='gun'                , help='particle to shoot'            , default='e-')
 parser.add_option('-n', '--nevts'      ,    dest='nevts'              , help='number of events to generate' , default=1000,    type=int)
@@ -24,7 +25,7 @@ parser.add_option('-S', '--no-submit'  ,    action="store_true",  dest='nosubmit
 #for en in [5,10,25,40,50,60,80,100,150,200,300,400,500,1000]:
 #for en in [188,307,503,829]:
 #for en in [5,10,20,25,50,75,100,125,150,175,200,300,500]: 
-for en in [100]: 
+for en in [200]: 
 
     nevents=opt.nevts
     if en>150: nevents=nevents/2
@@ -41,7 +42,7 @@ for en in [100]:
     scriptFile.write('source %s/g4env.sh\n'%(os.getcwd()))
     #scriptFile.write('cd %s\n'%(outDir))
     scriptFile.write('cp %s/g4steer.mac .\n'%(outDir))
-    scriptFile.write('PFCalEE g4steer.mac %d\n'%opt.version)
+    scriptFile.write('PFCalEE g4steer.mac %d %d\n'%(opt.version,opt.model))
     scriptFile.write('localdir=`pwd`\n')
     scriptFile.write('echo "--Local directory is " $localdir > g4.log\n')
     scriptFile.write('ls * >> g4.log\n')
@@ -69,8 +70,8 @@ for en in [100]:
     g4Macro.write('/run/verbose 0\n')
     g4Macro.write('/event/verbose 0\n')
     g4Macro.write('/tracking/verbose 0\n')
-    #g4Macro.write('/N03/det/setField 3.8 T\n')
-    g4Macro.write('/N03/det/setModel 0\n')
+    g4Macro.write('/N03/det/setField 3.8 T\n')
+    g4Macro.write('/N03/det/setModel %d\n'%opt.model)
     g4Macro.write('/random/setSeeds %d %d\n'%( random.uniform(0,100000), random.uniform(0,100000) ) )
     g4Macro.write('/generator/select particleGun\n')
     g4Macro.write('/gun/particle %s\n'%(opt.gun))    

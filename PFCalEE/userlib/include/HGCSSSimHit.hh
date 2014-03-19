@@ -113,15 +113,15 @@ public:
   };
 
   inline bool get_y_side() const {
-    return (cellid_ & 0x0100) >> 8;
+    return (cellid_ & 0x00010000) >> 16;
   };
 
   inline unsigned get_x_cell() const {
-    return (cellid_ & 0x00FE) >> 1;
+    return (cellid_ & 0xFFFE) >> 1;
   };
 
   inline unsigned get_y_cell() const {
-    return (cellid_ & 0xFE00) >> 9;
+    return (cellid_ & 0xFFFE0000) >> 17;
   };
 
   inline double get_x() const {

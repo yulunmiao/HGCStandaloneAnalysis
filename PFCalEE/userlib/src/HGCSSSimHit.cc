@@ -39,7 +39,7 @@ HGCSSSimHit::HGCSSSimHit(const G4SiHit & aSiHit){
 void HGCSSSimHit::encodeCellId(const bool x_side,const bool y_side,const unsigned x_cell,const unsigned y_cell){
   cellid_ = 
     x_side | (x_cell<<1) |
-    (y_side<<8) | (y_cell<<9);
+    (y_side<<16) | (y_cell<<17);
 
   // std::cout << " Cross-check of encoding: cellid=" << cellid_ << std::endl
   // 	    << " x_side " << x_side << " " << get_x_side() << std::endl

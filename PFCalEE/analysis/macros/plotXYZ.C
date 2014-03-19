@@ -17,65 +17,112 @@
 #include "TF1.h"
 #include "TString.h"
 #include "TLatex.h"
+#include "TColor.h"
 
+void set_plot_style()
+{
+    const Int_t NRGBs = 7;
+    const Int_t NCont = 255;
+
+    //Double_t stops[NRGBs] = { 0.00, 0.34, 0.61, 0.84, 1.00 };
+    //Double_t red[NRGBs]   = { 0.00, 0.00, 0.87, 1.00, 0.51 };
+    //Double_t green[NRGBs] = { 0.00, 0.81, 1.00, 0.20, 0.00 };
+    //Double_t blue[NRGBs]  = { 0.51, 1.00, 0.12, 0.00, 0.00 };
+    //Double_t stops[NRGBs] = { 0.00, 0.20, 0.30, 0.45, 0.61, 0.84, 1.00 };
+    Double_t stops[NRGBs] = { 0.00, 0.10, 0.20, 0.35, 0.61, 0.84, 1.00 };
+    Double_t red[NRGBs]   = { 1.00, 1.00, 0.00, 0.00, 0.50, 1.00, 0.50 };
+    Double_t green[NRGBs] = { 1.00, 1.00, 1.00, 0.81, 0.00, 0.20, 0.00 };
+    Double_t blue[NRGBs]  = { 0.50, 0.00, 0.10, 1.00, 0.50, 0.00, 0.00 };
+    TColor::CreateGradientColorTable(NRGBs, stops, red, green, blue, NCont);
+    gStyle->SetNumberContours(NCont);
+}
 
 int plotXYZ(){//main  
 
   //const unsigned nS = 7;
   //TString scenario[nS] = {"0","1","2","3","4","5","6"};
-  const unsigned nS = 1;
+  const unsigned nS = 2;
   std::string scenario[nS] = {
     //"quark_u/eta30/",
     //"quark_u/PU/eta30/"
-    "mu-"
+    "gamma_eta25/GeVCal/",
+    "gamma_eta25/PU/GeVCal/"
+    //"VBFH/concept/",
+    //"VBFH/PU/concept/"
   };
-  
+  std::ostringstream ltitleBase;
+  //ltitle << "#gamma 200 GeV"
+  ltitleBase << "VBF jet"
+    //<< " Event #" << event[ievt]
+	 << ", E_{1#times1 cm^{2}} > ";
+
   const unsigned nV = 1;
-  TString version[nV] = {"3"};
-  const double Emip = 0.0548;//in MeV
+  TString version[nV] = {"20"};
+  double Emip = 0.0548;//in MeV
 
-  const unsigned mipThresh = 0;
+  const unsigned nmips = 3;
+  unsigned mipThreshBase[nmips] = {1,5,10};
+  bool doThresh = true;
 
-  const unsigned nEvts = 1;
-  unsigned event[nEvts] = {54};//,6,12};
-  //for (unsigned ievt(0); ievt<nEvts; ++ievt){//loop on events
-  //  event[ievt] = ievt;
-  // }
+  const unsigned nEvts = 1;//1000;
+  unsigned event[nEvts];//={1,6,12};//103,659,875};
+  for (unsigned ievt(0); ievt<nEvts; ++ievt){//loop on events
+    event[ievt] = ievt;
+  }
 
-  const unsigned nLayers = 30;
-  const unsigned nEcalLayers = 30;
+  const unsigned nLayers = 64;
+  const unsigned nEcalLayers = 31;
 
-  TCanvas *mycECAL = new TCanvas("mycECAL","mycECAL",1500,1000);
-  TCanvas *mycHCAL = new TCanvas("mycHCAL","mycHCAL",1500,1000);
-  TCanvas *mycAll = new TCanvas("mycAll","mycAll",1500,1000);
-  const unsigned nPads = nEvts>10 ? 10 : nEvts;
-  mycAll->Divide(static_cast<unsigned>(nPads/2.+0.5),nEvts/2<1 ? 1 : 2);
+  double minZ=3170,maxZ=5000;
+  //double minX=-150,maxX=150;
+  double minX=-400,maxX=50;
+  //double minY=420,maxY=720;
+  //double minY=1150,maxY=1450;
+  double minY=320,maxY=900;
 
+  bool doAll = false;
+  if (doAll){
+    minX=-1000,maxX=1000;
+    minY=-1000,maxY=1000;
+  }
+
+
+  unsigned nX=(maxX-minX)/10;
+  unsigned nY=(maxY-minY)/10;
+  unsigned nZ=(maxZ-minZ)/2.;
+
+  TCanvas *mycECAL = new TCanvas("mycECAL","mycECAL",1200,800);
+  TCanvas *mycHCAL = new TCanvas("mycHCAL","mycHCAL",1200,800);
+  //TCanvas *mycAll = new TCanvas("mycAll","mycAll",1200,800);
+  //const unsigned nPads = nEvts>10 ? 10 : nEvts;
+  //mycAll->Divide(static_cast<unsigned>(nPads/2.+0.5),nEvts/2<1 ? 1 : 2);
 
   const unsigned nCanvas = nS;  
   TCanvas *myc[nCanvas];
   for (unsigned iC(0);iC<nCanvas;++iC){
     std::ostringstream lName;
     lName << "myc" << iC;
-    myc[iC] = new TCanvas(lName.str().c_str(),lName.str().c_str(),1500,1000);
+    myc[iC] = new TCanvas(lName.str().c_str(),lName.str().c_str(),1300,800);
   }
-  
+
   std::ostringstream saveName;
   
   for (unsigned iV(0); iV<nV;++iV){//loop on versions
     for (unsigned iS(0); iS<nS;++iS){//loop on scenarios
-    
-      TString plotDir = "../PLOTS/version"+version[iV]+"/"+scenario[iS]+"/";
       
-
+      TString inputDir = "../PLOTS/version_"+version[iV]+"/"+scenario[iS]+"/";
+      
+      
       bool isRECO = false;
       //if (scenario[iS].find("scenario_") != scenario[iS].npos) isRECO=true;
+      
+      if (isRECO) inputDir += "Reco/";
 
-      if (isRECO) plotDir += "Reco/";
+      unsigned evtcounter = 0;
 
       for (unsigned ievt(0); ievt<nEvts; ++ievt){//loop on events
 	std::ostringstream lName;
-	lName << plotDir << "CalibHistos_E50_evt" << event[ievt] << ".root";
+	lName << inputDir << "CalibHistos_E200_evt" << event[ievt] << ".root";
 	TFile *inputFile = TFile::Open(lName.str().c_str());
 	if (!inputFile) {
 	  std::cout << " -- Error, input file " << lName.str() << " cannot be opened. Going to next..." << std::endl;
@@ -83,6 +130,21 @@ int plotXYZ(){//main
 	  //return 1;
 	}
 	TH2F *p_xy[nLayers];
+	TH2F *p_xytot = 0;
+
+	TString plotDir = inputDir;
+	if (doAll) plotDir += "Overview/";
+
+	// lName.str("");
+	// lName << "../PLOTS/version_8/gamma_eta17/PU_pipm/GeVCal/CalibHistos_E200_evt" << event[ievt] << ".root";
+	// TFile *inputproton = TFile::Open(lName.str().c_str());
+	// TH3F *p_xyz_p = (TH3F*)gDirectory->Get("p_xyz")->Clone();
+	// lName.str("");
+	// lName << "../PLOTS/version_8/gamma_eta17/PU_pi0/GeVCal/CalibHistos_E200_evt" << event[ievt] << ".root";
+	// TFile *inputneutron = TFile::Open(lName.str().c_str());
+	// TH3F *p_xyz_n = (TH3F*)gDirectory->Get("p_xyz")->Clone();
+
+	inputFile->cd();
 	TH3F *p_xyz = 0;
 	if (!isRECO) p_xyz = (TH3F*)gDirectory->Get("p_xyz")->Clone();
 	else p_xyz = (TH3F*)gDirectory->Get("p_recoxyz")->Clone();
@@ -92,10 +154,19 @@ int plotXYZ(){//main
 	  return 1;
 	}
 	p_xyz->Sumw2();
+
+
+	//p_xyz_p->Sumw2();
+	//p_xyz_n->Sumw2();
 	double EmaxEcal = 0;
 	double EmaxHcal = 0;
+	p_xyz->Scale(1./Emip);
+	//p_xyz_p->Scale(1./Emip);
+	//p_xyz_n->Scale(1./Emip);
+	//p_xyz->SetMinimum(100);
 
 	for (unsigned iL(0); iL<nLayers; ++iL){
+	  //if (nLayers > nEcalLayers) Emip = 300./200*Emip;
 	  lName.str("");
 	  if (!isRECO) lName << "p_xy_" << iL;
 	  else lName << "p_recoxy_" << iL;
@@ -104,77 +175,213 @@ int plotXYZ(){//main
 	    std::cout << " -- ERROR, pointer for histogram is null for layer: " << iL << ". Exiting..." << std::endl;
 	    return 1;
 	  }
+	  
 	  p_xy[iL]->Scale(1./Emip);
 	  if (!isRECO) {
 	    p_xy[iL]->RebinX(4);
 	    p_xy[iL]->RebinY(4);
 	  }
+	  
 	  double Etot = p_xy[iL]->GetMaximum();
 	  if (Etot > EmaxEcal && iL<nEcalLayers) EmaxEcal = Etot;
 	  if (Etot > EmaxHcal && iL>=nEcalLayers) EmaxHcal = Etot;
-	}
-
-
-	gStyle->SetOptStat(0);
-	std::ostringstream ltitle;
-	ltitle << "Event #" << event[ievt] ;
-
-	myc[iS]->cd();
-	p_xyz->Scale(1./Emip);
-	if (!isRECO) {
-	  p_xyz->RebinY(4);
-	  p_xyz->RebinZ(4);
-	}
-	//p_xyz->SetMinimum(100);
-	for (int xb(1); xb<p_xyz->GetNbinsX()+1;++xb){
-	  for (int yb(1); yb<p_xyz->GetNbinsY()+1;++yb){
-	    for (int zb(1); zb<p_xyz->GetNbinsZ()+1;++zb){
-	      //std::cout << xb << " " << yb << " " << zb << " " << p_xyz->GetBinContent(xb,yb,zb) << std::endl;
-	      if (p_xyz->GetBinContent(xb,yb,zb) < mipThresh) p_xyz->SetBinContent(xb,yb,zb,0);
+	  
+	  if (iL==0){
+	    p_xytot = (TH2F*)p_xy[iL]->Clone();
+	  }
+	  else {
+	    if (!doThresh){
+	      p_xytot->Add(p_xy[iL]);
 	    }
 	  }
-	}
+	}//loop on layers
+
+	TH2F *p_xztot = 0;
+	TH2F *p_zytot = 0;
+
+	unsigned mipThresh = 1;
+	for (unsigned iM(0); iM<nmips;++iM){//loop on mip thresh values
+	  
+	  if (iS==1) {
+	    mipThresh = mipThreshBase[iM];     
+	    set_plot_style();
+	  }
+	  else if (iS==0){
+	    if (iM>0) continue;
+	  }
+
+	  for (int xb(1); xb<p_xyz->GetNbinsX()+1;++xb){
+	    for (int yb(1); yb<p_xyz->GetNbinsY()+1;++yb){
+	      for (int zb(1); zb<p_xyz->GetNbinsZ()+1;++zb){
+		double ltmp = p_xyz->GetBinContent(xb,yb,zb);
+		if (ltmp<1) continue;
+		//std::cout << xb << " " << yb << " " << zb << " " << p_xyz->GetBinContent(xb,yb,zb) << std::endl;
+		if (ltmp < mipThresh) {
+		  p_xyz->SetBinContent(xb,yb,zb,0);
+		}
+	      }
+	    }
+	  }
+	  if (p_xztot) p_xztot->Delete();
+	  p_xztot = new TH2F("p_xztot",";x(mm);z(mm)",
+			     p_xyz->GetNbinsY(),p_xyz->GetYaxis()->GetBinLowEdge(1),p_xyz->GetYaxis()->GetBinLowEdge(p_xyz->GetNbinsY()+1),
+			     p_xyz->GetNbinsX(),p_xyz->GetXaxis()->GetBinLowEdge(1),p_xyz->GetXaxis()->GetBinLowEdge(p_xyz->GetNbinsX()+1));
+	  if (p_zytot) p_zytot->Delete();
+	  p_zytot = new TH2F("p_zytot",";z(mm);y(mm)",
+			     p_xyz->GetNbinsX(),p_xyz->GetXaxis()->GetBinLowEdge(1),p_xyz->GetXaxis()->GetBinLowEdge(p_xyz->GetNbinsX()+1),
+			     p_xyz->GetNbinsZ(),p_xyz->GetZaxis()->GetBinLowEdge(1),p_xyz->GetZaxis()->GetBinLowEdge(p_xyz->GetNbinsZ()+1));
 
 
-	p_xyz->GetXaxis()->SetLabelSize(0.05);
-	p_xyz->GetYaxis()->SetLabelSize(0.05);
-	p_xyz->GetZaxis()->SetLabelSize(0.05);
-	p_xyz->GetXaxis()->SetTitleSize(0.05);
-	p_xyz->GetYaxis()->SetTitleSize(0.05);
-	p_xyz->GetZaxis()->SetTitleSize(0.05);
-	p_xyz->SetTitle(ltitle.str().c_str());
-	p_xyz->Draw("");
+	  if (doThresh){
+	    int xbmin = p_xyz->GetYaxis()->FindBin(minX);
+	    int xbmax = p_xyz->GetYaxis()->FindBin(maxX);
+	    int ybmin = p_xyz->GetZaxis()->FindBin(minY);
+	    int ybmax = p_xyz->GetZaxis()->FindBin(maxY);
+	    int zbmin = p_xyz->GetXaxis()->FindBin(minZ);
+	    int zbmax = p_xyz->GetXaxis()->FindBin(maxZ);
+	    for (unsigned iL(0); iL<nLayers; ++iL){
+	      for (int xb(1); xb<p_xyz->GetNbinsY()+1;++xb){
+		for (int yb(1); yb<p_xyz->GetNbinsZ()+1;++yb){
+		  for (int zb(1); zb<p_xyz->GetNbinsX()+1;++zb){
+		    //std::cout << xb << " " << yb << " " << zb << " " << p_xyz->GetBinContent(xb,yb,zb) << std::endl;
+		    if (zb==1) {
+		      if (iL==0) {
+			p_xytot->SetBinContent(xb,yb,0);
+		      }
+		      if (p_xy[iL]->GetBinContent(xb,yb) < mipThresh) {
+			p_xytot->SetBinContent(xb,yb,p_xytot->GetBinContent(xb,yb));
+		      }
+		      else {
+			p_xytot->SetBinContent(xb,yb,p_xytot->GetBinContent(xb,yb)+p_xy[iL]->GetBinContent(xb,yb));
+		      } 
+		    }
+		    if (iL==0){
+		      if (yb>ybmin && yb < ybmax) {
+			p_xztot->SetBinContent(xb,zb,p_xztot->GetBinContent(xb,zb)+p_xyz->GetBinContent(zb,xb,yb));
+			if (zb>1 && p_xztot->GetBinContent(xb,zb)>0 && p_xztot->GetBinContent(xb,zb-1)>0){
+			  p_xztot->SetBinContent(xb,zb-1,p_xztot->GetBinContent(xb,zb-1)+p_xztot->GetBinContent(xb,zb));
+			  p_xztot->SetBinContent(xb,zb,0);
+			}
+		      }
+		      if (xb>xbmin && xb < xbmax) {
+			p_zytot->SetBinContent(zb,yb,p_zytot->GetBinContent(zb,yb)+p_xyz->GetBinContent(zb,xb,yb));
+			if (zb>1 && p_zytot->GetBinContent(zb,yb)>0 && p_zytot->GetBinContent(zb-1,yb)>0){
+			  p_zytot->SetBinContent(zb-1,yb,p_zytot->GetBinContent(zb-1,yb)+p_zytot->GetBinContent(zb,yb));
+			  p_zytot->SetBinContent(zb,yb,0);
+			}
+		      }
+		    }
+		  }//loop on z
+		}//loop on y
+	      }//loop on x
+	    }//loop on layers
+	  }//doThresh
+
+	  gStyle->SetOptStat(0);
+	  std::ostringstream ltitle;
+	  ltitle << ltitleBase.str() << mipThresh << " Mips" ;
 	
-	myc[iS]->Update();
-	saveName.str("");
-	saveName << plotDir << "/xyzSimHits_evt" << event[ievt] << "_mipThresh" << mipThresh;
-	myc[iS]->Print((saveName.str()+".png").c_str());
-	myc[iS]->Print((saveName.str()+".pdf").c_str());
+	  myc[iS]->Clear();
+	  myc[iS]->Divide(2,2);
+	  myc[iS]->cd(1);
+	  if (!isRECO) {
+	    //p_xyz->RebinY(4);
+	    //p_xyz->RebinZ(4);
+	    //p_xyz_p->RebinY(4);
+	    //p_xyz_p->RebinZ(4);
+	    //p_xyz_n->RebinY(4);
+	    //p_xyz_n->RebinZ(4);
+	  }
+	  p_xyz->GetXaxis()->SetRangeUser(minZ,maxZ);
+	  p_xyz->GetYaxis()->SetRangeUser(minX,maxX);
+	  p_xyz->GetZaxis()->SetRangeUser(minY,maxY);
+
+	  p_xyz->GetXaxis()->SetLabelSize(0.05);
+	  p_xyz->GetYaxis()->SetLabelSize(0.05);
+	  p_xyz->GetZaxis()->SetLabelSize(0.05);
+	  p_xyz->GetXaxis()->SetTitleSize(0.05);
+	  p_xyz->GetYaxis()->SetTitleSize(0.05);
+	  p_xyz->GetZaxis()->SetTitleSize(0.05);
+	  p_xyz->SetTitle(ltitle.str().c_str());
+	  p_xyz->Draw("");
+	  if (iS==1){
+	    //p_xyz_p->SetMarkerColor(2);
+	    //p_xyz_p->SetMaximum(p_xyz->GetMaximum());
+	    //p_xyz_p->Draw("same");
+	    //p_xyz_n->SetMarkerColor(3);
+	    //p_xyz_n->SetMaximum(p_xyz->GetMaximum());
+	    //p_xyz_n->Draw("same");
+	  }
+
+	  myc[iS]->cd(2);
+	  //p_xztot->RebinX(4);
+	  //p_xztot->RebinY(2);
+	  p_xztot->GetXaxis()->SetLabelSize(0.05);
+	  p_xztot->GetYaxis()->SetLabelSize(0.05);
+	  p_xztot->GetXaxis()->SetTitleSize(0.05);
+	  p_xztot->GetYaxis()->SetTitleSize(0.05);
+	  p_xztot->GetZaxis()->SetTitleOffset(-0.5);
+	  p_xztot->GetZaxis()->SetTitle("E(MIP)");
+	  p_xztot->GetXaxis()->SetRangeUser(minX,maxX);
+	  p_xztot->GetYaxis()->SetRangeUser(minZ,maxZ);
+	  p_xztot->Draw("colz");
+	  //p_xztot->Draw("");
 	
-	//continue;
+	  myc[iS]->cd(3);
+	  //p_zytot->RebinX(2);
+	  //p_zytot->RebinY(4);
+	  p_zytot->GetXaxis()->SetLabelSize(0.05);
+	  p_zytot->GetYaxis()->SetLabelSize(0.05);
+	  p_zytot->GetXaxis()->SetTitleSize(0.05);
+	  p_zytot->GetYaxis()->SetTitleSize(0.05);
+	  p_zytot->GetZaxis()->SetTitleOffset(-0.5);
+	  p_zytot->GetZaxis()->SetTitle("E(MIP)");
+	  p_zytot->GetXaxis()->SetRangeUser(minZ,maxZ);
+	  p_zytot->GetYaxis()->SetRangeUser(minY,maxY);
+	  p_zytot->Draw("colz");
+	  //p_zytot->Draw("");
+	
+	  myc[iS]->cd(4);
+	  p_xytot->GetXaxis()->SetLabelSize(0.05);
+	  p_xytot->GetYaxis()->SetLabelSize(0.05);
+	  p_xytot->GetXaxis()->SetTitleSize(0.05);
+	  p_xytot->GetYaxis()->SetTitleSize(0.05);
+	  p_xytot->GetZaxis()->SetTitleOffset(-0.5);
+	  p_xytot->GetZaxis()->SetTitle("E(MIP)");
+	  p_xytot->GetXaxis()->SetRangeUser(minX,maxX);
+	  p_xytot->GetYaxis()->SetRangeUser(minY,maxY);
+	  p_xytot->Draw("colz");
 
-	mycAll->cd(ievt%nPads+1);
-	gPad->SetLogz(1);
-	TString lLabel = "yz_";
-	lLabel += ievt;
-	TH2D *proj = (TH2D*)p_xyz->Project3D(lLabel);
-	proj->GetZaxis()->SetLabelSize(0.05);
-	proj->GetZaxis()->SetTitleSize(0.05);
-	proj->GetZaxis()->SetTitle("E(MIP)");
-	proj->GetZaxis()->SetTitleOffset(-0.5);
-	proj->SetTitle(ltitle.str().c_str());
-	//proj->SetMinimum(0.1);
-	//proj->Draw("LEGO2z");
-	proj->Draw("colz");
-
-	if (ievt%nPads == nPads-1){
-	  mycAll->Update();
+	  myc[iS]->Update();
 	  saveName.str("");
-	  saveName << plotDir << "/xySimHits_proj_" << ievt/nPads << "_mipThresh" << mipThresh;
-	  mycAll->Print((saveName.str()+".png").c_str());
-	  mycAll->Print((saveName.str()+".pdf").c_str());
-	}
-	//continue;
+	  saveName << plotDir << "/xyzSimHits_evt" << event[ievt] << "_mipThresh" << mipThresh;
+	  myc[iS]->Print((saveName.str()+".png").c_str());
+	  myc[iS]->Print((saveName.str()+".pdf").c_str());
+	
+	  //return 1;//
+	  //continue;
+
+	  // mycAll->cd(evtcounter%nPads+1);
+	  // gPad->SetLogz(1);
+	  // //TH2D *proj = (TH2D*)p_xyz->Project3D(lLabel);
+	  // p_xztot->GetZaxis()->SetLabelSize(0.05);
+	  // p_xztot->GetZaxis()->SetTitleSize(0.05);
+	  // p_xztot->GetZaxis()->SetTitle("E(MIP)");
+	  // p_xztot->GetZaxis()->SetTitleOffset(-0.5);
+	  // p_xztot->SetTitle(ltitle.str().c_str());
+	  // //p_xztot->SetMinimum(0.1);
+	  // //p_xztot->Draw("LEGO2z");
+	  // p_xztot->Draw("colz");
+
+	  // if (evtcounter%nPads == nPads-1){
+	  //   mycAll->Update();
+	  //   saveName.str("");
+	  //   saveName << plotDir << "/xzSimHits_" << evtcounter/nPads << "_mipThresh" << mipThresh;
+	  //   mycAll->Print((saveName.str()+".png").c_str());
+	  //   mycAll->Print((saveName.str()+".pdf").c_str());
+	  // }
+	  //continue;
+	}//loop on mi pthreshold
 
 	mycECAL->Clear();
 	unsigned counter = 1;
@@ -183,20 +390,24 @@ int plotXYZ(){//main
 	mycHCAL->Clear();
 	mycHCAL->Divide(5,3);
 
+	unsigned layId = 0;
 
-	for (unsigned iL(0); iL<nLayers; ++iL){//loop on layers
+	for (unsigned iL(1); iL<nLayers; ++iL){//loop on layers
 	  //std::cout << " -- Processing layer " << iL << std::endl;
-	  if (iL%3==2 && counter < 10 && iL<nEcalLayers) {
+	  if ((iL-1)%3==2 && counter < 10 && iL<nEcalLayers) {
 	    std::cout << " -- Ecal layer " << iL << " counter = " << counter << std::endl;
 	    mycECAL->cd(counter);
 	    counter++;
+	    layId = iL;
 	  }
-	  else if (counter<25 && iL>=nEcalLayers){
+	  else if (counter<25 && iL>=nEcalLayers && ((iL<nEcalLayers+24 && iL%2==1)||iL>=nEcalLayers+24))  {
 	    std::cout << " -- Hcal layer " << iL << " counter = " << counter << std::endl;
 	    mycHCAL->cd(counter-9);
+	    layId = nEcalLayers+counter-10;
+	    if (iL>=nEcalLayers+24) layId = nEcalLayers+15+counter-10;
 	    counter++;
 	  }
-	  else if (iL==nEcalLayers+15){
+	  else if (iL==nEcalLayers+24+3){
 	    saveName.str("");
 	    saveName << plotDir << "/xySimHits_HCAL_evt" << event[ievt] << "_subset1";
 	    mycHCAL->Update();
@@ -204,9 +415,12 @@ int plotXYZ(){//main
 	    mycHCAL->Print((saveName.str()+".pdf").c_str());
 	    counter = 10;
 	    std::cout << " -- Hcal layer " << iL << " counter = " << counter << std::endl;
+	    mycHCAL->Clear();
+	    mycHCAL->Divide(2,3);
 	    mycHCAL->cd(counter-9);
+	    layId = nEcalLayers+15+counter-10;
 	    counter++;
-	  } 
+	  }
 	  else continue;
 	  gPad->SetLogz(1);
 	  p_xy[iL]->SetMaximum(iL<nEcalLayers ? EmaxEcal : EmaxHcal);
@@ -219,10 +433,13 @@ int plotXYZ(){//main
 
 	  //p_xy[iL]->Draw("colz");
 	  char buf[500];
-	  sprintf(buf,"Layer %d",iL);
+	  sprintf(buf,"Layer %d",layId-1);
 	  p_xy[iL]->SetTitle(buf);
 
 	  //p_xy[iL]->Draw("LEGO2z");
+	  p_xy[iL]->GetXaxis()->SetRangeUser(minX,maxX);
+	  p_xy[iL]->GetYaxis()->SetRangeUser(minY,maxY);
+		
 	  p_xy[iL]->Draw("colz");
 	}//loop on layers
 	saveName.str("");
@@ -236,6 +453,7 @@ int plotXYZ(){//main
 	mycHCAL->Print((saveName.str()+".png").c_str());
 	mycHCAL->Print((saveName.str()+".pdf").c_str());
 
+	evtcounter++;
 
       }//loop on events
 

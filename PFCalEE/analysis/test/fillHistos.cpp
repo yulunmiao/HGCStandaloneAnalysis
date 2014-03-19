@@ -183,18 +183,36 @@ int main(int argc, char** argv){//main
   bool saveTxtOutput = false;
   bool doFiducialCuts = false;
   bool selectPiHCAL = false;
-  bool calibrate = true;
+  bool calibrate = false;
   bool concept = true;
 
   bool selectEarlyDecay = false;
 
-  const unsigned nLayers = 64;//Calice 54;//Scint 9;//HCAL 33;//All 64
-  const unsigned nEcalLayers = 31;
+  const unsigned nLayers = 64;//64;//Calice 54;//Scint 9;//HCAL 33;//All 64
+  const unsigned nEcalLayers = 31;//31;
   const unsigned nHcalSiLayers = 24;//concept 24;//calice 47
   const double signalRegionInX=20;
   //const double Emip = 0.0548;//MeV
   const double HcalToEcalConv = 1;//1/1.772;
-  const double HcalSciToHcalSiConv = 1/1.33;//1/5.12;
+  const double HcalSciToHcalSiConv = 1;//1/1.33;//1/5.12;
+
+  //double minX=-250,maxX=250;
+  double minX=-1000,maxX=1000;
+  //double minY=150,maxY=800;
+  //double minY=1100,maxY=1500;
+  double minY=-1000,maxY=1000;
+  double minZ=3170,maxZ=3500;
+  unsigned nX=(maxX-minX)/2.5,nY=(maxY-minY)/2.5;
+  if (nLayers != nEcalLayers) {
+    maxZ = 5070;
+  }
+  unsigned nZ=maxZ-minZ;
+
+  std::cout << " -- 2-D histograms: " << std::endl
+	    << " -- X: " << nX << " " << minX << " " << maxX << std::endl
+	    << " -- Y: " << nY << " " << minY << " " << maxY << std::endl
+	    << " -- Z: " << nZ << " " << minZ << " " << maxZ << std::endl
+    ;
 
   const unsigned nOcc = 1;//4;
   const unsigned occThreshold[nOcc] = {1};//,5,10,20};
@@ -202,8 +220,8 @@ int main(int argc, char** argv){//main
   const unsigned nSmear = 1;
   const double smearFrac[nSmear] = {0};//,0.01,0.02,0.03,0.04,0.05,0.07,0.10,0.15,0.20};
 
-  const unsigned nLat = 20;
-  const double latSize[nLat] = {10,20,30,40,50,60,70,80,90,100,110,120,130,140,150,160,170,180,190,200};//+/- in mm
+  const unsigned nLat = 1;//20;
+  const double latSize[nLat] = {100};//{10,20,30,40,50,60,70,80,90,100,110,120,130,140,150,160,170,180,190,200};//+/- in mm
 
   bool saveLLR = false;
   double etaMinLLR = 3.8;
@@ -373,6 +391,8 @@ int main(int argc, char** argv){//main
   TH2F *p_xy[nGenEn][nLayers];
   TH3F *p_xyz[nGenEn];
   TH2F *p_xy_evt[nLayers];
+  TH2F *p_xz_evt[nLayers];
+  TH2F *p_zy_evt[nLayers];
   TH3F *p_xyz_evt = 0;
   TH2F *p_recoxy[nGenEn][nLayers];
   TH3F *p_recoxyz[nGenEn];
@@ -383,6 +403,8 @@ int main(int argc, char** argv){//main
   for (unsigned iL(0); iL<nLayers; ++iL){
     p_recoxy_evt[iL] = 0;
     p_xy_evt[iL] = 0;
+    p_xz_evt[iL] = 0;
+    p_zy_evt[iL] = 0;
     //std::cout << iL << " " << zlay[iL] << " " 
     //<< llrBinWidth[iL] << " y=0@eta3 " 
     //<< getEta(0,"eta30",zlay[iL]) << std::endl;
@@ -448,12 +470,13 @@ int main(int argc, char** argv){//main
     //if (filePath.find("pi+")!=filePath.npos) input << "/pt_" ;
     //HGcal_version_8_e50.root
     if (pEOS) {
-      input << "_eta" ;
+      input << "_e" ;
       input << genEn[iE] << fileName;
     }
     else {
-      input << "/e_" ;
-      input << genEn[iE] << "/" << fileName ;
+      //input << "/e_" ;
+      //input << genEn[iE] << "/" << fileName ;
+      input << "/" << fileName;
     }
     TFile *inputFile = TFile::Open(input.str().c_str());
 
@@ -513,17 +536,18 @@ int main(int argc, char** argv){//main
     unsigned nPuEvts= 0;
 
     if (overlayPU){
-      std::string inStr = "/afs/cern.ch/work/a/amagnan/public/";
+      std::string inStr;// = "/afs/cern.ch/work/a/amagnan/public/";
       
-      if (isG4Tree) inStr += "HGCalEEGeant4/"+pVersion+"/"+pScenario+"/PedroPU/"+pEta+"/PFcal.root";
-      else  inStr += "HGCalEEDigi/"+pVersion+"/"+pScenario+"/PedroPU/"+pEta+"/DigiPFcal.root";
+      //if (isG4Tree) inStr += "HGCalEEGeant4/"+pVersion+"/"+pScenario+"/PedroPU/"+pEta+"/PFcal.root";
+      //else  inStr += "HGCalEEDigi/"+pVersion+"/"+pScenario+"/PedroPU/"+pEta+"/DigiPFcal.root";
+      if (isG4Tree) inStr += "140PU/PFcal_140PU_EEHE.root";
       puFile = TFile::Open(inStr.c_str());
       if (!puFile) {
 	std::cout << " -- Error, input file " << inStr << " for PU cannot be opened. Exiting..." << std::endl;
 	return 1;
       }
       else std::cout << " -- using file " << inStr << " for PU." << std::endl;
-      lPuTree = isG4Tree ? (TTree*)puFile->Get("HGCSSTree") : (TTree*)puFile->Get("RecoTree");
+      lPuTree = (TTree*)puFile->Get("PUTree");
       if (!lPuTree){
 	std::cout << " -- Error, tree cannot be opened. Exiting..." << std::endl;
 	return 1;
@@ -539,8 +563,9 @@ int main(int argc, char** argv){//main
       nPuEvts =  isG4Tree ? 
 	static_cast<unsigned>(lPuTree->GetEntries()/nLayers):
 	static_cast<unsigned>(lPuTree->GetEntries());
+      //nPuEvts =  static_cast<unsigned>(lPuTree->GetEntries());
 
-      std::cout << "- For PU: " << nPuEvts  << " events are available." << std::endl;
+      std::cout << "- For PU: " << nPuEvts  << " single-interaction events are available." << std::endl;
       
     }
 
@@ -652,23 +677,32 @@ int main(int argc, char** argv){//main
 	  (!isG4Tree || (isG4Tree && (volNb == 0)))
 	  ){
 
+
 	if (p_xyz_evt) p_xyz_evt->Delete();
-	p_xyz_evt = new TH3F("p_xyz",";z(mm);x(mm);y(mm)",2000,-1000,1000,200,-250,250,200,-250,250);
+	p_xyz_evt = new TH3F("p_xyz",";z(mm);x(mm);y(mm)",nZ/2,minZ,maxZ,nX/4,minX,maxX,nY/4,minY,maxY);
 	if (!isG4Tree) {
 	  if (p_recoxyz_evt) p_recoxyz_evt->Delete();
-	  p_recoxyz_evt = new TH3F("p_recoxyz",";z(mm);x(mm);y(mm)",2000,-1000,1000,50,-250,250,50,-250,250);
+	  p_recoxyz_evt = new TH3F("p_recoxyz",";z(mm);x(mm);y(mm)",nZ,minZ,maxZ,nX/4,minX,maxX,nY/4,minY,maxY);
 	}
 	
 	for (unsigned iL(0); iL<nLayers; ++iL){
 	  lName.str("");
 	  lName << "p_xy_" << iL;
 	  if (p_xy_evt[iL]) p_xy_evt[iL]->Delete();
-	  p_xy_evt[iL] = new TH2F(lName.str().c_str(),";x(mm);y(mm)",200,-250,250,200,-250,250);
+	  p_xy_evt[iL] = new TH2F(lName.str().c_str(),";x(mm);y(mm)",nX,minX,maxX,nY,minY,maxY);
+	  lName.str("");
+	  lName << "p_xz_" << iL;
+	  if (p_xz_evt[iL]) p_xz_evt[iL]->Delete();
+	  p_xz_evt[iL] = new TH2F(lName.str().c_str(),";x(mm);z(mm)",nX,minX,maxX,nZ,minZ,maxZ);
+	  lName.str("");
+	  lName << "p_zy_" << iL;
+	  if (p_zy_evt[iL]) p_zy_evt[iL]->Delete();
+	  p_zy_evt[iL] = new TH2F(lName.str().c_str(),";z(mm);y(mm)",nZ,minZ,maxZ,nY,minY,maxY);
 	  if (!isG4Tree){
 	    lName.str("");
 	    lName << "p_recoxy_" << iL;
 	    if (p_recoxy_evt[iL]) p_recoxy_evt[iL]->Delete();
-	    p_recoxy_evt[iL] = new TH2F(lName.str().c_str(),";x(mm);y(mm)",50,-250,250,50,-250,250);
+	    p_recoxy_evt[iL] = new TH2F(lName.str().c_str(),";x(mm);y(mm)",nX/4,minX,maxX,nY/4,minY,maxY);
 
 	  }
 	}
@@ -681,8 +715,8 @@ int main(int argc, char** argv){//main
 	  //get random PU events among available;
 	  std::cout << " -- PU Random number for entry " << ievt << " is " << ipuevt << std::endl;
 	}
+	
 	lPuTree->GetEntry(isG4Tree? nLayers*ipuevt+(ievt%nLayers) : ipuevt);
-
 	for (unsigned iH(0); iH<(*pusimhitvec).size(); ++iH){//loop on hits
 	  HGCSSSimHit lHit = (*pusimhitvec)[iH];
 	  unsigned layer = lHit.layer();
@@ -690,15 +724,19 @@ int main(int argc, char** argv){//main
 	    if (firstEvent) std::cout << " -- Warning PU hit#" << iH << ", applying patch to layer number..." << layer << " " << volNb << std::endl; 
 	    layer = volNb;
 	  }
-
+	    
 	  //select "flavour"
 	  if (doChargedPions){
-	    if ((lHit.nHadrons() == 0 && lHit.nMuons() == 0)) continue;
+	    //if ((lHit.nHadrons() == 0 && lHit.nMuons() == 0)) continue;
+	    //HACK !!
+	    if (lHit.nProtons() == 0) continue;
 	  }
 	  else if (doNeutralPions){
-	    if (lHit.nGammas()==0 && lHit.nElectrons()==0 ) continue;
+	    //if (lHit.nGammas()==0 && lHit.nElectrons()==0 ) continue;
+	    //HACK !!
+	    if (lHit.nNeutrons()==0 ) continue;
 	  }
-	  
+	    
 	  double posx = lHit.get_x();
 	  double posy = lHit.get_y();
 	  double posz = lHit.get_z();
@@ -722,10 +760,20 @@ int main(int argc, char** argv){//main
 	  }
 	  p_xy[iE][layer]->Fill(posx,posy,energy);
 	  p_xyz[iE]->Fill(posz,posx,posy,energy);
-
+	    
 	  if (saveEventByEvent){
-	    p_xy_evt[layer]->Fill(posx,posy,energy);
-	    p_xyz_evt->Fill(posz,posx,posy,energy);
+	    bool pass = (layer < nEcalLayers) ||
+	      (layer>= nEcalLayers && 
+	       layer<nEcalLayers+nHcalSiLayers &&
+	       (!concept || (concept && layer%2==1))
+	       ) ||
+	      layer>=nEcalLayers+nHcalSiLayers;
+	    if (pass){
+	      p_xy_evt[layer]->Fill(posx,posy,energy);
+	      p_xz_evt[layer]->Fill(posx,posz,energy);
+	      p_zy_evt[layer]->Fill(posz,posy,energy);
+	      p_xyz_evt->Fill(posz,posx,posy,energy);
+	    }
 	  }
 	  p_time[iE][layer]->Fill(lHit.time());
 	  //restrict in y and x to have just the influence of the eta bin wanted
@@ -736,7 +784,7 @@ int main(int argc, char** argv){//main
 	  }
 	  Etot[layer] += energy;
 	  if (debug>1) std::cout << "-hit" << iH << "-" << layer << " " << energy << " " << Etot[layer];
-	  
+	    
 	  if (isCalice){
 	    if (layer<nHcalSiLayers) {
 	      Etotal[0] += weightedE;
@@ -761,7 +809,7 @@ int main(int argc, char** argv){//main
 		  if (fabs(posx)<latSize[iR] &&
 		      fabs(posy)<latSize[iR]) Elateral[0][iR]+= weightedE;
 		}
-		
+		  
 	      }
 	    }
 	    else {
@@ -774,7 +822,7 @@ int main(int argc, char** argv){//main
 		    fabs(posy)<latSize[iR]) Elateral[0][iR]+= weightedE;
 	      }
 	    }
-
+	      
 	  }//HCALonly
 	  else {//ECALonly or ECAL+HCAL
 	    if (layer<nEcalLayers) {
@@ -809,10 +857,10 @@ int main(int argc, char** argv){//main
 	      }
 	    }//HCAL
 	  }//ECALonly or ECAL+HCAL
-       
+	    
 	}//loop on hits
-
-
+	  
+	  
 	nTotal += (*pusimhitvec).size();
 	if (debug)  std::cout << std::endl;
 	if (!isG4Tree){
@@ -837,7 +885,7 @@ int main(int argc, char** argv){//main
 	      if ( (pVersion.find("23") != pVersion.npos && fabs(posx) > 200) ||
 		   (pVersion.find("23") == pVersion.npos && fabs(posx) > 60)) continue;
 	    }
-
+	      
 	    double energy = lHit.energy();//in MIPs already
 	    unsigned layer = lHit.layer();
 	    p_recoxy[iE][layer]->Fill(posx,posy,energy);
@@ -856,8 +904,8 @@ int main(int argc, char** argv){//main
 	      p_recoxy_evt[layer]->Fill(posx,posy,energy);
 	      p_recoxyz_evt->Fill(posz,posx,posy,energy);
 	    }
-
-
+	      
+	      
 	  }
 	}
       }//add PU hits
@@ -872,10 +920,14 @@ int main(int argc, char** argv){//main
 
 	//select "flavour"
 	if (doChargedPions){
-	  if ((lHit.nHadrons() == 0 && lHit.nMuons() == 0)) continue;
+	  //if ((lHit.nHadrons() == 0 && lHit.nMuons() == 0)) continue;
+	  //HACK !!
+	  if (lHit.nProtons()==0 ) continue;
 	}
 	else if (doNeutralPions){
-	  if (lHit.nGammas()==0 && lHit.nElectrons()==0 ) continue;
+	  //HACK !!
+	  if (lHit.nNeutrons()==0 ) continue;
+	  //if (lHit.nGammas()==0 && lHit.nElectrons()==0 ) continue;
 	}
 
 	double posx = lHit.get_x();
@@ -921,8 +973,18 @@ int main(int argc, char** argv){//main
 	p_xy[iE][layer]->Fill(posx,posy,energy);
 	p_xyz[iE]->Fill(posz,posx,posy,energy);
 	if (saveEventByEvent){
-	  p_xy_evt[layer]->Fill(posx,posy,energy);
-	  p_xyz_evt->Fill(posz,posx,posy,energy);
+	  bool pass = (layer < nEcalLayers) ||
+	    (layer>= nEcalLayers && 
+	     layer<nEcalLayers+nHcalSiLayers &&
+	     (!concept || (concept && layer%2==1))
+	     ) ||
+	    layer>=nEcalLayers+nHcalSiLayers;
+	  if (pass){
+	    p_xy_evt[layer]->Fill(posx,posy,energy);
+	    p_xz_evt[layer]->Fill(posx,posz,energy);
+	    p_zy_evt[layer]->Fill(posz,posy,energy);
+	    p_xyz_evt->Fill(posz,posx,posy,energy);
+	  }
 	}
 	p_time[iE][layer]->Fill(lHit.time());
 	if (fabs(posx)<signalRegionInX/2.){
@@ -1200,12 +1262,13 @@ int main(int argc, char** argv){//main
 	      std::cout << " -- Opening event file for evt " << lEvt << std::endl;
 	    }
 	    outputEvt->cd();
-	    
 	    for (unsigned iL(0); iL<nLayers; ++iL){
 	      p_xy_evt[iL]->Write();
+	      p_xz_evt[iL]->Write();
+	      p_zy_evt[iL]->Write();
 	      if (!isG4Tree) p_recoxy_evt[iL]->Write();
 	    }
-	    p_xyz_evt->Write();
+	    if (p_xyz_evt) p_xyz_evt->Write();
 	    if (!isG4Tree) p_recoxyz_evt->Write();
 	    outputEvt->Close();
 	  }
