@@ -57,7 +57,7 @@ public:
   };
 
   inline unsigned fullcellid() const {
-    return cellid_ | (layer_<<24);
+    return cellid_ | ((layer_&0xFF)<<24);
   };
 
   inline double noiseFraction() const {
@@ -77,15 +77,15 @@ public:
   };
 
   inline bool get_y_side() const{
-    return (cellid_ & 0x0100) >> 8;
+    return (cellid_ & 0x0200) >> 9;
   };
 
   inline unsigned get_x_cell() const{
-    return (cellid_ & 0x00FE) >> 1;
+    return (cellid_ & 0x01FE) >> 1;
   };
 
   inline unsigned get_y_cell() const{
-    return (cellid_ & 0xFE00) >> 9;
+    return (cellid_ & 0x3FC00) >> 10;
   };
 
   inline double get_x() const{
@@ -107,7 +107,7 @@ public:
   };
 
   inline unsigned getGranularity() const{
-    return (cellid_ & 0x00FF0000) >> 16;
+    return (cellid_ & 0x00FC0000) >> 18;
   };
 
   void Print(std::ostream & aOs) const;

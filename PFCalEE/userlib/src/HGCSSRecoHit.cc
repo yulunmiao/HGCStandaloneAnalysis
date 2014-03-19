@@ -25,9 +25,9 @@ HGCSSRecoHit::HGCSSRecoHit(const HGCSSSimHit & aSimHit, const unsigned granulari
 
 void HGCSSRecoHit::encodeCellId(const bool x_side,const bool y_side,const unsigned x_cell,const unsigned y_cell, const unsigned granularity){
   cellid_ = 
-    x_side | (x_cell<<1) |
-    (y_side<<8) | (y_cell<<9) |
-    (granularity<<16) ;
+    x_side | ((x_cell & 0xFF)<<1) |
+    (y_side<<9) | ((y_cell & 0xFF)<<10) |
+    ((granularity & 0x3F) <<18) ;
 
   // std::cout << " Cross-check of encoding: cellid=" << cellid_ << std::endl
   // 	    << " x_side " << x_side << " " << get_x_side() << std::endl
