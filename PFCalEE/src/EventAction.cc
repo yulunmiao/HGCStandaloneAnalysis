@@ -15,7 +15,7 @@ EventAction::EventAction()
 {
   runAct = (RunAction*)G4RunManager::GetRunManager()->GetUserRunAction();
   eventMessenger = new EventActionMessenger(this);
-  printModulo = 5;
+  printModulo = 10;
   outF_=TFile::Open("PFcal.root","RECREATE");
   //ntuple_=new TNtuple("CaloStack","CaloStack","event:volNb:volX0:volX0trans:den:denWeight:denAbs:denTotal:gFrac:eFrac:muFrac:hadFrac:avgTime:nhits");
   // ntuple_->Branch("dendydz",dendydz_,"dendydz[81]/F");
@@ -37,8 +37,9 @@ EventAction::EventAction()
   tree_->Branch("nSiHits",&event_[13]);
   tree_->Branch("volLambda",&event_[14]);
   tree_->Branch("neutronFrac",&event_[15]);
+  tree_->Branch("nGenParticles",&event_[16]);
   tree_->Branch("HGCSSSimHitVec","std::vector<HGCSSSimHit>",&hitvec_);
-
+  tree_->Branch("HGCSSGenParticleVec","std::vector<HGCSSGenParticle>",&genvec_);
 }
 
 //
@@ -66,9 +67,11 @@ void EventAction::BeginOfEventAction(const G4Event* evt)
 //
 void EventAction::Detect(G4double edep, G4double stepl,G4double globalTime, 
 			 G4int pdgId, G4VPhysicalVolume *volume, const G4ThreeVector & position, 
-			 G4int trackID, G4int parentID)
+			 G4int trackID, G4int parentID,
+			 const HGCSSGenParticle & genPart)
 {
   for(size_t i=0; i<detector_->size(); i++) (*detector_)[i].add(edep,stepl,globalTime,pdgId,volume,position,trackID,parentID,i);
+  if (genPart.isIncoming()) genvec_.push_back(genPart);
 }
 
   //void EventAction::Detect(G4double edep, G4double stepl,G4double globalTime, G4int pdgId, G4VPhysicalVolume *volume, int iyiz)
@@ -99,11 +102,12 @@ void EventAction::EndOfEventAction(const G4Event* evt)
       event_[13]=(*detector_)[i].getSiHitVec().size();
       event_[14]=(*detector_)[i].getAbsorberLambda();
       event_[15]=(*detector_)[i].getNeutronFraction();
+      event_[16]=genvec_.size();
       hitvec_.clear();
       std::map<unsigned,HGCSSSimHit> lHitMap;
       std::pair<std::map<unsigned,HGCSSSimHit>::iterator,bool> isInserted;
-      //get ID of parents among incoming particles.
-      //if (i>0) (*detector_)[i].trackParticleHistory((*detector_)[i-1].getSiHitVec());
+
+      if (i>0) (*detector_)[i].trackParticleHistory((*detector_)[i-1].getSiHitVec());
 
       for (unsigned iSiHit(0); iSiHit<event_[13];++iSiHit){
 	G4SiHit lSiHit = (*detector_)[i].getSiHitVec()[iSiHit];
@@ -120,6 +124,7 @@ void EventAction::EndOfEventAction(const G4Event* evt)
       std::map<unsigned,HGCSSSimHit>::iterator lIter = lHitMap.begin();
       hitvec_.reserve(lHitMap.size());
       for (; lIter != lHitMap.end(); ++lIter){
+	(lIter->second).calculateTime();
 	hitvec_.push_back(lIter->second);
       }
       //ntuple_->Fill(event_);
@@ -128,7 +133,16 @@ void EventAction::EndOfEventAction(const G4Event* evt)
       //for(size_t iyiz=0; iyiz<81; iyiz++) dendydz_[iyiz]=(*detector_)[i].getMeasuredEnergyInPos(iyiz);
       //ntuple_->Fill(event_);
 
-      if(debug) (*detector_)[i].report( (i==0) );
+      if(debug) {
+	if (i==0) G4cout << " -- Number of truth particles = " << genvec_.size() << G4endl;
+	(*detector_)[i].report( (i==0) );
+      }
+
+      //if (i==0) G4cout << " ** evt " << evt->GetEventID() << G4endl;
+
+      //reset genvec: want to record only for first layer
+      genvec_.clear();
+
       (*detector_)[i].resetCounters();
     }
 }

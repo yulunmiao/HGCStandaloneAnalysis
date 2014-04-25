@@ -34,7 +34,7 @@ int main(int argc, char** argv){//main
   TString lSuffix = "version23_e100";
   TString plotBase = "PLOTS/version23/mu-/";
 
-  TFile *inputFile = TFile::Open("root://eoscms//eos/cms/store/user/amagnan/HGCalHEGeant4Cor/mu-/HGcal_"+lSuffix+".root");
+  TFile *inputFile = TFile::Open("root://eoscms//eos/cms/store/user/amagnan/HGCalHEGeant4/run_0/mu-/HGcal_"+lSuffix+".root");
   if (!inputFile) {
     std::cout << " -- Error, input file cannot be opened. Exiting..." << std::endl;
     return 1;
@@ -67,7 +67,7 @@ int main(int argc, char** argv){//main
 
     lTree->GetEntry(ievt);
     
-    if (ievt%30000==0) std::cout << "entry " << ievt << " volNb = " << volNb << std::endl;
+    if (ievt%(nLayers*1000)==0) std::cout << "entry " << ievt << " volNb = " << volNb << std::endl;
 
     unsigned nHits = 0;
     double energySel = 0;

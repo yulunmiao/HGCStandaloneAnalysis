@@ -17,6 +17,7 @@
 #include "HGCSSSimHit.hh"
 #include "HGCSSRecoHit.hh"
 #include "HGCSSParameters.hh"
+#include "HGCSSCalibration.hh"
 
 // double zlayer(const unsigned layer) {
 //   double w1b = 1.6+3+0.1;
@@ -37,6 +38,15 @@
 //   return -totalWidth/2. + offset; //in mm
   
 // }
+
+bool fillHistoConditions(const bool selectEarlyDecay,
+			 const double E_FHCAL,
+			 const double Etotal){
+  if (selectEarlyDecay) {
+    if (E_FHCAL < 0.95*Etotal) return false; 
+  }
+  return true;
+}
 
 double getBinWidth(const double etaMin,const double etaMax, std::string etaStr, const double zlaymm){
   double eta0 = 0;
@@ -97,66 +107,6 @@ double getEta(double ypos, std::string etaStr, const double zlaymm){
 
 }
 
-double getWeight(unsigned layer,std::string aVersion, double volX0ref, double volX0, bool toGeV=false){
-  double mipHCALSi = 0.0849;//MeV
-  double mipHCALSci = 1.49;//MeV
-  //double calibHCALSi = 1/3.144;//MeV/GeV
-  double calibHCALSi = 1/1.496;//MeV/GeV
-  double calibHCALSci = 1/14.778;//MeV/GeV
-  if (aVersion.find("22")!=aVersion.npos){
-    //just scint HCAL
-    return toGeV? calibHCALSci : 1;
-  }
-  if (aVersion.find("21")!=aVersion.npos){
-    if (layer < 24)
-      return toGeV? calibHCALSi: 1;
-    //return 1;
-    else if (layer < 33)
-      //return toGeV? calibHCAL*mipHCAL*volX0/volX0ref : volX0/volX0ref;
-      return toGeV? calibHCALSci*92.196/65.235 : 92.196/65.235 ;
-    //return calibHCAL*mipHCAL*volX0/volX0ref;
-  }
-  if (aVersion.find("23")!=aVersion.npos){
-    calibHCALSci = 1/29.815;//MeV/GeV
-    if (layer < 47)
-      return toGeV? calibHCALSci: 1;
-    //return 1;
-    else if (layer < 54)
-      //return toGeV? calibHCAL*mipHCAL*volX0/volX0ref : volX0/volX0ref;
-      return toGeV? calibHCALSci*104./22. : 104./22. ;
-    //return calibHCAL*mipHCAL*volX0/volX0ref;
-  }
-
-  if (layer<11) 
-    return toGeV? 107.84 : 1;
-  //if (aVersion.find("20")!= aVersion.npos || 
-  //aVersion.find("21") != aVersion.npos ||
-  //aVersion.find("22") != aVersion.npos ||
-  //aVersion.find("23") != aVersion.npos){
-  else if (layer < 21) 
-    return toGeV? 136.31 : 1.264;
-  //return 8.001/5.848;
-  //return 0.8/0.5;
-  else if (layer<31) 
-    return toGeV? 218.79 : 2.029;
-  //return 10.854/5.848;
-  //return 1.2/0.5;
-  else if (layer < 55)
-    return toGeV? calibHCALSi: 1;
-  //return 65.235/5.848;
-  else if (layer < 64)
-    return toGeV? calibHCALSci*92.196/65.235 : 92.196/65.235;
-  //return 40.779/5.848;
-
-  return 1;
-  //}
-  //else {
-  //  if (layer < 20) return 0.8/0.4;
-  //  else if (layer < 30) return 1.2/0.4;
-  //  else return 1;
-  //}
-}
-
 
 int main(int argc, char** argv){//main  
 
@@ -169,8 +119,9 @@ int main(int argc, char** argv){//main
 	      << " <optional: debug (default=0)>"
 	      << " <optional: overlayPU (default=0)>"
 	      << " <optional: saveEventByEventThresh (default=0)>"
-	      << " <optional: doChargedPionsOnly (default=0)>"
-	      << " <optional: doNeutralPionsOnly (default=0)>"
+	      << " <optional: doProtonsOnly (default=0)>"
+	      << " <optional: doNeutronsOnly (default=0)>"
+	      << " <optional: list of events: 7,16,22>"
 	      << std::endl;
     return 1;
   }
@@ -179,40 +130,37 @@ int main(int argc, char** argv){//main
   //// Hardcoded config ////////////////////////////////////
   //////////////////////////////////////////////////////////
 
-  bool applyWeight = true;
+  bool applyWeight = true;//do MIP + absorber thickness reweighting
   bool saveTxtOutput = false;
   bool doFiducialCuts = false;
   bool selectPiHCAL = false;
-  bool calibrate = false;
-  bool concept = true;
+  bool calibrate = true;//do MIP to GeV for total E.
+  bool concept = false;
 
-  bool selectEarlyDecay = false;
+  bool useOldEncoding = false;
 
-  const unsigned nLayers = 64;//64;//Calice 54;//Scint 9;//HCAL 33;//All 64
-  const unsigned nEcalLayers = 31;//31;
-  const unsigned nHcalSiLayers = 24;//concept 24;//calice 47
+  bool selectEarlyDecay = true;//>95% of E in HCAL
+
+  const unsigned nSections = 4;
+
+  const unsigned nLimits = 1;
+  const double pElim[nLimits] = {5};//8,10,12,14,16};//in mips for Cglobal
+
   const double signalRegionInX=20;
-  //const double Emip = 0.0548;//MeV
-  const double HcalToEcalConv = 1;//1/1.772;
-  const double HcalSciToHcalSiConv = 1;//1/1.33;//1/5.12;
 
+  const double minRadius = 0;//316;//mm
+
+  bool doOverview = false;
   //double minX=-250,maxX=250;
-  double minX=-1000,maxX=1000;
-  //double minY=150,maxY=800;
-  //double minY=1100,maxY=1500;
-  double minY=-1000,maxY=1000;
-  double minZ=3170,maxZ=3500;
-  unsigned nX=(maxX-minX)/2.5,nY=(maxY-minY)/2.5;
-  if (nLayers != nEcalLayers) {
-    maxZ = 5070;
-  }
-  unsigned nZ=maxZ-minZ;
+  double minX=-1700,maxX=1700;
+  double minY=-1700,maxY=1700;
+  double minZ=3170,maxZ=5070;
 
-  std::cout << " -- 2-D histograms: " << std::endl
-	    << " -- X: " << nX << " " << minX << " " << maxX << std::endl
-	    << " -- Y: " << nY << " " << minY << " " << maxY << std::endl
-	    << " -- Z: " << nZ << " " << minZ << " " << maxZ << std::endl
-    ;
+  if (!doOverview){
+    minX=-800;maxX=800;
+    minY=-800;maxY=1000;
+    //minY=1100;maxY=1500;
+  }
 
   const unsigned nOcc = 1;//4;
   const unsigned occThreshold[nOcc] = {1};//,5,10,20};
@@ -236,8 +184,8 @@ int main(int argc, char** argv){//main
   std::string fileName = argv[3];//"PFcal.root";
   unsigned debug = 0;
   if (argc >5) debug = atoi(argv[5]);
-  bool doChargedPions = false;
-  bool doNeutralPions = false;
+  bool doProtons = false;
+  bool doNeutrons = false;
   bool saveEventByEvent = false;
   bool overlayPU = false;
   if (argc>6) overlayPU = atoi(argv[6]);
@@ -246,8 +194,8 @@ int main(int argc, char** argv){//main
     saveEvtThresh = atoi(argv[7]);
     if (saveEvtThresh>0) saveEventByEvent = true;
   }
-  if (argc>8) doChargedPions = atoi(argv[8]);
-  if (argc>9) doNeutralPions = atoi(argv[9]);
+  if (argc>8) doProtons = atoi(argv[8]);
+  if (argc>9) doNeutrons = atoi(argv[9]);
 
   std::cout << " -- Input parameters: " << std::endl
 	    << " -- Input file path: " << filePath << std::endl
@@ -257,13 +205,15 @@ int main(int argc, char** argv){//main
   else std::cout << pNevts << " events." << std::endl;
 
   if (overlayPU) std::cout << " -- Overlaying PU events from Minbias bank" << std::endl;
-  if (doChargedPions) std::cout << " -- Using hits from charged pions only" << std::endl;
-  if (doNeutralPions) std::cout << " -- Using hits from neutral pions only" << std::endl;
+  if (doProtons) std::cout << " -- Using hits from protons only" << std::endl;
+  if (doNeutrons) std::cout << " -- Using hits from neutrons only" << std::endl;
 
   unsigned nMaxHits = saveEvtThresh;//10000;
   if (saveEventByEvent) std::cout << " -- saving event by event for events with nHits above " << nMaxHits <<std::endl;
 
   TRandom3 lRndm(0);
+
+  std::cout << " -- Random number seed: " << lRndm.GetSeed() << std::endl;
 
   //unsigned tmpEn[]={5,10,20,25,50,75,100,125,150,175,200,300,500};
   //unsigned tmpEn[]={5,10,25,40,50,60,80,100,200,300,400,500,1000,2000};
@@ -289,31 +239,27 @@ int main(int argc, char** argv){//main
   }
   const unsigned nGenEn=genEn.size();
   
-  bool isHCALonly = filePath.find("version21")!=filePath.npos;
-  bool isCalice = filePath.find("version23")!=filePath.npos;
+  std::cout << " -- Setup to run on " << nGenEn << " energy points." << std::endl;
+
+  std::vector<unsigned> evtList;
+
+  std::vector<std::string> evtVec;
+  std::string evtVecStr;
+  if (argc >10) {
+    evtVecStr = argv[10];
+    boost::split( evtVec, evtVecStr, boost::is_any_of(","));
+    for (unsigned ie(0); ie<evtVec.size();++ie){
+      unsigned tmp = 0;
+      std::istringstream(evtVec[ie])>>tmp;
+      evtList.push_back(tmp);
+    }
+  }
 
   const double totalWidth=(filePath.find("version20")==filePath.npos && 
-			   filePath.find("version21")==filePath.npos) ? 200 : 500;
+			   filePath.find("version21")==filePath.npos &&
+			   filePath.find("version22")==filePath.npos &&
+			   filePath.find("version23")==filePath.npos) ? 200 : 500;
 
-
-  std::cout << " ----------------------------------- " << std::endl
-	    << " ----------------------------------- " << std::endl
-	    << " ----- Hardcoded configuration is : " << std::endl
-	    << " ----------------------------------- " << std::endl
-	    << " ----------------------------------- " << std::endl
-	    << " -- applyWeight = " << applyWeight << std::endl
-	    << " -- saveTxtOutput = " <<saveTxtOutput << std::endl
-	    << " -- doFiducialCuts = " <<doFiducialCuts << std::endl
-	    << " -- selectPiHCAL = " <<selectPiHCAL << std::endl
-	    << " -- calibrate = " <<calibrate << std::endl
-	    << " -- concept = " <<concept << std::endl
-	    << " -- N layers = " << nLayers << std::endl
-	    << " -- nEcalLayers = " << nEcalLayers << " weights " << getWeight(5,isHCALonly?"version3":filePath,1,1,calibrate) << " " << getWeight(15,isHCALonly?"version3":filePath,1,1,calibrate) << " " << getWeight(25,isHCALonly?"version3":filePath,1,1,calibrate) << std::endl
-	    << " -- nHcalSiLayers  = " << nHcalSiLayers << " weight " << getWeight(isHCALonly?1:nEcalLayers+1,filePath,1,1,calibrate) << " Scint " << getWeight(isHCALonly?nHcalSiLayers+1:nEcalLayers+nHcalSiLayers+1,filePath,1,1,calibrate) << std::endl
-	    << " -- conversions: HcalToEcalConv = " <<HcalToEcalConv << " HcalSciToHcalSiConv = " << HcalSciToHcalSiConv << std::endl
-	    << " ----------------------------------- " << std::endl
-	    << " ----------------------------------- " << std::endl
-	    << " -----------------------------------" << std::endl;
 
   TString plotDir = "PLOTS/";
   std::vector<std::string> pathVec;
@@ -322,7 +268,7 @@ int main(int argc, char** argv){//main
     pEOS = true;
   }
    
-  if (filePath.find("version_23") != filePath.npos) pEOS = false;
+  //if (filePath.find("version_23") != filePath.npos) pEOS = false;
 
   if (pEOS) boost::split( pathVec, filePath, boost::is_any_of("/_"));
   else  boost::split( pathVec, filePath, boost::is_any_of("/"));
@@ -336,7 +282,7 @@ int main(int argc, char** argv){//main
     if (lTmp.find("version") != lTmp.npos) {
       pVersion = lTmp;//+"_"+pathVec[pathVec.size()-i];
     }
-    else if (lTmp.find("scenario") != lTmp.npos) {
+     else if (lTmp.find("scenario") != lTmp.npos) {
       pScenario = lTmp;
     }
     else if (pEOS && pVersion.size()!=0 && lTmp.find("HGcal")!=lTmp.npos){
@@ -361,8 +307,8 @@ int main(int argc, char** argv){//main
   plotDir += "/";
   plotDir += pParticle;
   if (overlayPU) plotDir += "/PU";
-  if (!doNeutralPions && doChargedPions) plotDir += "_pipm";
-  else if (!doChargedPions && doNeutralPions) plotDir += "_pi0";
+  if (!doNeutrons && doProtons) plotDir += "_protons";
+  else if (!doProtons && doNeutrons) plotDir += "_neutrons";
   plotDir += "/";
   plotDir += pEta;
   plotDir += "/";
@@ -373,10 +319,48 @@ int main(int argc, char** argv){//main
   if (!applyWeight) plotDir += "noWeights/";
   if (selectPiHCAL) plotDir += "selectPiHCAL/";
   if (concept) plotDir += "concept/";
-  else if (isHCALonly) plotDir += "twiceSampling/";
+  else plotDir += "twiceSampling/";
   if (calibrate) plotDir += "GeVCal/";
   //plotDir += "simpleWeights/";
   if (selectEarlyDecay) plotDir += "EarlyDecay/";
+
+  if (doOverview) plotDir += "Overview/";
+
+
+  std::cout << " ----------------------------------- " << std::endl
+	    << " ----------------------------------- " << std::endl
+	    << " ----- Hardcoded configuration is : " << std::endl
+	    << " ----------------------------------- " << std::endl
+	    << " ----------------------------------- " << std::endl
+	    << " -- applyWeight = " << applyWeight << std::endl
+	    << " -- saveTxtOutput = " <<saveTxtOutput << std::endl
+	    << " -- doFiducialCuts = " <<doFiducialCuts << std::endl
+	    << " -- selectPiHCAL = " <<selectPiHCAL << std::endl
+	    << " -- calibrate = " <<calibrate << std::endl
+	    << " -- concept = " <<concept << std::endl
+	    << " -- useOldEncoding = " << useOldEncoding << std::endl;
+
+  //initialise calibration class
+
+  HGCSSCalibration mycalib(filePath,concept,calibrate);
+  const unsigned nLayers = mycalib.nLayers();//64;//Calice 54;//Scint 9;//HCAL 33;//All 64
+  const unsigned nEcalLayers = mycalib.nEcalLayers();//31;
+  const unsigned nFHcalLayers = mycalib.nFHcalLayers();//concept 24;//calice 47
+
+  std::cout << " -- N layers = " << nLayers << std::endl
+	    << " -- nEcalLayers = " << nEcalLayers 
+	    << ", mip weights = " << mycalib.mipWeight(0) << " " << mycalib.mipWeight(1) << " " << mycalib.mipWeight(2)
+	    << ", GeV weights = " << mycalib.gevWeight(0) << " offset " << mycalib.gevOffset(0)
+	    << std::endl
+	    << " -- nFHcalLayers  = " << nFHcalLayers 
+	    << ", mip weights = " << mycalib.mipWeight(3) << " " << mycalib.mipWeight(4) << " " << mycalib.mipWeight(5) 
+	    << ", GeV weights = " << mycalib.gevWeight(1) << " " << mycalib.gevWeight(2) << " offsets: " << mycalib.gevOffset(1) << " " <<   mycalib.gevOffset(2)
+	    << std::endl
+	    << " -- conversions: HcalToEcalConv = " <<mycalib.HcalToEcalConv() << " BHcalToFHcalConv = " << mycalib.BHcalToFHcalConv() << std::endl
+	    << " -- Elim for Cglobal = " << pElim[0] << "-" << pElim[nLimits-1] << " Mips" << std::endl
+	    << " ----------------------------------- " << std::endl
+	    << " ----------------------------------- " << std::endl
+	    << " -----------------------------------" << std::endl;
 
   std::cout << " -- Output file directory is : " << plotDir << std::endl;
 
@@ -387,12 +371,21 @@ int main(int argc, char** argv){//main
     return 1;
   }
 
+  unsigned nX=(maxX-minX)/2.5,nY=(maxY-minY)/2.5;
+  if (nLayers == nEcalLayers) {
+    maxZ = 3500;
+  }
+  unsigned nZ=maxZ-minZ;
+
+  std::cout << " -- 2-D histograms: " << std::endl
+	    << " -- X: " << nX << " " << minX << " " << maxX << std::endl
+	    << " -- Y: " << nY << " " << minY << " " << maxY << std::endl
+	    << " -- Z: " << nZ << " " << minZ << " " << maxZ << std::endl
+    ;
 
   TH2F *p_xy[nGenEn][nLayers];
   TH3F *p_xyz[nGenEn];
   TH2F *p_xy_evt[nLayers];
-  TH2F *p_xz_evt[nLayers];
-  TH2F *p_zy_evt[nLayers];
   TH3F *p_xyz_evt = 0;
   TH2F *p_recoxy[nGenEn][nLayers];
   TH3F *p_recoxyz[nGenEn];
@@ -403,8 +396,6 @@ int main(int argc, char** argv){//main
   for (unsigned iL(0); iL<nLayers; ++iL){
     p_recoxy_evt[iL] = 0;
     p_xy_evt[iL] = 0;
-    p_xz_evt[iL] = 0;
-    p_zy_evt[iL] = 0;
     //std::cout << iL << " " << zlay[iL] << " " 
     //<< llrBinWidth[iL] << " y=0@eta3 " 
     //<< getEta(0,"eta30",zlay[iL]) << std::endl;
@@ -415,9 +406,14 @@ int main(int argc, char** argv){//main
   TH1F *p_Etot[nGenEn][nLayers];
   TH1F *p_Efrac[nGenEn][nLayers];
   TH1F *p_time[nGenEn][nLayers];
-  TH1F *p_Etotal[nGenEn][3];
-  TH1F *p_EfracLateral[nGenEn][2][nLat];
+  TH1F *p_Etotal[nGenEn][nSections];
+  TH1F *p_EfracLateral[nGenEn][nSections][nLat];
   TH2F *p_HCALvsECAL[nGenEn];
+  TH2F *p_BHCALvsFHCAL[nGenEn];
+  TH1F *p_Cglobal[nGenEn][nLimits];
+  TH1F *p_Eshower[nGenEn][nLimits];
+  TH2F *p_EvsCglobal[nGenEn][nLimits];
+
 
   TH1F *p_Ereco[nGenEn][nSmear];
   TH1F *p_nSimHits[nGenEn];
@@ -445,9 +441,16 @@ int main(int argc, char** argv){//main
   mycE->Divide(5,2);
   gStyle->SetOptStat("eMRuoi");
 
+
+  double EmipMean[nGenEn];
+
+
   for (unsigned iE(0); iE<nGenEn; ++iE){
 
     if (isMB) genEn[iE] = iE;
+
+    EmipMean[iE] = 1.;
+
 
     std::cout << "- Processing energy : " << genEn[iE] << std::endl;
     TString genEnStr;
@@ -465,6 +468,7 @@ int main(int argc, char** argv){//main
     double E2=0;
     double E3=0;
 
+
     std::ostringstream input;
     input << filePath ;
     //if (filePath.find("pi+")!=filePath.npos) input << "/pt_" ;
@@ -474,8 +478,8 @@ int main(int argc, char** argv){//main
       input << genEn[iE] << fileName;
     }
     else {
-      //input << "/e_" ;
-      //input << genEn[iE] << "/" << fileName ;
+      input << "/e_" ;
+      input << genEn[iE];
       input << "/" << fileName;
     }
     TFile *inputFile = TFile::Open(input.str().c_str());
@@ -499,7 +503,7 @@ int main(int argc, char** argv){//main
     unsigned event = 0;
     float volNb = 0;
     float volX0 = 0;
-    float volX0ref = 0;
+    //float volX0ref = 0;
     //float volLambda = 0;
     std::vector<HGCSSSimHit> * simhitvec = 0;
     std::vector<HGCSSRecoHit> * rechitvec = 0;
@@ -524,6 +528,8 @@ int main(int argc, char** argv){//main
       ((pNevts > lTree->GetEntries()/nLayers || pNevts==0) ? static_cast<unsigned>(lTree->GetEntries()/nLayers) : pNevts) :
       ((pNevts > lTree->GetEntries() || pNevts==0) ? static_cast<unsigned>(lTree->GetEntries()) : pNevts) ;
 
+
+
     std::cout << "- Processing = " << nEvts  << " events out of " ;
     if (isG4Tree) std::cout << lTree->GetEntries()/nLayers << std::endl;
     else std::cout << lTree->GetEntries() << std::endl;
@@ -540,7 +546,7 @@ int main(int argc, char** argv){//main
       
       //if (isG4Tree) inStr += "HGCalEEGeant4/"+pVersion+"/"+pScenario+"/PedroPU/"+pEta+"/PFcal.root";
       //else  inStr += "HGCalEEDigi/"+pVersion+"/"+pScenario+"/PedroPU/"+pEta+"/DigiPFcal.root";
-      if (isG4Tree) inStr += "140PU/PFcal_140PU_EEHE.root";
+      if (isG4Tree) inStr += "140PU/PFcal_140PU_EEHE_full.root";
       puFile = TFile::Open(inStr.c_str());
       if (!puFile) {
 	std::cout << " -- Error, input file " << inStr << " for PU cannot be opened. Exiting..." << std::endl;
@@ -582,13 +588,18 @@ int main(int argc, char** argv){//main
       eLLR[iL] = 0;
       zlay[iL] = 0;
     }
-    double Etotal[3] = {0,0,0};
-    double Elateral[3][20];
-    for (unsigned iD(0); iD<3; ++iD){
+    double Etotal[nSections];
+    TH2F * EmipHits = new TH2F("EmipHits",";x(mm);y(mm)",17,-255,255,17,-255,255);
+
+    double Elateral[nSections][nLat];
+    for (unsigned iD(0); iD<nSections; ++iD){
+      Etotal[iD] = 0;
+      p_Etotal[iE][iD] = 0;
       for (unsigned iR(0); iR<nLat; ++iR){
 	Elateral[iD][iR] = 0;
       }
     }
+
     unsigned nTotal = 0;
     unsigned nTotalSignal = 0;
     double Ereco[nSmear];
@@ -606,9 +617,25 @@ int main(int argc, char** argv){//main
       p_recoxyz[iE] = new TH3F(lName.str().c_str(),";z(mm);x(mm);y(mm)",2000,-1000,1000,50,-250,250,50,-250,250);
     }
     else p_recoxyz[iE] = 0;
-    p_Etotal[iE][0] = 0;
-    p_Etotal[iE][1] = 0;
-    p_Etotal[iE][2] = 0;
+
+
+    for (unsigned iLim(0); iLim<nLimits;++iLim){
+      lName.str("");
+      lName << "p_Cglobal_" << genEn[iE] << "_" << iLim;
+      p_Cglobal[iE][iLim] =  new TH1F(lName.str().c_str(),";C_{global}",1000,0,2);
+      
+      lName.str("");
+      lName << "p_Eshower_" << genEn[iE] << "_" << iLim;
+      p_Eshower[iE][iLim] = new TH1F(lName.str().c_str(),";E_{shower} (GeV)",1000,0,2*genEn[iE]);
+
+      lName.str("");
+      lName << "p_EvsCglobal_" << genEn[iE] << "_" << iLim;
+      p_EvsCglobal[iE][iLim] =  new TH2F(lName.str().c_str(),";C_{global};Etot (GeV)",
+					 1000,0,2,
+					 1000,0,2*genEn[iE]);
+
+    }
+
     p_nSimHits[iE] = 0;
     p_EvsLayer[iE] = 0;
     p_nRecHits[iE] = 0;
@@ -620,8 +647,14 @@ int main(int argc, char** argv){//main
       lName << "p_EfracLateral_" << genEn[iE] << "_ECAL_" << iR;
       p_EfracLateral[iE][0][iR] =  new TH1F(lName.str().c_str(),";E_{total}^{x #times x}/E_{total}",101,0,1.01);
       lName.str("");
-      lName << "p_EfracLateral_" << genEn[iE] << "_HCAL_" << iR;
+      lName << "p_EfracLateral_" << genEn[iE] << "_FHCAL_" << iR;
       p_EfracLateral[iE][1][iR] =  new TH1F(lName.str().c_str(),";E_{total}^{x #times x}/E_{total}",101,0,1.01);
+      lName.str("");
+      lName << "p_EfracLateral_" << genEn[iE] << "_BHCAL_" << iR;
+      p_EfracLateral[iE][2][iR] =  new TH1F(lName.str().c_str(),";E_{total}^{x #times x}/E_{total}",101,0,1.01);
+      lName.str("");
+      lName << "p_EfracLateral_" << genEn[iE] << "_ALL_" << iR;
+      p_EfracLateral[iE][3][iR] =  new TH1F(lName.str().c_str(),";E_{total}^{x #times x}/E_{total}",101,0,1.01);
     }
     for (unsigned iL(0); iL<nLayers; ++iL){
       lName.str("");
@@ -655,14 +688,25 @@ int main(int argc, char** argv){//main
       if (debug) std::cout << "... Processing entry: " << ievt << std::endl;
       else if (ievt%1000 == 0) std::cout << "... Processing entry: " << ievt << std::endl;
       
+      unsigned lEvt = isG4Tree? ievt/nLayers : ievt;
+      bool proceed = evtList.size()==0?true:false;
+      for (unsigned ie(0); ie<evtList.size();++ie){
+	if (lEvt==evtList[ie]) {
+	  proceed=true;
+	  break;
+	}
+      }
+
+      if (!proceed) continue;
+
       lTree->GetEntry(ievt);
 
-      if (volNb==0) volX0ref = volX0;
-      else if (volNb == nEcalLayers) volX0ref = volX0;
+      //if (volNb==0) volX0ref = volX0;
+      //else if (volNb == nEcalLayers) volX0ref = volX0;
 
       if (debug){
 	if (isG4Tree) {
-	  std::cout << "... Processing layer " << volNb << " with " << (*simhitvec).size() << " simhits, X0 = " << volX0 << " weight = " << getWeight(volNb,pVersion,volX0ref,volX0,calibrate) << std::endl;
+	  std::cout << "... Processing layer " << volNb << " with " << (*simhitvec).size() << " simhits, X0 = " << volX0 << " weight = " << mycalib.MeVToMip(static_cast<unsigned>(volNb)) << std::endl;
 	}
 	else {
 	  std::cout << "... Size of hit vectors: sim = " <<  (*simhitvec).size() << ", reco = " << (*rechitvec).size()<< std::endl;
@@ -671,18 +715,17 @@ int main(int argc, char** argv){//main
       
       double Emax = 0;
 
-      unsigned lEvt = isG4Tree? ievt/nLayers : ievt;
- 
       if (saveEventByEvent && 
 	  (!isG4Tree || (isG4Tree && (volNb == 0)))
 	  ){
 
 
 	if (p_xyz_evt) p_xyz_evt->Delete();
-	p_xyz_evt = new TH3F("p_xyz",";z(mm);x(mm);y(mm)",nZ/2,minZ,maxZ,nX/4,minX,maxX,nY/4,minY,maxY);
+	if (!doOverview) p_xyz_evt = new TH3F("p_xyz",";z(mm);x(mm);y(mm)",nZ/2,minZ,maxZ,nX/2,minX,maxX,nY/2,minY,maxY);
+	else p_xyz_evt = new TH3F("p_xyz",";z(mm);x(mm);y(mm)",nZ/20,minZ,maxZ,nX/8,minX,maxX,nY/8,minY,maxY);
 	if (!isG4Tree) {
 	  if (p_recoxyz_evt) p_recoxyz_evt->Delete();
-	  p_recoxyz_evt = new TH3F("p_recoxyz",";z(mm);x(mm);y(mm)",nZ,minZ,maxZ,nX/4,minX,maxX,nY/4,minY,maxY);
+	  p_recoxyz_evt = new TH3F("p_recoxyz",";z(mm);x(mm);y(mm)",nZ/2,minZ,maxZ,nX/2,minX,maxX,nY/2,minY,maxY);
 	}
 	
 	for (unsigned iL(0); iL<nLayers; ++iL){
@@ -690,19 +733,11 @@ int main(int argc, char** argv){//main
 	  lName << "p_xy_" << iL;
 	  if (p_xy_evt[iL]) p_xy_evt[iL]->Delete();
 	  p_xy_evt[iL] = new TH2F(lName.str().c_str(),";x(mm);y(mm)",nX,minX,maxX,nY,minY,maxY);
-	  lName.str("");
-	  lName << "p_xz_" << iL;
-	  if (p_xz_evt[iL]) p_xz_evt[iL]->Delete();
-	  p_xz_evt[iL] = new TH2F(lName.str().c_str(),";x(mm);z(mm)",nX,minX,maxX,nZ,minZ,maxZ);
-	  lName.str("");
-	  lName << "p_zy_" << iL;
-	  if (p_zy_evt[iL]) p_zy_evt[iL]->Delete();
-	  p_zy_evt[iL] = new TH2F(lName.str().c_str(),";z(mm);y(mm)",nZ,minZ,maxZ,nY,minY,maxY);
 	  if (!isG4Tree){
 	    lName.str("");
 	    lName << "p_recoxy_" << iL;
 	    if (p_recoxy_evt[iL]) p_recoxy_evt[iL]->Delete();
-	    p_recoxy_evt[iL] = new TH2F(lName.str().c_str(),";x(mm);y(mm)",nX/4,minX,maxX,nY/4,minY,maxY);
+	    p_recoxy_evt[iL] = new TH2F(lName.str().c_str(),";x(mm);y(mm)",nX/2,minX,maxX,nY/2,minY,maxY);
 
 	  }
 	}
@@ -717,6 +752,7 @@ int main(int argc, char** argv){//main
 	}
 	
 	lPuTree->GetEntry(isG4Tree? nLayers*ipuevt+(ievt%nLayers) : ipuevt);
+	if (debug>1) std::cout << " -- Number of pu hits: " << (*pusimhitvec).size() << std::endl;
 	for (unsigned iH(0); iH<(*pusimhitvec).size(); ++iH){//loop on hits
 	  HGCSSSimHit lHit = (*pusimhitvec)[iH];
 	  unsigned layer = lHit.layer();
@@ -724,22 +760,24 @@ int main(int argc, char** argv){//main
 	    if (firstEvent) std::cout << " -- Warning PU hit#" << iH << ", applying patch to layer number..." << layer << " " << volNb << std::endl; 
 	    layer = volNb;
 	  }
-	    
 	  //select "flavour"
-	  if (doChargedPions){
+	  if (doProtons){
 	    //if ((lHit.nHadrons() == 0 && lHit.nMuons() == 0)) continue;
 	    //HACK !!
 	    if (lHit.nProtons() == 0) continue;
 	  }
-	  else if (doNeutralPions){
+	  else if (doNeutrons){
 	    //if (lHit.nGammas()==0 && lHit.nElectrons()==0 ) continue;
 	    //HACK !!
 	    if (lHit.nNeutrons()==0 ) continue;
 	  }
 	    
-	  double posx = lHit.get_x();
-	  double posy = lHit.get_y();
+	  double posx = useOldEncoding? lHit.get_x_old():lHit.get_x();
+	  double posy = useOldEncoding? lHit.get_y_old():lHit.get_y();
 	  double posz = lHit.get_z();
+	  
+	  double radius = sqrt(posx*posx+posy*posy);
+	  if (radius < minRadius) continue;
 	  //double posx = lHit.get_y();
 	  //double posy = lHit.get_x();
 	  double energy = lHit.energy();
@@ -749,7 +787,7 @@ int main(int argc, char** argv){//main
 	    lHit.Print(std::cout);
 	  }
 	  double weightedE = energy;
-	  if (applyWeight) weightedE *= getWeight(layer,pVersion,volX0ref,volX0,calibrate);
+	  if (applyWeight) weightedE *= mycalib.MeVToMip(layer);
 	  //reject lower region for boundary effects
 	  if (doFiducialCuts){
 	    if ( (pVersion.find("23") != pVersion.npos && posy < -200) ||
@@ -764,15 +802,14 @@ int main(int argc, char** argv){//main
 	  if (saveEventByEvent){
 	    bool pass = (layer < nEcalLayers) ||
 	      (layer>= nEcalLayers && 
-	       layer<nEcalLayers+nHcalSiLayers &&
+	       layer<nEcalLayers+nFHcalLayers &&
 	       (!concept || (concept && layer%2==1))
 	       ) ||
-	      layer>=nEcalLayers+nHcalSiLayers;
+	      layer>=nEcalLayers+nFHcalLayers;
 	    if (pass){
-	      p_xy_evt[layer]->Fill(posx,posy,energy);
-	      p_xz_evt[layer]->Fill(posx,posz,energy);
-	      p_zy_evt[layer]->Fill(posz,posy,energy);
-	      p_xyz_evt->Fill(posz,posx,posy,energy);
+	      double tmpE = weightedE;
+	      p_xy_evt[layer]->Fill(posx,posy,tmpE);
+	      p_xyz_evt->Fill(posz,posx,posy,tmpE);
 	    }
 	  }
 	  p_time[iE][layer]->Fill(lHit.time());
@@ -785,79 +822,14 @@ int main(int argc, char** argv){//main
 	  Etot[layer] += energy;
 	  if (debug>1) std::cout << "-hit" << iH << "-" << layer << " " << energy << " " << Etot[layer];
 	    
-	  if (isCalice){
-	    if (layer<nHcalSiLayers) {
-	      Etotal[0] += weightedE;
-	      Etotal[2] += weightedE;
-	    }
-	    else {
-	      Etotal[1] += weightedE;
-	      Etotal[2] += weightedE*HcalSciToHcalSiConv;
-	    }
-	    for (unsigned iR(0); iR<nLat; ++iR){
-	      if (fabs(posx)<latSize[iR] &&
-		  fabs(posy)<latSize[iR]) Elateral[0][iR]+= weightedE;
-	    }
+	  mycalib.incrementEnergy(layer,weightedE,Etotal[0],Etotal[1],Etotal[2]);
+	  
+	  for (unsigned iR(0); iR<nLat; ++iR){
+	    if (radius<latSize[iR]) mycalib.incrementEnergy(layer,weightedE,Elateral[0][iR],Elateral[1][iR],Elateral[2][iR]);
 	  }
-	  else if (isHCALonly) {
-	    if (layer<nHcalSiLayers) {
-	      if (!concept || 
-		  (concept && layer%2==1)){
-		Etotal[0] += weightedE;
-		Etotal[2] += weightedE;
-		for (unsigned iR(0); iR<nLat; ++iR){
-		  if (fabs(posx)<latSize[iR] &&
-		      fabs(posy)<latSize[iR]) Elateral[0][iR]+= weightedE;
-		}
-		  
-	      }
-	    }
-	    else {
-	      //twice sampling: correct weight.
-	      if (!concept) weightedE = weightedE*2.;
-	      Etotal[1] += weightedE;
-	      Etotal[2] += weightedE*HcalSciToHcalSiConv;
-	      for (unsigned iR(0); iR<nLat; ++iR){
-		if (fabs(posx)<latSize[iR] &&
-		    fabs(posy)<latSize[iR]) Elateral[0][iR]+= weightedE;
-	      }
-	    }
-	      
-	  }//HCALonly
-	  else {//ECALonly or ECAL+HCAL
-	    if (layer<nEcalLayers) {
-	      Etotal[0] += weightedE;
-	      Etotal[2] += weightedE;
-	      for (unsigned iR(0); iR<nLat; ++iR){
-		if (fabs(posx)<latSize[iR] &&
-		    fabs(posy)<latSize[iR]) Elateral[0][iR]+= weightedE;
-	      }
-	    }//ECAL
-	    else {
-	      if (layer<nEcalLayers+nHcalSiLayers) {
-		if (!concept ||
-		    (concept && layer%2==1)){
-		  Etotal[1] += weightedE;
-		  Etotal[2] += weightedE*HcalToEcalConv;
-		  for (unsigned iR(0); iR<nLat; ++iR){
-		    if (fabs(posx)<latSize[iR] &&
-			fabs(posy)<latSize[iR]) Elateral[1][iR]+= weightedE;
-		  }
-		}
-	      }
-	      else {
-		//twice sampling: correct weight.
-		if (!concept) weightedE = weightedE*2.;
-		Etotal[1] += weightedE*HcalSciToHcalSiConv;
-		Etotal[2] += weightedE*HcalSciToHcalSiConv*HcalToEcalConv;
-		for (unsigned iR(0); iR<nLat; ++iR){
-		  if (fabs(posx)<latSize[iR] &&
-		      fabs(posy)<latSize[iR]) Elateral[1][iR]+= weightedE;
-		}
-	      }
-	    }//HCAL
-	  }//ECALonly or ECAL+HCAL
-	    
+
+	  //calculate mean Emip
+	  EmipHits->Fill(posx,posy,weightedE);
 	}//loop on hits
 	  
 	  
@@ -894,7 +866,7 @@ int main(int argc, char** argv){//main
 	      if (energy > occThreshold[iO]) p_occupancy[iO][layer]->Fill(posx,posy);
 	    }
 	    double weightedE = energy;
-	    if (applyWeight)  weightedE *= getWeight(layer,pVersion,volX0ref,volX0,calibrate);
+	    //if (applyWeight)  weightedE *= mycalib.MeVToMip(layer);
 	    for (unsigned iSmear(0); iSmear<nSmear;++iSmear){
 	      double smearFactor = lRndm.Gaus(0,smearFrac[iSmear]);
 	      Ereco[iSmear] += weightedE*(1+smearFactor);
@@ -919,19 +891,19 @@ int main(int argc, char** argv){//main
 	}
 
 	//select "flavour"
-	if (doChargedPions){
+	if (doProtons){
 	  //if ((lHit.nHadrons() == 0 && lHit.nMuons() == 0)) continue;
 	  //HACK !!
 	  if (lHit.nProtons()==0 ) continue;
 	}
-	else if (doNeutralPions){
+	else if (doNeutrons){
 	  //HACK !!
 	  if (lHit.nNeutrons()==0 ) continue;
 	  //if (lHit.nGammas()==0 && lHit.nElectrons()==0 ) continue;
 	}
 
-	double posx = lHit.get_x();
-	double posy = lHit.get_y();
+	double posx = useOldEncoding? lHit.get_x_old():lHit.get_x();
+	double posy = useOldEncoding? lHit.get_y_old():lHit.get_y();
 	double posz = lHit.get_z();
 	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -942,6 +914,10 @@ int main(int argc, char** argv){//main
 	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	
+	double radius = sqrt(posx*posx+posy*posy);
+	if (radius < minRadius) continue;
+	
 	double energy = lHit.energy();
 	if (debug>1) {
 	  std::cout << " --  SimHit " << iH << "/" << (*simhitvec).size() << " --" << std::endl
@@ -959,7 +935,7 @@ int main(int argc, char** argv){//main
 	}
 
 	double weightedE = energy;
-	if (applyWeight) weightedE *= getWeight(layer,pVersion,volX0ref,volX0,calibrate);
+	if (applyWeight) weightedE *= mycalib.MeVToMip(layer);
 
 	if (doFiducialCuts){
 	  //reject lower region for boundary effects
@@ -975,15 +951,14 @@ int main(int argc, char** argv){//main
 	if (saveEventByEvent){
 	  bool pass = (layer < nEcalLayers) ||
 	    (layer>= nEcalLayers && 
-	     layer<nEcalLayers+nHcalSiLayers &&
+	     layer<nEcalLayers+nFHcalLayers &&
 	     (!concept || (concept && layer%2==1))
 	     ) ||
-	    layer>=nEcalLayers+nHcalSiLayers;
+	    layer>=nEcalLayers+nFHcalLayers;
 	  if (pass){
-	    p_xy_evt[layer]->Fill(posx,posy,energy);
-	    p_xz_evt[layer]->Fill(posx,posz,energy);
-	    p_zy_evt[layer]->Fill(posz,posy,energy);
-	    p_xyz_evt->Fill(posz,posx,posy,energy);
+	    double tmpE = weightedE;
+	    p_xy_evt[layer]->Fill(posx,posy,tmpE);
+	    p_xyz_evt->Fill(posz,posx,posy,tmpE);
 	  }
 	}
 	p_time[iE][layer]->Fill(lHit.time());
@@ -994,87 +969,22 @@ int main(int argc, char** argv){//main
 	}
 	Etot[layer] += energy;
 	if (debug>1) std::cout << "-hit" << iH << "-" << layer << " " << energy << " " << Etot[layer];
-
- 
-	if (isCalice){
-	  if (layer<nHcalSiLayers) {
-	    Etotal[0] += weightedE;
-	    Etotal[2] += weightedE;
-	  }
-	  else {
-	    Etotal[1] += weightedE;
-	    Etotal[2] += weightedE*HcalSciToHcalSiConv;
-	  }
-	  for (unsigned iR(0); iR<nLat; ++iR){
-	    if (fabs(posx)<latSize[iR] &&
-		fabs(posy)<latSize[iR]) Elateral[0][iR]+= weightedE;
-	  }
+	    
+	mycalib.incrementEnergy(layer,weightedE,Etotal[0],Etotal[1],Etotal[2]);
+	
+	for (unsigned iR(0); iR<nLat; ++iR){
+	  if (radius<latSize[iR]) mycalib.incrementEnergy(layer,weightedE,Elateral[0][iR],Elateral[1][iR],Elateral[2][iR]);
 	}
-	else if (isHCALonly) {
-	  if (layer<nHcalSiLayers) {
-	    if (!concept || 
-		(concept && layer%2==1)){
-	      Etotal[0] += weightedE;
-	      Etotal[2] += weightedE;
-	      for (unsigned iR(0); iR<nLat; ++iR){
-		if (fabs(posx)<latSize[iR] &&
-		    fabs(posy)<latSize[iR]) Elateral[0][iR]+= weightedE;
-	      }
-	      
-	    }
-	  }
-	  else {
-	    //twice sampling: correct weight.
-	    if (!concept) weightedE = weightedE*2.;
-	    Etotal[1] += weightedE;
-	    Etotal[2] += weightedE*HcalSciToHcalSiConv;
-	    for (unsigned iR(0); iR<nLat; ++iR){
-	      if (fabs(posx)<latSize[iR] &&
-		  fabs(posy)<latSize[iR]) Elateral[0][iR]+= weightedE;
-	    }
-	  }
-	  
-	}//HCALonly
-	else {//ECALonly or ECAL+HCAL
-	  if (layer<nEcalLayers) {
-	    Etotal[0] += weightedE;
-	    Etotal[2] += weightedE;
-	    for (unsigned iR(0); iR<nLat; ++iR){
-	      if (fabs(posx)<latSize[iR] &&
-		  fabs(posy)<latSize[iR]) Elateral[0][iR]+= weightedE;
-	    }
-	  }//ECAL
-	  else {
-	    if (layer<nEcalLayers+nHcalSiLayers) {
-	      if (!concept ||
-		  (concept && layer%2==1)){
-		Etotal[1] += weightedE;
-		Etotal[2] += weightedE*HcalToEcalConv;
-		for (unsigned iR(0); iR<nLat; ++iR){
-		  if (fabs(posx)<latSize[iR] &&
-		      fabs(posy)<latSize[iR]) Elateral[1][iR]+= weightedE;
-		}
-	      }
-	    }
-	    else {
-	      //twice sampling: correct weight.
-	      if (!concept) weightedE = weightedE*2.;
-	      Etotal[1] += weightedE*HcalSciToHcalSiConv;
-	      Etotal[2] += weightedE*HcalSciToHcalSiConv*HcalToEcalConv;
-	      for (unsigned iR(0); iR<nLat; ++iR){
-		if (fabs(posx)<latSize[iR] &&
-		    fabs(posy)<latSize[iR]) Elateral[1][iR]+= weightedE;
-	      }
-	    }
-	  }//HCAL
-	}//ECALonly or ECAL+HCAL
-       	
-	zlay[layer] = posz;
+	
+	//calculate mean Emip
+	EmipHits->Fill(posx,posy,weightedE);
+ 	zlay[layer] = posz;
 
       }//loop on hits
 
       nTotal += (*simhitvec).size();
       nTotalSignal += (*simhitvec).size();
+
       if (debug)  std::cout << std::endl;
       if (!isG4Tree){
 	if (!overlayPU) {
@@ -1109,7 +1019,7 @@ int main(int argc, char** argv){//main
 	    if (energy > occThreshold[iO]) p_occupancy[iO][layer]->Fill(posx,posy);
 	  }
 	  double weightedE = energy;
-	  if (applyWeight)  weightedE *= getWeight(layer,pVersion,volX0ref,volX0,calibrate);
+	  //if (applyWeight)  weightedE *= mycalib.MeVToMip(layer);
 	  for (unsigned iSmear(0); iSmear<nSmear;++iSmear){
 	    double smearFactor = lRndm.Gaus(0,smearFrac[iSmear]);
 	    Ereco[iSmear] += weightedE*(1+smearFactor);
@@ -1143,20 +1053,12 @@ int main(int argc, char** argv){//main
       }
 
 
-
-
       if (!isG4Tree || (isG4Tree && (volNb == nLayers-1))){//fill histos
 	//if (debug) std::cout << " -- Filling histograms..." << std::endl;
-	bool doFill = true;
-	if (selectEarlyDecay) {
-	  double tmp = 0;
-	  double tmp2 = 0;
-	  for (unsigned iL(0);iL<5;++iL){
-            tmp += Etot[iL];
-	    tmp2 += Etot[iL+5];
-	  }
-	  if (tmp2 < 10*tmp) doFill = false; 
-	}
+	Etotal[3] = mycalib.recoEnergyUncor(Etotal[0],Etotal[1],Etotal[2]);
+	double EReco_FHCAL = mycalib.recoEnergyUncor(Etotal[0],Etotal[1],Etotal[2],true);
+	bool doFill = fillHistoConditions(selectEarlyDecay,EReco_FHCAL,Etotal[3]);
+
 	if (selectPiHCAL && Etotal[0]>10) doFill = false;
 
 	double Etmp = 0;
@@ -1178,26 +1080,46 @@ int main(int argc, char** argv){//main
 	  lName.str("");
 	  lName << "p_EvsLayer_" << genEn[iE];
 	  p_EvsLayer[iE] = new TH2F(lName.str().c_str(),";layer;E (MeV)",nLayers,0,nLayers,1000,0,3*Emax);
+
 	  lName.str("");
 	  lName << "p_Etotal_" << genEn[iE] << "_ECAL";
-	  p_Etotal[iE][0] = new TH1F(lName.str().c_str(),";G4 Etotal ECAL (MeV)",1000,0,10*Etotal[0]);
+	  p_Etotal[iE][0] = new TH1F(lName.str().c_str(),";G4 E ECAL (MeV)",
+				     1000,0,2*Etotal[3]);
 	  p_Etotal[iE][0]->StatOverflows();
+
 	  lName.str("");
-	  lName << "p_Etotal_" << genEn[iE] << "_HCAL";
-	  if (isCalice) p_Etotal[iE][1] = new TH1F(lName.str().c_str(),";G4 Etotal HCAL (MeV)",1000,0,10*Etotal[0]/HcalSciToHcalSiConv);
-	  else if (isHCALonly) p_Etotal[iE][1] = new TH1F(lName.str().c_str(),";G4 Etotal HCAL (MeV)",1000,0,10*Etotal[0]/HcalSciToHcalSiConv);
-	  else p_Etotal[iE][1] = new TH1F(lName.str().c_str(),";G4 Etotal HCAL (MeV)",1000,0,10*Etotal[0]/HcalToEcalConv);
+	  lName << "p_Etotal_" << genEn[iE] << "_FHCAL";
+	  p_Etotal[iE][1] = new TH1F(lName.str().c_str(),";G4 E FHCAL (MeV)",
+				     1000,0,2*Etotal[3]);
+
 	  p_Etotal[iE][1]->StatOverflows();
+
+	  lName.str("");
+	  lName << "p_Etotal_" << genEn[iE] << "_BHCAL";
+	  p_Etotal[iE][2] = new TH1F(lName.str().c_str(),";G4 E BHCAL (MeV)",
+				     1000,0,2*Etotal[3]);
+
+	  p_Etotal[iE][2]->StatOverflows();
+
 	  lName.str("");
 	  lName << "p_Etotal_" << genEn[iE] << "_ECALHCAL";
-	  p_Etotal[iE][2] = new TH1F(lName.str().c_str(),";G4 Etotal ECAL+HCAL (MeV)",1000,0,10*Etotal[2]);
-	  p_Etotal[iE][2]->StatOverflows();
+	  p_Etotal[iE][3] = new TH1F(lName.str().c_str(),";G4 Etotal ECAL+HCAL (MeV)",1000,0,2*Etotal[3]);
+	  p_Etotal[iE][3]->StatOverflows();
+
 	  lName.str("");
 	  lName << "p_HCALvsECAL_" << genEn[iE];
-	  if (isCalice) p_HCALvsECAL[iE] = new TH2F(lName.str().c_str(),";G4 Etotal HCAL-Sci (MeV); G4 Etotal HCAL-Sci-TCMT (MeV)",1000,0,5*Etotal[2],1000,0,10*Etotal[0]/HcalSciToHcalSiConv);
-	  else if (isHCALonly) p_HCALvsECAL[iE] = new TH2F(lName.str().c_str(),";G4 Etotal HCAL-Si (MeV); G4 Etotal HCAL-Sci (MeV)",1000,0,5*Etotal[2],1000,0,10*Etotal[0]/HcalSciToHcalSiConv);
-	  else p_HCALvsECAL[iE] = new TH2F(lName.str().c_str(),";G4 Etotal ECAL (MeV); G4 Etotal HCAL (MeV)",1000,0,3*Etotal[2],1000,0,10*Etotal[0]/HcalToEcalConv);
+	  p_HCALvsECAL[iE] = new TH2F(lName.str().c_str(),";G4 E ECAL; G4 E HCAL",
+				      1000,0,2*Etotal[3],
+				      1000,0,2*Etotal[3]);
 	  p_HCALvsECAL[iE]->StatOverflows();
+
+	  lName.str("");
+	  lName << "p_BHCALvsFHCAL_" << genEn[iE];
+	  p_BHCALvsFHCAL[iE] = new TH2F(lName.str().c_str(),";G4 E FHCAL; G4 E BHCAL",
+					1000,0,2*Etotal[3],
+					1000,0,2*Etotal[3]);
+	  p_HCALvsECAL[iE]->StatOverflows();
+
 	  lName.str("");
 	  lName << "p_nSimHits_" << genEn[iE];
 	  p_nSimHits[iE] = new TH1F(lName.str().c_str(),"; nSimHits",1000,static_cast<unsigned>(nTotal/10.),nTotal*10);
@@ -1208,8 +1130,8 @@ int main(int argc, char** argv){//main
 	  if (doFill) {
 	    p_Etot[iE][iL]->Fill(Etot[iL]);
 	    p_EvsLayer[iE]->Fill(iL,Etot[iL]);
-	    Etmp += Etot[iL];
-	    if (Etotal[0]+Etotal[1] > 0) p_Efrac[iE][iL]->Fill(Etmp/(Etotal[0]+Etotal[1]));
+	    Etmp += Etot[iL]*mycalib.MeVToMip(iL);
+	    if (Etotal[0]+Etotal[1]+Etotal[2] > 0) p_Efrac[iE][iL]->Fill(Etmp/(Etotal[0]+Etotal[1]+Etotal[2]));
 	    else p_Efrac[iE][iL]->Fill(0);
 	  }
 	  Etot[iL] = 0;
@@ -1233,17 +1155,50 @@ int main(int argc, char** argv){//main
 	}//loop on layers
 	if (doFill) {
 
-	  p_HCALvsECAL[iE]->Fill(Etotal[0],Etotal[1]);
+	  //fill Cglobal histos
+	  unsigned nHitsCountNum[nLimits];
+	  unsigned nHitsCountDen = 0;
 
-	  for (unsigned iD(0); iD<3; ++iD){
-	    p_Etotal[iE][iD]->Fill(Etotal[iD]);
+	  double Cglobal[nLimits];
+	  for (unsigned iLim(0); iLim<nLimits;++iLim){
+	    nHitsCountNum[iLim] = 0;
+	    Cglobal[iLim] = 1.;
+	    for (unsigned ix(1); ix<EmipHits->GetNbinsX()+1; ++ix){
+	      for (unsigned iy(1); iy<EmipHits->GetNbinsY()+1; ++iy){
+		double eTmp = EmipHits->GetBinContent(ix,iy);
+		if (eTmp<pElim[iLim]) nHitsCountNum[iLim]++;
+		if (iLim==0 && eTmp<EmipMean[iE]) nHitsCountDen++;
+	      }
+	    }
+	    if (nHitsCountDen>0) Cglobal[iLim] = nHitsCountNum[iLim]*1.0/nHitsCountDen;
+	    p_Cglobal[iE][iLim]->Fill(Cglobal[iLim]);
+	    p_EvsCglobal[iE][iLim]->Fill(Cglobal[iLim],EReco_FHCAL);
+	    p_Eshower[iE][iLim]->Fill(mycalib.hcalShowerEnergy(Cglobal[0],Etotal[1],Etotal[2]));
+	  }
+	  
+	  p_HCALvsECAL[iE]->Fill(Etotal[0]*(calibrate?mycalib.gevWeight(0):1),
+				 mycalib.hcalShowerEnergy(Cglobal[0],Etotal[1],Etotal[2]));
+
+
+	  p_BHCALvsFHCAL[iE]->Fill(Cglobal[0]*Etotal[1]*(calibrate?mycalib.gevWeight(1):1),Etotal[2]*(calibrate?mycalib.gevWeight(2):1));
+
+	  // std::cout << lEvt << " " 
+	  // 	    << nTotHits << " "
+	  // 	    << EmipMean << " " 
+	  // 	    << pElim << " "
+	  // 	    << nHitsCount[0] << " "
+	  // 	    << nHitsCount[1] << " "
+	  // 	    << Cglobal << std::endl;
+
+	  for (unsigned iD(0); iD<nSections; ++iD){
+	    p_Etotal[iE][iD]->Fill(Etotal[iD]*(calibrate?mycalib.gevWeight(iD):1.));
 	    for (unsigned iR(0); iR<nLat; ++iR){
-	      if (isCalice || isHCALonly) {
-		if (iD==0 && (Etotal[0]+Etotal[1] > 0) ) p_EfracLateral[iE][0][iR]->Fill(Elateral[0][iR]/(Etotal[0]+Etotal[1]));
+	      if (iD==nSections-1){
+		double totTmp = mycalib.showerEnergy(Cglobal[0],Etotal[0],Etotal[1],Etotal[2]);
+		double latTmp = mycalib.showerEnergy(Cglobal[0],Elateral[0][iR],Elateral[1][iR],Elateral[2][iR]);
+		if (totTmp > 0) p_EfracLateral[iE][iD][iR]->Fill(latTmp/totTmp);
 	      }
-	      else if (iD<2) {
-		if (Etotal[iD] > 0) p_EfracLateral[iE][iD][iR]->Fill(Elateral[iD][iR]/Etotal[iD]);
-	      }
+	      else if (Etotal[iD]>0) p_EfracLateral[iE][iD][iR]->Fill(Elateral[iD][iR]/Etotal[iD]);
 	    }
 	  }
 
@@ -1264,21 +1219,22 @@ int main(int argc, char** argv){//main
 	    outputEvt->cd();
 	    for (unsigned iL(0); iL<nLayers; ++iL){
 	      p_xy_evt[iL]->Write();
-	      p_xz_evt[iL]->Write();
-	      p_zy_evt[iL]->Write();
 	      if (!isG4Tree) p_recoxy_evt[iL]->Write();
 	    }
 	    if (p_xyz_evt) p_xyz_evt->Write();
 	    if (!isG4Tree) p_recoxyz_evt->Write();
 	    outputEvt->Close();
 	  }
-	}
-	for (unsigned iD(0); iD<3; ++iD){
+	}//if dofill
+
+	for (unsigned iD(0); iD<nSections; ++iD){
 	  Etotal[iD] = 0;
 	  for (unsigned iR(0); iR<nLat; ++iR){
 	    Elateral[iD][iR] = 0;
 	  }
 	}
+
+	EmipHits->Reset();
 	nTotal = 0;
 	nTotalSignal = 0;
 	firstEvent = false;
@@ -1303,13 +1259,19 @@ int main(int argc, char** argv){//main
     }
     p_xyz[iE]->Write();
     p_EvsLayer[iE]->Write();
-    for (unsigned iD(0); iD<3; ++iD){
+    for (unsigned iLim(0); iLim<nLimits;++iLim){
+      p_Cglobal[iE][iLim]->Write();
+      p_EvsCglobal[iE][iLim]->Write();
+      p_Eshower[iE][iLim]->Write();
+    }
+    for (unsigned iD(0); iD<nSections; ++iD){
       p_Etotal[iE][iD]->Write();
       for (unsigned iR(0); iR<nLat; ++iR){
-	if (iD<2) p_EfracLateral[iE][iD][iR]->Write();
+	p_EfracLateral[iE][iD][iR]->Write();
       }
     }
     p_HCALvsECAL[iE]->Write();
+    p_BHCALvsFHCAL[iE]->Write();
     p_nSimHits[iE]->Write();
     if (!isG4Tree) {
       for (unsigned iSmear(0); iSmear<nSmear;++iSmear){
@@ -1327,7 +1289,7 @@ int main(int argc, char** argv){//main
 	      << " overflows " << p_Etotal[iE][0]->GetBinContent(p_Etotal[iE][0]->GetNbinsX()+1)
 	      << std::endl;
 
-    std::cout << " -- Summary of energies HCAL: " << std::endl
+    std::cout << " -- Summary of energies HCAL section 1: " << std::endl
 	      << " ---- SimHits: entries " << p_Etotal[iE][1]->GetEntries() 
 	      << " mean " << p_Etotal[iE][1]->GetMean() 
 	      << " rms " << p_Etotal[iE][1]->GetRMS() 
@@ -1335,12 +1297,20 @@ int main(int argc, char** argv){//main
 	      << " overflows " << p_Etotal[iE][1]->GetBinContent(p_Etotal[iE][1]->GetNbinsX()+1)
 	      << std::endl;
 
-    std::cout << " -- Summary of energies ECAL+HCAL: " << std::endl
+    std::cout << " -- Summary of energies HCAL section 2: " << std::endl
 	      << " ---- SimHits: entries " << p_Etotal[iE][2]->GetEntries() 
 	      << " mean " << p_Etotal[iE][2]->GetMean() 
 	      << " rms " << p_Etotal[iE][2]->GetRMS() 
 	      << " underflows " << p_Etotal[iE][2]->GetBinContent(0)
 	      << " overflows " << p_Etotal[iE][2]->GetBinContent(p_Etotal[iE][2]->GetNbinsX()+1)
+	      << std::endl;
+ 
+    std::cout << " -- Summary of energies ECAL+HCAL: " << std::endl
+	      << " ---- SimHits: entries " << p_Etotal[iE][3]->GetEntries() 
+	      << " mean " << p_Etotal[iE][3]->GetMean() 
+	      << " rms " << p_Etotal[iE][3]->GetRMS() 
+	      << " underflows " << p_Etotal[iE][3]->GetBinContent(0)
+	      << " overflows " << p_Etotal[iE][3]->GetBinContent(p_Etotal[iE][3]->GetNbinsX()+1)
 	      << std::endl;
     if (!isG4Tree) {
       std::cout << " ---- RecHits: entries " << p_Ereco[iE][0]->GetEntries() 
@@ -1387,9 +1357,10 @@ int main(int argc, char** argv){//main
  }
 
   std::cout << "\\hline \n";
-  std::cout << " Energy (GeV) & Eecal (RMS) & Ehcal (RMS) & Etot (RMS) "
+  std::cout << " Energy (GeV) & Eecal (RMS) & Ehcal1 (RMS) & Ehcal2 (RMS) & Etot (RMS) "
     // << " & nSimHits (RMS) "
 	    << "\\\\ \n"; 
+  std::cout << "\\hline \n";
   for (unsigned iE(0); iE<nGenEn; ++iE){//loop on energies
     if (!p_Etotal[iE][0] || !p_Etotal[iE][1] || !p_Etotal[iE][2]) continue;
     std::cout << genEn[iE] << " & "
@@ -1398,6 +1369,8 @@ int main(int argc, char** argv){//main
 	      << p_Etotal[iE][1]->GetMean() << " (" << p_Etotal[iE][1]->GetRMS() 
 	      << ") & "
 	      << p_Etotal[iE][2]->GetMean() << " (" << p_Etotal[iE][2]->GetRMS() 
+	      << ") & "
+	      << p_Etotal[iE][3]->GetMean() << " (" << p_Etotal[iE][3]->GetRMS() 
         //<< ") & "
       //<< p_nSimHits[iE]->GetMean() << " (" << p_nSimHits[iE]->GetRMS() 
 	      << ") \\\\ \n ";

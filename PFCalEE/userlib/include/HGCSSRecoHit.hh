@@ -3,8 +3,10 @@
 
 #include <iomanip>
 #include <vector>
+#include <cmath>
 #include "Rtypes.h"
 #include <sstream>
+#include "TMath.h"
 
 #include "HGCSSSimHit.hh"
 
@@ -26,6 +28,29 @@ public:
 
   inline double energy() const {
     return energy_;
+  };
+
+  double eta() const;
+  double phi() const;
+
+  inline double E() const {
+    return energy_;
+  };
+
+  inline double pt() const {
+    return energy_/cosh(eta());
+  };
+
+  inline double px() const {
+    return pt()*cos(phi());
+  };
+
+  inline double py() const {
+    return pt()*sin(phi());
+  };
+
+  inline double pz() const {
+    return pt()*sinh(eta());
   };
 
   inline void energy(const double & energy) {
@@ -77,15 +102,15 @@ public:
   };
 
   inline bool get_y_side() const{
-    return (cellid_ & 0x0200) >> 9;
+    return (cellid_ & 0x2000) >> 13;
   };
 
   inline unsigned get_x_cell() const{
-    return (cellid_ & 0x01FE) >> 1;
+    return (cellid_ & 0x1FFE) >> 1;
   };
 
   inline unsigned get_y_cell() const{
-    return (cellid_ & 0x3FC00) >> 10;
+    return (cellid_ & 0x03FFC000) >> 14;
   };
 
   inline double get_x() const{
@@ -107,7 +132,7 @@ public:
   };
 
   inline unsigned getGranularity() const{
-    return (cellid_ & 0x00FC0000) >> 18;
+    return (cellid_ & 0xFC000000) >> 26;
   };
 
   void Print(std::ostream & aOs) const;

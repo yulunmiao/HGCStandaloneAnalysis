@@ -32,7 +32,9 @@ extern void G__set_cpp_environmentdict();
 #include "TObject.h"
 #include "TMemberInspector.h"
 #include "HGCSSSimHit.hh"
+#include "HGCSSGenParticle.hh"
 #include "HGCSSRecoHit.hh"
+#include "HGCSSRecoJet.hh"
 #include <algorithm>
 namespace std { }
 using namespace std;
@@ -55,11 +57,21 @@ extern G__linked_taginfo G__dictLN_HGCSSSimHit;
 extern G__linked_taginfo G__dictLN_vectorlEHGCSSSimHitcOallocatorlEHGCSSSimHitgRsPgR;
 extern G__linked_taginfo G__dictLN_vectorlEHGCSSSimHitcOallocatorlEHGCSSSimHitgRsPgRcLcLiterator;
 extern G__linked_taginfo G__dictLN_reverse_iteratorlEvectorlEHGCSSSimHitcOallocatorlEHGCSSSimHitgRsPgRcLcLiteratorgR;
+extern G__linked_taginfo G__dictLN_HGCSSGenParticle;
+extern G__linked_taginfo G__dictLN_vectorlEHGCSSGenParticlecOallocatorlEHGCSSGenParticlegRsPgR;
+extern G__linked_taginfo G__dictLN_vectorlEHGCSSGenParticlecOallocatorlEHGCSSGenParticlegRsPgRcLcLiterator;
+extern G__linked_taginfo G__dictLN_reverse_iteratorlEvectorlEHGCSSGenParticlecOallocatorlEHGCSSGenParticlegRsPgRcLcLiteratorgR;
 extern G__linked_taginfo G__dictLN_HGCSSRecoHit;
 extern G__linked_taginfo G__dictLN_vectorlEHGCSSRecoHitcOallocatorlEHGCSSRecoHitgRsPgR;
 extern G__linked_taginfo G__dictLN_vectorlEHGCSSRecoHitcOallocatorlEHGCSSRecoHitgRsPgRcLcLiterator;
 extern G__linked_taginfo G__dictLN_reverse_iteratorlEvectorlEHGCSSRecoHitcOallocatorlEHGCSSRecoHitgRsPgRcLcLiteratorgR;
+extern G__linked_taginfo G__dictLN_HGCSSRecoJet;
+extern G__linked_taginfo G__dictLN_vectorlEHGCSSRecoJetcOallocatorlEHGCSSRecoJetgRsPgR;
+extern G__linked_taginfo G__dictLN_vectorlEHGCSSRecoJetcOallocatorlEHGCSSRecoJetgRsPgRcLcLiterator;
+extern G__linked_taginfo G__dictLN_reverse_iteratorlEvectorlEHGCSSRecoJetcOallocatorlEHGCSSRecoJetgRsPgRcLcLiteratorgR;
 
 /* STUB derived class for protected member access */
 typedef vector<HGCSSSimHit,allocator<HGCSSSimHit> > G__vectorlEHGCSSSimHitcOallocatorlEHGCSSSimHitgRsPgR;
+typedef vector<HGCSSGenParticle,allocator<HGCSSGenParticle> > G__vectorlEHGCSSGenParticlecOallocatorlEHGCSSGenParticlegRsPgR;
 typedef vector<HGCSSRecoHit,allocator<HGCSSRecoHit> > G__vectorlEHGCSSRecoHitcOallocatorlEHGCSSRecoHitgRsPgR;
+typedef vector<HGCSSRecoJet,allocator<HGCSSRecoJet> > G__vectorlEHGCSSRecoJetcOallocatorlEHGCSSRecoJetgRsPgR;

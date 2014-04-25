@@ -56,7 +56,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod) : version_(ver)
 	if(version_==v_HGCALEE_inverted) {pb2=1.63; pb1=3.32;                         }
 	if(version_==v_HGCALEE_W)        {pb1=0.70;  pb2=2.10; pb3=3.50;}
 	if(version_==v_HGCALEE_prePCB)   {addPrePCB_=true;}
-	G4cout << "[DetectorConstruction] starting v_HGCALEE with Si width=" << siWidth << " and gap " << gap << G4endl;
+	G4cout << "[DetectorConstruction] starting v_HGCAL* with Si width=" << siWidth << " and gap " << gap << G4endl;
 	
 	//add 1um silicon to track incoming particles
 	//if(version_==v_HGCALEE_SiDummy) m_caloStruct.push_back( SamplingSection(0,0,0.001*mm,0,0) );
@@ -100,8 +100,8 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod) : version_(ver)
       {
 	//for(int i=0; i<12; i++) m_caloStruct.push_back( SamplingSection(52*mm,3.0*mm,0.3*mm,2.0*mm,2.0*mm) );
 	//total 5.3 lambda = 22mm brass * 38 layers 
-	for(int i=0; i<38; i++) m_caloStruct.push_back( SamplingSection(22*mm,0.*mm,5*mm,0.*mm,0.*mm) );
-	for(int i=0; i<9; i++) m_caloStruct.push_back( SamplingSection(22*mm,0.*mm,5*mm,0.*mm,0.*mm) );
+	for(int i=0; i<38; i++) m_caloStruct.push_back( SamplingSection(21*mm,0.*mm,5*mm,0.*mm,0.*mm) );
+	for(int i=0; i<9; i++) m_caloStruct.push_back( SamplingSection(21*mm,0.*mm,5*mm,0.*mm,0.*mm) );
 	for(int i=0; i<7; i++) m_caloStruct.push_back( SamplingSection(104*mm,0.*mm,5*mm,0.*mm,0.*mm) );
 	break;
       }
@@ -136,6 +136,9 @@ void DetectorConstruction::DefineMaterials()
   m_materials["Brass"]= new G4Material("Brass",8.5*g/cm3,2);
   m_materials["Brass"]->AddMaterial(m_materials["Cu"]  , 70*perCent);
   m_materials["Brass"]->AddMaterial(m_materials["Zn"]  , 30*perCent);
+  m_materials["AbsHCAL"] = (version_== v_HGCALHE_CALICE) ?
+    nistManager->FindOrBuildMaterial("G4_Fe",false) :
+    m_materials["Brass"];
   m_materials["C"] = nistManager->FindOrBuildMaterial("G4_C",false); 
   m_materials["H"] = nistManager->FindOrBuildMaterial("G4_H",false); 
   m_materials["Scintillator"]= nistManager->FindOrBuildMaterial("G4_POLYSTYRENE",false); 
@@ -157,6 +160,8 @@ void DetectorConstruction::UpdateCalorSize(){
     m_CalorSizeXY=200;
   else if (model_ == DetectorConstruction::m_SIMPLE_50)
     m_CalorSizeXY=500;
+  else if (model_ == DetectorConstruction::m_SIMPLE_100)
+    m_CalorSizeXY=1000;
   else if (model_ == DetectorConstruction::m_FULLSECTION){
     m_CalorSizeXY=1700;
     m_minRadius = 150;
@@ -249,10 +254,10 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 	}
 	else {
 	  //HCAL
-	  logi = new G4LogicalVolume(solid, m_materials["Brass"], baseName+"log");
-	  m_caloStruct[i].Pb_X0 = m_materials["Brass"]->GetRadlen();
-	  m_caloStruct[i].Pb_L0 = m_materials["Brass"]->GetNuclearInterLength();
-	  G4cout << "************ Abs " << i << " " << m_caloStruct[i].Pb_X0 << " " << m_caloStruct[i].Pb_thick << " " << m_materials["Brass"]->GetDensity() << G4endl;
+	  logi = new G4LogicalVolume(solid, m_materials["AbsHCAL"], baseName+"log");
+	  m_caloStruct[i].Pb_X0 = m_materials["AbsHCAL"]->GetRadlen();
+	  m_caloStruct[i].Pb_L0 = m_materials["AbsHCAL"]->GetNuclearInterLength();
+	  G4cout << "************ Abs " << i << " " << m_caloStruct[i].Pb_X0 << " " << m_caloStruct[i].Pb_thick << " " << m_materials["AbsHCAL"]->GetDensity() << G4endl;
 	}
 	m_caloStruct[i].Pb_vol= new G4PVPlacement(0, G4ThreeVector(0.,0.,zOffset+zOverburden+thick/2), logi, baseName+"phys", m_logicWorld, false, 0);
 	G4VisAttributes *simpleBoxVisAtt= new G4VisAttributes(G4Colour::Gray());

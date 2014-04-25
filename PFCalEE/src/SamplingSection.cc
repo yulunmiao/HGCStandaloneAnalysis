@@ -150,12 +150,7 @@ void SamplingSection::trackParticleHistory(const G4SiHitVec & incoming)
     for (unsigned iI(0); iI<incoming.size(); ++iI){//loop on previous layer
       G4int trId = incoming[iI].trackId;
       if (trId == parId) Si_HitVec[iP].parentId = incoming[iI].parentId;
-
     }//loop on previous layer
-
-
   }//loop on g4hits
-
-
   //  return Si_HitVec;
 }

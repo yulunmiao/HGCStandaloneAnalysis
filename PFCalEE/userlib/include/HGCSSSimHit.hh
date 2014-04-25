@@ -26,7 +26,9 @@ public:
     nMuons_(0),
     nNeutrons_(0),
     nProtons_(0),
-    nHadrons_(0)
+    nHadrons_(0),
+    trackIDMainParent_(0),
+    energyMainParent_(0)
   {
     
   };
@@ -40,6 +42,10 @@ public:
 
   inline double time() const {
     return time_;
+  };
+
+  inline void calculateTime() {
+    if (energy_>0) time_ = time_/energy_;
   };
 
   inline unsigned layer() const {
@@ -138,6 +144,36 @@ public:
     else return get_y_cell()*sign*CELL_SIZE_Y*getGranularity()-CELL_SIZE_Y*getGranularity()/2;
   };
 
+  inline bool get_x_side_old() const{
+    return cellid_ & 0x0001;
+  };
+
+  inline bool get_y_side_old() const {
+    return (cellid_ & 0x0100) >> 8;
+  };
+
+  inline unsigned get_x_cell_old() const {
+    return (cellid_ & 0x00FE) >> 1;
+  };
+
+  inline unsigned get_y_cell_old() const {
+    return (cellid_ & 0xFE00) >> 9;
+  };
+
+  inline double get_x_old() const {
+    float sign = get_x_side_old() ? 1. : -1. ;
+    if (sign > 0)
+      return get_x_cell_old()*sign*CELL_SIZE_X*getGranularity()+CELL_SIZE_X*getGranularity()/2;
+    else return get_x_cell_old()*sign*CELL_SIZE_X*getGranularity()-CELL_SIZE_X*getGranularity()/2;
+  };
+
+  inline double get_y_old() const {
+    float sign = get_y_side_old() ? 1. : -1. ;
+    if (sign > 0)
+      return get_y_cell_old()*sign*CELL_SIZE_Y*getGranularity()+CELL_SIZE_Y*getGranularity()/2;
+    else return get_y_cell_old()*sign*CELL_SIZE_Y*getGranularity()-CELL_SIZE_Y*getGranularity()/2;
+  };
+
   inline double get_z() const {
     return zpos_;
   };
@@ -145,6 +181,14 @@ public:
   inline unsigned getGranularity() const{
     return 1;
   };
+
+  inline int mainParentTrackID() const{
+    return trackIDMainParent_;
+  }
+
+  inline double mainParentEfrac() const {
+    return energyMainParent_/energy_;
+  }
 
   void PrintGeometry(std::ostream & aOs) const ;
 
@@ -163,6 +207,8 @@ private:
   unsigned nNeutrons_;
   unsigned nProtons_;
   unsigned nHadrons_;
+  int trackIDMainParent_;
+  double energyMainParent_;
 
   ClassDef(HGCSSSimHit,1);
 

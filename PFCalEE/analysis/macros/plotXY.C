@@ -27,7 +27,7 @@ int plotXY(){//main
   //TString scenario[nS] = {"0","1","2","3","4","5","6"};
   const unsigned nS = 1;
   std::string scenario[nS] = {
-    "mu-/"
+    "pi-/twiceSampling/GeVCal/EarlyDecay/"
     //"pi+/PU/eta20/",
     //"pi+/PU/eta25/",
     //"pi+/PU/eta30/"
@@ -47,10 +47,10 @@ int plotXY(){//main
 };
   
   const unsigned nV = 1;
-  TString version[nV] = {"3"};
+  TString version[nV] = {"23"};
   bool isPU = false;
-  const unsigned nLayers = 30;
-  const unsigned nEcalLayers = 30;
+  const unsigned nLayers = 54;
+  const unsigned nEcalLayers = 38;
 
   TCanvas *mycECAL = new TCanvas("mycECAL","mycECAL",1500,1000);
   TCanvas *mycHCAL = new TCanvas("mycHCAL","mycHCAL",1500,1000);

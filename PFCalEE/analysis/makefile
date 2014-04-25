@@ -8,16 +8,18 @@ SHELL=bash
 USERINCLUDES += -I$(ROOTSYS)/include/
 USERINCLUDES += -I$(ROOFITSYS)/include/
 #USERINCLUDES += -I$(CMS_PATH)/$(SCRAM_ARCH)/external/boost/1.47.0/include/
-USERINCLUDES += -Iinclude/ -I../userlib/include/
+USERINCLUDES += -Iinclude/ -I../userlib/include/ -I$(FASTJET_INSTALL)/include/
 
 # Define libraries to link
 USERLIBS += $(shell root-config --glibs) -lRooFit #-lGenVector -lTreePlayer -lTMVA
 USERLIBS += -L../userlib/lib -lPFCalEEuserlib
+USERLIBS += -Wl,-rpath,$(FASTJET_INSTALL)/lib -lm  -L$(FASTJET_INSTALL)/lib -lfastjettools -lfastjet -lfastjetplugins -lsiscone_spherical -lsiscone
 #USERLIBS += -L$(CMS_PATH)/$(SCRAM_ARCH)/external/boost/1.47.0/lib/ -lboost_regex -lboost_program_options -lboost_filesystem
 
 #CXXFLAGS = -Wall -W -Wno-unused-function -Wno-parentheses -Wno-char-subscripts -Wno-unused-parameter -O2 
 CXXFLAGS = -Wall -W -O2 -std=c++0x
 LDFLAGS = -shared -Wall -W 
+
 
 # If possible we'll use the clang compiler, it's faster and gives more helpful error messages
 # If it's not available, then fallback to gcc.

@@ -7,7 +7,10 @@
 HGCSSRecoHit::HGCSSRecoHit(const HGCSSSimHit & aSimHit, const unsigned granularity){
   energy_ = aSimHit.energy();
   adcCounts_ = 0;
-  zpos_ = aSimHit.get_z();
+  // move to not have center in the middle
+  zpos_ = aSimHit.get_z()+4000;
+
+
   layer_ = aSimHit.layer();
   noiseFrac_ = 0;
 
@@ -23,11 +26,30 @@ HGCSSRecoHit::HGCSSRecoHit(const HGCSSSimHit & aSimHit, const unsigned granulari
 
 }
 
+
+double HGCSSRecoHit::eta() const {
+  double x = get_x();
+  double y = get_y();
+  double theta = acos(fabs(zpos_)/sqrt(zpos_*zpos_+x*x+y*y));
+  double leta = -log(tan(theta/2.));
+  if (zpos_>0) return leta;
+  else return -leta;
+}
+
+double HGCSSRecoHit::phi() const {
+  double x = get_x();
+  double y = get_y();
+  if (x==0) return 0;
+  if (x>0) return atan(y/x);
+  else if (y>0) return TMath::Pi()+atan(y/x);
+  else return -TMath::Pi()+atan(y/x);
+}
+
 void HGCSSRecoHit::encodeCellId(const bool x_side,const bool y_side,const unsigned x_cell,const unsigned y_cell, const unsigned granularity){
   cellid_ = 
-    x_side | ((x_cell & 0xFF)<<1) |
-    (y_side<<9) | ((y_cell & 0xFF)<<10) |
-    ((granularity & 0x3F) <<18) ;
+    x_side | ((x_cell & 0xFFF)<<1) |
+    (y_side<<13) | ((y_cell & 0xFFF)<<14) |
+    ((granularity & 0x3F) <<26) ;
 
   // std::cout << " Cross-check of encoding: cellid=" << cellid_ << std::endl
   // 	    << " x_side " << x_side << " " << get_x_side() << std::endl

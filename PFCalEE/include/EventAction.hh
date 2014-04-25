@@ -13,6 +13,7 @@
 #include "SamplingSection.hh"
 #include "G4SiHit.hh"
 #include "HGCSSSimHit.hh"
+#include "HGCSSGenParticle.hh"
 
 #include <vector>
 #include <map>
@@ -30,8 +31,9 @@ public:
 
   void Detect(G4double edep, G4double stepl,G4double globalTime, G4int pdgId, 
 	      G4VPhysicalVolume *volume, const G4ThreeVector & position,
-	      G4int trackID, G4int parentID);
-
+	      G4int trackID, G4int parentID,
+	      const HGCSSGenParticle & genPart);
+  
   //void Detect(G4double edep, G4double stepl,G4double globalTime, G4int pdgId, G4VPhysicalVolume *volume,int iyiz);
 
   void SetPrintModulo(G4int    val)  {printModulo = val;};
@@ -45,8 +47,9 @@ private:
   TFile *outF_;
   //TNtuple *ntuple_;
   TTree *tree_;
-  Float_t event_[17];
+  Float_t event_[18];
   HGCSSSimHitVec hitvec_;
+  HGCSSGenParticleVec genvec_;
   //  Float_t event_[15], dendydz_[81], cellSize_;
   EventActionMessenger*  eventMessenger;
 

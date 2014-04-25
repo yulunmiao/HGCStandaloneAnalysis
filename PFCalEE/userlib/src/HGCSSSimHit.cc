@@ -6,7 +6,10 @@
 
 HGCSSSimHit::HGCSSSimHit(const G4SiHit & aSiHit){
   energy_ = aSiHit.energy;
-  time_ = aSiHit.time;
+  //energy weighted time
+  //PS: need to call calculateTime() after all hits 
+  //have been added to have divided by totalE!!
+  time_ = aSiHit.time*aSiHit.energy;
   zpos_ = aSiHit.hit_z;
   layer_ = aSiHit.layer;
 
@@ -34,6 +37,10 @@ HGCSSSimHit::HGCSSSimHit(const G4SiHit & aSiHit){
   else if(abs(aSiHit.pdgId)==2112) nNeutrons_++;
   else if(abs(aSiHit.pdgId)==2212) nProtons_++;
   else nHadrons_++;
+
+  trackIDMainParent_ = aSiHit.parentId;
+  energyMainParent_ = aSiHit.energy;
+
 }
 
 void HGCSSSimHit::encodeCellId(const bool x_side,const bool y_side,const unsigned x_cell,const unsigned y_cell){
@@ -51,7 +58,9 @@ void HGCSSSimHit::encodeCellId(const bool x_side,const bool y_side,const unsigne
 
 void HGCSSSimHit::Add(const G4SiHit & aSiHit){
 
-  time_ = (time_*energy_ + aSiHit.time*aSiHit.energy)/(energy_+aSiHit.energy);
+  time_ = time_ + aSiHit.time*aSiHit.energy;
+  //PS: need to call calculateTime() after all hits 
+  //have been added to have divided by totalE!!
 
   if(abs(aSiHit.pdgId)==22) nGammas_++;
   else if(abs(aSiHit.pdgId)==11) nElectrons_++;
@@ -61,6 +70,11 @@ void HGCSSSimHit::Add(const G4SiHit & aSiHit){
   else nHadrons_++;
 
   energy_ += aSiHit.energy;
+  if (aSiHit.energy > energyMainParent_){
+    trackIDMainParent_ = aSiHit.parentId;
+    energyMainParent_ = aSiHit.energy;
+  }
+
 }
 
 void HGCSSSimHit::Print(std::ostream & aOs) const{
@@ -73,6 +87,8 @@ void HGCSSSimHit::Print(std::ostream & aOs) const{
       << " neutron " << nNeutrons_ 
       << " proton " << nProtons_ 
       << " had " << nHadrons_ 
+      << std::endl
+      << " = main parent: trackID " << trackIDMainParent_ << " efrac " << mainParentEfrac()
       << std::endl
       << "====================================" << std::endl;
 

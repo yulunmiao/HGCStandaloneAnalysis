@@ -18,6 +18,7 @@ private:
   EventAction *eventAction_;  
   //to correct the energy in the scintillator
   G4EmSaturation* saturationEngine;
+  G4double timeLimit_;
 
 };
 

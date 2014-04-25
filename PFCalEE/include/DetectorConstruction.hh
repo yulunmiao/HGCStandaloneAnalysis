@@ -47,7 +47,8 @@ public:
   enum DetectorModel {
     m_SIMPLE_20=0,
     m_SIMPLE_50=1,
-    m_FULLSECTION=2
+    m_FULLSECTION=2,
+    m_SIMPLE_100=3
   };
 
   /**

@@ -5,8 +5,9 @@ export G4BASE=/afs/cern.ch/sw/lcg/external/geant4
 export DAWNHOME=/afs/cern.ch/sw/lcg/external/dawn/3_88a/x86_64-slc5-gcc43-opt/
 export G4DAWNFILE_DEST_DIR=/afs/cern.ch/work/a/amagnan/DawnFiles/
 export HEPMC_DIR=/afs/cern.ch/sw/lcg/external/HepMC/2.06.08/x86_64-slc6-gcc46-opt/
+export FASTJET_INSTALL=/afs/cern.ch/user/a/amagnan/SLHC/fastjet-install/
 source $G4BASE/9.6.p02/x86_64-slc6-gcc46-opt/share/Geant4-9.6.2/geant4make/geant4make.sh
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$XERCESCROOT/lib:$HEPMC_DIR/lib:$USERBASE/userlib/lib:$USERBASE/analysis/lib
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$XERCESCROOT/lib:$HEPMC_DIR/lib:$USERBASE/userlib/lib:$USERBASE/analysis/lib:$FASTJET_INSTALL/lib
 #source /afs/cern.ch/sw/lcg/contrib/gcc/4.6/x86_64-slc6/setup.sh
-source /afs/cern.ch/sw/lcg/app/releases/ROOT/5.34.09/x86_64-slc6-gcc46-opt/root/bin/thisroot.sh
-export PATH=$DAWNHOME/bin:$PATH
+source /afs/cern.ch/sw/lcg/app/releases/ROOT/5.34.18/x86_64-slc6-gcc46-opt/root/bin/thisroot.sh
+export PATH=$DAWNHOME/bin:$PATH:$FASTJET_INSTALL/bin

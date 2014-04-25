@@ -10,25 +10,30 @@ random.seed()
 
 usage = 'usage: %prog [options]'
 parser = optparse.OptionParser(usage)
-parser.add_option('-q', '--queue'      ,    dest='queue'              , help='batch queue'                  , default='2nw')
-parser.add_option('-v', '--version'    ,    dest='version'            , help='detector version'             , default=0,      type=int)
-parser.add_option('-m', '--model'    ,    dest='model'            , help='detector model'             , default=0,      type=int)
-parser.add_option('-a', '--alpha'      ,    dest='alpha'              , help='incidence angle in rad'              , default=0,      type=float)
-parser.add_option('-g', '--gun'        ,    dest='gun'                , help='particle to shoot'            , default='e-')
-parser.add_option('-n', '--nevts'      ,    dest='nevts'              , help='number of events to generate' , default=1000,    type=int)
-parser.add_option('-o', '--out'        ,    dest='out'                , help='output directory'             , default=os.getcwd() )
-parser.add_option('-e', '--eos'        ,    dest='eos'                , help='eos path to save root file to EOS',         default='')
-parser.add_option('-S', '--no-submit'  ,    action="store_true",  dest='nosubmit'           , help='Do not submit batch job.')
+parser.add_option('-f', '--short-queue',    dest='squeue'             , help='short batch queue'            , default='1nd')
+parser.add_option('-q', '--long-queue' ,    dest='lqueue'             , help='long batch queue'             , default='2nw')
+parser.add_option('-v', '--version'     ,    dest='version'            , help='detector version'             , default=0,      type=int)
+parser.add_option('-m', '--model'       ,    dest='model'              , help='detector model'               , default=0,      type=int)
+parser.add_option('-a', '--alpha'       ,    dest='alpha'              , help='incidence angle in rad'       , default=0,      type=float)
+parser.add_option('-g', '--gun'         ,    dest='gun'                , help='particle to shoot'            , default='e-')
+parser.add_option('-n', '--nevts'       ,    dest='nevts'              , help='number of events to generate' , default=1000,    type=int)
+parser.add_option('-o', '--out'         ,    dest='out'                , help='output directory'             , default=os.getcwd() )
+parser.add_option('-e', '--eos'         ,    dest='eos'                , help='eos path to save root file to EOS',         default='')
+parser.add_option('-S', '--no-submit'   ,    action="store_true",  dest='nosubmit'           , help='Do not submit batch job.')
 (opt, args) = parser.parse_args()
 
 
 #for en in [5,10,25,40,50,60,80,100,150,200,300,400,500,1000]:
 #for en in [188,307,503,829]:
 #for en in [5,10,20,25,50,75,100,125,150,175,200,300,500]: 
-for en in [200]: 
+for en in [10,15,18,20,25,30,35,40,45,50,60,80,100,200,300,400,500]:
+#for en in [100]: 
 
     nevents=opt.nevts
     if en>150: nevents=nevents/2
+
+    myqueue=opt.lqueue
+    if en<60: myqueue=opt.squeue
 
     outDir='%s/version_%d/%s/e_%d'%(opt.out,opt.version,opt.gun,en)
     eosDir='%s/%s'%(opt.eos,opt.gun)
@@ -56,8 +61,15 @@ for en in [200]:
         scriptFile.write('if (( "$?" != "0" )); then\n')
         scriptFile.write('echo " --- Problem with copy of file PFcal.root to EOS. Keeping locally." >> g4.log\n')
         scriptFile.write('else\n')
+        scriptFile.write('eossize=`eos ls -l %s/HGcal_%s.root | awk \'{print $5}\'`\n'%(eosDir,outTag))
+        scriptFile.write('localsize=`ls -l PFcal.root | awk \'{print $5}\'`\n')
+        scriptFile.write('if (( "$eossize" != "$localsize" )); then\n')
+        scriptFile.write('echo " --- Copy to eos failed. Localsize = $localsize, eossize = $eossize. Keeping locally..." >> g4.log\n')
+        scriptFile.write('else\n')
+        scriptFile.write('echo " --- Size check done: Localsize = $localsize, eossize = $eossize" >> g4.log\n')
         scriptFile.write('echo " --- File PFcal.root successfully copied to EOS: %s/HGcal_%s.root" >> g4.log\n'%(eosDir,outTag))
         scriptFile.write('rm PFcal.root\n')
+        scriptFile.write('fi\n')
         scriptFile.write('fi\n')
     scriptFile.write('cp * %s/\n'%(outDir))
     scriptFile.write('echo "All done"\n')
@@ -70,7 +82,7 @@ for en in [200]:
     g4Macro.write('/run/verbose 0\n')
     g4Macro.write('/event/verbose 0\n')
     g4Macro.write('/tracking/verbose 0\n')
-    g4Macro.write('/N03/det/setField 3.8 T\n')
+    #g4Macro.write('/N03/det/setField 3.8 T\n')
     g4Macro.write('/N03/det/setModel %d\n'%opt.model)
     g4Macro.write('/random/setSeeds %d %d\n'%( random.uniform(0,100000), random.uniform(0,100000) ) )
     g4Macro.write('/generator/select particleGun\n')
@@ -82,6 +94,6 @@ for en in [200]:
 
     #submit
     os.system('chmod u+rwx %s/runJob.sh'%outDir)
-    if opt.nosubmit : os.system('echo bsub -q %s %s/runJob.sh'%(opt.queue,outDir)) 
-    else: os.system("bsub -q %s \'%s/runJob.sh\'"%(opt.queue,outDir))
+    if opt.nosubmit : os.system('echo bsub -q %s %s/runJob.sh'%(myqueue,outDir)) 
+    else: os.system("bsub -q %s \'%s/runJob.sh\'"%(myqueue,outDir))
 

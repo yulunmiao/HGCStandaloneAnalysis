@@ -38,13 +38,13 @@ int main(int argc, char** argv){//main
   const unsigned nHcalSiLayers = 24;//concept 24;//calice 47
 
   //double minX=-250,maxX=250;
-  double minX=-1000,maxX=1000;
+  double minX=-1700,maxX=1700;
   //double minY=150,maxY=800;
   //double minY=1100,maxY=1500;
-  double minY=-1000,maxY=1000;
+  double minY=-1700,maxY=1700;
   double minZ=3170,maxZ=5070;
   
-  unsigned nEvtsOut = 2;
+  unsigned nEvtsOut = 10;
 
   //////////////////////////////////////////////////////////
   //// End Hardcoded config ////////////////////////////////////
@@ -122,7 +122,7 @@ int main(int argc, char** argv){//main
   else std::cout << lTree->GetEntries() << std::endl;
   
 
-  TFile *outputFile = TFile::Open("140PU/PFcal_140PU_EEHE.root","RECREATE");
+  TFile *outputFile = TFile::Open("140PU/PFcal_140PU_EEHE_full.root","RECREATE");
 
   if (!outputFile) {
     std::cout << " -- Error, cannot open output file. Exiting..." << std::endl;

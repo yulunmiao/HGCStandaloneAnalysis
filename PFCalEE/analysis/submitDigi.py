@@ -17,28 +17,29 @@ parser.add_option('-r', '--randomseed' ,    dest='seed'               , help='ra
 parser.add_option('-d', '--debug'      ,    dest='debug'              , help='debug output' , default=0,    type=int)
 parser.add_option('-s', '--scenario'   ,    dest='scenario'           , help='Integer describing scenario.' , default=0,    type=int)
 parser.add_option('-o', '--out'        ,    dest='out'                , help='output directory'             , default=os.getcwd() )
-parser.add_option('-e', '--eos'        ,    dest='eos'                , help='eos path to save root file to EOS',         default='')
+parser.add_option('-e', '--eos'        ,    dest='eos'                , help='eos path to save root file to EOS', default='root://eoscms//eos/cms/store/user/amagnan/HGCalHEGeant4/run_0')
 parser.add_option('-S', '--no-submit'  ,    action="store_true",  dest='nosubmit'           , help='Do not submit batch job.')
 (opt, args) = parser.parse_args()
 
 nevents=opt.Nevts
 
 #myg4dir="/afs/cern.ch/work/a/amagnan/public/HGCalEEGeant4/"
-myg4dir="root://eoscms//eos/cms/store/cmst3/group/hgcal/Geant4"
+#myg4dir="root://eoscms//eos/cms/store/cmst3/group/hgcal/Geant4"
+#myg4dir="root://eoscms//eos/cms/store/user/amagnan/HGCalHEGeant4"
 
-
-for version in [3]:
+for version in [23]:
     #for particle in ["Gamma","GammaPU","PU"]:
-    for particle in ["e-"]: #"SimplePU"]:
+    for particle in ["pi-"]: #"SimplePU"]:
         #for eta in [30,35]:
         #for eta in [20,25,30,35]:
         eosDir='%s/%s'%(opt.eos,particle)
-        for en in [5,10,20,25,50,75,100,125,150,175,200,300,500]:
+        #for en in [5,10,25,40,50,60,80,100,150,200,300,400,500,1000]:
+        for en in [10,15,20,25,30,35,40,45,50,60,80,100,200,300,400,500]:
             #for en in [0,1,2,3,4,5,6,7,8,9]:
             #for en in [5,10,25,50,75,100]:
             #for en in [150,200,300,500]:
             
-            inDir='%s/HGcal_version_%d_e%d.root'%(myg4dir,version,en)
+            inDir='%s/HGcal_version%d_e%d.root'%(eosDir,version,en)
             outDir='%s/version_%d/scenario_%d/%s/e_%d/'%(opt.out,version,opt.scenario,particle,en)
             outlog='%s/digitizer.log'%(outDir)
             os.system('mkdir -p %s'%outDir)
