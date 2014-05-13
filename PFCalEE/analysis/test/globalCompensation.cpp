@@ -18,6 +18,7 @@
 #include "HGCSSRecoHit.hh"
 #include "HGCSSParameters.hh"
 #include "HGCSSCalibration.hh"
+#include "HGCSSDigitisation.hh"
 
 #include "TRandom3.h"
 
@@ -37,6 +38,9 @@ void findMeanEnergy(TTree *lTree,
 		    const unsigned nLayers,
 		    const unsigned nEvts,
 		    const bool selectEarlyDecay,
+		    const double mipThresh,
+		    const bool applyDigi,
+		    HGCSSDigitisation & myDigitiser,
 		    HGCSSCalibration & mycalib,
 		    TH1F *p_Etotal){
 
@@ -55,24 +59,43 @@ void findMeanEnergy(TTree *lTree,
       HGCSSSimHit lHit = (*simhitvec)[iH];
       unsigned layer = lHit.layer();
       double energy = lHit.energy();
-      
+      double posx = lHit.get_x();
+      double posy = lHit.get_y();
+
       double weightedE = energy*mycalib.MeVToMip(layer);
       
       Etot[layer] += energy;
       //if (debug>1) std::cout << "-hit" << iH << "-" << layer << " " << energy << " " << Etot[layer];
-      mycalib.incrementEnergy(layer,weightedE,Etotal[0],Etotal[1],Etotal[2]);
+      mycalib.incrementEnergy(layer,weightedE,lHit.time(),posx,posy);
     }//loop on hits
 
     if (!isG4Tree || (isG4Tree && (volNb == nLayers-1))){//fill histos
       //if (debug) std::cout << " -- Filling histograms..." << std::endl;
+      if (applyDigi){
+	myDigitiser.digitiseECAL(mycalib.getECAL2DHistoVec());
+	myDigitiser.digitiseFHCAL(mycalib.getFHCAL2DHistoVec());
+	myDigitiser.digitiseBHCAL(mycalib.getBHCAL2DHistoVec());
+      }
+
+      Etotal[0] = mycalib.getECALenergy(mipThresh);
+      Etotal[1] = mycalib.getFHCALenergy(mipThresh);
+      Etotal[2] = mycalib.getBHCALenergy(mipThresh);
 
       double EReco = mycalib.recoEnergyUncor(Etotal[0],Etotal[1],Etotal[2]);
       double EReco_FHCAL = mycalib.recoEnergyUncor(Etotal[0],Etotal[1],Etotal[2],true);
-      bool doFill = fillHistoConditions(selectEarlyDecay,EReco_FHCAL,EReco);
-
+      double Etmp = 0;
+      for (unsigned iL(0);iL<6;++iL){//loop on layers
+	Etmp += Etot[iL]*mycalib.MeVToMip(iL);
+      }
+      bool doFill = true;
+      if (selectEarlyDecay && Etotal[0]+Etotal[1]+Etotal[2] > 0 && Etmp/(Etotal[0]+Etotal[1]+Etotal[2])<0.08) doFill = false;
+      //      bool doFill = fillHistoConditions(selectEarlyDecay,EReco_FHCAL,EReco);
+      
       if (doFill) {
 	p_Etotal->Fill(EReco);
       }
+
+      mycalib.reset2DHistos();
 
       for (unsigned iD(0); iD<3; ++iD){
 	Etotal[iD] = 0;
@@ -169,11 +192,12 @@ void findMeanEnergy(TTree *lTree,
 
 int main(int argc, char** argv){//main  
 
-  if (argc < 4) {
+  if (argc < 5) {
     std::cout << " Usage: " 
 	      << argv[0] << " <nEvts to process (0=all)>"
 	      << " <full path to input file>"
 	      << " <file name (PFcal.root, or DigiPFcal.root)>" 
+	      << " <output file unique suffix>" 
 	      << " <optional: list of energies: 5,10,25>"
 	      << " <optional: debug (default=0)>"
 	      << " <optional: doMeanRms (default=0)>"
@@ -189,10 +213,13 @@ int main(int argc, char** argv){//main
   bool calibrate = true;//do MIP to GeV for total E.
   bool concept = false;
 
-  bool selectEarlyDecay = true;//>95% of E in HCAL
+  bool selectEarlyDecay = true;
 
-  const unsigned nLimits = 15;
-  const double pElim[nLimits] = {10,5,6,7,8,9,9.5,10.5,11,11.5,12,13,14,15,20};
+  const bool applyDigi = true;
+  const double mipThresh = 0.5;
+
+  const unsigned nLimits = 10;//5;
+  const double pElim[nLimits] = {5,6,7,8,9,10,11,12,13,14};
 
   //////////////////////////////////////////////////////////
   //// End Hardcoded config ////////////////////////////////////
@@ -211,11 +238,12 @@ int main(int argc, char** argv){//main
   const unsigned pNevts = atoi(argv[1]);
   std::string filePath = argv[2];
   std::string fileName = argv[3];//"PFcal.root";
+  TString pSuffix = argv[4];
   unsigned debug = 0;
-  if (argc >5) debug = atoi(argv[5]);
+  if (argc >6) debug = atoi(argv[6]);
   unsigned doMeanRms = 0;
   //unsigned doHitSpectra = 0;
-  if (argc >6) doMeanRms = atoi(argv[6]);
+  if (argc >7) doMeanRms = atoi(argv[7]);
   //if (argc >7) doHitSpectra = atoi(argv[7]);
 
   std::cout << " -- Input parameters: " << std::endl
@@ -234,8 +262,8 @@ int main(int argc, char** argv){//main
 
   std::vector<std::string> enVec;
   std::string genEnStr;
-  if (argc >4) {
-    genEnStr = argv[4];
+  if (argc >5) {
+    genEnStr = argv[5];
     boost::split( enVec, genEnStr, boost::is_any_of(","));
     for (unsigned iE(0); iE<enVec.size();++iE){
       unsigned tmpE = 0;
@@ -306,7 +334,13 @@ int main(int argc, char** argv){//main
   if (calibrate) plotDir += "GeVCal/";
   //plotDir += "simpleWeights/";
   if (selectEarlyDecay) plotDir += "EarlyDecay/";
-
+  if (applyDigi) {
+    plotDir += "MipThresh_";
+    plotDir += static_cast<unsigned>(mipThresh);
+    plotDir += "p";
+    plotDir += static_cast<unsigned>(mipThresh*10-static_cast<unsigned>(mipThresh)*10);
+    plotDir += "/";
+  }
 
   std::cout << " ----------------------------------- " << std::endl
 	    << " ----------------------------------- " << std::endl
@@ -324,6 +358,9 @@ int main(int argc, char** argv){//main
   const unsigned nEcalLayers = mycalib.nEcalLayers();//31;
   const unsigned nFHcalLayers = mycalib.nFHcalLayers();//concept 24;//calice 47
 
+  HGCSSDigitisation myDigitiser;
+  //myDigitiser.setRandomSeed(1);
+
   std::cout << " -- N layers = " << nLayers << std::endl
 	    << " -- nEcalLayers = " << nEcalLayers 
 	    << ", mip weights = " << mycalib.mipWeight(0) << " " << mycalib.mipWeight(1) << " " << mycalib.mipWeight(2)
@@ -335,8 +372,16 @@ int main(int argc, char** argv){//main
 	    << std::endl
 	    << " -- conversions: HcalToEcalConv = " <<mycalib.HcalToEcalConv() << " BHcalToFHcalConv = " << mycalib.BHcalToFHcalConv() << std::endl
 	    << " -- Elim for Cglobal = " << pElim[0] << "-" << pElim[nLimits-1] << " Mips" << std::endl
-	    << " ----------------------------------- " << std::endl
-	    << " ----------------------------------- " << std::endl
+	    << " ----------------------------------- " << std::endl;
+
+  if (applyDigi){
+    myDigitiser.Print(std::cout);
+  }
+  else {
+    std::cout << " -- No digi applied -- " << std::endl;
+  }
+  
+  std::cout << " ----------------------------------- " << std::endl
 	    << " -----------------------------------" << std::endl;
 
   std::cout << " -- Output file directory is : " << plotDir << std::endl;
@@ -344,7 +389,7 @@ int main(int argc, char** argv){//main
 
   TFile *outputFile = 0;
   if (!doMeanRms){ 
-    outputFile = TFile::Open(plotDir+"/CalibHcalHistos_test.root","RECREATE");
+    outputFile = TFile::Open(plotDir+"/CalibHcalHistos_"+pSuffix+".root","RECREATE");
     
     if (!outputFile) {
       std::cout << " -- Error, output file " << outputFile->GetName() << " cannot be opened. Please create output directory : " << plotDir << "  Exiting..." << std::endl;
@@ -380,7 +425,7 @@ int main(int argc, char** argv){//main
   else {
     meanRmsIn.open(plotDir+"/MeanRmsHcal.dat");
     if(!meanRmsIn.is_open()){
-      std::cerr << "Unable to open file for writting meanRMS for HCAL. " << std::endl;
+      std::cerr << "Unable to open input file containing meanRMS for HCAL. " << std::endl;
       return 1;
     }
     while(1){
@@ -508,6 +553,9 @@ int main(int argc, char** argv){//main
 		     simhitvec,volNb,
 		     nLayers,nEvts,
 		     selectEarlyDecay,
+		     mipThresh,
+		     applyDigi,
+		     myDigitiser,
 		     mycalib,
 		     p_Etotal[iE]);
       
@@ -631,19 +679,19 @@ int main(int argc, char** argv){//main
       Etot[iL] = 0;
     }
 
-    TH2F * EmipHits = new TH2F("EmipHits",";x(mm);y(mm)",17,-255,255,17,-255,255);
+    TH2F * EmipHits = new TH2F("EmipHits",";x(mm);y(mm)",34,-510,510,34,-510,510);
     //TH2F * EmipHits = new TH2F("EmipHits",";x(mm);y(mm)",16,-240,240,16,-240,240);
     unsigned nTotal = 0;
     unsigned nTotalSignal = 0;
 
     lName.str("");
     lName << "p_hitSpectrum_lowTail_" << genEn[iE];
-    p_hitSpectrum_lowTail[iE] =  new TH1F(lName.str().c_str(),";E^{hit}_{HCAL} (MIPs)",1000,0,200);
+    p_hitSpectrum_lowTail[iE] =  new TH1F(lName.str().c_str(),";E^{hit}_{HCAL} (MIPs)",1000,0,100);
     p_hitSpectrum_lowTail[iE]->Sumw2();
 
     lName.str("");
     lName << "p_hitSpectrum_highTail_" << genEn[iE];
-    p_hitSpectrum_highTail[iE] =  new TH1F(lName.str().c_str(),";E^{hit}_{HCAL} (MIPs)",1000,0,200);
+    p_hitSpectrum_highTail[iE] =  new TH1F(lName.str().c_str(),";E^{hit}_{HCAL} (MIPs)",1000,0,100);
     p_hitSpectrum_highTail[iE]->Sumw2();
 
     lName.str("");
@@ -721,7 +769,7 @@ int main(int argc, char** argv){//main
 
 	Etot[layer] += energy;
 	if (debug>1) std::cout << "-hit" << iH << "-" << layer << " " << energy << " " << Etot[layer];
-	mycalib.incrementEnergy(layer,weightedE,Etotal[0],Etotal[1],Etotal[2]);
+	mycalib.incrementEnergy(layer,weightedE,lHit.time(),posx,posy);
 	//calculate mean Emip just for HCAL layers
 	if (layer<nFHcalLayers) EmipHits->Fill(posx,posy,weightedE);
 
@@ -734,10 +782,24 @@ int main(int argc, char** argv){//main
 
       if (!isG4Tree || (isG4Tree && (volNb == nLayers-1))){//fill histos
 	//if (debug) std::cout << " -- Filling histograms..." << std::endl;
+	if (applyDigi){
+	  myDigitiser.digitiseECAL(mycalib.getECAL2DHistoVec());
+	  myDigitiser.digitiseFHCAL(mycalib.getFHCAL2DHistoVec());
+	  myDigitiser.digitiseBHCAL(mycalib.getBHCAL2DHistoVec());
+	}
+	Etotal[0] = mycalib.getECALenergy(mipThresh);
+	Etotal[1] = mycalib.getFHCALenergy(mipThresh);
+	Etotal[2] = mycalib.getBHCALenergy(mipThresh);
 
 	double EReco = mycalib.recoEnergyUncor(Etotal[0],Etotal[1],Etotal[2]);
 	double EReco_FHCAL = mycalib.recoEnergyUncor(Etotal[0],Etotal[1],Etotal[2],true);
-	bool doFill = fillHistoConditions(selectEarlyDecay,EReco_FHCAL,EReco);
+	//bool doFill = fillHistoConditions(selectEarlyDecay,EReco_FHCAL,EReco);
+	double Etmp = 0;
+	for (unsigned iL(0);iL<6;++iL){//loop on layers
+	  Etmp += Etot[iL]*mycalib.MeVToMip(iL);
+	}
+	bool doFill = true;
+	if (selectEarlyDecay && Etotal[0]+Etotal[1]+Etotal[2] > 0 && Etmp/(Etotal[0]+Etotal[1]+Etotal[2])<0.08) doFill = false;
 
 	if (doFill) {
 	  bool lowTail = EReco < (meanRecoE[genEn[iE]]-rmsRecoE[genEn[iE]]);
@@ -775,8 +837,8 @@ int main(int argc, char** argv){//main
 	      for (int iy(1); iy<EmipHits->GetNbinsY()+1; ++iy){
 		double eTmp = EmipHits->GetBinContent(ix,iy);
 		if (eTmp < 0.5) continue;
-		if (eTmp<pElim[iLim]) nHitsCountNum[iLim]++;
-		if (iLim==0 && eTmp<EmipMean) nHitsCountDen++;
+		if (eTmp<=pElim[iLim]) nHitsCountNum[iLim]++;
+		if (iLim==0 && eTmp<=EmipMean) nHitsCountDen++;
 	      }
 	    }
 	    double Cglobal = 0;
@@ -797,7 +859,8 @@ int main(int argc, char** argv){//main
 	}
 
 	EmipHits->Reset();
-	
+	mycalib.reset2DHistos();
+
 	nTotal = 0;
 	nTotalSignal = 0;
 	firstEvent = false;

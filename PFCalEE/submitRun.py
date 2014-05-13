@@ -26,14 +26,14 @@ parser.add_option('-S', '--no-submit'   ,    action="store_true",  dest='nosubmi
 #for en in [5,10,25,40,50,60,80,100,150,200,300,400,500,1000]:
 #for en in [188,307,503,829]:
 #for en in [5,10,20,25,50,75,100,125,150,175,200,300,500]: 
-for en in [10,15,18,20,25,30,35,40,45,50,60,80,100,200,300,400,500]:
+for en in [10,15,18,20,25,30,35,40,45,50,60,80]:
 #for en in [100]: 
 
     nevents=opt.nevts
     if en>150: nevents=nevents/2
 
     myqueue=opt.lqueue
-    if en<60: myqueue=opt.squeue
+    if en<100: myqueue=opt.squeue
 
     outDir='%s/version_%d/%s/e_%d'%(opt.out,opt.version,opt.gun,en)
     eosDir='%s/%s'%(opt.eos,opt.gun)
@@ -61,7 +61,7 @@ for en in [10,15,18,20,25,30,35,40,45,50,60,80,100,200,300,400,500]:
         scriptFile.write('if (( "$?" != "0" )); then\n')
         scriptFile.write('echo " --- Problem with copy of file PFcal.root to EOS. Keeping locally." >> g4.log\n')
         scriptFile.write('else\n')
-        scriptFile.write('eossize=`eos ls -l %s/HGcal_%s.root | awk \'{print $5}\'`\n'%(eosDir,outTag))
+        scriptFile.write('eossize=`$myeos ls -l %s/HGcal_%s.root | awk \'{print $5}\'`\n'%(eosDir,outTag))
         scriptFile.write('localsize=`ls -l PFcal.root | awk \'{print $5}\'`\n')
         scriptFile.write('if (( "$eossize" != "$localsize" )); then\n')
         scriptFile.write('echo " --- Copy to eos failed. Localsize = $localsize, eossize = $eossize. Keeping locally..." >> g4.log\n')

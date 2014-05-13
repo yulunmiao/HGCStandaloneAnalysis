@@ -39,9 +39,9 @@ int main(int argc,char** argv)
 
   // Set mandatory initialization classes
   //int version=DetectorConstruction::v_HGCALEE_concept;
-  int version=DetectorConstruction::v_HGCAL;
-  int model=DetectorConstruction::m_FULLSECTION;
-  //int model=DetectorConstruction::m_SIMPLE_20;
+  int version=23;//DetectorConstruction::v_HGCAL;
+  //int model=DetectorConstruction::m_FULLSECTION;
+  int model=DetectorConstruction::m_SIMPLE_20;
 
   if(argc>2) version=atoi(argv[2]);
   if(argc>3) model=atoi(argv[3]);

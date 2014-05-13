@@ -68,13 +68,15 @@ int plotE(){//main
   //TString scenario[nS] = {"0","1","2","3","4","5","6"};
   const unsigned nS = 1;
   std::string scenario[nS] = {
-    "pi-/twiceSampling/GeVCal/EarlyDecay/"
-    //"e-/twiceSampling/GeVCal/"
-    //"pi-/concept/GeVCal/EarlyDecay/"
-    //"pi-/twiceSampling/GeVCal/EarlyDecay/"
-    //"pi-/GeVCal/EarlyDecay/"
+    //"pi-/twiceSampling/GeVCal/MipThresh_0p5/ECALloss/"
+    "pi-/twiceSampling/GeVCal/EarlyDecay/MipThresh_0p5/"
+    //"e-/twiceSampling/MipThresh_0p5/"
   };
-  
+
+  TString pSuffix = "all";
+
+  const bool addNoiseTerm = true;
+
   const unsigned nV = 1;
   TString version[nV] = {"23"};//,"0"};
   
@@ -87,8 +89,8 @@ int plotE(){//main
 
   bool doMIPconv = false;
 
-  double MIPtoGeV = 1;//0.92;// 41.98;
-  double offset = 0;//-1.06;
+  double MIPtoGeV = 1;//0.914;//41.69;//43.97;//0.92;// 41.98;
+  double offset = 0;//-1.04;//-4.3;//-38;//-1.06;
 
 
   double EmipECAL = 0.0548;//in GeV
@@ -102,8 +104,8 @@ int plotE(){//main
   Float_t sigmaStochErr[nSmear][nS][MAX];
   Float_t sigmaConst[nSmear][nS][MAX];
   Float_t sigmaConstErr[nSmear][nS][MAX];
-  //Float_t sigmaNoise[nS][MAX];
-  //Float_t sigmaNoiseErr[nS][MAX];
+  Float_t sigmaNoise[nSmear][nS][MAX];
+  Float_t sigmaNoiseErr[nSmear][nS][MAX];
   
   std::ostringstream saveName;
   bool isPU = false;
@@ -113,7 +115,7 @@ int plotE(){//main
 		    30,35,40,45,50,
 		    60,80};//,100,200,300,
   //500};//,1000,2000};
-  //unsigned genEn[]={10,25,40,50,60,80,100,150,200,300,400,500};//,1000,2000};
+  //unsigned genEn[]={10,20,30,40,60,80};
   //unsigned genEn[]={40,50,60,80,100,200,300,400,500,1000,2000};
   //unsigned genEn[]={5,10,20,25,50,75,100,125,150,175,200,300,500};
   //unsigned genEn[]={10,25,40,50,60,80};
@@ -178,8 +180,8 @@ int plotE(){//main
 	
 	
 	TFile *inputFile = 0;
-	if (doShower) inputFile = TFile::Open(plotDir+"CalibHcalHistos.root");
-	else inputFile = TFile::Open(plotDir+"CalibHistos.root");
+	if (doShower) inputFile = TFile::Open(plotDir+"CalibHcalHistos_"+pSuffix+".root");
+	else inputFile = TFile::Open(plotDir+"CalibHistos_"+pSuffix+".root");
 	if (!inputFile) {
 	  std::cout << " -- Error, input file " << inputFile->GetName() << " cannot be opened. Exiting..." << std::endl;
 	  return 1;
@@ -191,8 +193,8 @@ int plotE(){//main
 	TH1F *p_EtotalPU = 0;
 	TH1F *p_ErecoPU = 0;
 	
-	TH2F *p_meanFrac = new TH2F("p_meanFrac",";layer;gen E (GeV);<E_{layer}>/E_{tot}",30,0,30,nGenEn,0,nGenEn);
-	TH2F *p_rmsFrac = new TH2F("p_rmsFrac",";layer;gen E (GeV);#sigma(E_{layer}/E_{tot})",30,0,30,nGenEn,0,nGenEn);
+	TH2F *p_meanFrac = new TH2F("p_meanFrac",";layer;gen E (GeV);<E_{layer}>/E_{tot}",nLayers,0,nLayers,nGenEn,0,nGenEn);
+	TH2F *p_rmsFrac = new TH2F("p_rmsFrac",";layer;gen E (GeV);#sigma(E_{layer}/E_{tot})",nLayers,0,nLayers,nGenEn,0,nGenEn);
 	
 	
 	bool isG4File = false;
@@ -234,13 +236,16 @@ int plotE(){//main
 	      
 	      if (genEn[iE]==30 && iL<36) {
 		mycL->cd(iL+1);
+		char buf[500];
+		sprintf(buf,"E=%d GeV, layer %d",genEn[iE],iL);
+		p_Efrac[iE][iL]->SetTitle(buf);
 		p_Efrac[iE][iL]->Draw();
 	      }
 	      
 	    }//loop on layers
 
 	    
-	    if (iE==5){
+	    if (genEn[iE]==30){
 	      saveName.str("");
 	      saveName << plotDir << "/SimEfraction_" << genEn[iE] << "GeV" ;
 	      mycL->Update();
@@ -251,7 +256,7 @@ int plotE(){//main
 
 	  lName.str("");
 	  if (doShower) lName << "p_EshowerCor_" << genEn[iE];
-	  //if (doShower) lName << "p_Eshower_" << genEn[iE] << "_" << 0;
+	  //if (doShower) lName << "p_Eshower_" << genEn[iE] << "_" << 5;
 	  else lName << "p_Etotal_" << genEn[iE] << "_" << pDetector;
 	  p_Etotal[iE] = (TH1F*)gDirectory->Get(lName.str().c_str());
 	  if (!p_Etotal[iE]){
@@ -396,8 +401,8 @@ int plotE(){//main
 			      p_Etotal[iE]->GetMean()+2*p_Etotal[iE]->GetRMS());
 
 	  else p_Etotal[iE]->Fit("gaus","LR+","",
-				 p_Etotal[iE]->GetMean()-1.5*p_Etotal[iE]->GetRMS(),
-				 p_Etotal[iE]->GetMean()+1.5*p_Etotal[iE]->GetRMS());
+				 p_Etotal[iE]->GetMean()-2*p_Etotal[iE]->GetRMS(),
+				 p_Etotal[iE]->GetMean()+2*p_Etotal[iE]->GetRMS());
 
 
 	  TF1 *fitResult = p_Etotal[iE]->GetFunction("gaus");
@@ -560,8 +565,8 @@ int plotE(){//main
 		gPad->SetGridy(1);
 		TGraphErrors * grDelta = deltaFit;
 		grDelta->SetTitle("");
-		grDelta->SetMinimum(-0.03);
-		grDelta->SetMaximum(0.03);
+		grDelta->SetMinimum(-0.2);
+		grDelta->SetMaximum(0.2);
 		grDelta->GetXaxis()->SetLabelSize(0.15);
 		grDelta->GetXaxis()->SetTitleSize(0.15);
 		grDelta->GetYaxis()->SetLabelSize(0.12);
@@ -581,6 +586,7 @@ int plotE(){//main
 		//TF1 *fitFunc2 =new TF1("reso","sqrt([0]*x*x+[1]+[2]*x*x*x*x)",gr->GetXaxis()->GetXmin(),gr->GetXaxis()->GetXmax());
 		TF1 *fitFunc2;
 		fitFunc2 =new TF1("reso","sqrt([0]*x*x+[1])",gr->GetXaxis()->GetXmin(),gr->GetXaxis()->GetXmax());
+		if (addNoiseTerm) fitFunc2 =new TF1("reso","sqrt([0]*x*x+[1]+[2]*x*x*x*x)",gr->GetXaxis()->GetXmin(),gr->GetXaxis()->GetXmax());
 		//if (i<4) fitFunc2 =new TF1("reso","sqrt([0]*x*x+[1])",gr->GetXaxis()->GetXmin(),gr->GetXaxis()->GetXmax());
 		//else fitFunc2 =new TF1("reso","sqrt([0]*x*x+[1])",gr->GetXaxis()->GetXmin(),0.2);//gr->GetXaxis()->GetXmax());
 
@@ -588,13 +594,22 @@ int plotE(){//main
 		fitFunc2->SetParLimits(0,0,1);
 		fitFunc2->SetParameter(1,0);
 		fitFunc2->SetParLimits(1,0,1);
+		if (addNoiseTerm) {
+		  fitFunc2->SetParameter(2,0.18*0.18);
+		  fitFunc2->SetParLimits(2,0,0);
+		  fitFunc2->FixParameter(2,0.18*0.18);
+		}
 		if (pDetector == "HCAL" || pDetector == "ECALHCAL" || pDetector == "SiSci") {
 		  fitFunc2->SetParameter(0,0.5);
 		  fitFunc2->SetParLimits(0,0,2);
 		  fitFunc2->SetParameter(1,0);
 		  fitFunc2->SetParLimits(1,0,1);
+		  if (addNoiseTerm) {
+		    fitFunc2->SetParameter(2,0.18*0.18);
+		    fitFunc2->SetParLimits(2,0,0);
+		    fitFunc2->FixParameter(2,0.18*0.18);
+		  }
 		}
-
 		if (i<4) {
 		  //fitFunc2->SetParameter(2,0.);
 		  //fitFunc2->SetParLimits(2,0,0);
@@ -610,13 +625,15 @@ int plotE(){//main
 		sigmaStochErr[iSm][iS][i] = fitFunc2->GetParError(0)/(2*sigmaStoch[iSm][iS][i]);
 		sigmaConst[iSm][iS][i] = sqrt(fitFunc2->GetParameter(1));
 		sigmaConstErr[iSm][iS][i] = fitFunc2->GetParError(1)/(2*sigmaConst[iSm][iS][i]);
-		//sigmaNoise[iSm][iS][i] = sqrt(fitFunc2->GetParameter(2));
-		//sigmaNoiseErr[iSm][iS][i] = fitFunc2->GetParError(2)/(2*sigmaNoise[iSm][iS][i]);
+		if (addNoiseTerm) {
+		  sigmaNoise[iSm][iS][i] = sqrt(fitFunc2->GetParameter(2));
+		  sigmaNoiseErr[iSm][iS][i] = fitFunc2->GetParError(2)/(2*sigmaNoise[iSm][iS][i]);
+		}
 		TLatex lat;
 		if (i>3) lat.SetTextColor(6);
 		else lat.SetTextColor(1);
-		//sprintf(buf,"#frac{#sigma}{E} #propto #frac{s}{#sqrt{E}} #oplus c #oplus #frac{n}{E}");
-		sprintf(buf,"#frac{#sigma}{E} #propto #frac{s}{#sqrt{E}} #oplus c");
+		if (addNoiseTerm) sprintf(buf,"#frac{#sigma}{E} #propto #frac{s}{#sqrt{E}} #oplus c #oplus #frac{n}{E}");
+		else sprintf(buf,"#frac{#sigma}{E} #propto #frac{s}{#sqrt{E}} #oplus c");
 		double Emin = 1/sqrt(genEn[nGenEn-1]);
 		if (i<4) lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*0.9,buf);
 		sprintf(buf,"s=%3.3f #pm %3.3f",sigmaStoch[iSm][iS][i],sigmaStochErr[iSm][iS][i]);
@@ -624,11 +641,12 @@ int plotE(){//main
 		sprintf(buf,"c=%3.3f #pm %3.3f",sigmaConst[iSm][iS][i],sigmaConstErr[iSm][iS][i]);
 		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.8-i/2*0.1-i/4*0.3),buf);
 		sprintf(buf,"chi2/NDF = %3.3f/%d = %3.3f",fitFunc2->GetChisquare(),fitFunc2->GetNDF(),fitFunc2->GetChisquare()/fitFunc2->GetNDF());
-		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.7-i/2*0.1-i/4*0.3),buf);
+		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.4-i/2*0.1-i/4*0.3),buf);
 		//if (i>3){
-		//sprintf(buf,"n=%3.3f #pm %3.3f",sigmaNoise[iSm][iS][i],sigmaNoiseErr[iSm][iS][i]);
-		//lat.DrawLatex(i/2*0.125-0.075,gr->GetYaxis()->GetXmax()*(0.7-i/2*0.1-i/4*0.3),buf);
-		//}
+		if (addNoiseTerm) {
+		  sprintf(buf,"n=%3.3f #pm %3.3f",sigmaNoise[iSm][iS][i],sigmaNoiseErr[iSm][iS][i]);
+		  lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.7-i/2*0.1-i/4*0.3),buf);
+		}
 	      }
 	    myc[i%4]->Update();
 	    if (doShower) {
@@ -650,9 +668,9 @@ int plotE(){//main
   
   for (unsigned iV(0); iV<nV;++iV){
     std::cout << "version " << version[iV] << std::endl;
-    std::cout << "scenario & type & sigmaStoch & sigmaConst"
-      //<< " & sigmaNoise"
-	      << " \\\\ \n" 
+    std::cout << "scenario & type & sigmaStoch & sigmaConst";
+    if (addNoiseTerm) std::cout << " & sigmaNoise";
+    std::cout << " \\\\ \n" 
 	      << "\\hline\n";
     for (unsigned iS(0); iS<nS;++iS){
       for (unsigned i(2); i<MAX;++i){
@@ -660,9 +678,9 @@ int plotE(){//main
 	  if (i==4 || i==5) continue;
 	  std::cout << scenario[iS] << " & " << type[i] << " & " <<  std::setprecision(3)
 		    << "$" << sigmaStoch[iSm][iS][i] << "\\pm" << sigmaStochErr[iSm][iS][i] << "$ & "
-		    << "$" << sigmaConst[iSm][iS][i] << "\\pm" << sigmaConstErr[iSm][iS][i] << "$"
-	    //<< " & $" << sigmaNoise[iSm][iS][i] << "\\pm" << sigmaNoiseErr[iSm][iS][i] << "$"
-		    << "\n";
+		    << "$" << sigmaConst[iSm][iS][i] << "\\pm" << sigmaConstErr[iSm][iS][i] << "$";
+	  if (addNoiseTerm) std::cout << " & $" << sigmaNoise[iSm][iS][i] << "\\pm" << sigmaNoiseErr[iSm][iS][i] << "$";
+		  std::cout << "\n";
 	}
 	std::cout <<"\\hline\n";
       }

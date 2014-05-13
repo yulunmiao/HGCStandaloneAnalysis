@@ -32,36 +32,38 @@ int plotGlobalCor(){//main
   //TString scenario[nS] = {"0","1","2","3","4","5","6"};
   const unsigned nS = 1;
   std::string scenario[nS] = {
-    "pi-/twiceSampling/GeVCal/EarlyDecay/"
+    "pi-/twiceSampling/GeVCal/EarlyDecay/MipThresh_0p5/"
   };
   
   const unsigned nV = 1;
   TString version[nV] = {"23"};
 
+  TString pSuffix = "all";
+
   const unsigned nLayers = 54;//64 //54
   const unsigned nHcalLayers = 38;
 
   unsigned genEn[]={//10,30,80};
-    10,15,18,20,25,
-    30,35,40,45,50,
-    60,80};//,100,200,300,400,500
+      10,15,18,20,25,
+      30,35,40,45,50,
+      60,80};//,100,200,300,400,500
   //,1000,2000};
   //unsigned genEn[]={10,25,40,50,60,80,100,150,200,300,400,500};//,1000,2000};
   //unsigned genEn[]={50,100,150,200};
-  //unsigned genEn[]={10};
+  //unsigned genEn[]={10,80};
   unsigned nGenEn=sizeof(genEn)/sizeof(unsigned);
 
   //const unsigned nLimits = 1;//5;
   //const double pElim[nLimits] = {5};
-  const unsigned nLimits = 15;
-  const double pElim[nLimits] = {10,5,6,7,8,9,9.5,10.5,11,11.5,12,13,14,15,20};
+  const unsigned nLimits = 10;//5;
+  const double pElim[nLimits] = {5,6,7,8,9,10,11,12,13,14};
 
   const unsigned limRef = 0;
 
   std::ostringstream lName;
 
   const unsigned nC = 7;
-  const unsigned nCtot = 9;
+  const unsigned nCtot = nC+1;
   TCanvas *myc[nCtot];
   for (unsigned iC(0); iC<nCtot;++iC){
     lName.str("");
@@ -83,7 +85,7 @@ int plotGlobalCor(){//main
       TString plotDir = "../PLOTS/version"+version[iV]+"/"+scenario[iS]+"/";
       
       lName.str("");
-      lName << plotDir << "CalibHcalHistos.root";
+      lName << plotDir << "CalibHcalHistos_" << pSuffix << ".root";
       TFile *inputFile = TFile::Open(lName.str().c_str());
       if (!inputFile) {
 	std::cout << " -- Error, input file " << lName.str() << " cannot be opened. Going to next..." << std::endl;

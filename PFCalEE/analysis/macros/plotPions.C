@@ -26,21 +26,22 @@ int plotPions(){//main
   const unsigned nS = 1;
   std::string scenario[nS] = {
     //"pi-/twiceSampling/GeVCal/"
-    "pi-/concept/GeVCal/"
+    //"pi-/concept/GeVCal/"
+    "pi-/twiceSampling/GeVCal/EarlyDecay/MipThresh_0p5/ECALloss/"
   };
   
   const unsigned nV = 1;
-  TString version[nV] = {"20"};
+  TString version[nV] = {"23"};
 
   std::string pDetector = "HCALvsECAL";
 
   //const double EmipSi = 0.0822;//in MeV
 
-  const unsigned nLayers = 64;//64 //54
-  const unsigned nEcalLayers = 31;
+  const unsigned nLayers = 54;//64 //54
+  const unsigned nEcalLayers = 38;
 
   //unsigned genEn[]={5,10,25,40,50,60,80,100,150,200,300,400,500};//,1000,2000};
-  unsigned genEn[]={50,100,150,200};
+  unsigned genEn[]={10,15,18,20,25,30,35,40,45,50,60,80};
   //unsigned genEn[]={10};
   unsigned nGenEn=sizeof(genEn)/sizeof(unsigned);
 
@@ -56,7 +57,7 @@ int plotPions(){//main
       TString plotDir = "../PLOTS/version"+version[iV]+"/"+scenario[iS]+"/";
       
       std::ostringstream lName;
-      lName << plotDir << "CalibHistos.root";
+      lName << plotDir << "CalibHistos_time200.root";
       TFile *inputFile = TFile::Open(lName.str().c_str());
       if (!inputFile) {
 	std::cout << " -- Error, input file " << lName.str() << " cannot be opened. Going to next..." << std::endl;
