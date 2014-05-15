@@ -12,12 +12,13 @@ usage = 'usage: %prog [options]'
 parser = optparse.OptionParser(usage)
 parser.add_option('-s', '--short-queue',    dest='squeue'             , help='short batch queue'            , default='1nd')
 parser.add_option('-q', '--long-queue' ,    dest='lqueue'             , help='long batch queue'             , default='2nw')
+parser.add_option('-t', '--git-tag'     ,    dest='gittag'             , help='git tag version'              , default='V00-00-00')
 parser.add_option('-r', '--run'         ,    dest='run'                , help='stat run'                     , default=-1,      type=int)
 parser.add_option('-v', '--version'     ,    dest='version'            , help='detector version'             , default=3,      type=int)
 parser.add_option('-m', '--model'       ,    dest='model'              , help='detector model'               , default=3,      type=int)
 parser.add_option('-a', '--alpha'       ,    dest='alpha'              , help='incidence angle in rad'       , default=0,      type=float)
 parser.add_option('-b', '--Bfield'      ,    dest='Bfield'             , help='B field value in Tesla'       , default=0,      type=float)
-parser.add_option('-t', '--type'        ,    dest='datatype'           , help='data type or particle to shoot', default='e-')
+parser.add_option('-d', '--datatype'    ,    dest='datatype'           , help='data type or particle to shoot', default='e-')
 parser.add_option('-f', '--datafile'    ,    dest='datafile'           , help='full path to HepMC input file', default='data/example_MyPythia.dat')
 parser.add_option('-n', '--nevts'       ,    dest='nevts'              , help='number of events to generate' , default=1000,    type=int)
 parser.add_option('-o', '--out'         ,    dest='out'                , help='output directory'             , default=os.getcwd() )
@@ -40,9 +41,9 @@ for en in enlist :
     bval="BOFF"
     if opt.Bfield>0 : bval="BON" 
     
-    outDir='%s/version_%d/model_%d/%s/%s'%(opt.out,opt.version,opt.model,opt.datatype,bval)
+    outDir='%s/git_%s/version_%d/model_%d/%s/%s'%(opt.out,opt.gittag,opt.version,opt.model,opt.datatype,bval)
     if en>0 : outDir='%s/e_%d'%(outDir,en)
-    eosDir='%s/%s'%(opt.eos,opt.datatype)
+    eosDir='%s/git%s/%s'%(opt.eos,opt.gittag,opt.datatype)
     if opt.alpha>0 : outDir='%s/a_%3.3f/'%(outDir,opt.alpha) 
     if (opt.run>=0) : outDir='%s/run_%d/'%(outDir,opt.run)
     
