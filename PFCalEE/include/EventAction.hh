@@ -12,6 +12,8 @@
 #include "TTree.h"
 #include "SamplingSection.hh"
 #include "G4SiHit.hh"
+#include "HGCSSEvent.hh"
+#include "HGCSSSamplingSection.hh"
 #include "HGCSSSimHit.hh"
 #include "HGCSSGenParticle.hh"
 
@@ -47,7 +49,9 @@ private:
   TFile *outF_;
   //TNtuple *ntuple_;
   TTree *tree_;
-  Float_t event_[18];
+  HGCSSEvent event_;
+  HGCSSSamplingSectionVec ssvec_;
+  //Float_t event_[18];
   HGCSSSimHitVec hitvec_;
   HGCSSGenParticleVec genvec_;
   //  Float_t event_[15], dendydz_[81], cellSize_;

@@ -1,3 +1,6 @@
+#pragma link C++ class HGCSSEvent+;
+#pragma link C++ class HGCSSSamplingSection+;
+#pragma link C++ class vector<HGCSSSamplingSection>+;
 #pragma link C++ class HGCSSSimHit+;
 #pragma link C++ class vector<HGCSSSimHit>+;
 #pragma link C++ class HGCSSGenParticle+;

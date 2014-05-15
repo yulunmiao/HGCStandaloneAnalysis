@@ -99,8 +99,14 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod) : version_(ver)
     case v_HGCALHE_CALICE:
       {
 	//for(int i=0; i<12; i++) m_caloStruct.push_back( SamplingSection(52*mm,3.0*mm,0.3*mm,2.0*mm,2.0*mm) );
-	//total 5.3 lambda = 22mm brass * 38 layers 
-	for(int i=0; i<38; i++) m_caloStruct.push_back( SamplingSection(21*mm,0.*mm,5*mm,0.*mm,0.*mm) );
+	//total 5.3 lambda = 22mm brass * 38 layers
+	for(int i=0; i<3; i++) m_caloStruct.push_back( SamplingSection(20.7*mm,0.*mm,5*mm,1.*mm,2.5*mm) );
+	for(int i=0; i<21; i++) m_caloStruct.push_back( SamplingSection(21.4*mm,0.*mm,5*mm,1.*mm,2.5*mm) );
+	for(int i=0; i<14; i++) m_caloStruct.push_back( SamplingSection(21.6*mm,0.*mm,5*mm,1.*mm,2.5*mm) );
+	//last absorber chunk ??
+	//m_caloStruct.push_back( SamplingSection(20.5*mm,0.*mm,0*mm,0*mm,0*mm) );
+
+	//for(int i=0; i<38; i++) m_caloStruct.push_back( SamplingSection(21*mm,0.*mm,5*mm,0.*mm,0.*mm) );
 	for(int i=0; i<9; i++) m_caloStruct.push_back( SamplingSection(21*mm,0.*mm,5*mm,0.*mm,0.*mm) );
 	for(int i=0; i<7; i++) m_caloStruct.push_back( SamplingSection(104*mm,0.*mm,5*mm,0.*mm,0.*mm) );
 	break;
@@ -127,20 +133,27 @@ void DetectorConstruction::DefineMaterials()
   m_materials["Cu"] = nistManager->FindOrBuildMaterial("G4_Cu",false); 
   m_materials["Si"] = nistManager->FindOrBuildMaterial("G4_Si",false);
   m_materials["Zn"] = nistManager->FindOrBuildMaterial("G4_Zn",false);
+  m_materials["Air"]=nistManager->FindOrBuildMaterial("G4_AIR",false);
+  m_materials["Fe"] = nistManager->FindOrBuildMaterial("G4_Fe",false);
+  m_materials["Mn"] = nistManager->FindOrBuildMaterial("G4_Mn",false);
+  m_materials["C"] = nistManager->FindOrBuildMaterial("G4_C",false); 
+  m_materials["H"] = nistManager->FindOrBuildMaterial("G4_H",false); 
+
   m_materials["PCB"] = new G4Material("G10",1.700*g/cm3,4);
   m_materials["PCB"]->AddElement(nistManager->FindOrBuildElement(14), 1);
   m_materials["PCB"]->AddElement(nistManager->FindOrBuildElement(8) , 2);
   m_materials["PCB"]->AddElement(nistManager->FindOrBuildElement(6) , 3);
   m_materials["PCB"]->AddElement(nistManager->FindOrBuildElement(1) , 3);
-  m_materials["Air"]=nistManager->FindOrBuildMaterial("G4_AIR",false);
   m_materials["Brass"]= new G4Material("Brass",8.5*g/cm3,2);
   m_materials["Brass"]->AddMaterial(m_materials["Cu"]  , 70*perCent);
   m_materials["Brass"]->AddMaterial(m_materials["Zn"]  , 30*perCent);
+  m_materials["Steel"]= new G4Material("Steel",7.87*g/cm3,3);
+  m_materials["Steel"]->AddMaterial(m_materials["Fe"]  , 0.9843);
+  m_materials["Steel"]->AddMaterial(m_materials["Mn"], 0.014);
+  m_materials["Steel"]->AddMaterial(m_materials["C"], 0.0017);
   m_materials["AbsHCAL"] = (version_== v_HGCALHE_CALICE) ?
-    nistManager->FindOrBuildMaterial("G4_Fe",false) :
+    m_materials["Steel"]:
     m_materials["Brass"];
-  m_materials["C"] = nistManager->FindOrBuildMaterial("G4_C",false); 
-  m_materials["H"] = nistManager->FindOrBuildMaterial("G4_H",false); 
   m_materials["Scintillator"]= nistManager->FindOrBuildMaterial("G4_POLYSTYRENE",false); 
   //m_materials["Scintillator"]= new G4Material("Scintillator",1.032*g/cm3,2);
   //m_materials["Scintillator"]->AddMaterial(m_materials["C"]  , 91.512109*perCent);

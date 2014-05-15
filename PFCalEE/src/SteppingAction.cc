@@ -87,7 +87,12 @@ void SteppingAction::UserSteppingAction(const G4Step* aStep)
       (thePostPVname=="Abs1phys" || thePostPVname=="Si1phys")
       ){
     //if (pdgId == 2112) std::cout << "-- found neutron: " << thePrePVname << " " << thePostPVname << std::endl;
+    //const G4ThreeVector & preposition = thePreStepPoint->GetPosition();
     const G4ThreeVector & postposition = thePostStepPoint->GetPosition();
+    //std::cout << "pre " << preposition[0] << " " << preposition[1] << " " << postposition[2]
+    //	      << std::endl
+    //	      << "post " << postposition[0] << " " << postposition[1] << " " << postposition[2]
+    //	      << std::endl;
     const G4ThreeVector &p = lTrack->GetMomentum();
     G4ParticleDefinition *pd = lTrack->GetDefinition();
     genPart.setPosition(postposition[0],postposition[1],postposition[2]);

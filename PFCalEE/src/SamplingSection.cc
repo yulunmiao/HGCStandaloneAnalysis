@@ -135,7 +135,7 @@ G4double SamplingSection::getAbsorbedEnergy()
 //
 G4double SamplingSection::getTotalEnergy()
 {
-  return Air_den+getMeasuredEnergy(false)+getAbsorbedEnergy();
+  return Air_den+PCB_den+getMeasuredEnergy(false)+getAbsorbedEnergy();
 }
 
 const G4SiHitVec & SamplingSection::getSiHitVec() const

@@ -73,7 +73,7 @@ int plotE(){//main
     //"e-/twiceSampling/MipThresh_0p5/"
   };
 
-  TString pSuffix = "all";
+  TString pSuffix = "New_run5_light";
 
   const bool addNoiseTerm = true;
 
@@ -82,8 +82,8 @@ int plotE(){//main
   
   const unsigned nLayers = 54;//9;//33; //54;
 
-  const bool doFrac = false;
-  const bool doShower = true;
+  const bool doFrac = true;
+  const bool doShower = false;
 
   TString pDetector = "ECALHCAL";//both also for HCAL only if Si+Sci...
 
@@ -112,8 +112,8 @@ int plotE(){//main
   
   
   unsigned genEn[]={10,15,18,20,25,
-		    30,35,40,45,50,
-		    60,80};//,100,200,300,
+		    30,35,40,45,50};
+  //60,80};//,100,200,300,
   //500};//,1000,2000};
   //unsigned genEn[]={10,20,30,40,60,80};
   //unsigned genEn[]={40,50,60,80,100,200,300,400,500,1000,2000};
@@ -181,7 +181,7 @@ int plotE(){//main
 	
 	TFile *inputFile = 0;
 	if (doShower) inputFile = TFile::Open(plotDir+"CalibHcalHistos_"+pSuffix+".root");
-	else inputFile = TFile::Open(plotDir+"CalibHistos_"+pSuffix+".root");
+	else inputFile = TFile::Open(plotDir+"CalibHistos"+pSuffix+".root");
 	if (!inputFile) {
 	  std::cout << " -- Error, input file " << inputFile->GetName() << " cannot be opened. Exiting..." << std::endl;
 	  return 1;
