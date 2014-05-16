@@ -3,43 +3,34 @@
 #include <iostream>
 #include <cmath>
 
-HGCSSGeometryConversion::HGCSSGeometryConversion(std::string filePath,
-						 const HGCSSDetector & aDet){
+HGCSSGeometryConversion::HGCSSGeometryConversion(std::string filePath){
   width_ = 200;//mm
   if (filePath.find("model1")!=filePath.npos) width_ = 500;
   else if (filePath.find("model2")!=filePath.npos) width_ = 1700*2;
   else if (filePath.find("model3")!=filePath.npos) width_ = 1000;
 
   cellSize_ = 2.5;
-
-  for (unsigned iS(0); iS<aDet.nSections();++iS){
-    bool last = false;
-    if (iS==aDet.nSections()-1) last = true;
-    detector_.addSubdetector(aDet.getSubDetector(iS),last);
-  }
-
+  
 }
 
 
 HGCSSGeometryConversion::~HGCSSGeometryConversion(){
   std::map<DetectorEnum,std::vector<TH2D *> >::iterator liter =
-    2DHistMapE_.begin();
-  for (; liter !=2DHistMapE_.end();++liter){
+    HistMapE_.begin();
+  for (; liter !=HistMapE_.end();++liter){
     deleteHistos(liter->second);
   }
-  2DHistMapE_.clear();
-  std::map<DetectorEnum,std::vector<TH2D *> >::iterator liter =
-    2DHistMapTime_.begin();
-  for (; liter !=2DHistMapTime_.end();++liter){
+  HistMapE_.clear();
+  liter = HistMapTime_.begin();
+  for (; liter !=HistMapTime_.end();++liter){
     deleteHistos(liter->second);
   }
-  2DHistMapTime_.clear();
-  std::map<DetectorEnum,std::vector<TH2D *> >::iterator liter =
-    2DHistMapZ_.begin();
-  for (; liter !=2DHistMapZ_.end();++liter){
+  HistMapTime_.clear();
+  liter = HistMapZ_.begin();
+  for (; liter !=HistMapZ_.end();++liter){
     deleteHistos(liter->second);
   }
-  2DHistMapZ_.clear();
+  HistMapZ_.clear();
 }
 
 
@@ -61,25 +52,25 @@ void HGCSSGeometryConversion::setGranularity(const std::vector<unsigned> & granu
 
  void HGCSSGeometryConversion::initialiseHistos(const bool recreate){
 
-  for (unsigned iS(0); iS<detector_.nSections();++iS){
+   for (unsigned iS(0); iS<theDetector().nSections();++iS){
     std::vector<TH2D *> histVecE;
-    resetVector(histVecE,detector_.detName(iS),detector_.subDetector(iS),detector_.nLayers(iS),recreate);
-    2DHistMapE_[detector_.detType(iS)]=histVecE;
+    resetVector(histVecE,theDetector().detName(iS),theDetector().subDetector(iS),theDetector().nLayers(iS),recreate);
+    HistMapE_[theDetector().detType(iS)]=histVecE;
 
     std::vector<double> avgvecE;
-    avgvecE.resize(detector_.nLayers(iS),0);
-    avgMapE_[detector_.detType(iS)]=avgvecE;
+    avgvecE.resize(theDetector().nLayers(iS),0);
+    avgMapE_[theDetector().detType(iS)]=avgvecE;
 
     std::vector<TH2D *> histVecTime;
-    resetVector(histVecTime,detector_.detName(iS),detector_.subDetector(iS),detector_.nLayers(iS),recreate);
-    2DHistMapTime_[detector_.detType(iS)]=histVecTime;
+    resetVector(histVecTime,theDetector().detName(iS),theDetector().subDetector(iS),theDetector().nLayers(iS),recreate);
+    HistMapTime_[theDetector().detType(iS)]=histVecTime;
     std::vector<TH2D *> histVecZ;
-    resetVector(histVecZ,detector_.detName(iS),detector_.subDetector(iS),detector_.nLayers(iS),recreate);
-    2DHistMapZ_[detector_.detType(iS)]=histVecZ;
+    resetVector(histVecZ,theDetector().detName(iS),theDetector().subDetector(iS),theDetector().nLayers(iS),recreate);
+    HistMapZ_[theDetector().detType(iS)]=histVecZ;
 
     std::vector<double> avgvecZ;
-    avgvecZ.resize(detector_.nLayers(iS),0);
-    avgMapZ_[detector_.detType(iS)]=avgvecZ;
+    avgvecZ.resize(theDetector().nLayers(iS),0);
+    avgMapZ_[theDetector().detType(iS)]=avgvecZ;
   }
  }
 
@@ -91,15 +82,15 @@ void HGCSSGeometryConversion::fill(const DetectorEnum type,
 				   const double & posy,
 				   const double & posz)
 {
-  2DHistMapE_[type][newlayer]->Fill(posx,posy,weightedE);
-  2DHistMapTime_[type][newlayer]->Fill(posx,posy,weightedE*aTime);
-  2DHistMapZ_[type][newlayer]->Fill(posx,posy,weightedE*posz);
+  HistMapE_[type][newlayer]->Fill(posx,posy,weightedE);
+  HistMapTime_[type][newlayer]->Fill(posx,posy,weightedE*aTime);
+  HistMapZ_[type][newlayer]->Fill(posx,posy,weightedE*posz);
   avgMapZ_[type][newlayer] += weightedE*posz;
   avgMapE_[type][newlayer] += weightedE;
 }
 
 double HGCSSGeometryConversion::getAverageZ(const unsigned layer){
-  const HGCSSSubDetector & subdet = detector_.subDetector(layer);
+  const HGCSSSubDetector & subdet = theDetector().subDetector(layer);
   unsigned newlayer = layer-subdet.layerIdMin;
   double avg = 0;
   if (avgMapE_[subdet.type][newlayer]>0)
@@ -107,12 +98,12 @@ double HGCSSGeometryConversion::getAverageZ(const unsigned layer){
   return avg;
 }
 
-TH2F * & HGCSSGeometryConversion::get2DHist(const unsigned layer,std::string name){
-  const HGCSSSubDetector & subdet = detector_.subDetector(layer);
+TH2D * HGCSSGeometryConversion::get2DHist(const unsigned layer,std::string name){
+  const HGCSSSubDetector & subdet = theDetector().subDetector(layer);
   unsigned newlayer = layer-subdet.layerIdMin;
-  if (name == "E") return 2DHistMapE_[subdet.type][newlayer];
-  else if (name == "Time") return 2DHistMapTime_[subdet.type][newlayer];
-  else if (name == "Z") return 2DHistMapZ_[subdet.type][newlayer];
+  if (name == "E") return HistMapE_[subdet.type][newlayer];
+  else if (name == "Time") return HistMapTime_[subdet.type][newlayer];
+  else if (name == "Z") return HistMapZ_[subdet.type][newlayer];
   else {
     std::cerr << " ERROR !! Unknown histogram name. Exiting..." << std::endl;
     exit(1);
@@ -128,7 +119,7 @@ void HGCSSGeometryConversion::resetVector(std::vector<TH2D *> & aVec,
 					  std::string aString,
 					  const HGCSSSubDetector & aDet,
 					  const unsigned nLayers,
-					  bool recreate=false)
+					  bool recreate)
 {
   if (aVec.size()!=0){
     for (unsigned iL(0); iL<aVec.size();++iL){
@@ -145,7 +136,7 @@ void HGCSSGeometryConversion::resetVector(std::vector<TH2D *> & aVec,
       for (unsigned iL(0); iL<nLayers;++iL){
 	std::ostringstream lname;
 	lname << "EmipHits_" << aString << "_" << iL ;
-	double newcellsize = cellSize_*getGranularity(iL,adet);
+	double newcellsize = cellSize_*getGranularity(iL,aDet);
 	//take smallest pair integer to be sure to fit in the geometry
 	//even if small dead area introduced at the edge
 	unsigned nBins = static_cast<unsigned>(width_*1./(newcellsize*2.))*2;

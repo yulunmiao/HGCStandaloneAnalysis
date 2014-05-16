@@ -11,14 +11,13 @@
 class HGCSSGeometryConversion{
   
 public:
-  HGCSSGeometryConversion(std::string filePath,
-			  const HGCSSDetector & aDet);
+  HGCSSGeometryConversion(std::string filePath);
 
   ~HGCSSGeometryConversion();
 
   void setGranularity(const std::vector<unsigned> & granul);
 
-  unsigned getGranularity(const unsigned aLayer, const DetectorEnum adet);
+  unsigned getGranularity(const unsigned aLayer, const HGCSSSubDetector & adet);
 
   inline double getXYwidth() const {
     return width_;
@@ -31,6 +30,8 @@ public:
   inline double cellSize() const{
     return cellSize_;
   };
+
+  void initialiseHistos(const bool recreate);
 
   void fill(const DetectorEnum type,
 	    const unsigned newlayer,
@@ -54,29 +55,29 @@ public:
 
   void deleteHistos(std::vector<TH2D *> & aVec);
 
-  TH2F * & get2DHist(const unsigned layer,std::string name);
+  TH2D * get2DHist(const unsigned layer,std::string name);
 
   inline std::vector<TH2D *> & get2DEnergyVec(const DetectorEnum aDet){
-    return 2DHistMapE_[aDet];
+    return HistMapE_[aDet];
   };
 
   inline std::vector<TH2D *> & get2DTimeVec(const DetectorEnum aDet){
-    return 2DHistMapTime_[aDet];
+    return HistMapTime_[aDet];
   };
 
   inline std::vector<TH2D *> & get2DZposVec(const DetectorEnum aDet){
-    return 2DHistMapZ_[aDet];
+    return HistMapZ_[aDet];
   };
 
 private:
 
   double width_;
   double cellSize_;
-  HGCSSDetector detector_;
+  std::vector<unsigned> granularity_;
 
-  std::map<DetectorEnum,std::vector<TH2D *> > 2DHistMapE_;
-  std::map<DetectorEnum,std::vector<TH2D *> > 2DHistMapTime_;
-  std::map<DetectorEnum,std::vector<TH2D *> > 2DHistMapZ_;
+  std::map<DetectorEnum,std::vector<TH2D *> > HistMapE_;
+  std::map<DetectorEnum,std::vector<TH2D *> > HistMapTime_;
+  std::map<DetectorEnum,std::vector<TH2D *> > HistMapZ_;
   std::map<DetectorEnum,std::vector<double> > avgMapZ_;
   std::map<DetectorEnum,std::vector<double> > avgMapE_;
 };

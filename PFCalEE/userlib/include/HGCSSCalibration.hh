@@ -6,12 +6,12 @@
 #include <vector>
 #include "TH2D.h"
 
+#include "HGCSSDetector.hh"
+
 class HGCSSCalibration {
 
 public:
-  HGCSSCalibration(std::string filePath,
-		   const bool concept, 
-		   const bool calibrate=true);
+  HGCSSCalibration(std::string filePath);
   ~HGCSSCalibration();
 
   double correctTime(const double & aTime,
@@ -22,10 +22,6 @@ public:
   double MeVToMip(const unsigned layer,
 		  const bool absWeight=false) const;
 
-  inline HGCSSDetector & detector() {
-    return detector_;
-  };
-
 private:
   HGCSSCalibration(){};
 
@@ -33,12 +29,8 @@ private:
   double vtx_y_;
   double vtx_z_;
 
-  bool concept_;
   bool isHCALonly_;
   bool isCaliceHcal_;
-
-  HGCSSDetector detector_;
-
 
 };
 

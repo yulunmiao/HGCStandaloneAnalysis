@@ -21,6 +21,8 @@
 #include "HGCSSRecoJet.hh"
 #include "HGCSSCalibration.hh"
 #include "HGCSSDigitisation.hh"
+#include "HGCSSDetector.hh"
+#include "HGCSSGeometryConversion.hh"
 
 using namespace fastjet;
 
@@ -51,29 +53,6 @@ void extractParameterFromStr(std::string aStr,T vec){
   }//loop on elements
 }
 
-
-void simToDigi(HGCSSRecoHit & aHit, 
-	       const double & aNoise, 
-	       const double & aMeVtoMip, 
-	       const unsigned & aMipToADC){
-  //convert to MIP
-  double oldE = aHit.energy()*aMeVtoMip;
-  double newE = oldE+aNoise;
-  aHit.noiseFraction(newE > 0 ? 
-		     (fabs(aNoise) < oldE ? aNoise/oldE : 1) : -1);
-  aHit.energy(newE > 0 ? newE : 0);
-  //round to the lower integer, not nearer...
-  aHit.adcCounts(static_cast<unsigned>(aHit.energy()*aMipToADC));
-}
-
-bool digiToReco(HGCSSRecoHit & aRecHit,
-		const unsigned & aMipToADC,
-		const unsigned & aThreshold){
-  aRecHit.energy(aRecHit.adcCounts()*1.0/aMipToADC);
-  if (aRecHit.adcCounts() > aThreshold) 
-    return true;
-  return false;
-}
 
 int main(int argc, char** argv){//main  
 
@@ -150,11 +129,47 @@ int main(int argc, char** argv){//main
   //// End Hardcoded config ////////////////////////////////////
   //////////////////////////////////////////////////////////
 
-  //initialise calibration class
-  HGCSSCalibration mycalib(inFilePath,concept);
-  const HGCSSDetector & detector = mycalib.detector();
+  //initialise detector
+  HGCSSDetector & myDetector = theDetector();
+  bool isScintOnly =  inFilePath.find("version22")!=inFilePath.npos;
+  bool isHCALonly = inFilePath.find("version21")!=inFilePath.npos || isScintOnly;
+  bool isCaliceHcal = inFilePath.find("version23")!=inFilePath.npos || inFilePath.find("version_23")!=inFilePath.npos;
 
-  const unsigned nLayers = detector.nLayers();
+  unsigned indices[7] = {0,0,0,0,0,0,0};
+  //fill layer indices
+  if (isScintOnly) {
+    indices[4] = 0;
+    indices[5] = 9;
+    indices[6] = 9;
+  }
+  else if (isCaliceHcal) {
+    indices[3] = 0;
+    indices[4] = 38;
+    indices[5] = 47;
+    indices[6] = 54;
+  }
+  else if (isHCALonly) {
+    indices[3] = 0;
+    indices[4] = 24;
+    indices[5] = 33;
+    indices[6] = 33;
+  }
+  else {
+    indices[0] = 0;
+    indices[1] = 11;
+    indices[2] = 21;
+    indices[3] = 31;
+    indices[4] = 55;
+    indices[5] = 64;
+    indices[6] = 64;
+  }
+
+  myDetector.buildDetector(indices,concept,isCaliceHcal);
+
+  //initialise calibration class
+  HGCSSCalibration mycalib(inFilePath);
+
+  const unsigned nLayers = myDetector.nLayers();
 
   HGCSSGeometryConversion geomConv(inFilePath);
   const double xWidth = geomConv.getXYwidth();
@@ -189,27 +204,13 @@ int main(int argc, char** argv){//main
   //std::cout << " -- Total number of cells = " << nbCells << std::endl;
 
   geomConv.setGranularity(granularity);
-  geomConv.initialiseHistos(detector);
+  geomConv.initialiseHistos();
 
   TRandom3 *lRndm = new TRandom3();
   lRndm->SetSeed(pSeed);
 
   std::cout << " -- Random3 seed = " << lRndm->GetSeed() << std::endl
 	    << " ----------------------------------------" << std::endl;
-
-
-  std::cout << " -- nEcalLayers = " << nEcalLayers 
-	    << ", mip weights = " << mycalib.mipWeight(0) << " " << mycalib.mipWeight(1) << " " << mycalib.mipWeight(2)
-	    << ", abs weights = " << mycalib.absWeight(0) << " " << mycalib.absWeight(1) << " " << mycalib.absWeight(2)
-	    << ", GeV weights = " << mycalib.gevWeight(0) << " offset " << mycalib.gevOffset(0)
-	    << std::endl
-	    << " -- nHcalSiLayers  = " << nHcalSiLayers 
-	    << ", mip weights = " << mycalib.mipWeight(3) << " " << mycalib.mipWeight(4) << " " << mycalib.mipWeight(5) 
-	    << ", mip weights = " << mycalib.absWeight(3) << " " << mycalib.absWeight(4) << " " << mycalib.absWeight(5) 
-	    << ", GeV weights = " << mycalib.gevWeight(1) << " " << mycalib.gevWeight(2) << " offsets: " << mycalib.gevOffset(1) << " " <<   mycalib.gevOffset(2)
-	    << std::endl
-	    << " -- conversions: HcalToEcalConv = " <<mycalib.HcalToEcalConv() << " BHcalToFHcalConv = " << mycalib.BHcalToFHcalConv() << std::endl
-	    << " -----------------------------------" << std::endl;
 
   /////////////////////////////////////////////////////////////
   //output
@@ -284,9 +285,6 @@ int main(int argc, char** argv){//main
 
   std::cout << "- Processing = " << nEvts  << " events out of " << inputTree->GetEntries() << std::endl;
 
-  //create map used to assemble hits per event.
-  std::map<unsigned,HGCSSRecoHit> lHitMap;
-  std::pair<std::map<unsigned,HGCSSRecoHit>::iterator,bool> isInserted;
   std::vector<PseudoJet> lParticles;
 
   for (unsigned ievt(0); ievt<nEvts; ++ievt){//loop on entries
@@ -300,7 +298,7 @@ int main(int argc, char** argv){//main
     if (geomConv.cellSize() != cellSize){
       std::cerr << " -- Warning ! Cellsize is not as expected. Reinitialising 2-D histograms... " << std::endl;
       geomConv.cellSize(cellSize);
-      geomConv.initialiseHistos(detector,true);
+      geomConv.initialiseHistos(true);
     }
 
     //unsigned layer = volNb;
@@ -322,7 +320,7 @@ int main(int argc, char** argv){//main
       unsigned layer = lHit.layer();
 
       if (layer != prevLayer){
-	const HGCSSSubDetector & subdet = detector.subDetector(layer);
+	const HGCSSSubDetector & subdet = myDetector.subDetector(layer);
 	type = subdet.type;
 	newlayer = layer-subdet.layerIdMin;
 	prevLayer = layer;
@@ -336,7 +334,7 @@ int main(int argc, char** argv){//main
     }//loop on input simhits
 
     if (debug>1) {
-      std::cout << " **DEBUG** simhits = " << (*hitvec).size() << " " << lSimHits.size() << " recohits = " << lHitMap.size() << std::endl;
+      std::cout << " **DEBUG** simhits = " << (*hitvec).size() << " " << lSimHits.size() << std::endl;
     }
 
     //create hits, everywhere to have also pure noise
@@ -348,9 +346,9 @@ int main(int argc, char** argv){//main
       TH2D *histE = geomConv.get2DHist(iL,"E");
       TH2D *histTime = geomConv.get2DHist(iL,"Time");
       TH2D *histZ = geomConv.get2DHist(iL,"Z");
-      DetectorEnum adet = detector.subDetector(iL).type;
-      bool isScint = detector.subDetector(iL).isScint;
-      bool isSi = detector.subDetector(iL).isSi;
+      DetectorEnum adet = myDetector.subDetector(iL).type;
+      bool isScint = myDetector.subDetector(iL).isScint;
+      bool isSi = myDetector.subDetector(iL).isSi;
       nTotBins += histE->GetNbinsX()*histE->GetNbinsY();
       if (pSaveDigis) lDigiHits.reserve(nTotBins);
 
@@ -473,7 +471,7 @@ int main(int argc, char** argv){//main
     lDigiHits.clear();
     lRecoHits.clear();
     lCaloJets.clear();
-    lHitMap.clear();
+    geomConv.initialiseHistos();
     lParticles.clear();
     if (pSaveSims) lSimHits.reserve(maxSimHits);
     lRecoHits.reserve(maxRecHits);

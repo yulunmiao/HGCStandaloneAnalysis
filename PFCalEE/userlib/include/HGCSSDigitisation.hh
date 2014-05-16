@@ -7,7 +7,7 @@
 #include <map>
 #include "TRandom3.h"
 #include "TH2D.h"
-#include "HGCSSSubDetector.hh"
+#include "HGCSSDetector.hh"
 
 class HGCSSDigitisation {
 
@@ -21,15 +21,21 @@ public:
     sigmaPix_(3)
   {
     rndm_.SetSeed(seed_);
-    //noise_[HGCSSDetector::ECAL] = 0.12;
-    //noise_[HGCSSDetector::FHCAL] = 0.12;
-    //noise_[HGCSSDetector::BHCAL] = 0.12;
-    mipToADC_[HGCSSDetector::ECAL] = 50;
-    mipToADC_[HGCSSDetector::FHCAL] = 50;
-    mipToADC_[HGCSSDetector::BHCAL] = 50;
-    timeCut_[HGCSSDetector::ECAL] = 200;//ns
-    timeCut_[HGCSSDetector::FHCAL] = 200;//ns
-    timeCut_[HGCSSDetector::BHCAL] = 200;//ns
+    //noise_[DetectorEnum::ECAL] = 0.12;
+    //noise_[DetectorEnum::FHCAL] = 0.12;
+    //noise_[DetectorEnum::BHCAL] = 0.12;
+    mipToADC_[DetectorEnum::FECAL] = 50;
+    mipToADC_[DetectorEnum::MECAL] = 50;
+    mipToADC_[DetectorEnum::BECAL] = 50;
+    mipToADC_[DetectorEnum::FHCAL] = 50;
+    mipToADC_[DetectorEnum::BHCAL1] = 50;
+    mipToADC_[DetectorEnum::BHCAL2] = 50;
+    timeCut_[DetectorEnum::FECAL] = 200;//ns
+    timeCut_[DetectorEnum::MECAL] = 200;//ns
+    timeCut_[DetectorEnum::BECAL] = 200;//ns
+    timeCut_[DetectorEnum::FHCAL] = 200;//ns
+    timeCut_[DetectorEnum::BHCAL1] = 200;//ns
+    timeCut_[DetectorEnum::BHCAL2] = 200;//ns
   };
 
   ~HGCSSDigitisation(){};
@@ -59,15 +65,15 @@ public:
     noise_[alay] = aNoise;
   };
 
-  inline void setMipToADC(const double & aMipToADC, const HGCSSDetector & adet){
+  inline void setMipToADC(const double & aMipToADC, DetectorEnum adet){
     mipToADC_[adet] = aMipToADC;
   };
 
-  inline void setTimeCut(const double & aTimeCut, const HGCSSDetector & adet){
+  inline void setTimeCut(const double & aTimeCut, DetectorEnum adet){
     timeCut_[adet] = aTimeCut;
   };
 
-  inline bool passTimeCut(const double aTime, const HGCSSDetector & adet){
+  inline bool passTimeCut(const double aTime, DetectorEnum adet){
     return (aTime < timeCut_[adet]);
   };
 
@@ -79,13 +85,14 @@ public:
 
   double digiE(const double & aMipE);
 
-  void addNoise(double & aDigiE, const HGCSSDetector & adet, TH1F * & hist);
+  void addNoise(double & aDigiE, const unsigned & alay, TH1F * & hist);
+  
+  unsigned adcConverter(double eMIP, DetectorEnum adet);
 
-  void digitiseSiCAL(std::vector<TH2D *> & aHistVec,const HGCSSDetector & adet);
+  double adcToMIP(const unsigned acdCounts, DetectorEnum adet);
 
-  double adcConverter(const double & eMIP, const HGCSSDetector & adet);
-
-  void digitiseSciCAL(std::vector<TH2D *> & aHistVec,const HGCSSDetector & adet);
+  double sumBins(const std::vector<TH2D *> & aHistVec,
+		 const double & aMipThresh);
 
   void Print(std::ostream & aOs) const;
 
@@ -96,9 +103,9 @@ private:
   double crossTalk_;
   unsigned nTotal_;
   double sigmaPix_;
-  std::map<HGCSSDetector,double> timeCut_;
+  std::map<DetectorEnum,double> timeCut_;
   std::map<unsigned,double> noise_;
-  std::map<HGCSSDetector,unsigned> mipToADC_;
+  std::map<DetectorEnum,unsigned> mipToADC_;
 
 };
 
