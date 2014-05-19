@@ -345,9 +345,10 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 	  logi->SetVisAttributes(simpleBoxVisAtt);
 	  zOverburden = zOverburden + thick;
 	  //add region to be able to set specific cuts for it
+	  unsigned nlogicsi = m_logicSi.size();
 	  G4Region* aRegion = new G4Region(baseName+"Reg");
-	  m_logicSi[3*i+idx]->SetRegion(aRegion);
-	  aRegion->AddRootLogicalVolume(m_logicSi[3*i+idx]);
+	  m_logicSi[nlogicsi-1]->SetRegion(aRegion);
+	  aRegion->AddRootLogicalVolume(m_logicSi[nlogicsi-1]);
 	}
       }
 
