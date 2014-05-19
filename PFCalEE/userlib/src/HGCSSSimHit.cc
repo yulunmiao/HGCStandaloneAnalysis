@@ -4,14 +4,14 @@
 #include <cmath>
 #include <stdlib.h>
 
-HGCSSSimHit::HGCSSSimHit(const G4SiHit & aSiHit){
+HGCSSSimHit::HGCSSSimHit(const G4SiHit & aSiHit, const unsigned & asilayer){
   energy_ = aSiHit.energy;
   //energy weighted time
   //PS: need to call calculateTime() after all hits 
   //have been added to have divided by totalE!!
   time_ = aSiHit.time*aSiHit.energy;
   zpos_ = aSiHit.hit_z;
-  layer_ = aSiHit.layer;
+  setLayer(aSiHit.layer,asilayer);
 
   //coordinates in mm
   //double z = aSiHit.hit_x;
@@ -79,7 +79,7 @@ void HGCSSSimHit::Add(const G4SiHit & aSiHit){
 
 void HGCSSSimHit::Print(std::ostream & aOs) const{
   aOs << "====================================" << std::endl
-      << " = Layer " << layer_ << " cellid " << cellid_ << std::endl
+      << " = Layer " << layer() << " siLayer " << silayer() << " cellid " << cellid_ << std::endl
       << " = Energy " << energy_ << " time " << time_ << std::endl
       << " = g " << nGammas_ 
       << " e " << nElectrons_ 

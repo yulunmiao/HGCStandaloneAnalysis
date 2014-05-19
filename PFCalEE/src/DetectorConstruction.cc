@@ -37,14 +37,14 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod) : version_(ver)
     case v_CALICE:
       {
 	G4cout << "[DetectorConstruction] starting v_CALICE (10x0.4+10x0.8+10x1.2)X_0 with Tungsten" << G4endl;
-	for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(0.4*3.504*mm,0.0*mm,0.525*mm,1.0*mm,2.5*mm) );
-	for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(0.8*3.504*mm,0.0*mm,0.525*mm,1.0*mm,2.5*mm) );
-	for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(1.2*3.504*mm,0.0*mm,0.525*mm,1.0*mm,2.5*mm) );
+	for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(0.4*3.504*mm,0.0*mm,0.525*mm,0.525*mm,0.525*mm,1.0*mm,2.5*mm) );
+	for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(0.8*3.504*mm,0.0*mm,0.525*mm,0.525*mm,0.525*mm,1.0*mm,2.5*mm) );
+	for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(1.2*3.504*mm,0.0*mm,0.525*mm,0.525*mm,0.525*mm,1.0*mm,2.5*mm) );
 	break;
       }
     case v_HGCALEE_Si80: case v_HGCALEE_Si120: case v_HGCALEE_Si200: case v_HGCALEE_Si500: case v_HGCALEE_gap1: case  v_HGCALEE_CALICE: case v_HGCALEE_inverted: case v_HGCALEE_concept: case v_HGCALEE_W: case v_HGCALEE_gap4: case v_HGCAL:
       {
-	float siWidth(0.200), gap(2),pad(1);
+	float siWidth(0.300), gap(2),pad(1);
 	float pb1(1.63), pb2(3.32), pb3(5.56), cu(3.0);
 	int n1(10),n2(10),n3(10);
 	if(version_==v_HGCALEE_Si80)     {siWidth=0.08;                               }
@@ -60,19 +60,19 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod) : version_(ver)
 	
 	//add 1um silicon to track incoming particles
 	//if(version_==v_HGCALEE_SiDummy) m_caloStruct.push_back( SamplingSection(0,0,0.001*mm,0,0) );
-	if(version_==v_HGCALEE_concept || version_==v_HGCAL) m_caloStruct.push_back( SamplingSection(0.0*mm,0*mm,siWidth*mm,pad*mm,gap*mm) );
-	for(int i=0; i<n1; i++)         m_caloStruct.push_back( SamplingSection(pb1*mm,cu*mm,siWidth*mm,pad*mm,gap*mm) );
-	for(int i=0; i<n2; i++)         m_caloStruct.push_back( SamplingSection(pb2*mm,cu*mm,siWidth*mm,pad*mm,gap*mm) );
-	for(int i=0; i<n3; i++)         m_caloStruct.push_back( SamplingSection(pb3*mm,cu*mm,siWidth*mm,pad*mm,gap*mm) );
+	if(version_==v_HGCALEE_concept || version_==v_HGCAL) m_caloStruct.push_back( SamplingSection(0.0*mm,0*mm,siWidth/3.*mm,siWidth/3.*mm,siWidth/3.*mm,pad*mm,gap*mm) );
+	for(int i=0; i<n1; i++)         m_caloStruct.push_back( SamplingSection(pb1*mm,cu*mm,siWidth/3.*mm,siWidth/3.*mm,siWidth/3.*mm,pad*mm,gap*mm) );
+	for(int i=0; i<n2; i++)         m_caloStruct.push_back( SamplingSection(pb2*mm,cu*mm,siWidth/3.*mm,siWidth/3.*mm,siWidth/3.*mm,pad*mm,gap*mm) );
+	for(int i=0; i<n3; i++)         m_caloStruct.push_back( SamplingSection(pb3*mm,cu*mm,siWidth/3.*mm,siWidth/3.*mm,siWidth/3.*mm,pad*mm,gap*mm) );
 
 	if (version_==v_HGCAL){
 	  for(int i=0; i<12; i++) {
 	    //add an intermediate Si layer to study resolution improvement
-	    m_caloStruct.push_back( SamplingSection(26*mm,0.*mm,0.3*mm,0.*mm,0.*mm) );
-	    m_caloStruct.push_back( SamplingSection(26*mm,3.0*mm,0.3*mm,2.0*mm,2.0*mm) );
+	    m_caloStruct.push_back( SamplingSection(26*mm,0.*mm,0.1*mm,0.1*mm,0.1*mm,0.*mm,0.*mm) );
+	    m_caloStruct.push_back( SamplingSection(26*mm,3.0*mm,0.1*mm,0.1*mm,0.1*mm,2.0*mm,2.0*mm) );
 	  }
 	  //for(int i=0; i<12; i++) m_caloStruct.push_back( SamplingSection(52*mm,3.0*mm,0.3*mm,2.0*mm,2.0*mm) );
-	  for(int i=0; i<9; i++) m_caloStruct.push_back( SamplingSection(78*mm,0.*mm,9*mm,0.*mm,0.*mm) );
+	  for(int i=0; i<9; i++) m_caloStruct.push_back( SamplingSection(78*mm,0.*mm,9*mm,0.*mm,0.*mm,0.*mm,0.*mm) );
 	}
 	break;
       }
@@ -81,18 +81,18 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod) : version_(ver)
 	//add HCAL
 	for(int i=0; i<12; i++) {
 	  //add an intermediate Si layer to study resolution improvement
-	  m_caloStruct.push_back( SamplingSection(26*mm,0.*mm,0.3*mm,0.*mm,0.*mm) );
-	  m_caloStruct.push_back( SamplingSection(26*mm,3.0*mm,0.3*mm,2.0*mm,2.0*mm) );
+	  m_caloStruct.push_back( SamplingSection(26*mm,0.*mm,0.1*mm,0.1*mm,0.1*mm,0.*mm,0.*mm) );
+	  m_caloStruct.push_back( SamplingSection(26*mm,3.0*mm,0.1*mm,0.1*mm,0.1*mm,2.0*mm,2.0*mm) );
 	}
 	//for(int i=0; i<12; i++) m_caloStruct.push_back( SamplingSection(52*mm,3.0*mm,0.3*mm,2.0*mm,2.0*mm) );
-	for(int i=0; i<9; i++) m_caloStruct.push_back( SamplingSection(78*mm,0.*mm,9*mm,0.*mm,0.*mm) );
+	for(int i=0; i<9; i++) m_caloStruct.push_back( SamplingSection(78*mm,0.*mm,9*mm,0.*mm,0.*mm,0.*mm,0.*mm) );
 
 	break;
       }
     case v_HGCALHEScint:
       {
 	//for(int i=0; i<12; i++) m_caloStruct.push_back( SamplingSection(52*mm,3.0*mm,0.3*mm,2.0*mm,2.0*mm) );
-	for(int i=0; i<9; i++) m_caloStruct.push_back( SamplingSection(78*mm,0.*mm,9*mm,0.*mm,0.*mm) );
+	for(int i=0; i<9; i++) m_caloStruct.push_back( SamplingSection(78*mm,0.*mm,9*mm,0.*mm,0.*mm,0.*mm,0.*mm) );
 
 	break;
       }
@@ -100,15 +100,15 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod) : version_(ver)
       {
 	//for(int i=0; i<12; i++) m_caloStruct.push_back( SamplingSection(52*mm,3.0*mm,0.3*mm,2.0*mm,2.0*mm) );
 	//total 5.3 lambda = 22mm brass * 38 layers
-	for(int i=0; i<3; i++) m_caloStruct.push_back( SamplingSection(20.7*mm,0.*mm,5*mm,1.*mm,2.5*mm) );
-	for(int i=0; i<21; i++) m_caloStruct.push_back( SamplingSection(21.4*mm,0.*mm,5*mm,1.*mm,2.5*mm) );
-	for(int i=0; i<14; i++) m_caloStruct.push_back( SamplingSection(21.6*mm,0.*mm,5*mm,1.*mm,2.5*mm) );
+	for(int i=0; i<3; i++) m_caloStruct.push_back( SamplingSection(20.7*mm,0.*mm,5*mm,0.*mm,0.*mm,1.*mm,2.5*mm) );
+	for(int i=0; i<21; i++) m_caloStruct.push_back( SamplingSection(21.4*mm,0.*mm,5*mm,0.*mm,0.*mm,1.*mm,2.5*mm) );
+	for(int i=0; i<14; i++) m_caloStruct.push_back( SamplingSection(21.6*mm,0.*mm,5*mm,0.*mm,0.*mm,1.*mm,2.5*mm) );
 	//last absorber chunk ??
 	//m_caloStruct.push_back( SamplingSection(20.5*mm,0.*mm,0*mm,0*mm,0*mm) );
 
 	//for(int i=0; i<38; i++) m_caloStruct.push_back( SamplingSection(21*mm,0.*mm,5*mm,0.*mm,0.*mm) );
-	for(int i=0; i<9; i++) m_caloStruct.push_back( SamplingSection(21*mm,0.*mm,5*mm,0.*mm,0.*mm) );
-	for(int i=0; i<7; i++) m_caloStruct.push_back( SamplingSection(104*mm,0.*mm,5*mm,0.*mm,0.*mm) );
+	for(int i=0; i<9; i++) m_caloStruct.push_back( SamplingSection(21*mm,0.*mm,5*mm,0.*mm,0.*mm,0.*mm,0.*mm) );
+	for(int i=0; i<7; i++) m_caloStruct.push_back( SamplingSection(104*mm,0.*mm,5*mm,0.*mm,0.*mm,0.*mm,0.*mm) );
 	break;
       }
 
@@ -318,35 +318,37 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 	  }
 	}
 
-      thick = m_caloStruct[i].Si_thick;
-      if(thick>0){
-	G4LogicalVolume *logi;
-	if (thick<1){//Si
-	  sprintf(nameBuf,"Si%d",int(i+1)); 
-	  baseName=nameBuf;
-	  solid = constructSolid(baseName,thick);
-	  logi  = new G4LogicalVolume(solid, m_materials["Si"], baseName+"log");
-	  m_caloStruct[i].Si_X0 = m_materials["Si"]->GetRadlen();
-	  G4cout << "************ Si  " << i << " " << m_caloStruct[i].Si_X0 << " " << m_caloStruct[i].Si_thick << G4endl;
+      for (unsigned idx(0); idx<3; ++idx){
+	thick = m_caloStruct[i].Si_thick[idx];
+	if(thick>0){
+	  G4LogicalVolume *logi;
+	  if (thick<1){//Si
+	    sprintf(nameBuf,"Si%d_%d",int(i+1),idx); 
+	    baseName=nameBuf;
+	    solid = constructSolid(baseName,thick);
+	    logi  = new G4LogicalVolume(solid, m_materials["Si"], baseName+"log");
+	    m_caloStruct[i].Si_X0 = m_materials["Si"]->GetRadlen();
+	    G4cout << "************ Si  " << i << " layer " << idx << " " << m_caloStruct[i].Si_X0 << " " << m_caloStruct[i].Si_thick[idx] << G4endl;
+	  }
+	  else {//scint
+	    sprintf(nameBuf,"Scint%d_%d",int(i+1),idx);
+	    baseName=nameBuf;
+	    solid = constructSolid(baseName,thick);
+	    logi  = new G4LogicalVolume(solid, m_materials["Scintillator"], baseName+"log");
+	    m_caloStruct[i].Si_X0 = m_materials["Scintillator"]->GetRadlen();
+	    G4cout << "************ Scintillator  " << i << " layer " << idx << " " << m_caloStruct[i].Si_X0 << " " << m_caloStruct[i].Si_thick[idx] << " " << m_materials["Scintillator"]->GetDensity() << G4endl;
+	  }
+	  m_logicSi.push_back(logi);
+	  m_caloStruct[i].Si_vol[idx] = new G4PVPlacement(0, G4ThreeVector(0.,0.,zOffset+zOverburden+thick/2), logi, baseName+"phys", m_logicWorld, false, 0);
+	  G4VisAttributes *simpleBoxVisAtt = new G4VisAttributes(G4Colour::White());
+	  simpleBoxVisAtt->SetVisibility(true);
+	  logi->SetVisAttributes(simpleBoxVisAtt);
+	  zOverburden = zOverburden + thick;
+	  //add region to be able to set specific cuts for it
+	  G4Region* aRegion = new G4Region(baseName+"Reg");
+	  m_logicSi[3*i+idx]->SetRegion(aRegion);
+	  aRegion->AddRootLogicalVolume(m_logicSi[3*i+idx]);
 	}
-	else {//scint
-	  sprintf(nameBuf,"Scint%d",int(i+1));
-	  baseName=nameBuf;
-	  solid = constructSolid(baseName,thick);
-	  logi  = new G4LogicalVolume(solid, m_materials["Scintillator"], baseName+"log");
-	  m_caloStruct[i].Si_X0 = m_materials["Scintillator"]->GetRadlen();
-	  G4cout << "************ Scintillator  " << i << " " << m_caloStruct[i].Si_X0 << " " << m_caloStruct[i].Si_thick << " " << m_materials["Scintillator"]->GetDensity() << G4endl;
-	}
-	m_logicSi.push_back(logi);
-	m_caloStruct[i].Si_vol = new G4PVPlacement(0, G4ThreeVector(0.,0.,zOffset+zOverburden+thick/2), logi, baseName+"phys", m_logicWorld, false, 0);
-	G4VisAttributes *simpleBoxVisAtt = new G4VisAttributes(G4Colour::White());
-	simpleBoxVisAtt->SetVisibility(true);
-	logi->SetVisAttributes(simpleBoxVisAtt);
-	zOverburden = zOverburden + thick;
-	//add region to be able to set specific cuts for it
-	G4Region* aRegion = new G4Region(baseName+"Reg");
-	m_logicSi[i]->SetRegion(aRegion);
-	aRegion->AddRootLogicalVolume(m_logicSi[i]);
       }
 
 

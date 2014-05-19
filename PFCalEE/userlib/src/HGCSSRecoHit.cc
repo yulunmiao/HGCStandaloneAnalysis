@@ -7,8 +7,7 @@
 HGCSSRecoHit::HGCSSRecoHit(const HGCSSSimHit & aSimHit, const unsigned granularity){
   energy_ = aSimHit.energy();
   adcCounts_ = 0;
-  // move to not have center in the middle
-  zpos_ = aSimHit.get_z()+4000;
+  zpos_ = aSimHit.get_z();
 
 
   layer_ = aSimHit.layer();
@@ -26,6 +25,10 @@ HGCSSRecoHit::HGCSSRecoHit(const HGCSSSimHit & aSimHit, const unsigned granulari
 
 }
 
+
+double HGCSSRecoHit::theta() const {
+  return 2*atan(exp(-eta()));
+}
 
 double HGCSSRecoHit::eta() const {
   double x = get_x();

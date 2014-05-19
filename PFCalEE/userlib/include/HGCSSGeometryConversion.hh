@@ -31,7 +31,7 @@ public:
     return cellSize_;
   };
 
-  void initialiseHistos(const bool recreate);
+  void initialiseHistos(const bool recreate=false);
 
   void fill(const DetectorEnum type,
 	    const unsigned newlayer,

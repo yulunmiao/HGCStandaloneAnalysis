@@ -28,6 +28,15 @@ double HGCSSDigitisation::positiveRandomGaus(const double & mean){
   return result;
 }
 
+double HGCSSDigitisation::mipCor(const double & aMipE,
+				 const double & posx, 
+				 const double & posy,
+				 const double & posz){
+  double costheta = fabs(posz)/sqrt(posz*posz+posx*posx+posy*posy);
+  if (costheta>0) return aMipE*costheta;
+  return aMipE;
+}
+
 double HGCSSDigitisation::digiE(const double & aMipE){
   double npix = nPixels(aMipE);
   double result = nTotal_/npe_*log((nTotal_-crossTalk_*npix)/(nTotal_-npix));

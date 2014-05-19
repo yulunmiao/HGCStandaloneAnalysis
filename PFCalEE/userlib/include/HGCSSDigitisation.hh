@@ -83,6 +83,11 @@ public:
 
   double positiveRandomGaus(const double & mean);
 
+  double mipCor(const double & aMipE,
+		const double & posx, 
+		const double & posy,
+		const double & posz);
+
   double digiE(const double & aMipE);
 
   void addNoise(double & aDigiE, const unsigned & alay, TH1F * & hist);

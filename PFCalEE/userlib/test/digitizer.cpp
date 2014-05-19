@@ -16,6 +16,7 @@
 
 #include "fastjet/ClusterSequence.hh"
 
+#include "HGCSSEvent.hh"
 #include "HGCSSSimHit.hh"
 #include "HGCSSRecoHit.hh"
 #include "HGCSSRecoJet.hh"
@@ -172,22 +173,20 @@ int main(int argc, char** argv){//main
   const unsigned nLayers = myDetector.nLayers();
 
   HGCSSGeometryConversion geomConv(inFilePath);
-  const double xWidth = geomConv.getXYwidth();
+  //const double xWidth = geomConv.getXYwidth();
 
   HGCSSDigitisation myDigitiser;
 
   std::vector<unsigned> granularity;
   granularity.resize(nLayers,1);
-  double pNoiseInMips[nLayers];
-  unsigned pThreshInADC[nLayers];
-  for (unsigned iL(0); iL<nLayers; ++iL){
-    pNoiseInMips[iL] = 0.1;
-    pThreshInADC[iL] = 25;
-  }
+  std::vector<double> pNoiseInMips;
+  pNoiseInMips.resize(nLayers,0.1);
+  std::vector<unsigned> pThreshInADC;
+  pThreshInADC.resize(nLayers,25);
 
-  extractParameterFromStr<unsigned[(unsigned)nLayers]>(granulStr,granularity);
-  extractParameterFromStr<double[nLayers]>(noiseStr,pNoiseInMips);
-  extractParameterFromStr<unsigned[(unsigned)nLayers]>(threshStr,pThreshInADC);
+  extractParameterFromStr<std::vector<unsigned> >(granulStr,granularity);
+  extractParameterFromStr<std::vector<double> >(noiseStr,pNoiseInMips);
+  extractParameterFromStr<std::vector<unsigned> >(threshStr,pThreshInADC);
 
   //unsigned nbCells = 0;
 
@@ -290,8 +289,8 @@ int main(int argc, char** argv){//main
   for (unsigned ievt(0); ievt<nEvts; ++ievt){//loop on entries
 
     inputTree->GetEntry(ievt);
-    lEvent.eventNumber(event.eventNumber());
-    const double cellSize = event.cellSize();
+    lEvent.eventNumber(event->eventNumber());
+    const double cellSize = event->cellSize();
     lEvent.cellSize(cellSize);
     
     //sanity check
@@ -318,18 +317,17 @@ int main(int argc, char** argv){//main
       //do not save hits with 0 energy...
       if (lHit.energy()>0 && pSaveSims) lSimHits.push_back(lHit);
       unsigned layer = lHit.layer();
-
       if (layer != prevLayer){
 	const HGCSSSubDetector & subdet = myDetector.subDetector(layer);
 	type = subdet.type;
-	newlayer = layer-subdet.layerIdMin;
+	subdetLayer = layer-subdet.layerIdMin;
 	prevLayer = layer;
       }
       double energy = lHit.energy()*mycalib.MeVToMip(layer);
       double posx = lHit.get_x();
       double posy = lHit.get_y();
       double posz = lHit.get_z();
-      geomConv.fill(type,newlayer,energy,lHit.time(),posx,posy,posz);
+      geomConv.fill(type,subdetLayer,energy,lHit.time(),posx,posy,posz);
 
     }//loop on input simhits
 
@@ -354,8 +352,8 @@ int main(int argc, char** argv){//main
 
       double meanZpos = geomConv.getAverageZ(iL);
       
-      for (unsigned iX(1); iX<histE->GetNbinsX()+1;++iX){
-	for (unsigned iY(1); iY<histE->GetNbinsY()+1;++iY){
+      for (int iX(1); iX<histE->GetNbinsX()+1;++iX){
+	for (int iY(1); iY<histE->GetNbinsY()+1;++iY){
 	  double digiE = 0;
 	  double simE = histE->GetBinContent(iX,iY);
 	  double time = 0;
@@ -367,21 +365,30 @@ int main(int argc, char** argv){//main
 	  double posz = 0;
 	  if (simE>0) posz = histZ->GetBinContent(iX,iY)/simE;
 	  else posz = meanZpos;
-	  unsigned adc = 0;
-	  if (isScint && simE>0) {
-	    digiE = myDigitiser.digiE(simE);
+	  double x = histE->GetXaxis()->GetBinCenter(iX);
+	  double y = histE->GetYaxis()->GetBinCenter(iY);
+
+	  //correct for particle angle in conversion to MIP
+	  double simEcor = myDigitiser.mipCor(simE,x,y,posz);
+	  digiE = simEcor;
+
+	  if (isScint && simEcor>0) {
+	    digiE = myDigitiser.digiE(simEcor);
 	  }
 	  myDigitiser.addNoise(digiE,iL,p_noise);
-	  //aHit.noiseFraction(newE > 0 ? 
-	  //		     (fabs(aNoise) < oldE ? aNoise/oldE : 1) : -1);
+
+	  double noiseFrac = 1.0;
+	  if (simEcor>0) noiseFrac = (digiE-simEcor)/simEcor;
+
 	  //for silicon-based Calo
+	  unsigned adc = 0;
 	  if (isSi){
-	    adc = adcConverter(digiE,adet);
-	    digiE = adcToMIP(adc,adet);
+	    adc = myDigitiser.adcConverter(digiE,adet);
+	    digiE = myDigitiser.adcToMIP(adc,adet);
 	  }
 	  bool aboveThresh = 
 	    (isSi && adc > pThreshInADC[iL]) ||
-	    (isScint && digiE > pThreshInADC[iL]/adcToMIP(1,adet));
+	    (isScint && digiE > pThreshInADC[iL]/myDigitiser.adcToMIP(1,adet));
 	  //histE->SetBinContent(iX,iY,digiE);
 	  if ((!pSaveDigis && aboveThresh) ||
 	      pSaveDigis)
@@ -391,10 +398,8 @@ int main(int argc, char** argv){//main
 	      lRecHit.layer(iL);
 	      lRecHit.energy(digiE);
 	      lRecHit.adcCounts(adc);
-	      lRecHit.zpos(posz);
-	      lRecHit.noiseFraction();//TO DO
-	      double x = histE->GetXaxis()->GetBinCenter(iX);
-	      double y = histE->GetYaxis()->GetBinCenter(iY);
+	      lRecHit.z(posz);
+	      lRecHit.noiseFraction(noiseFrac);
 	      unsigned x_cell = static_cast<unsigned>(fabs(x)/(cellSize*granularity[iL]));
 	      unsigned y_cell = static_cast<unsigned>(fabs(y)/(cellSize*granularity[iL]));
 	      lRecHit.encodeCellId(x>0,y>0,x_cell,y_cell,granularity[iL]);
@@ -404,7 +409,7 @@ int main(int argc, char** argv){//main
 	      lRecoHits.push_back(lRecHit);
 
 	      if (pMakeJets){
-		if (posz>0) lParticles.push_back( PseudoJet(lHit.px(),lHit.py(),lHit.pz(),lHit.E()));
+		if (posz>0) lParticles.push_back( PseudoJet(lRecHit.px(),lRecHit.py(),lRecHit.pz(),lRecHit.E()));
 	      }
 
 	    }//save hits
@@ -429,8 +434,8 @@ int main(int argc, char** argv){//main
 	const PseudoJet & lFastJet = jets[i];
 	//TOFIX // inverted y and z...
 	HGCSSRecoJet ljet(lFastJet.px(),
-			  lFastJet.pz(),
 			  lFastJet.py(),
+			  lFastJet.pz(),
 			  lFastJet.E());
 	if (lFastJet.has_constituents()) ljet.nConstituents(lFastJet.constituents().size());
 	if (lFastJet.has_area()){

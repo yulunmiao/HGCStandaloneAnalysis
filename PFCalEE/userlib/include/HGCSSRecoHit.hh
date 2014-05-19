@@ -31,6 +31,7 @@ public:
   };
 
   double eta() const;
+  double theta() const;
   double phi() const;
 
   inline double E() const {
@@ -55,6 +56,10 @@ public:
 
   inline void energy(const double & energy) {
     energy_ = energy;
+  };
+
+  inline void z(const double & zpos){
+    zpos_ = zpos;
   };
 
   inline unsigned adcCounts() const {

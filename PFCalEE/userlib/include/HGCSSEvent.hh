@@ -30,6 +30,7 @@ public:
   inline void eventNumber(const unsigned aNum){
     event_ = aNum;
   };
+
   inline void cellSize(const double & aVal){
     cellSize_ = aVal;
   };

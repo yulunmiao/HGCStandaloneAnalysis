@@ -32,7 +32,7 @@ public:
   {
     
   };
-  HGCSSSimHit(const G4SiHit & aSiHit);
+  HGCSSSimHit(const G4SiHit & aSiHit, const unsigned & asilayer);
 
   ~HGCSSSimHit(){};
 
@@ -49,11 +49,15 @@ public:
   };
 
   inline unsigned layer() const {
-    return layer_;
+    return layer_/3;
   };
 
-  inline void layer(const unsigned & layer){
-    layer_ = layer;
+  inline unsigned silayer() const {
+    return layer_%3;
+  };
+
+  inline void setLayer(const unsigned & layer, const unsigned & silayer){
+    layer_ = 3*layer+silayer;
   };
 
   inline unsigned cellid() const {

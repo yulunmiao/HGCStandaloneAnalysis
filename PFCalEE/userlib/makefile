@@ -53,9 +53,7 @@ EXES=$(wildcard $(BASEDIR)/test/*.cpp)
 OBJS=$(subst $(SRCDIR), $(OBJDIR),$(subst cc,$(OBJ_EXT),$(SRCS)))
 BINS=$(subst $(TESTDIR), $(EXEDIR),$(subst .$(TEST_EXT),,$(EXES)))
 
-all: lib 
-
-#$(BINS)
+all: lib $(BINS)
 
 docs: all
 	doxygen Doxyfile
