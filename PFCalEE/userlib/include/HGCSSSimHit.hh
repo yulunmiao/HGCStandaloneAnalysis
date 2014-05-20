@@ -32,7 +32,7 @@ public:
   {
     
   };
-  HGCSSSimHit(const G4SiHit & aSiHit, const unsigned & asilayer);
+  HGCSSSimHit(const G4SiHit & aSiHit, const unsigned & asilayer, const float cellSize = CELL_SIZE_X);
 
   ~HGCSSSimHit(){};
 
@@ -134,18 +134,18 @@ public:
     return (cellid_ & 0xFFFE0000) >> 17;
   };
 
-  inline double get_x() const {
+  inline double get_x(const float cellSize = CELL_SIZE_X) const {
     float sign = get_x_side() ? 1. : -1. ;
     if (sign > 0)
-      return get_x_cell()*sign*CELL_SIZE_X*getGranularity()+CELL_SIZE_X*getGranularity()/2;
-    else return get_x_cell()*sign*CELL_SIZE_X*getGranularity()-CELL_SIZE_X*getGranularity()/2;
+      return get_x_cell()*sign*cellSize*getGranularity()+cellSize*getGranularity()/2;
+    else return get_x_cell()*sign*cellSize*getGranularity()-cellSize*getGranularity()/2;
   };
 
-  inline double get_y() const {
+  inline double get_y(const float cellSize = CELL_SIZE_Y) const {
     float sign = get_y_side() ? 1. : -1. ;
     if (sign > 0)
-      return get_y_cell()*sign*CELL_SIZE_Y*getGranularity()+CELL_SIZE_Y*getGranularity()/2;
-    else return get_y_cell()*sign*CELL_SIZE_Y*getGranularity()-CELL_SIZE_Y*getGranularity()/2;
+      return get_y_cell()*sign*cellSize*getGranularity()+cellSize*getGranularity()/2;
+    else return get_y_cell()*sign*cellSize*getGranularity()-cellSize*getGranularity()/2;
   };
 
   inline bool get_x_side_old() const{
@@ -164,18 +164,18 @@ public:
     return (cellid_ & 0xFE00) >> 9;
   };
 
-  inline double get_x_old() const {
+  inline double get_x_old(const float cellSize = CELL_SIZE_X) const {
     float sign = get_x_side_old() ? 1. : -1. ;
     if (sign > 0)
-      return get_x_cell_old()*sign*CELL_SIZE_X*getGranularity()+CELL_SIZE_X*getGranularity()/2;
-    else return get_x_cell_old()*sign*CELL_SIZE_X*getGranularity()-CELL_SIZE_X*getGranularity()/2;
+      return get_x_cell_old()*sign*cellSize*getGranularity()+cellSize*getGranularity()/2;
+    else return get_x_cell_old()*sign*cellSize*getGranularity()-cellSize*getGranularity()/2;
   };
 
-  inline double get_y_old() const {
+  inline double get_y_old(const float cellSize = CELL_SIZE_Y) const {
     float sign = get_y_side_old() ? 1. : -1. ;
     if (sign > 0)
-      return get_y_cell_old()*sign*CELL_SIZE_Y*getGranularity()+CELL_SIZE_Y*getGranularity()/2;
-    else return get_y_cell_old()*sign*CELL_SIZE_Y*getGranularity()-CELL_SIZE_Y*getGranularity()/2;
+      return get_y_cell_old()*sign*cellSize*getGranularity()+cellSize*getGranularity()/2;
+    else return get_y_cell_old()*sign*cellSize*getGranularity()-cellSize*getGranularity()/2;
   };
 
   inline double get_z() const {
@@ -193,8 +193,6 @@ public:
   inline double mainParentEfrac() const {
     return energyMainParent_/energy_;
   }
-
-  void PrintGeometry(std::ostream & aOs) const ;
 
   void Print(std::ostream & aOs) const ;
 

@@ -28,7 +28,7 @@
 using namespace fastjet;
 
 template <class T>
-void extractParameterFromStr(std::string aStr,T vec){ 
+void extractParameterFromStr(std::string aStr,T & vec){ 
   if (aStr == "") return;
   std::vector<std::string> layVec;
   boost::split( layVec, aStr, boost::is_any_of(","));
@@ -100,7 +100,7 @@ int main(int argc, char** argv){//main
   unsigned debug = 0;
   unsigned pSeed = 0;
   bool pSaveDigis = 0;
-  bool pSaveSims = 1;
+  bool pSaveSims = 0;
   bool pMakeJets = false;
   if (nPar > nReqA) std::istringstream(argv[nReqA])>>pSeed;
   if (nPar > nReqA+1) {
@@ -180,7 +180,7 @@ int main(int argc, char** argv){//main
   std::vector<unsigned> granularity;
   granularity.resize(nLayers,1);
   std::vector<double> pNoiseInMips;
-  pNoiseInMips.resize(nLayers,0.1);
+  pNoiseInMips.resize(nLayers,0.12);
   std::vector<unsigned> pThreshInADC;
   pThreshInADC.resize(nLayers,25);
 
@@ -196,7 +196,7 @@ int main(int argc, char** argv){//main
     if (iL<10) std::cout << " ";
     std::cout << iL << " : " << granularity[iL] << ", " << pNoiseInMips[iL] << " mips, " << pThreshInADC[iL] << " adc - ";
     if (iL%5==4) std::cout << std::endl;
-    
+    myDigitiser.setNoise(iL,pNoiseInMips[iL]);
     //nbCells += N_CELLS_XY_MAX/(granularity[iL]*granularity[iL]);
   }
         
@@ -218,7 +218,7 @@ int main(int argc, char** argv){//main
   std::ostringstream outputStr;
   outputStr << outFilePath << "/DigiPFcal" ;
   if (pSaveDigis)  outputStr << "_withDigiHits";
-  if (!pSaveSims)  outputStr << "_withoutSimHits";
+  if (pSaveSims)  outputStr << "_withSimHits";
   outputStr << ".root";
   
   TFile *outputFile = TFile::Open(outputStr.str().c_str(),"RECREATE");
@@ -322,12 +322,13 @@ int main(int argc, char** argv){//main
 	type = subdet.type;
 	subdetLayer = layer-subdet.layerIdMin;
 	prevLayer = layer;
+	if (debug > 1) std::cout << " - layer " << layer << " " << subdet.name << " " << subdetLayer << std::endl;
       }
       double energy = lHit.energy()*mycalib.MeVToMip(layer);
-      double posx = lHit.get_x();
-      double posy = lHit.get_y();
+      double posx = lHit.get_x(cellSize);
+      double posy = lHit.get_y(cellSize);
       double posz = lHit.get_z();
-      geomConv.fill(type,subdetLayer,energy,lHit.time(),posx,posy,posz);
+      if (energy>0) geomConv.fill(type,subdetLayer,energy,lHit.time(),posx,posy,posz);
 
     }//loop on input simhits
 
@@ -351,7 +352,12 @@ int main(int argc, char** argv){//main
       if (pSaveDigis) lDigiHits.reserve(nTotBins);
 
       double meanZpos = geomConv.getAverageZ(iL);
-      
+
+      if (debug>1){
+	std::cout << " -- Layer " << iL << " " << myDetector.subDetector(iL).name << " z=" << meanZpos
+		  << " totbins = " << nTotBins << " histE entries = " << histE->GetEntries() << std::endl;
+      }
+
       for (int iX(1); iX<histE->GetNbinsX()+1;++iX){
 	for (int iY(1); iY<histE->GetNbinsY()+1;++iY){
 	  double digiE = 0;
@@ -359,7 +365,7 @@ int main(int argc, char** argv){//main
 	  double time = 0;
 	  if (simE>0) time = histTime->GetBinContent(iX,iY)/simE;
 
-	  bool passTime = myDigitiser.passTimeCut(time,adet);
+	  bool passTime = myDigitiser.passTimeCut(adet,time);
 	  if (!passTime) continue;
 
 	  double posz = 0;
@@ -367,6 +373,8 @@ int main(int argc, char** argv){//main
 	  else posz = meanZpos;
 	  double x = histE->GetXaxis()->GetBinCenter(iX);
 	  double y = histE->GetYaxis()->GetBinCenter(iY);
+
+	  //if (fabs(x) > 500 || fabs(y)>500) std::cout << " x=" << x << ", y=" << y << std::endl;
 
 	  //correct for particle angle in conversion to MIP
 	  double simEcor = myDigitiser.mipCor(simE,x,y,posz);
@@ -388,7 +396,7 @@ int main(int argc, char** argv){//main
 	  }
 	  bool aboveThresh = 
 	    (isSi && adc > pThreshInADC[iL]) ||
-	    (isScint && digiE > pThreshInADC[iL]/myDigitiser.adcToMIP(1,adet));
+	    (isScint && digiE > pThreshInADC[iL]*myDigitiser.adcToMIP(1,adet));
 	  //histE->SetBinContent(iX,iY,digiE);
 	  if ((!pSaveDigis && aboveThresh) ||
 	      pSaveDigis)
@@ -398,11 +406,13 @@ int main(int argc, char** argv){//main
 	      lRecHit.layer(iL);
 	      lRecHit.energy(digiE);
 	      lRecHit.adcCounts(adc);
+	      lRecHit.x(x);
+	      lRecHit.y(y);
 	      lRecHit.z(posz);
 	      lRecHit.noiseFraction(noiseFrac);
-	      unsigned x_cell = static_cast<unsigned>(fabs(x)/(cellSize*granularity[iL]));
-	      unsigned y_cell = static_cast<unsigned>(fabs(y)/(cellSize*granularity[iL]));
-	      lRecHit.encodeCellId(x>0,y>0,x_cell,y_cell,granularity[iL]);
+	      //unsigned x_cell = static_cast<unsigned>(fabs(x)/(cellSize*granularity[iL]));
+	      //unsigned y_cell = static_cast<unsigned>(fabs(y)/(cellSize*granularity[iL]));
+	      //lRecHit.encodeCellId(x>0,y>0,x_cell,y_cell,granularity[iL]);
 
 	      if (pSaveDigis) lDigiHits.push_back(lRecHit);
 
@@ -418,7 +428,7 @@ int main(int argc, char** argv){//main
     }//loop on layers
 
     if (debug) {
-      std::cout << " **DEBUG** sim-digi-reco hits = " << lSimHits.size() << "-" << lDigiHits.size() << "-" << lRecoHits.size() << std::endl;
+      std::cout << " **DEBUG** sim-digi-reco hits = " << (*hitvec).size() << "-" << lDigiHits.size() << "-" << lRecoHits.size() << std::endl;
     }
     
     

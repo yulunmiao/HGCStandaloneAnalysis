@@ -61,7 +61,8 @@ for en in enlist :
     scriptFile.write('echo "--Local directory is " $localdir > g4.log\n')
     scriptFile.write('ls * >> g4.log\n')
     if len(opt.eos)>0:
-        outTag='version%d_model%d_%s_e%d'%(opt.version,opt.model,bval,en)
+        outTag='version%d_model%d_%s'%(opt.version,opt.model,bval)
+        if en>0 : outTag='%s_e%d'%(outTag,en)
         if opt.alpha>0 : outTag='%s_alpha%3.3f'%(outTag,opt.alpha) 
         if (opt.run>=0) : outTag='%s_run%d'%(outTag,opt.run)
         scriptFile.write('grep "alias eos=" /afs/cern.ch/project/eos/installation/cms/etc/setup.sh | sed "s/alias /export my/" > eosenv.sh\n')

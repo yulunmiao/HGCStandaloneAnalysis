@@ -4,7 +4,7 @@
 #include <cmath>
 #include <stdlib.h>
 
-HGCSSSimHit::HGCSSSimHit(const G4SiHit & aSiHit, const unsigned & asilayer){
+HGCSSSimHit::HGCSSSimHit(const G4SiHit & aSiHit, const unsigned & asilayer, const float cellSize){
   energy_ = aSiHit.energy;
   //energy weighted time
   //PS: need to call calculateTime() after all hits 
@@ -20,8 +20,8 @@ HGCSSSimHit::HGCSSSimHit(const G4SiHit & aSiHit, const unsigned & asilayer){
   //cellid encoding:
   bool x_side = x>0 ? true : false;
   bool y_side = y>0 ? true : false;
-  unsigned x_cell = static_cast<unsigned>(fabs(x)/(CELL_SIZE_X*getGranularity()));
-  unsigned y_cell = static_cast<unsigned>(fabs(y)/(CELL_SIZE_Y*getGranularity()));
+  unsigned x_cell = static_cast<unsigned>(fabs(x)/(cellSize*getGranularity()));
+  unsigned y_cell = static_cast<unsigned>(fabs(y)/(cellSize*getGranularity()));
 
   encodeCellId(x_side,y_side,x_cell,y_cell);
 
@@ -94,12 +94,3 @@ void HGCSSSimHit::Print(std::ostream & aOs) const{
 
 }
 
-void HGCSSSimHit::PrintGeometry(std::ostream & aOs) const{
-  aOs << " =========================================================== " << std::endl
-      << " ============= Printing of Transverse Geometry ============= " << std::endl
-      << " =========================================================== " << std::endl
-      << " = CELL_SIZE_X " << CELL_SIZE_X << " mm" << std::endl
-      << " = CELL_SIZE_Y " << CELL_SIZE_Y << " mm" << std::endl
-      << " =========================================================== " << std::endl
-      << " =========================================================== " << std::endl;
-}

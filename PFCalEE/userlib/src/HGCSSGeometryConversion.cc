@@ -53,25 +53,23 @@ void HGCSSGeometryConversion::setGranularity(const std::vector<unsigned> & granu
  void HGCSSGeometryConversion::initialiseHistos(const bool recreate){
 
    for (unsigned iS(0); iS<theDetector().nSections();++iS){
-    std::vector<TH2D *> histVecE;
-    resetVector(histVecE,theDetector().detName(iS),theDetector().subDetector(iS),theDetector().nLayers(iS),recreate);
-    HistMapE_[theDetector().detType(iS)]=histVecE;
+     resetVector(HistMapE_[theDetector().detType(iS)],"EmipHits",theDetector().detName(iS),theDetector().subDetector(iS),theDetector().nLayers(iS),recreate);
+     //std::cout << " check: " << HistMapE_[theDetector().detType(iS)].size() << std::endl;
+     
+     std::vector<double> avgvecE;
+     avgvecE.resize(theDetector().nLayers(iS),0);
+     avgMapE_[theDetector().detType(iS)]=avgvecE;
+     
+     resetVector(HistMapTime_[theDetector().detType(iS)],"TimeHits",theDetector().detName(iS),theDetector().subDetector(iS),theDetector().nLayers(iS),recreate);
+     //std::cout << " check: " << HistMapTime_[theDetector().detType(iS)].size() << std::endl;
 
-    std::vector<double> avgvecE;
-    avgvecE.resize(theDetector().nLayers(iS),0);
-    avgMapE_[theDetector().detType(iS)]=avgvecE;
-
-    std::vector<TH2D *> histVecTime;
-    resetVector(histVecTime,theDetector().detName(iS),theDetector().subDetector(iS),theDetector().nLayers(iS),recreate);
-    HistMapTime_[theDetector().detType(iS)]=histVecTime;
-    std::vector<TH2D *> histVecZ;
-    resetVector(histVecZ,theDetector().detName(iS),theDetector().subDetector(iS),theDetector().nLayers(iS),recreate);
-    HistMapZ_[theDetector().detType(iS)]=histVecZ;
-
-    std::vector<double> avgvecZ;
-    avgvecZ.resize(theDetector().nLayers(iS),0);
-    avgMapZ_[theDetector().detType(iS)]=avgvecZ;
-  }
+     resetVector(HistMapZ_[theDetector().detType(iS)],"zHits",theDetector().detName(iS),theDetector().subDetector(iS),theDetector().nLayers(iS),recreate);
+     //std::cout << " check: " << HistMapZ_[theDetector().detType(iS)].size() << std::endl;
+     
+     std::vector<double> avgvecZ;
+     avgvecZ.resize(theDetector().nLayers(iS),0);
+     avgMapZ_[theDetector().detType(iS)]=avgvecZ;
+   }
  }
 
 void HGCSSGeometryConversion::fill(const DetectorEnum type,
@@ -116,36 +114,45 @@ unsigned HGCSSGeometryConversion::getGranularity(const unsigned aLayer, const HG
 }
 
 void HGCSSGeometryConversion::resetVector(std::vector<TH2D *> & aVec,
+					  std::string aVar,
 					  std::string aString,
 					  const HGCSSSubDetector & aDet,
 					  const unsigned nLayers,
 					  bool recreate)
 {
+  //std::cout << " vector size: " << aVar << " " << aString << " = " << aVec.size() << std::endl;
+  if (recreate){
+    for (unsigned iL(0); iL<aVec.size();++iL){
+      aVec[iL]->Delete();
+    }
+    aVec.clear();
+  }
   if (aVec.size()!=0){
     for (unsigned iL(0); iL<aVec.size();++iL){
       aVec[iL]->Reset();
-      if (recreate) aVec[iL]->Delete();
     }
   }
-  if (aVec.size()==0 || recreate){
+  else {
     if (nLayers > 0){
       aVec.resize(nLayers,0);
-      std::cout << " -- Creating " << nLayers << " 2D histograms for " << aString 
+      std::cout << " -- Creating " << nLayers << " 2D histograms for " << aVar << " " << aString 
 	//<< " with " << nBins << " bins between " << min << " and " << max 
 		<< std::endl;
       for (unsigned iL(0); iL<nLayers;++iL){
 	std::ostringstream lname;
-	lname << "EmipHits_" << aString << "_" << iL ;
+	lname << aVar << "_" << aString << "_" << iL ;
 	double newcellsize = cellSize_*getGranularity(iL,aDet);
 	//take smallest pair integer to be sure to fit in the geometry
 	//even if small dead area introduced at the edge
 	unsigned nBins = static_cast<unsigned>(width_*1./(newcellsize*2.))*2;
-	double min = -nBins*newcellsize/2.;
+	double min = -1.0*nBins*newcellsize/2.;
 	double max = nBins*newcellsize/2.;
 	aVec[iL] = new TH2D(lname.str().c_str(),";x(mm);y(mm)",nBins,min,max,nBins,min,max);
+	if (iL==0) std::cout << " ---- bins, min, max = " << nBins << " " << min << " " << max << std::endl;
       }
     }
   }
+  //std::cout << " vector size after: " << aVar << " " << aString << " = " << aVec.size() << std::endl;
 }
 
 

@@ -47,6 +47,7 @@ public:
 		 const double & aMipThresh=0.);
 
   void resetVector(std::vector<TH2D *> & aVec,
+		   std::string aVar,
 		   std::string aString,
 		   const HGCSSSubDetector & aDet,
 		   const unsigned nLayers,

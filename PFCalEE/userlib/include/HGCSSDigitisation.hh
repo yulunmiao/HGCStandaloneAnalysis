@@ -61,19 +61,19 @@ public:
     sigmaPix_ = aSigma;
   };
 
-  inline void setNoise(const double & aNoise, const unsigned & alay){
+  inline void setNoise(const unsigned & alay, const double & aNoise){
     noise_[alay] = aNoise;
   };
 
-  inline void setMipToADC(const double & aMipToADC, DetectorEnum adet){
+  inline void setMipToADC(DetectorEnum adet, const double & aMipToADC){
     mipToADC_[adet] = aMipToADC;
   };
 
-  inline void setTimeCut(const double & aTimeCut, DetectorEnum adet){
+  inline void setTimeCut(DetectorEnum adet, const double & aTimeCut){
     timeCut_[adet] = aTimeCut;
   };
 
-  inline bool passTimeCut(const double aTime, DetectorEnum adet){
+  inline bool passTimeCut(DetectorEnum adet, const double & aTime){
     return (aTime < timeCut_[adet]);
   };
 

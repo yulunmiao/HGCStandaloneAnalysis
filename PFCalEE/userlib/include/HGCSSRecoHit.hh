@@ -16,13 +16,15 @@ public:
   HGCSSRecoHit():
     energy_(0),
     adcCounts_(0),
+    xpos_(0),
+    ypos_(0),
     zpos_(0),
     layer_(0),
-    cellid_(0),
+    //cellid_(0),
     noiseFrac_(0)
   {};
 
-  HGCSSRecoHit(const HGCSSSimHit & aSimHit, const unsigned granularity=1);
+  HGCSSRecoHit(const HGCSSSimHit & aSimHit, const unsigned granularity=1, const float cellSize=2.5);
 
   ~HGCSSRecoHit(){};
 
@@ -58,8 +60,16 @@ public:
     energy_ = energy;
   };
 
-  inline void z(const double & zpos){
-    zpos_ = zpos;
+  inline void x(const double & pos){
+    xpos_ = pos;
+  };
+
+  inline void y(const double & pos){
+    ypos_ = pos;
+  };
+
+  inline void z(const double & pos){
+    zpos_ = pos;
   };
 
   inline unsigned adcCounts() const {
@@ -78,17 +88,13 @@ public:
     layer_ = layer;
   };
 
-  inline unsigned cellid() const {
-    return cellid_;
-  };
+  // inline unsigned cellid() const {
+  //   return cellid_;
+  // };
 
-  inline void cellid(const unsigned & id){
-    cellid_ = id;
-  };
-
-  inline unsigned fullcellid() const {
-    return cellid_ | ((layer_&0xFF)<<24);
-  };
+  // inline void cellid(const unsigned & id){
+  //   cellid_ = id;
+  // };
 
   inline double noiseFraction() const {
     return noiseFrac_;
@@ -100,45 +106,47 @@ public:
 
   void Add(const HGCSSSimHit & aSimHit);
   
-  void encodeCellId(const bool x_side,const bool y_side,const unsigned x_cell,const unsigned y_cell, const unsigned granularity);
+  // void encodeCellId(const bool x_side,const bool y_side,const unsigned x_cell,const unsigned y_cell, const unsigned granularity);
 
-  inline bool get_x_side() const{
-    return cellid_ & 0x0001;
+  // inline bool get_x_side() const{
+  //   return cellid_ & 0x0001;
+  // };
+
+  // inline bool get_y_side() const{
+  //   return (cellid_ & 0x2000) >> 13;
+  // };
+
+  // inline unsigned get_x_cell() const{
+  //   return (cellid_ & 0x1FFE) >> 1;
+  // };
+
+  // inline unsigned get_y_cell() const{
+  //   return (cellid_ & 0x03FFC000) >> 14;
+  // };
+
+  inline double get_x(const float cellSize=2.5) const{
+    return xpos_;
+    //float sign = get_x_side() ? 1. : -1. ;
+    //if (sign > 0)
+    //  return get_x_cell()*sign*cellSize*getGranularity()+cellSize*getGranularity()/2;
+    //else return get_x_cell()*sign*cellSize*getGranularity()-cellSize*getGranularity()/2;
   };
 
-  inline bool get_y_side() const{
-    return (cellid_ & 0x2000) >> 13;
-  };
-
-  inline unsigned get_x_cell() const{
-    return (cellid_ & 0x1FFE) >> 1;
-  };
-
-  inline unsigned get_y_cell() const{
-    return (cellid_ & 0x03FFC000) >> 14;
-  };
-
-  inline double get_x() const{
-    float sign = get_x_side() ? 1. : -1. ;
-    if (sign > 0)
-      return get_x_cell()*sign*CELL_SIZE_X*getGranularity()+CELL_SIZE_X*getGranularity()/2;
-    else return get_x_cell()*sign*CELL_SIZE_X*getGranularity()-CELL_SIZE_X*getGranularity()/2;
-  };
-
-  inline double get_y() const{
-    float sign = get_y_side() ? 1. : -1. ;
-    if (sign > 0)
-      return get_y_cell()*sign*CELL_SIZE_Y*getGranularity()+CELL_SIZE_Y*getGranularity()/2;
-    else return get_y_cell()*sign*CELL_SIZE_Y*getGranularity()-CELL_SIZE_Y*getGranularity()/2;
+  inline double get_y(const float cellSize=2.5) const{
+    return ypos_;
+    //float sign = get_y_side() ? 1. : -1. ;
+    //if (sign > 0)
+    //  return get_y_cell()*sign*cellSize*getGranularity()+cellSize*getGranularity()/2;
+    //else return get_y_cell()*sign*cellSize*getGranularity()-cellSize*getGranularity()/2;
   };
 
   inline double get_z() const {
     return zpos_;
   };
 
-  inline unsigned getGranularity() const{
-    return (cellid_ & 0xFC000000) >> 26;
-  };
+  // inline unsigned getGranularity() const{
+  //   return (cellid_ & 0xFC000000) >> 26;
+  // };
 
   void Print(std::ostream & aOs) const;
 
@@ -146,9 +154,11 @@ private:
 
   double energy_;
   unsigned adcCounts_;
+  double xpos_;
+  double ypos_;
   double zpos_;
   unsigned layer_;
-  unsigned cellid_;
+  //unsigned cellid_;
   double noiseFrac_;
 
   ClassDef(HGCSSRecoHit,1);
