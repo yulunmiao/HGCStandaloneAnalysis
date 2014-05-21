@@ -31,6 +31,9 @@ public:
     return cellSize_;
   };
 
+  unsigned getNumberOfSiLayers(const DetectorEnum type,
+			       const double & eta=0) const;
+
   void initialiseHistos(const bool recreate=false);
 
   void fill(const DetectorEnum type,

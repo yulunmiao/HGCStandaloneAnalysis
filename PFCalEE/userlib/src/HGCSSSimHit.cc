@@ -77,6 +77,15 @@ void HGCSSSimHit::Add(const G4SiHit & aSiHit){
 
 }
 
+double HGCSSSimHit::eta() const {
+  double x = get_x();
+  double y = get_y();
+  double theta = acos(fabs(zpos_)/sqrt(zpos_*zpos_+x*x+y*y));
+  double leta = -log(tan(theta/2.));
+  if (zpos_>0) return leta;
+  else return -leta;
+}
+
 void HGCSSSimHit::Print(std::ostream & aOs) const{
   aOs << "====================================" << std::endl
       << " = Layer " << layer() << " siLayer " << silayer() << " cellid " << cellid_ << std::endl

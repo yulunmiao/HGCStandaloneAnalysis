@@ -10,9 +10,18 @@ HGCSSGeometryConversion::HGCSSGeometryConversion(std::string filePath){
   else if (filePath.find("model3")!=filePath.npos) width_ = 1000;
 
   cellSize_ = 2.5;
-  
+
 }
 
+unsigned HGCSSGeometryConversion::getNumberOfSiLayers(const DetectorEnum type,
+						      const double & eta) const
+{
+  if (type == DetectorEnum::FECAL) return 2;
+  else if (type == DetectorEnum::MECAL) return 2;
+  else if (type == DetectorEnum::BECAL) return 2;
+  else if (type == DetectorEnum::FHCAL) return 3;
+  return 3;
+}
 
 HGCSSGeometryConversion::~HGCSSGeometryConversion(){
   std::map<DetectorEnum,std::vector<TH2D *> >::iterator liter =

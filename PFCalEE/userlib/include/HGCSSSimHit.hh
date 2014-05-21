@@ -182,6 +182,8 @@ public:
     return zpos_;
   };
 
+  double eta() const;
+
   inline unsigned getGranularity() const{
     return 1;
   };

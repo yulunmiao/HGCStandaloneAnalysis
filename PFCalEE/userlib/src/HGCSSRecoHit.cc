@@ -30,9 +30,7 @@ double HGCSSRecoHit::theta() const {
 }
 
 double HGCSSRecoHit::eta() const {
-  double x = get_x();
-  double y = get_y();
-  double theta = acos(fabs(zpos_)/sqrt(zpos_*zpos_+x*x+y*y));
+  double theta = acos(fabs(zpos_)/sqrt(zpos_*zpos_+xpos_*xpos_+ypos_*ypos_));
   double leta = -log(tan(theta/2.));
   if (zpos_>0) return leta;
   else return -leta;

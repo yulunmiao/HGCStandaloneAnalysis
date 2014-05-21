@@ -31,6 +31,10 @@ enlist=[0]
 #if opt.dogun : enlist=[10,15,18,20,25,30,35,40,45,50,60,80,100,200,300,400,500]
 if opt.dogun : enlist=[10,20,30,40,50,100]
 
+granularity='0-20:4,21-63:6'
+noise='0-63:0.12'
+threshold='0-63:25'
+
 for en in enlist :
 
     nevents=opt.nevts
@@ -47,7 +51,9 @@ for en in enlist :
     eosDir='%s/git%s/%s'%(opt.eos,opt.gittag,opt.datatype)
     if opt.alpha>0 : outDir='%s/a_%3.3f/'%(outDir,opt.alpha) 
     if (opt.run>=0) : outDir='%s/run_%d/'%(outDir,opt.run)
-    
+
+    outlog='%s/digitizer.log'%(outDir)
+
     os.system('mkdir -p %s'%outDir)
     
     #wrapper
@@ -56,9 +62,10 @@ for en in enlist :
     scriptFile.write('source %s/g4env.sh\n'%(os.getcwd()))
     #scriptFile.write('cd %s\n'%(outDir))
     scriptFile.write('cp %s/g4steer.mac .\n'%(outDir))
-    scriptFile.write('PFCalEE g4steer.mac %d %d\n'%(opt.version,opt.model))
+    scriptFile.write('PFCalEE g4steer.mac %d %d | tee g4.log\n'%(opt.version,opt.model))
     scriptFile.write('localdir=`pwd`\n')
-    scriptFile.write('echo "--Local directory is " $localdir > g4.log\n')
+    scriptFile.write('%s/userlib/bin/digitizer 0 $localdir/PFcal.root $localdir/ %s %s %s | tee %s\n'%(os.getcwd(),granularity,noise,threshold,outlog))
+    scriptFile.write('echo "--Local directory is " $localdir >> g4.log\n')
     scriptFile.write('ls * >> g4.log\n')
     if len(opt.eos)>0:
         outTag='version%d_model%d_%s'%(opt.version,opt.model,bval)
@@ -75,14 +82,27 @@ for en in enlist :
         scriptFile.write('eossize=`$myeos ls -l %s/HGcal_%s.root | awk \'{print $5}\'`\n'%(eosDir,outTag))
         scriptFile.write('localsize=`ls -l PFcal.root | awk \'{print $5}\'`\n')
         scriptFile.write('if (( "$eossize" != "$localsize" )); then\n')
-        scriptFile.write('echo " --- Copy to eos failed. Localsize = $localsize, eossize = $eossize. Keeping locally..." >> g4.log\n')
+        scriptFile.write('echo " --- Copy of sim file to eos failed. Localsize = $localsize, eossize = $eossize. Keeping locally..." >> g4.log\n')
         scriptFile.write('else\n')
         scriptFile.write('echo " --- Size check done: Localsize = $localsize, eossize = $eossize" >> g4.log\n')
         scriptFile.write('echo " --- File PFcal.root successfully copied to EOS: %s/HGcal_%s.root" >> g4.log\n'%(eosDir,outTag))
         scriptFile.write('rm PFcal.root\n')
         scriptFile.write('fi\n')
         scriptFile.write('fi\n')
-        
+        scriptFile.write('cmsStage -f DigiPFcal.root %s/Digi_%s.root\n'%(eosDir,outTag))
+        scriptFile.write('if (( "$?" != "0" )); then\n')
+        scriptFile.write('echo " --- Problem with copy of file DigiPFcal.root to EOS. Keeping locally." >> g4.log\n')
+        scriptFile.write('else\n')
+        scriptFile.write('eossize=`$myeos ls -l %s/Digi_%s.root | awk \'{print $5}\'`\n'%(eosDir,outTag))
+        scriptFile.write('localsize=`ls -l DigiPFcal.root | awk \'{print $5}\'`\n')
+        scriptFile.write('if (( "$eossize" != "$localsize" )); then\n')
+        scriptFile.write('echo " --- Copy of digi file to eos failed. Localsize = $localsize, eossize = $eossize. Keeping locally..." >> g4.log\n')
+        scriptFile.write('else\n')
+        scriptFile.write('echo " --- Size check done: Localsize = $localsize, eossize = $eossize" >> g4.log\n')
+        scriptFile.write('echo " --- File DigiPFcal.root successfully copied to EOS: %s/Digi_%s.root" >> g4.log\n'%(eosDir,outTag))
+        scriptFile.write('rm DigiPFcal.root\n')
+        scriptFile.write('fi\n')
+        scriptFile.write('fi\n')
     scriptFile.write('cp * %s/\n'%(outDir))
     scriptFile.write('echo "All done"\n')
     scriptFile.close()

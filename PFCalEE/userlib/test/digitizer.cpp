@@ -120,7 +120,8 @@ int main(int argc, char** argv){//main
   //////////////////////////////////////////////////////////
   //// Hardcoded config ////////////////////////////////////
   //////////////////////////////////////////////////////////
-  bool concept = false;
+  //for HGCAL, true means only 12 FHCAL layers considered (24 are simulated)
+  bool concept = true;
 
   // choose a jet definition
   double R = 0.5;
@@ -323,12 +324,15 @@ int main(int argc, char** argv){//main
 	subdetLayer = layer-subdet.layerIdMin;
 	prevLayer = layer;
 	if (debug > 1) std::cout << " - layer " << layer << " " << subdet.name << " " << subdetLayer << std::endl;
-      }
+      }      
       double energy = lHit.energy()*mycalib.MeVToMip(layer);
       double posx = lHit.get_x(cellSize);
       double posy = lHit.get_y(cellSize);
       double posz = lHit.get_z();
-      if (energy>0) geomConv.fill(type,subdetLayer,energy,lHit.time(),posx,posy,posz);
+      if (energy>0 && 
+	  lHit.silayer() < geomConv.getNumberOfSiLayers(type)//,lHit.eta()) 
+	  )
+	geomConv.fill(type,subdetLayer,energy,lHit.time(),posx,posy,posz);
 
     }//loop on input simhits
 
