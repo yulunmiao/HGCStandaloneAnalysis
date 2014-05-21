@@ -1,7 +1,7 @@
 #!/bin/sh
 
 ##default baseline
-python submitDigi.py -s 0 -o /afs/cern.ch/work/a/amagnan/public/HGCalEEDigi
+python submitDigi.py -s 0 -o /afs/cern.ch/work/a/amagnan/public/HGCalEEDigi -e /store/user/amagnan/HGCalEEGeant4/
 ##scan adc range
 python submitDigi.py -s 1 -m 1 -t 0-29:1 -o /afs/cern.ch/work/a/amagnan/public/HGCalEEDigi
 python submitDigi.py -s 2 -m 10 -t 0-29:5 -o /afs/cern.ch/work/a/amagnan/public/HGCalEEDigi

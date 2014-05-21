@@ -15,6 +15,14 @@ make
 ./bin/compareCaloStackPerformances -i ../ -v 20 -e 5
 
 ###################################
+EOS file paths
+###################################
+root://eoscms//eos/cms/
+/store/user/amagnan/
+/store/cmst3/group/hgcal/Geant4
+
+
+###################################
 Info on existing Executables:
 ###################################
 

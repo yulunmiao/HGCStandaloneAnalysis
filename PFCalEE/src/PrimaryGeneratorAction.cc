@@ -80,11 +80,13 @@ PrimaryGeneratorAction::PrimaryGeneratorAction()
   G4ParticleDefinition* particle
                     = particleTable->FindParticle(particleName="e-");
   particleGun->SetParticleDefinition(particle);
-  particleGun->SetParticleMomentumDirection(G4ThreeVector(1.,0.,0.));
+  particleGun->SetParticleMomentumDirection(G4ThreeVector(0.,0.,1.));
   particleGun->SetParticleEnergy(10.*GeV);
-  G4double position = -0.5*(Detector->GetWorldSizeX());
-  particleGun->SetParticlePosition(G4ThreeVector(position,0.*cm,0.*cm));
+  G4double position = -0.5*(Detector->GetWorldSizeZ());
+  particleGun->SetParticlePosition(G4ThreeVector(0.*cm,0.*cm,position));
   
+  G4cout << " -- Gun position set to: 0,0," << position << G4endl;
+
   rndmFlag = "off";
 
 }
@@ -105,9 +107,10 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 {
   //this function is called at the begining of event
   // 
-  G4double x0 = -0.5*(Detector->GetWorldSizeX());
-  G4double y0 = 0.*cm, z0 = 0.*cm;
+  G4double z0 = -0.5*(Detector->GetWorldSizeZ());
+  G4double x0 = 0.*cm, y0 = 0.*cm;
   particleGun->SetParticlePosition(G4ThreeVector(x0,y0,z0));
+  G4cout << " -- Gun position set to: " << x0 << "," << y0 << "," << z0 << G4endl;
   if(currentGenerator){
     currentGenerator->GeneratePrimaryVertex(anEvent);
   }

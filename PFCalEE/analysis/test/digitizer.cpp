@@ -12,11 +12,17 @@
 #include "TCanvas.h"
 #include "TStyle.h"
 #include "TRandom3.h"
+#include "Math/Vector4D.h"
+
+#include "fastjet/ClusterSequence.hh"
 
 #include "HGCSSSimHit.hh"
 #include "HGCSSRecoHit.hh"
+#include "HGCSSRecoJet.hh"
 #include "HGCSSParameters.hh"
+#include "HGCSSCalibration.hh"
 
+using namespace fastjet;
 
 template <class T>
 void extractParameterFromStr(std::string aStr,T vec){ 
@@ -48,10 +54,10 @@ void extractParameterFromStr(std::string aStr,T vec){
 
 void simToDigi(HGCSSRecoHit & aHit, 
 	       const double & aNoise, 
-	       const double & aMipE, 
+	       const double & aMeVtoMip, 
 	       const unsigned & aMipToADC){
   //convert to MIP
-  double oldE = aHit.energy()/aMipE;
+  double oldE = aHit.energy()*aMeVtoMip;
   double newE = oldE+aNoise;
   aHit.noiseFraction(newE > 0 ? 
 		     (fabs(aNoise) < oldE ? aNoise/oldE : 1) : -1);
@@ -90,7 +96,6 @@ int main(int argc, char** argv){//main
 	      << "<optional: debug (default=0)>" << std::endl
 	      << "<optional: save sim hits (default=1)> " << std::endl
 	      << "<optional: save digi hits (default=0)> " << std::endl
-	      << "<optional: mipEnergy (default=0.0559 MeV)>" << std::endl
 	      << "<optional: maxTime (default=2ns)>" << std::endl
 	      << std::endl;
     return 1;
@@ -115,7 +120,6 @@ int main(int argc, char** argv){//main
 	    << " -- thresholds: " << threshStr << std::endl
 	    << " -- Mip to ADC conversion: " << pMipToADC << " ADC counts / MIP." << std::endl;
 	    
-  double pMipEnergy = 0.0559; //from muon deposits at 25 GeV, in version_20...
   double pMaxTime = 2.0;//ns
   unsigned debug = 0;
   unsigned pSeed = 0;
@@ -128,18 +132,35 @@ int main(int argc, char** argv){//main
   }
   if (nPar > nReqA+2) std::istringstream(argv[nReqA+2])>>pSaveDigis;
   if (nPar > nReqA+3) std::istringstream(argv[nReqA+3])>>pSaveSims;
-  if (nPar > nReqA+4) std::istringstream(argv[nReqA+4])>>pMipEnergy;
-  if (nPar > nReqA+5) std::istringstream(argv[nReqA+5])>>pMaxTime;
+  if (nPar > nReqA+4) std::istringstream(argv[nReqA+4])>>pMaxTime;
   
   std::cout << " -- Random seed will be set to : " << pSeed << std::endl;
   if (pSaveDigis) std::cout << " -- DigiHits are saved." << std::endl;
   if (!pSaveSims) std::cout << " -- SimHits are not saved." << std::endl;
-  std::cout << " -- Mip energy: " << pMipEnergy << " MeV." << std::endl
-	    << " -- Max time integrated: " << pMaxTime << " ns." << std::endl
+  std::cout << " -- Max time integrated: " << pMaxTime << " ns." << std::endl
 	    << " ----------------------------------------" << std::endl;
   
 
-  const unsigned nLayers = N_LAYERS;
+  //////////////////////////////////////////////////////////
+  //// Hardcoded config ////////////////////////////////////
+  //////////////////////////////////////////////////////////
+
+  const unsigned nLayers = 54; //64;//Calice 54;//Scint 9;//HCAL 33;//All 64
+  const double xWidth = 500; //200
+  const unsigned nEcalLayers = 31;//31;
+  const unsigned nHcalSiLayers = 47;//concept 24;//calice 47
+
+  bool concept = false;
+
+  bool makeJets = false;
+  // choose a jet definition
+  double R = 0.5;
+  JetDefinition jet_def(antikt_algorithm, R);
+
+  //////////////////////////////////////////////////////////
+  //// End Hardcoded config ////////////////////////////////////
+  //////////////////////////////////////////////////////////
+
   unsigned granularity[nLayers];
   double pNoiseInMips[nLayers];
   unsigned pThreshInADC[nLayers];
@@ -149,11 +170,11 @@ int main(int argc, char** argv){//main
     pThreshInADC[iL] = static_cast<unsigned>(5*pNoiseInMips[iL]*pMipToADC+0.5);
   }
 
-  extractParameterFromStr<unsigned[nLayers]>(granulStr,granularity);
+  extractParameterFromStr<unsigned[(unsigned)nLayers]>(granulStr,granularity);
   extractParameterFromStr<double[nLayers]>(noiseStr,pNoiseInMips);
-  extractParameterFromStr<unsigned[nLayers]>(threshStr,pThreshInADC);
+  extractParameterFromStr<unsigned[(unsigned)nLayers]>(threshStr,pThreshInADC);
 
-  unsigned nbCells = 0;
+  //unsigned nbCells = 0;
 
   std::cout << " -- Granularities and noise are setup like this:" << std::endl;
   for (unsigned iL(0); iL<nLayers; ++iL){
@@ -162,16 +183,31 @@ int main(int argc, char** argv){//main
     std::cout << iL << " : " << granularity[iL] << ", " << pNoiseInMips[iL] << " mips, " << pThreshInADC[iL] << " adc - ";
     if (iL%5==4) std::cout << std::endl;
     
-    nbCells += N_CELLS_XY_MAX/(granularity[iL]*granularity[iL]);
+    //nbCells += N_CELLS_XY_MAX/(granularity[iL]*granularity[iL]);
   }
         
-  std::cout << " -- Total number of cells = " << nbCells << std::endl;
+  //std::cout << " -- Total number of cells = " << nbCells << std::endl;
 
   TRandom3 *lRndm = new TRandom3();
   lRndm->SetSeed(pSeed);
 
   std::cout << " -- Random3 seed = " << lRndm->GetSeed() << std::endl
 	    << " ----------------------------------------" << std::endl;
+
+  //initialise calibration class
+
+  HGCSSCalibration mycalib(inFilePath,concept);
+
+  std::cout << " -- nEcalLayers = " << nEcalLayers 
+	    << ", mip weights = " << mycalib.mipWeight(0) << " " << mycalib.mipWeight(1) << " " << mycalib.mipWeight(2)
+	    << ", GeV weights = " << mycalib.gevWeight(0) << " offset " << mycalib.gevOffset(0)
+	    << std::endl
+	    << " -- nHcalSiLayers  = " << nHcalSiLayers 
+	    << ", mip weights = " << mycalib.mipWeight(3) << " " << mycalib.mipWeight(4) << " " << mycalib.mipWeight(5) 
+	    << ", GeV weights = " << mycalib.gevWeight(1) << " " << mycalib.gevWeight(2) << " offsets: " << mycalib.gevOffset(1) << " " <<   mycalib.gevOffset(2)
+	    << std::endl
+	    << " -- conversions: HcalToEcalConv = " <<mycalib.HcalToEcalConv() << " BHcalToFHcalConv = " << mycalib.BHcalToFHcalConv() << std::endl
+	    << " -----------------------------------" << std::endl;
 
   /////////////////////////////////////////////////////////////
   //output
@@ -204,20 +240,27 @@ int main(int argc, char** argv){//main
   HGCSSSimHitVec lSimHits;
   HGCSSRecoHitVec lDigiHits;
   HGCSSRecoHitVec lRecoHits;
+  HGCSSRecoJetVec lCaloJets;
   unsigned maxSimHits = 0;
+  unsigned maxRecHits = 0;
+  unsigned maxRecJets = 0;
   unsigned lEvent = 0;
+  float lVolX0 = 0;
+  float lVolLambda = 0;
   outputTree->Branch("event",&lEvent);
+  outputTree->Branch("volX0",&lVolX0);
+  outputTree->Branch("volLambda",&lVolLambda);
   if (pSaveSims) outputTree->Branch("HGCSSSimHitVec","std::vector<HGCSSSimHit>",&lSimHits);
   if (pSaveDigis) outputTree->Branch("HGCSSDigiHitVec","std::vector<HGCSSRecoHit>",&lDigiHits);
   outputTree->Branch("HGCSSRecoHitVec","std::vector<HGCSSRecoHit>",&lRecoHits);
-
+  if (makeJets) outputTree->Branch("HGCSSRecoJetVec","std::vector<HGCSSRecoJet>",&lCaloJets);
   TH1F * p_noise = new TH1F("noiseCheck",";noise (MIPs)",100,-2,2);
 
   /////////////////////////////////////////////////////////////
   //input
   /////////////////////////////////////////////////////////////
 
-  std::string inputStr = inFilePath + "/PFcal.root";
+  std::string inputStr = inFilePath ;
   TFile *inputFile = TFile::Open(inputStr.c_str());
   
   if (!inputFile) {
@@ -236,12 +279,16 @@ int main(int argc, char** argv){//main
   //input tree
   /////////////////////////////////////////////////////////////
 
-  float event;
-  float volNb;
+  float event=0;
+  float volNb=0;
+  float volX0=0;
+  //float volLambda = 0;
   std::vector<HGCSSSimHit> * hitvec = 0;
 
   inputTree->SetBranchAddress("event",&event);
   inputTree->SetBranchAddress("volNb",&volNb);
+  inputTree->SetBranchAddress("volX0trans",&volX0);
+  //inputTree->SetBranchAddress("volLambda",&volLambda);
   inputTree->SetBranchAddress("HGCSSSimHitVec",&hitvec);
     
   /////////////////////////////////////////////////////////////
@@ -249,20 +296,23 @@ int main(int argc, char** argv){//main
   /////////////////////////////////////////////////////////////
 
 
-  const unsigned nEvts = (pNevts > inputTree->GetEntries()/30. || pNevts==0) ? static_cast<unsigned>(inputTree->GetEntries()/30.) : pNevts;
+  const unsigned nEvts = (pNevts > inputTree->GetEntries()/nLayers || pNevts==0) ? static_cast<unsigned>(inputTree->GetEntries()/nLayers) : pNevts;
 
-  std::cout << "- Processing = " << nEvts  << " events out of " << inputTree->GetEntries()/30. << std::endl;
+  std::cout << "- Processing = " << nEvts  << " events out of " << inputTree->GetEntries()/nLayers << std::endl;
 
   //create map used to assemble hits per event.
   std::map<unsigned,HGCSSRecoHit> lHitMap;
   std::pair<std::map<unsigned,HGCSSRecoHit>::iterator,bool> isInserted;
+  std::vector<PseudoJet> lParticles;
 
-  for (unsigned ientry(0); ientry<nEvts*30; ++ientry){//loop on entries
+  for (unsigned ientry(0); ientry<nEvts*nLayers; ++ientry){//loop on entries
 
-    unsigned ievt =  ientry/30;
+    unsigned ievt =  ientry/nLayers;
 
     inputTree->GetEntry(ientry);
     lEvent = event;
+    lVolX0 = volX0;
+    //lVolLambda = volLambda;
     unsigned layer = volNb;
     
     if (debug>1) {
@@ -274,7 +324,9 @@ int main(int argc, char** argv){//main
 
     for (unsigned iH(0); iH<(*hitvec).size(); ++iH){//loop on hits
       HGCSSSimHit lHit = (*hitvec)[iH];
-      lSimHits.push_back(lHit);
+
+      //do not save hits with 0 energy...
+      if (lHit.energy()>0) lSimHits.push_back(lHit);
 
       //C-AMM: TO DO ?
       //discard simhits not in the right time window
@@ -297,8 +349,8 @@ int main(int argc, char** argv){//main
     }
 
     //create digihits, everywhere to have also pure noise.
-    for (unsigned iX(0); iX<SIZE_X/(CELL_SIZE_X*granularity[layer])/2;++iX){
-      for (unsigned iY(0); iY<SIZE_Y/(CELL_SIZE_Y*granularity[layer])/2;++iY){
+    for (unsigned iX(0); iX<xWidth/(CELL_SIZE_X*granularity[layer])/2;++iX){
+      for (unsigned iY(0); iY<xWidth/(CELL_SIZE_Y*granularity[layer])/2;++iY){
 	HGCSSRecoHit lNoiseHit;
 	lNoiseHit.layer(layer);
 	lNoiseHit.encodeCellId(true,true,iX,iY,granularity[layer]);
@@ -322,7 +374,7 @@ int main(int argc, char** argv){//main
 	HGCSSRecoHit & lHit = lIter->second;
 	//convert to MIP and add noise.
 	double lNoise = lRndm->Gaus(0,pNoiseInMips[layer]);
-	simToDigi(lHit,lNoise,pMipEnergy,pMipToADC);
+	simToDigi(lHit,lNoise,mycalib.MeVToMip(layer),pMipToADC);
 	lDigiHits.push_back(lHit);
 	p_noise->Fill(lNoise);
       }
@@ -331,14 +383,67 @@ int main(int argc, char** argv){//main
       for (unsigned iH(0); iH<lDigiHits.size(); ++iH){
 	//copy digihit to modify it
 	HGCSSRecoHit lHit = lDigiHits[iH];
-	if (digiToReco(lHit,pMipToADC,pThreshInADC[layer]))
+	if (digiToReco(lHit,pMipToADC,pThreshInADC[layer])){
 	  lRecoHits.push_back(lHit);
+	  //TOFIX: inverse y and z to have eta=0...
+	  if (lHit.get_z()!=0) lParticles.push_back( PseudoJet(lHit.px(),lHit.pz(),lHit.py(),lHit.E()));
+	  //ROOT::Math::XYZTVector lcheck(lHit.get_x(),lHit.get_y(),lHit.get_z(),0);
+	  // std::cout << lHit.get_x() << " " 
+	  // 	    << lHit.get_y() << " " 
+	  // 	    << lHit.get_z() << " " 
+	  // 	    << lHit.px() << " " 
+	  // 	    << lHit.py() << " "
+	  // 	    << lHit.pz() << " "
+	  // 	    << lHit.E() << " " 
+	  // 	    << lHit.eta() << " ("
+	  //   //<< lcheck.eta() << ") "
+	  // 	    << lHit.phi() //<< "("
+	  //   //<< lcheck.phi() << ")"
+	  // 	    << std::endl;
+	}
       }
 
       if (debug) {
 	std::cout << " **DEBUG** sim-digi-reco hits = " << lSimHits.size() << "-" << lDigiHits.size() << "-" << lRecoHits.size() << std::endl;
       }
 
+
+      if (makeJets){//makeJets
+
+	// run the clustering, extract the jets
+	ClusterSequence cs(lParticles, jet_def);
+	std::vector<PseudoJet> jets = sorted_by_pt(cs.inclusive_jets());
+
+
+	// print the jets
+	std::cout <<   "-- evt " << ievt << ": found " << jets.size() << " Jets." << std::endl;
+	for (unsigned i = 0; i < jets.size(); i++) {
+	  const PseudoJet & lFastJet = jets[i];
+	  //TOFIX // inverted y and z...
+	  HGCSSRecoJet ljet(lFastJet.px(),
+			    lFastJet.pz(),
+			    lFastJet.py(),
+			    lFastJet.E());
+	  if (lFastJet.has_constituents()) ljet.nConstituents(lFastJet.constituents().size());
+	  if (lFastJet.has_area()){
+	    ljet.area(lFastJet.area());
+	    ljet.area_error(lFastJet.area_error());
+	  }
+
+	  lCaloJets.push_back(ljet);
+	  std::cout << " -------- jet " << i << ": "
+		    << lFastJet.E() << " " 
+		    << lFastJet.perp() << " " 
+		    << lFastJet.rap() << " " << lFastJet.phi() << " "
+		    << lFastJet.constituents().size() << std::endl;
+	  // std::vector<PseudoJet> constituents = lFastJet.constituents();
+	  // for (unsigned j = 0; j < constituents.size(); j++) {
+	  //   std::cout << "    constituent " << j << "'s pt: " << constituents[j].perp()
+	  // 	      << std::endl;
+	  // }
+	}
+
+      }//makeJets
       
       outputTree->Fill();
       //reserve necessary space and clear vectors.
@@ -346,11 +451,23 @@ int main(int argc, char** argv){//main
 	maxSimHits = 2*lSimHits.size();
 	std::cout << " -- INFO: event " << ievt << " maxSimHits updated to " << maxSimHits << std::endl;
       }
+      if (lRecoHits.size() > maxRecHits) {
+	maxRecHits = 2*lRecoHits.size();
+	std::cout << " -- INFO: event " << ievt << " maxRecHits updated to " << maxRecHits << std::endl;
+      }
+      if (lCaloJets.size() > maxRecJets) {
+	maxRecJets = 2*lCaloJets.size();
+	std::cout << " -- INFO: event " << ievt << " maxRecJets updated to " << maxRecJets << std::endl;
+      }
       lSimHits.clear();
       lDigiHits.clear();
       lRecoHits.clear();
+      lCaloJets.clear();
       lHitMap.clear();
+      lParticles.clear();
       lSimHits.reserve(maxSimHits);
+      lParticles.reserve(maxRecHits);
+      lCaloJets.reserve(maxRecJets);
     }
     
   }//loop on entries

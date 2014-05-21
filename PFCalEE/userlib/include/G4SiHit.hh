@@ -16,8 +16,11 @@ public:
   double hit_x;
   double hit_y;
   double hit_z;
+  int trackId;
+  int parentId;
 
 private:
+
 
 };
 

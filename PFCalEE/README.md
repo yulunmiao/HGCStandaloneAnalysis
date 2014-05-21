@@ -13,7 +13,7 @@ simple objects, the classes should be added to userlib. The dictionary
 for root to understand the classes also need to be remade. Use "make
 dictionary" before make, inside of userlib/. Follow instructions in
 https://twiki.cern.ch/twiki/bin/view/Sandbox/AnnemarieMagnanSandbox
-for what needs to be put in the homemade classes for root to
+for what needs to be put in the homemade classes and makefile for root to
 understand them (see also example in class userlib/include/HGCSSSimHit.hh).
 
 ## Setup the environment (SLC6)
@@ -26,6 +26,16 @@ mkdir userlib/obj
 make
 
 
-## Submit in parallel the runs submitRun.py
+## Submit in parallel the runs submitProd.py
+## use option -S to not submit automatically to batch queues
+## use option -g to do particleGun (by opposition to hepmc file, see example below)
+## in case of options conflicts, you can replace python submitProd.py by ./submitProd.py...
 
-for i in `seq 0 11`; do python submitRun.py -v ${i} -e /store/cmst3/group/hgcal/Geant4 -o ~/work/ntuples -g e-; done
+##example with particle gun:
+##edit submitProd.py to set the energy loops.
+## For loop is to generate several samples with same stat in parallel.
+for i in `seq 0 5`; do python submitProd.py -s 1nd -q 2nd -t V00-00-00 -g -r ${i} -v 3 -m 0 -e /store/cmst3/group/hgcal/Geant4 -o ~/work/ntuples -d e- -n 2500; done
+
+##example with hepmc file:
+##edit submitProd.py to set the energy loop to 0.
+./submitProd.py -S -q 2nd -t V00-00-00 -f /afs/cern.ch/work/a/amagnan/CMSSW_6_2_0_SLHC8/src/UserCode/Gen2HepMC/test/VBFH_sel.dat  -v 20 -m 2 -e /store/cmst3/group/hgcal/Geant4 -o ~/work/ntuples -d VBFH -n 1000
