@@ -102,7 +102,7 @@ void EventAction::EndOfEventAction(const G4Event* evt)
 	std::map<unsigned,HGCSSSimHit> lHitMap;
 	std::pair<std::map<unsigned,HGCSSSimHit>::iterator,bool> isInserted;
 
-	if (i>0) (*detector_)[i].trackParticleHistory(idx,(*detector_)[i-1].getSiHitVec(idx));
+	//if (i>0) (*detector_)[i].trackParticleHistory(idx,(*detector_)[i-1].getSiHitVec(idx));
 
 	for (unsigned iSiHit(0); iSiHit<(*detector_)[i].getSiHitVec(idx).size();++iSiHit){
 	  G4SiHit lSiHit = (*detector_)[i].getSiHitVec(idx)[iSiHit];
