@@ -84,7 +84,7 @@ void SteppingAction::UserSteppingAction(const G4Step* aStep)
   //record truth particles
   if (globalTime < timeLimit_ && 
       thePrePVname=="Wphys" && 
-      (thePostPVname=="Abs1phys" || thePostPVname=="Si1phys")
+      (thePostPVname=="Abs1phys" || thePostPVname=="Si1_0phys")
       ){
     //if (pdgId == 2112) std::cout << "-- found neutron: " << thePrePVname << " " << thePostPVname << std::endl;
     //const G4ThreeVector & preposition = thePreStepPoint->GetPosition();
