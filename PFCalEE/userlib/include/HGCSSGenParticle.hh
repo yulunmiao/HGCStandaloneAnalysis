@@ -93,8 +93,7 @@ public:
 
   inline bool isIncoming() const{
     //do not want back-scattered particles, 
-    //or neutrons re-entering the front-face a long time after...
-    return ((pdgid_ != 0 || mass_ > 0) && pz_ >= 0 && time_ < 10);
+    return ((pdgid_ != 0 || mass_ > 0) && pz_ >= 0);
   };
 
   void Print(std::ostream & aOs) const ;

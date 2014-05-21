@@ -14,7 +14,7 @@ SteppingAction::SteppingAction()
   eventAction_ = (EventAction*)G4RunManager::GetRunManager()->GetUserEventAction();               
   eventAction_->Add(  ((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->getStructure() );
   saturationEngine = new G4EmSaturation();
-  timeLimit_ = 10;
+  timeLimit_ = 100;//ns
 }
 
 //
@@ -82,11 +82,13 @@ void SteppingAction::UserSteppingAction(const G4Step* aStep)
 
   HGCSSGenParticle genPart;
   //record truth particles
+  //time cut: we don't want neutrons re-entering the front-face a long time after...
   if (globalTime < timeLimit_ && 
-      thePrePVname=="Wphys" && 
-      (thePostPVname=="Abs1phys" || thePostPVname=="Si1_0phys")
+      thePrePVname=="Wphys"
+      && (thePostPVname=="Abs1phys" || thePostPVname=="Si1_0phys")
       ){
-    //if (pdgId == 2112) std::cout << "-- found neutron: " << thePrePVname << " " << thePostPVname << std::endl;
+    //if (pdgId == 2112) 
+    //std::cout << "-- found incoming: " << thePrePVname << " " << thePostPVname << " " << globalTime << std::endl;
     //const G4ThreeVector & preposition = thePreStepPoint->GetPosition();
     const G4ThreeVector & postposition = thePostStepPoint->GetPosition();
     //std::cout << "pre " << preposition[0] << " " << preposition[1] << " " << postposition[2]
