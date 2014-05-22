@@ -56,6 +56,10 @@ public:
     return layer_%3;
   };
 
+  inline void layer(const unsigned & layer) {
+    layer_ = layer;
+  };
+
   inline void setLayer(const unsigned & layer, const unsigned & silayer){
     layer_ = 3*layer+silayer;
   };

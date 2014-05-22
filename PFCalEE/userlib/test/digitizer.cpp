@@ -329,10 +329,11 @@ int main(int argc, char** argv){//main
       double posx = lHit.get_x(cellSize);
       double posy = lHit.get_y(cellSize);
       double posz = lHit.get_z();
+      double realtime = mycalib.correctTime(lHit.time(),posx,posy,posz);
       if (energy>0 && 
 	  lHit.silayer() < geomConv.getNumberOfSiLayers(type)//,lHit.eta()) 
 	  )
-	geomConv.fill(type,subdetLayer,energy,lHit.time(),posx,posy,posz);
+	geomConv.fill(type,subdetLayer,energy,realtime,posx,posy,posz);
 
     }//loop on input simhits
 

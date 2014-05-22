@@ -30,12 +30,12 @@ public:
     mipToADC_[DetectorEnum::FHCAL] = 50;
     mipToADC_[DetectorEnum::BHCAL1] = 50;
     mipToADC_[DetectorEnum::BHCAL2] = 50;
-    timeCut_[DetectorEnum::FECAL] = 200;//ns
-    timeCut_[DetectorEnum::MECAL] = 200;//ns
-    timeCut_[DetectorEnum::BECAL] = 200;//ns
-    timeCut_[DetectorEnum::FHCAL] = 200;//ns
-    timeCut_[DetectorEnum::BHCAL1] = 200;//ns
-    timeCut_[DetectorEnum::BHCAL2] = 200;//ns
+    timeCut_[DetectorEnum::FECAL] = 20;//ns
+    timeCut_[DetectorEnum::MECAL] = 20;//ns
+    timeCut_[DetectorEnum::BECAL] = 20;//ns
+    timeCut_[DetectorEnum::FHCAL] = 20;//ns
+    timeCut_[DetectorEnum::BHCAL1] = 20;//ns
+    timeCut_[DetectorEnum::BHCAL2] = 20;//ns
   };
 
   ~HGCSSDigitisation(){};

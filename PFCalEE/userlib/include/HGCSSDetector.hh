@@ -63,6 +63,11 @@ public:
   const HGCSSSubDetector & subDetector(const unsigned aLayer);
 
   unsigned getSection(const unsigned aLayer) const;
+  inline unsigned getSection(const DetectorEnum adet){
+    if (enumMap_.find(adet) != enumMap_.end())
+      return enumMap_[adet];
+    return nSections();
+  };
 
   void addSubdetector(const HGCSSSubDetector & adet);
   
