@@ -350,16 +350,17 @@ int main(int argc, char** argv){//main
       TH2D *histE = geomConv.get2DHist(iL,"E");
       TH2D *histTime = geomConv.get2DHist(iL,"Time");
       TH2D *histZ = geomConv.get2DHist(iL,"Z");
-      DetectorEnum adet = myDetector.subDetector(iL).type;
-      bool isScint = myDetector.subDetector(iL).isScint;
-      bool isSi = myDetector.subDetector(iL).isSi;
+      const HGCSSSubDetector & subdet = myDetector.subDetector(iL);
+      DetectorEnum adet = subdet.type;
+      bool isScint = subdet.isScint;
+      bool isSi = subdet.isSi;
       nTotBins += histE->GetNbinsX()*histE->GetNbinsY();
       if (pSaveDigis) lDigiHits.reserve(nTotBins);
 
       double meanZpos = geomConv.getAverageZ(iL);
 
       if (debug>1){
-	std::cout << " -- Layer " << iL << " " << myDetector.subDetector(iL).name << " z=" << meanZpos
+	std::cout << " -- Layer " << iL << " " << subdet.name << " z=" << meanZpos
 		  << " totbins = " << nTotBins << " histE entries = " << histE->GetEntries() << std::endl;
       }
 
@@ -406,7 +407,7 @@ int main(int argc, char** argv){//main
 	  if ((!pSaveDigis && aboveThresh) ||
 	      pSaveDigis)
 	    {//save hits
-
+	      //double calibE = myDigitiser.MIPtoGeV(subdet,digiE);
 	      HGCSSRecoHit lRecHit;
 	      lRecHit.layer(iL);
 	      lRecHit.energy(digiE);

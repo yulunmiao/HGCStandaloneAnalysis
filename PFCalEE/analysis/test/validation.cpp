@@ -121,6 +121,7 @@ int main(int argc, char** argv){//main
 
   //initialise calibration class
   HGCSSCalibration mycalib(inFilePath);
+  HGCSSDigitisation myDigitiser;
 
   const unsigned nLayers = myDetector.nLayers();
   const unsigned nSections = myDetector.nSections();
@@ -165,8 +166,16 @@ int main(int argc, char** argv){//main
 
   TH1F *p_nSimHits = new TH1F("p_nSimHits","n(SimHits)",
 			      1000,0,5000000);
+  p_nSimHits->StatOverflows();
+  
   TH1F *p_nRecHits = new TH1F("p_nRecHits","n(RecHits)",
 			      1000,0,50000);
+  p_nRecHits->StatOverflows();
+
+  TH1F *p_EsimTotal = new TH1F("p_EsimTotal",";Esim (MIPs)",5000,0,10000);
+  TH1F *p_ErecoTotal = new TH1F("p_ErecoTotal",";Ereco (GeV)",1000,0,200);
+  p_EsimTotal->StatOverflows();
+  p_ErecoTotal->StatOverflows();
 
   TH2F *p_xy[nLayers];
   TH2F *p_recoxy[nLayers];
@@ -200,10 +209,12 @@ int main(int argc, char** argv){//main
     lName << "p_Esim_" << myDetector.detName(iD);
     if (myDetector.detType(iD)==DetectorEnum::BHCAL1 || myDetector.detType(iD)==DetectorEnum::BHCAL2) p_Esim[iD] = new TH1F(lName.str().c_str(),";Esim (MIPs)",2000,0,20000);
     else p_Esim[iD] = new TH1F(lName.str().c_str(),";Esim (MIPs)",2000,0,200000);
+    p_Esim[iD]->StatOverflows();
     lName.str("");
     lName << "p_Ereco_" << myDetector.detName(iD);
     if (myDetector.detType(iD)==DetectorEnum::BHCAL1 || myDetector.detType(iD)==DetectorEnum::BHCAL2)  p_Ereco[iD] = new TH1F(lName.str().c_str(),";Ereco (MIPs)",2000,0,20000);
     else p_Ereco[iD] = new TH1F(lName.str().c_str(),";Ereco (MIPs)",2000,0,200000);
+    p_Ereco[iD]->StatOverflows();
   }
 
 
@@ -374,24 +385,30 @@ int main(int argc, char** argv){//main
     }//loop on layers
 
     double Eecal = 0;
-    if (myDetector.getSection(DetectorEnum::FECAL)<nSections) Eecal += Ereco[myDetector.getSection(DetectorEnum::FECAL)];
-    if (myDetector.getSection(DetectorEnum::MECAL)<nSections) Eecal += Ereco[myDetector.getSection(DetectorEnum::MECAL)];
-    if (myDetector.getSection(DetectorEnum::BECAL)<nSections) Eecal += Ereco[myDetector.getSection(DetectorEnum::BECAL)];
+    if (myDetector.section(DetectorEnum::FECAL)<nSections) Eecal += myDigitiser.MIPtoGeV(myDetector.subDetector(DetectorEnum::FECAL),Ereco[myDetector.section(DetectorEnum::FECAL)]);
+    if (myDetector.section(DetectorEnum::MECAL)<nSections) Eecal += myDigitiser.MIPtoGeV(myDetector.subDetector(DetectorEnum::MECAL),Ereco[myDetector.section(DetectorEnum::MECAL)]);
+    if (myDetector.section(DetectorEnum::BECAL)<nSections) Eecal += myDigitiser.MIPtoGeV(myDetector.subDetector(DetectorEnum::BECAL),Ereco[myDetector.section(DetectorEnum::BECAL)]);
     double Efhcal = 0;
-    if (myDetector.getSection(DetectorEnum::FHCAL)<nSections) Efhcal += Ereco[myDetector.getSection(DetectorEnum::FHCAL)];
+    if (myDetector.section(DetectorEnum::FHCAL)<nSections) Efhcal += myDigitiser.MIPtoGeV(myDetector.subDetector(DetectorEnum::FHCAL),Ereco[myDetector.section(DetectorEnum::FHCAL)]);
     double Ebhcal = 0;
-    if (myDetector.getSection(DetectorEnum::BHCAL1)<nSections) Ebhcal += Ereco[myDetector.getSection(DetectorEnum::BHCAL1)];
-    if (myDetector.getSection(DetectorEnum::BHCAL2)<nSections) Ebhcal += Ereco[myDetector.getSection(DetectorEnum::BHCAL2)];
+    if (myDetector.section(DetectorEnum::BHCAL1)<nSections) Ebhcal += myDigitiser.MIPtoGeV(myDetector.subDetector(DetectorEnum::BHCAL1),Ereco[myDetector.section(DetectorEnum::BHCAL1)]);
+    if (myDetector.section(DetectorEnum::BHCAL2)<nSections) Ebhcal += myDigitiser.MIPtoGeV(myDetector.subDetector(DetectorEnum::BHCAL2),Ereco[myDetector.section(DetectorEnum::BHCAL2)]);
 
     p_HCALvsECAL->Fill(Eecal,Efhcal+Ebhcal);
     p_BHCALvsFHCAL->Fill(Efhcal,Ebhcal);
 
+    double etotmips = 0;
     for (unsigned iD(0); iD<nSections; ++iD){
       p_Esim[iD]->Fill(Esim[iD]);
       p_Ereco[iD]->Fill(Ereco[iD]);
+      etotmips += Esim[iD]*myDetector.subDetector(iD).absWeight;
       Esim[iD]=0;
       Ereco[iD]=0;
     }
+
+    p_EsimTotal->Fill(etotmips);
+    p_ErecoTotal->Fill(Eecal+Efhcal+Ebhcal);
+
   }//loop on entries
   
   //write
@@ -415,7 +432,6 @@ int main(int argc, char** argv){//main
 	      <<  p_Esim[iD]->GetEntries() 
 	      << " mean " << p_Esim[iD]->GetMean() 
 	      << " rms " << p_Esim[iD]->GetRMS() 
-	      << " rms/mean " << p_Esim[iD]->GetRMS()/p_Esim[iD]->GetMean()
 	      << " underflows " << p_Esim[iD]->GetBinContent(0)
 	      << " overflows " << p_Esim[iD]->GetBinContent(p_Esim[iD]->GetNbinsX()+1)
 	      << std::endl;
@@ -424,11 +440,29 @@ int main(int argc, char** argv){//main
 	      <<  p_Ereco[iD]->GetEntries() 
 	      << " mean " << p_Ereco[iD]->GetMean() 
 	      << " rms " << p_Ereco[iD]->GetRMS() 
-	      << " rms/mean " << p_Ereco[iD]->GetRMS()/p_Ereco[iD]->GetMean()
 	      << " underflows " << p_Ereco[iD]->GetBinContent(0)
 	      << " overflows " << p_Ereco[iD]->GetBinContent(p_Ereco[iD]->GetNbinsX()+1)
 	      << std::endl;
   }
+    std::cout << " -- Total Esim in MIPS: "
+	      <<  p_EsimTotal->GetEntries() 
+	      << " mean " << p_EsimTotal->GetMean() 
+	      << " rms " << p_EsimTotal->GetRMS() 
+	      << " rms/mean " << p_EsimTotal->GetRMS()/p_EsimTotal->GetMean()
+	      << " underflows " << p_EsimTotal->GetBinContent(0)
+	      << " overflows " << p_EsimTotal->GetBinContent(p_EsimTotal->GetNbinsX()+1)
+	      << std::endl;
+
+    std::cout << " -- Total Ereco in GeV: "
+	      <<  p_ErecoTotal->GetEntries() 
+	      << " mean " << p_ErecoTotal->GetMean() 
+	      << " rms " << p_ErecoTotal->GetRMS() 
+	      << " rms/mean " << p_ErecoTotal->GetRMS()/p_ErecoTotal->GetMean()
+	      << " underflows " << p_ErecoTotal->GetBinContent(0)
+	      << " overflows " << p_ErecoTotal->GetBinContent(p_ErecoTotal->GetNbinsX()+1)
+	      << std::endl;
+
+
   //p_HCALvsECAL->Write();
   //p_BHCALvsFHCAL->Write();
   //p_nSimHits->Write();

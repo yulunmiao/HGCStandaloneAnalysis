@@ -63,7 +63,7 @@ public:
   const HGCSSSubDetector & subDetector(const unsigned aLayer);
 
   unsigned getSection(const unsigned aLayer) const;
-  inline unsigned getSection(const DetectorEnum adet){
+  inline unsigned section(const DetectorEnum adet){
     if (enumMap_.find(adet) != enumMap_.end())
       return enumMap_[adet];
     return nSections();
@@ -82,6 +82,9 @@ public:
   };
 
   const HGCSSSubDetector & subDetector(DetectorEnum adet);
+  inline const HGCSSSubDetector & subDetector(const unsigned aSection) const{
+    return subdets_[aSection];
+  };
 
   inline unsigned nLayers() const{
     return nLayers_;
