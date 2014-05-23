@@ -21,10 +21,19 @@ understand them (see also example in class userlib/include/HGCSSSimHit.hh).
 source g4env.sh
 
 ## Compile
-mkdir userlib/lib
-mkdir userlib/obj
-make
+cd userlib
 
+mkdir lib
+
+mkdir obj
+
+mkdir bin
+
+make -j 5
+
+cd ../
+
+make -j 5
 
 ## Submit in parallel the runs submitProd.py
 ## use option -S to not submit automatically to batch queues
@@ -32,10 +41,9 @@ make
 ## in case of options conflicts, you can replace python submitProd.py by ./submitProd.py...
 
 ##example with particle gun:
-##edit submitProd.py to set the energy loops.
+##edit submitProd.py to set the energy loop to the values wanted.
 ## For loop is to generate several samples with same stat in parallel.
 for i in `seq 0 5`; do python submitProd.py -s 1nd -q 2nd -t V00-00-00 -g -r ${i} -v 3 -m 0 -e /store/cmst3/group/hgcal/Geant4 -o ~/work/ntuples -d e- -n 2500; done
 
 ##example with hepmc file:
-##edit submitProd.py to set the energy loop to 0.
 ./submitProd.py -S -q 2nd -t V00-00-00 -f /afs/cern.ch/work/a/amagnan/CMSSW_6_2_0_SLHC8/src/UserCode/Gen2HepMC/test/VBFH_sel.dat  -v 20 -m 2 -e /store/cmst3/group/hgcal/Geant4 -o ~/work/ntuples -d VBFH -n 1000
