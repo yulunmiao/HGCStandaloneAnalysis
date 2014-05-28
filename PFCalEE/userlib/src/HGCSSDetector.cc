@@ -3,6 +3,9 @@
 
 HGCSSDetector & theDetector(){
   static HGCSSDetector lDet;
+  static bool firstDet=true;
+  if (firstDet) std::cout << " -- Created detector static object." << std::endl;
+  firstDet=false;
   return lDet;
 }
 
@@ -139,6 +142,7 @@ void HGCSSDetector::finishInitialisation(){
       if (iL >= indices_[i] && iL < indices_[i+1]) section_[iL] = i;
     }
   }
+  printDetector(std::cout);
 }
 
 const HGCSSSubDetector & HGCSSDetector::subDetector(DetectorEnum adet){
@@ -158,3 +162,16 @@ void HGCSSDetector::reset() {
   section_.clear();
 }
 
+void HGCSSDetector::printDetector(std::ostream & aOs) const{
+  std::cout << " -------------------------- " << std::endl
+	    << " -- Detector information -- " << std::endl
+	    << " -------------------------- " << std::endl
+	    << " - nSections = " << nSections_ << std::endl
+	    << " - nLayers = " << nLayers_ << std::endl
+	    << " - detNames = " ;
+  for (unsigned i(0); i<nSections_;++i){
+    std::cout << " " << detName(i);
+  }
+  std::cout << std::endl;
+  std::cout << " -------------------------- " << std::endl;
+}

@@ -35,19 +35,19 @@ granularity='0-20:4,21-63:6'
 noise='0-63:0.12'
 threshold='0-63:25'
 
-if opt.version<20:
+if opt.version<20 :
     granularity='0-31:4'
     noise='0-31:0.12'
     threshold='0-31:25'
-if opt.version==21:
+elif (opt.version==21) :
     granularity='0-32:6'
     noise='0-32:0.12'
     threshold='0-32:25'
-else if opt.version==22:
+elif (opt.version==22) :
     granularity='0-8:6'
     noise='0-8:0.12'
     threshold='0-8:25'
-else if opt.version==23:
+elif (opt.version==23) :
     granularity='0-53:12'
     noise='0-53:0.12'
     threshold='0-53:25'
@@ -55,10 +55,8 @@ else if opt.version==23:
 for en in enlist :
 
     nevents=opt.nevts
-    if en>150: nevents=nevents/2
     
     myqueue=opt.lqueue
-    if en>0 and en<100 : myqueue=opt.squeue
     
     bval="BOFF"
     if opt.Bfield>0 : bval="BON" 
@@ -74,39 +72,21 @@ for en in enlist :
     os.system('mkdir -p %s'%outDir)
     
     #wrapper
-    scriptFile = open('%s/runJob.sh'%(outDir), 'w')
+    scriptFile = open('%s/runDigiJob.sh'%(outDir), 'w')
     scriptFile.write('#!/bin/bash\n')
-    scriptFile.write('source %s/g4env.sh\n'%(os.getcwd()))
+    scriptFile.write('source %s/../g4env.sh\n'%(os.getcwd()))
     #scriptFile.write('cd %s\n'%(outDir))
-    scriptFile.write('cp %s/g4steer.mac .\n'%(outDir))
-    scriptFile.write('PFCalEE g4steer.mac %d %d | tee g4.log\n'%(opt.version,opt.model))
     outTag='version%d_model%d_%s'%(opt.version,opt.model,bval)
     if en>0 : outTag='%s_e%d'%(outTag,en)
     if opt.alpha>0 : outTag='%s_alpha%3.3f'%(outTag,opt.alpha) 
     if (opt.run>=0) : outTag='%s_run%d'%(outTag,opt.run)
-    scriptFile.write('mv PFcal.root HGcal_%s.root\n'%(outTag))
     scriptFile.write('localdir=`pwd`\n')
-    scriptFile.write('%s/userlib/bin/digitizer 0 $localdir/HGcal_%s.root $localdir/ %s %s %s | tee %s\n'%(os.getcwd(),outTag,granularity,noise,threshold,outlog))
+    scriptFile.write('%s/bin/digitizer 0 root://eoscms//eos/cms%s/HGcal_%s.root $localdir/ %s %s %s | tee %s\n'%(os.getcwd(),eosDir,outTag,granularity,noise,threshold,outlog))
     scriptFile.write('echo "--Local directory is " $localdir >> g4.log\n')
     scriptFile.write('ls * >> g4.log\n')
     if len(opt.eos)>0:
         scriptFile.write('grep "alias eos=" /afs/cern.ch/project/eos/installation/cms/etc/setup.sh | sed "s/alias /export my/" > eosenv.sh\n')
         scriptFile.write('source eosenv.sh\n')
-        scriptFile.write('$myeos mkdir -p %s\n'%eosDir)
-        scriptFile.write('cmsStage -f HGcal_%s.root %s/HGcal_%s.root\n'%(outTag,eosDir,outTag))
-        scriptFile.write('if (( "$?" != "0" )); then\n')
-        scriptFile.write('echo " --- Problem with copy of file PFcal.root to EOS. Keeping locally." >> g4.log\n')
-        scriptFile.write('else\n')
-        scriptFile.write('eossize=`$myeos ls -l %s/HGcal_%s.root | awk \'{print $5}\'`\n'%(eosDir,outTag))
-        scriptFile.write('localsize=`ls -l HGcal_%s.root | awk \'{print $5}\'`\n'%(outTag))
-        scriptFile.write('if (( "$eossize" != "$localsize" )); then\n')
-        scriptFile.write('echo " --- Copy of sim file to eos failed. Localsize = $localsize, eossize = $eossize. Keeping locally..." >> g4.log\n')
-        scriptFile.write('else\n')
-        scriptFile.write('echo " --- Size check done: Localsize = $localsize, eossize = $eossize" >> g4.log\n')
-        scriptFile.write('echo " --- File PFcal.root successfully copied to EOS: %s/HGcal_%s.root" >> g4.log\n'%(eosDir,outTag))
-        scriptFile.write('rm HGcal_%s.root\n'%(outTag))
-        scriptFile.write('fi\n')
-        scriptFile.write('fi\n')
         scriptFile.write('cmsStage -f DigiPFcal.root %s/Digi_%s.root\n'%(eosDir,outTag))
         scriptFile.write('if (( "$?" != "0" )); then\n')
         scriptFile.write('echo " --- Problem with copy of file DigiPFcal.root to EOS. Keeping locally." >> g4.log\n')
@@ -125,30 +105,8 @@ for en in enlist :
     scriptFile.write('echo "All done"\n')
     scriptFile.close()
     
-    #write geant 4 macro
-    g4Macro = open('%s/g4steer.mac'%(outDir), 'w')
-    g4Macro.write('/control/verbose 0\n')
-    g4Macro.write('/control/saveHistory\n')
-    g4Macro.write('/run/verbose 0\n')
-    g4Macro.write('/event/verbose 0\n')
-    g4Macro.write('/tracking/verbose 0\n')
-    g4Macro.write('/N03/det/setField %1.1f T\n'%opt.Bfield)
-    g4Macro.write('/N03/det/setModel %d\n'%opt.model)
-    g4Macro.write('/random/setSeeds %d %d\n'%( random.uniform(0,100000), random.uniform(0,100000) ) )
-    if opt.dogun :
-        g4Macro.write('/generator/select particleGun\n')
-        g4Macro.write('/gun/particle %s\n'%(opt.datatype))    
-        g4Macro.write('/gun/energy %f GeV\n'%(en))
-        g4Macro.write('/gun/direction %f %f %f\n'%(0.,math.sin(opt.alpha),math.cos(opt.alpha)))
-    else :
-        g4Macro.write('/generator/select hepmcAscii\n')
-        g4Macro.write('/generator/hepmcAscii/open %s\n'%(opt.datafile))
-        g4Macro.write('/generator/hepmcAscii/verbose 0\n')
-    g4Macro.write('/run/beamOn %d\n'%(nevents))
-    g4Macro.close()
-    
     #submit
-    os.system('chmod u+rwx %s/runJob.sh'%outDir)
-    if opt.nosubmit : os.system('echo bsub -q %s %s/runJob.sh'%(myqueue,outDir)) 
-    else: os.system("bsub -q %s \'%s/runJob.sh\'"%(myqueue,outDir))
+    os.system('chmod u+rwx %s/runDigiJob.sh'%outDir)
+    if opt.nosubmit : os.system('echo bsub -q %s %s/runDigiJob.sh'%(myqueue,outDir)) 
+    else: os.system("bsub -q %s \'%s/runDigiJob.sh\'"%(myqueue,outDir))
 

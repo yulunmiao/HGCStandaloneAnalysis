@@ -109,6 +109,8 @@ public:
 
   void reset();
 
+  void printDetector(std::ostream & aOs) const ;
+
 private:
   HGCSSDetector(){};
 

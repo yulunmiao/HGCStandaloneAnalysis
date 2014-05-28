@@ -49,7 +49,14 @@ void extractParameterFromStr(std::string aStr,T & vec){
     unsigned beginIdx =  atoi(lLay[0].c_str());
     unsigned endIdx = lLay.size() == 1 ? beginIdx :  atoi(lLay[1].c_str());
     for (unsigned iL(beginIdx); iL<endIdx+1; ++iL){
-      std::istringstream(lPair[1])>>vec[iL];
+      if (iL < vec.size())
+	std::istringstream(lPair[1])>>vec[iL];
+      else {
+	std::cout << " -- WARNING! Input parameter has more layers: " << endIdx << " than detector : " 
+		  << vec.size()
+		  << ". Ignoring additional layer #" << iL << "... PLEASE CHECK SETTINGS ARE CORRECT FOR EXISTING LAYERS!!"
+		  << std::endl;
+      }
     }
   }//loop on elements
 }
@@ -91,7 +98,10 @@ int main(int argc, char** argv){//main
 	    << " -- Input parameters: " << std::endl
 	    << " -- Input file path: " << inFilePath << std::endl
 	    << " -- Output file path: " << outFilePath << std::endl
-	    << " -- Processing " << pNevts << " events." << std::endl
+	    << " -- Processing " ;
+  if (pNevts>0) std::cout << pNevts;
+  else std::cout << "all";
+  std::cout << " events." << std::endl
 	    << " -- Granularities: " << granulStr << std::endl
 	    << " -- noise: " << noiseStr << std::endl
 	    << " -- thresholds: " << threshStr << std::endl
@@ -200,7 +210,7 @@ int main(int argc, char** argv){//main
     myDigitiser.setNoise(iL,pNoiseInMips[iL]);
     //nbCells += N_CELLS_XY_MAX/(granularity[iL]*granularity[iL]);
   }
-        
+  std::cout << std::endl;     
   //std::cout << " -- Total number of cells = " << nbCells << std::endl;
 
   geomConv.setGranularity(granularity);
