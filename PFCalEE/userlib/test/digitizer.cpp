@@ -402,7 +402,7 @@ int main(int argc, char** argv){//main
 	  }
 	  bool aboveThresh = 
 	    (isSi && adc > pThreshInADC[iL]) ||
-	    (isScint && digiE > pThreshInADC[iL]*myDigitiser.adcToMIP(1,adet));
+	    (isScint && digiE > pThreshInADC[iL]*myDigitiser.adcToMIP(1,adet,false));
 	  //histE->SetBinContent(iX,iY,digiE);
 	  if ((!pSaveDigis && aboveThresh) ||
 	      pSaveDigis)

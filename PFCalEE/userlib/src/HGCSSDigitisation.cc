@@ -63,16 +63,17 @@ unsigned HGCSSDigitisation::adcConverter(double eMIP, DetectorEnum adet){
   return eADC;
 }
 
-double HGCSSDigitisation::adcToMIP(const unsigned adcCounts, DetectorEnum adet){
-  return adcCounts*1.0/mipToADC_[adet];
+double HGCSSDigitisation::adcToMIP(const unsigned adcCounts, DetectorEnum adet, const bool smear){
+  double lE = adcCounts*1.0/mipToADC_[adet];
+  if (!smear) return lE;
+  return rndm_.Gaus(lE,gainSmearing_[adet]*lE);
 }
 
 double HGCSSDigitisation::MIPtoGeV(const HGCSSSubDetector & adet, 
 				   const double & aMipE)
 {
-  DetectorEnum ltype = adet.type;
   double lE = aMipE*adet.absWeight*adet.gevWeight-adet.gevOffset;
-  return rndm_.Gaus(lE,gainSmearing_[ltype]*lE);
+  return lE;
 }
 
 double HGCSSDigitisation::sumBins(const std::vector<TH2D *> & aHistVec,

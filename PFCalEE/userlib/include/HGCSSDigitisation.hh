@@ -115,7 +115,7 @@ public:
   
   unsigned adcConverter(double eMIP, DetectorEnum adet);
 
-  double adcToMIP(const unsigned acdCounts, DetectorEnum adet);
+  double adcToMIP(const unsigned acdCounts, DetectorEnum adet, const bool smear=true);
 
   double MIPtoGeV(const HGCSSSubDetector & adet, 
 		  const double & aMipE);
