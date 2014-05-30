@@ -27,12 +27,13 @@
 
 int main(int argc, char** argv){//main  
 
-  if (argc < 5) {
+  if (argc < 6) {
     std::cout << " Usage: " 
 	      << argv[0] << " <nEvts to process (0=all)>"
 	      << " <path to input file>"
 	      << " <suffix to input file>"
-	      << " <full path to output file>" 
+	      << " <full path to output file>"
+	      << " <number of si layers to consider: 1,2 or 3>" 
 	      << " <optional: debug (default=0)>"
 	      << std::endl;
     return 1;
@@ -69,12 +70,22 @@ int main(int argc, char** argv){//main
   std::string inFilePath = filePath+fileName;
 
   std::string outPath = argv[4];
+  unsigned nSiLayers = 2;
+  nSiLayers = atoi(argv[5]);
+
   unsigned debug = 0;
-  if (argc >5) debug = atoi(argv[5]);
+  if (argc >6) debug = atoi(argv[6]);
+
+
+  std::string pSuffix = "";
+  if (nSiLayers == 1) pSuffix = "_100um";
+  else if (nSiLayers == 3) pSuffix = "_300um";
+
 
   std::cout << " -- Input parameters: " << std::endl
 	    << " -- Input file path: " << filePath << std::endl
 	    << " -- Output file path: " << outPath << std::endl
+	    << " -- Requiring " << nSiLayers << " si layers." << std::endl
 	    << " -- Processing ";
   if (pNevts == 0) std::cout << "all events." << std::endl;
   else std::cout << pNevts << " events." << std::endl;
@@ -172,8 +183,8 @@ int main(int argc, char** argv){//main
 			      1000,0,50000);
   p_nRecHits->StatOverflows();
 
-  TH1F *p_EsimTotal = new TH1F("p_EsimTotal",";Esim (MIPs)",5000,0,10000);
-  TH1F *p_ErecoTotal = new TH1F("p_ErecoTotal",";Ereco (GeV)",1000,0,200);
+  TH1F *p_EsimTotal = new TH1F("p_EsimTotal",";Esim (MIPs)",50000,0,500000);
+  TH1F *p_ErecoTotal = new TH1F("p_ErecoTotal",";Ereco (GeV)",60000,0,600);
   p_EsimTotal->StatOverflows();
   p_ErecoTotal->StatOverflows();
 
@@ -227,6 +238,8 @@ int main(int argc, char** argv){//main
     std::cout << " -- Error, input file " << input.str() << " cannot be opened. Exiting..." << std::endl;
     return 1;
   }
+  else std::cout << " -- input file " << simFile->GetName() << " successfully opened." << std::endl;
+  
   TTree *lSimTree = (TTree*)simFile->Get("HGCSSTree");
   if (!lSimTree){
     std::cout << " -- Error, tree HGCSSTree cannot be opened. Exiting..." << std::endl;
@@ -234,7 +247,7 @@ int main(int argc, char** argv){//main
   }
 
   input.str("");
-  input << filePath << "Digi_" << fileName;
+  input << filePath << "Digi" << pSuffix << "_" << fileName;
   
   TFile *recFile = TFile::Open(input.str().c_str());
 
@@ -242,6 +255,8 @@ int main(int argc, char** argv){//main
     std::cout << " -- Error, input file " << input.str() << " cannot be opened. Exiting..." << std::endl;
     return 1;
   }
+  else std::cout << " -- input file " << recFile->GetName() << " successfully opened." << std::endl;
+
   TTree *lRecTree = (TTree*)recFile->Get("RecoTree");
   if (!lRecTree){
     std::cout << " -- Error, tree RecoTree cannot be opened. Exiting..." << std::endl;
@@ -285,7 +300,7 @@ int main(int argc, char** argv){//main
 
   for (unsigned ievt(0); ievt<nEvts; ++ievt){//loop on entries
     if (debug) std::cout << "... Processing entry: " << ievt << std::endl;
-    else if (ievt%10 == 0) std::cout << "... Processing entry: " << ievt << std::endl;
+    else if (ievt%50 == 0) std::cout << "... Processing entry: " << ievt << std::endl;
     
     lSimTree->GetEntry(ievt);
     lRecTree->GetEntry(ievt);
@@ -302,6 +317,10 @@ int main(int argc, char** argv){//main
 
     for (unsigned iH(0); iH<(*simhitvec).size(); ++iH){//loop on hits
       HGCSSSimHit lHit = (*simhitvec)[iH];
+
+      //discard some si layers...
+      if (lHit.silayer() >= nSiLayers) continue; 
+
       unsigned layer = lHit.layer();
       unsigned sec =  myDetector.getSection(layer);
 

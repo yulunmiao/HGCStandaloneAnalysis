@@ -37,9 +37,9 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod) : version_(ver)
     case v_CALICE:
       {
 	G4cout << "[DetectorConstruction] starting v_CALICE (10x0.4+10x0.8+10x1.2)X_0 with Tungsten" << G4endl;
-	for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(0.4*3.504*mm,0.0*mm,0.525*mm,0.525*mm,0.525*mm,1.0*mm,2.5*mm) );
-	for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(0.8*3.504*mm,0.0*mm,0.525*mm,0.525*mm,0.525*mm,1.0*mm,2.5*mm) );
-	for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(1.2*3.504*mm,0.0*mm,0.525*mm,0.525*mm,0.525*mm,1.0*mm,2.5*mm) );
+	for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(0.4*3.504*mm,0.0*mm,0.525*mm,0.*mm,0.*mm,1.0*mm,2.5*mm) );
+	for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(0.8*3.504*mm,0.0*mm,0.525*mm,0.*mm,0.*mm,1.0*mm,2.5*mm) );
+	for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(1.2*3.504*mm,0.0*mm,0.525*mm,0.*mm,0.*mm,1.0*mm,2.5*mm) );
 	break;
       }
     case v_HGCALEE_Si80: case v_HGCALEE_Si120: case v_HGCALEE_Si200: case v_HGCALEE_Si500: case v_HGCALEE_gap1: case  v_HGCALEE_CALICE: case v_HGCALEE_inverted: case v_HGCALEE_concept: case v_HGCALEE_W: case v_HGCALEE_gap4: case v_HGCAL:

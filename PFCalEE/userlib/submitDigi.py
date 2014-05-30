@@ -29,16 +29,17 @@ parser.add_option('-S', '--no-submit'   ,    action="store_true",  dest='nosubmi
 
 enlist=[0]
 #if opt.dogun : enlist=[10,15,18,20,25,30,35,40,45,50,60,80,100,200,300,400,500]
-if opt.dogun : enlist=[10,20,30,40,50,100]
+#if opt.dogun : enlist=[10,20,30,40,50,100]
+if opt.dogun : enlist=[5,10,15,20,25,30,40,50,60,80,100,150,200,300,400,500]
 
 granularity='0-20:4,21-63:6'
 noise='0-63:0.12'
 threshold='0-63:25'
 
 if opt.version<20 :
-    granularity='0-31:4'
-    noise='0-31:0.12'
-    threshold='0-31:25'
+    granularity='0-20:4,21-30:6'
+    noise='0-30:0.12'
+    threshold='0-30:25'
 elif (opt.version==21) :
     granularity='0-32:6'
     noise='0-32:0.12'
@@ -51,6 +52,8 @@ elif (opt.version==23) :
     granularity='0-53:12'
     noise='0-53:0.12'
     threshold='0-53:25'
+
+suffix='_100um'
 
 for en in enlist :
 
@@ -67,12 +70,12 @@ for en in enlist :
     if opt.alpha>0 : outDir='%s/a_%3.3f/'%(outDir,opt.alpha) 
     if (opt.run>=0) : outDir='%s/run_%d/'%(outDir,opt.run)
 
-    outlog='%s/digitizer.log'%(outDir)
-
+    outlog='%s/digitizer%s.log'%(outDir,suffix)
+    g4log='digijob%s.log'%(suffix)
     os.system('mkdir -p %s'%outDir)
     
     #wrapper
-    scriptFile = open('%s/runDigiJob.sh'%(outDir), 'w')
+    scriptFile = open('%s/runDigiJob%s.sh'%(outDir,suffix), 'w')
     scriptFile.write('#!/bin/bash\n')
     scriptFile.write('source %s/../g4env.sh\n'%(os.getcwd()))
     #scriptFile.write('cd %s\n'%(outDir))
@@ -82,22 +85,22 @@ for en in enlist :
     if (opt.run>=0) : outTag='%s_run%d'%(outTag,opt.run)
     scriptFile.write('localdir=`pwd`\n')
     scriptFile.write('%s/bin/digitizer 0 root://eoscms//eos/cms%s/HGcal_%s.root $localdir/ %s %s %s | tee %s\n'%(os.getcwd(),eosDir,outTag,granularity,noise,threshold,outlog))
-    scriptFile.write('echo "--Local directory is " $localdir >> g4.log\n')
-    scriptFile.write('ls * >> g4.log\n')
+    scriptFile.write('echo "--Local directory is " $localdir >> %s\n'%(g4log))
+    scriptFile.write('ls * >> %s\n'%(g4log))
     if len(opt.eos)>0:
         scriptFile.write('grep "alias eos=" /afs/cern.ch/project/eos/installation/cms/etc/setup.sh | sed "s/alias /export my/" > eosenv.sh\n')
         scriptFile.write('source eosenv.sh\n')
-        scriptFile.write('cmsStage -f DigiPFcal.root %s/Digi_%s.root\n'%(eosDir,outTag))
+        scriptFile.write('cmsStage -f DigiPFcal.root %s/Digi%s_%s.root\n'%(eosDir,suffix,outTag))
         scriptFile.write('if (( "$?" != "0" )); then\n')
-        scriptFile.write('echo " --- Problem with copy of file DigiPFcal.root to EOS. Keeping locally." >> g4.log\n')
+        scriptFile.write('echo " --- Problem with copy of file DigiPFcal.root to EOS. Keeping locally." >> %s\n'%(g4log))
         scriptFile.write('else\n')
-        scriptFile.write('eossize=`$myeos ls -l %s/Digi_%s.root | awk \'{print $5}\'`\n'%(eosDir,outTag))
+        scriptFile.write('eossize=`$myeos ls -l %s/Digi%s_%s.root | awk \'{print $5}\'`\n'%(eosDir,suffix,outTag))
         scriptFile.write('localsize=`ls -l DigiPFcal.root | awk \'{print $5}\'`\n')
         scriptFile.write('if (( "$eossize" != "$localsize" )); then\n')
-        scriptFile.write('echo " --- Copy of digi file to eos failed. Localsize = $localsize, eossize = $eossize. Keeping locally..." >> g4.log\n')
+        scriptFile.write('echo " --- Copy of digi file to eos failed. Localsize = $localsize, eossize = $eossize. Keeping locally..." >> %s\n'%(g4log))
         scriptFile.write('else\n')
-        scriptFile.write('echo " --- Size check done: Localsize = $localsize, eossize = $eossize" >> g4.log\n')
-        scriptFile.write('echo " --- File DigiPFcal.root successfully copied to EOS: %s/Digi_%s.root" >> g4.log\n'%(eosDir,outTag))
+        scriptFile.write('echo " --- Size check done: Localsize = $localsize, eossize = $eossize" >> %s\n'%(g4log))
+        scriptFile.write('echo " --- File DigiPFcal.root successfully copied to EOS: %s/Digi%s_%s.root" >> %s\n'%(eosDir,suffix,outTag,g4log))
         scriptFile.write('rm DigiPFcal.root\n')
         scriptFile.write('fi\n')
         scriptFile.write('fi\n')
@@ -106,7 +109,7 @@ for en in enlist :
     scriptFile.close()
     
     #submit
-    os.system('chmod u+rwx %s/runDigiJob.sh'%outDir)
-    if opt.nosubmit : os.system('echo bsub -q %s %s/runDigiJob.sh'%(myqueue,outDir)) 
-    else: os.system("bsub -q %s \'%s/runDigiJob.sh\'"%(myqueue,outDir))
+    os.system('chmod u+rwx %s/runDigiJob%s.sh'%(outDir,suffix))
+    if opt.nosubmit : os.system('echo bsub -q %s %s/runDigiJob%s.sh'%(myqueue,outDir,suffix)) 
+    else: os.system("bsub -q %s \'%s/runDigiJob%s.sh\'"%(myqueue,outDir,suffix))
 

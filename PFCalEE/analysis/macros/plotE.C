@@ -74,24 +74,24 @@ int plotE(){//main
     "e-/"
   };
 
-  TString pSuffix = "";
+  TString pSuffix = "_run0_200um";
 
-  const bool addNoiseTerm = true;
+  const bool addNoiseTerm = false;
 
   const unsigned nV = 1;
-  TString version[nV] = {"23"};//,"0"};
+  TString version[nV] = {"8"};//,"0"};
   
-  const unsigned nLayers = 54;//9;//33; //54;
+  const unsigned nLayers = 31;//9;//33; //54;
 
-  const bool doFrac = true;
+  const bool doFrac = false;
   const bool doShower = false;
 
   TString pDetector = "Total";//"_FHCAL";
 
   bool doMIPconv = false;
 
-  double MIPtoGeV = 39.88;//0.914;//41.69;//43.97;//0.92;// 41.98;
-  double offset = -0.9;//-1.04;//-4.3;//-38;//-1.06;
+  double MIPtoGeV = 183.;//0.914;//41.69;//43.97;//0.92;// 41.98;
+  double offset = 318;//-1.04;//-4.3;//-38;//-1.06;
   
   char unitStr[10] = "MIPs";
 
@@ -108,7 +108,7 @@ int plotE(){//main
   bool isPU = false;
   
   
-  unsigned genEn[]={10,20,30,40,50,100};
+  unsigned genEn[]={10,15,20,25,30,40,50,60,80,150,200,300,500};
   //60,80};//,100,200,300,
   //500};//,1000,2000};
   //unsigned genEn[]={10,20,30,40,60,80};
@@ -118,8 +118,8 @@ int plotE(){//main
   //unsigned genEn[]={10,40};
   const unsigned nGenEn=sizeof(genEn)/sizeof(unsigned);
   unsigned rebin[20] = {4,4,4,6,6,
-			6,6,6,6,6,
-			6,6,6,6,6,
+			6,6,8,8,20,
+			20,100,100,100,100,
 			6,6,6,6,6};
   //unsigned rebin[6] = {12,10,6,6,6,6};
 
@@ -131,7 +131,8 @@ int plotE(){//main
     mycL = new TCanvas("mycL","mycL",1500,1000);
   }
   TCanvas *mycE = new TCanvas("mycE","mycE",1500,1000);
-  TCanvas *mycPU = new TCanvas("mycPU","mycPU",1500,1000);
+  TCanvas *mycPU = 0;
+  if (isPU) mycPU = new TCanvas("mycPU","mycPU",1500,1000);
 
   if (nGenEn>12)
     mycE->Divide(5,3);
@@ -197,7 +198,7 @@ int plotE(){//main
 	  TFile *inputFile = 0;
 	  std::ostringstream linputStr;
 	  if (doShower) linputStr << plotDir << "CalibHcalHistos_" << pSuffix << ".root";
-	  else linputStr << plotDir << "validation_e" << genEn[iE] << ".root";
+	  else linputStr << plotDir << "validation_e" << genEn[iE] << pSuffix << ".root";
 	  inputFile = TFile::Open(linputStr.str().c_str());
 	  if (!inputFile) {
 	    std::cout << " -- Error, input file " << linputStr.str() << " cannot be opened. Exiting..." << std::endl;
@@ -557,8 +558,8 @@ int plotE(){//main
 		gPad->SetGridy(1);
 		TGraphErrors * grDelta = deltaFit;
 		grDelta->SetTitle("");
-		grDelta->SetMinimum(-0.01);
-		grDelta->SetMaximum(0.01);
+		grDelta->SetMinimum(-0.1);
+		grDelta->SetMaximum(0.1);
 		grDelta->GetXaxis()->SetLabelSize(0.15);
 		grDelta->GetXaxis()->SetTitleSize(0.15);
 		grDelta->GetYaxis()->SetLabelSize(0.12);
