@@ -42,7 +42,7 @@ bool ShowerProfile::buildShowerProfile(Float_t eElec, TString version, TNtuple *
   TF1 *showerFunc=0;
    
   //prepare to run over the ntuple with the information
-  TChain *CaloStack=new TChain("HGCSSTree");
+  TChain *HGCSSTree=new TChain("HGCSSTree");
   for(int irun=0; irun<4; irun++)
     {
       std::ostringstream indirpath;
@@ -51,21 +51,19 @@ bool ShowerProfile::buildShowerProfile(Float_t eElec, TString version, TNtuple *
       indirpath << "root://eoscms//eos/cms/store/user/amagnan/HGCalEEGeant4/gitV00-00-02/e-/HGcal_" << version << "_model3_BOFF_e" << (Int_t) eElec << "_run"<< irun << ".root";
       TString inDir(indirpath.str().c_str()); 
       cout << "Adding " << inDir << " for analysis" << endl;
-      CaloStack->Add(inDir);
+      HGCSSTree->Add(inDir);
     }
-  if (!CaloStack && CaloStack->GetEntries()==0) {
+  if (!HGCSSTree && HGCSSTree->GetEntries()==0) {
     cout << "TTree is null or has no entries for analysis..." << endl;
     return false;
   }
 
-  UInt_t curEvent(0);
-  Double_t cellSize(0);
   std::vector<HGCSSSimHit> *hitvec = 0;
   std::vector<HGCSSSamplingSection> *samplingvec = 0;
-  CaloStack->SetBranchAddress("event_",&curEvent);
-  CaloStack->SetBranchAddress("cellSize_",&cellSize);
-  CaloStack->SetBranchAddress("HGCSSSamplingSectionVec",&samplingvec);
-  CaloStack->SetBranchAddress("HGCSSSimHitVec",&hitvec);   
+  HGCSSEvent * event=0;
+  HGCSSTree->SetBranchAddress("HGCSSEvent",&event);  
+  HGCSSTree->SetBranchAddress("HGCSSSamplingSectionVec",&samplingvec);
+  HGCSSTree->SetBranchAddress("HGCSSSimHitVec",&hitvec);   
   
   //energy deposits counter <vol number, < absorber X0, En> >
   std::map<Int_t, std::pair<Float_t,Float_t> > enCounter, enFracCounter;
@@ -76,15 +74,15 @@ bool ShowerProfile::buildShowerProfile(Float_t eElec, TString version, TNtuple *
   Float_t mipEn(55.1*siWidthToIntegrate/2.);
   Bool_t showFit(true);
   Float_t refX0(1.0);
-  for(Int_t i=0; i<CaloStack->GetEntries(); i++)
+  for(Int_t i=0; i<HGCSSTree->GetEntries(); i++)
     {
-      CaloStack->GetEntry(i);
-      cout << curEvent << " " << cellSize << endl;
+      HGCSSTree->GetEntry(i);
+      UInt_t curEvent(event->eventNumber());
+      Double_t cellSize(event->cellSize());
 
       Float_t totEnInHits(0),totEnInHits2(0),totEnInHits7(0),totEnInHits20(0), totEnInHitsDyn(0), totNmipHits(0);
       for (unsigned iH(0); iH<(*hitvec).size(); ++iH)
 	{
-
 	  HGCSSSimHit lHit = (*hitvec)[iH];
 	  int siLayer=lHit.silayer();
 	  if(siWidthToIntegrate==0 && siLayer!=0) continue;
