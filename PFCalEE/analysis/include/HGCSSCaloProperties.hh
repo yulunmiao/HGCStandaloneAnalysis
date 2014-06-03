@@ -22,6 +22,7 @@
 #include "TF1.h"
 #include "TMath.h"
 #include "TSpline.h"
+#include "TNtuple.h"
 
 #include "RooDataSet.h"
 #include "RooRealVar.h"
@@ -59,7 +60,11 @@ public:
   ~ShowerProfile(){};
 
   void writeTo(TDirectory *dir);
-  bool buildShowerProfile(Float_t eElec, TString version);
+  bool buildShowerProfile(Float_t eElec, TString version,TNtuple *tuple);
+  
+  typedef  std::pair<Int_t,Int_t> LocalCoord_t;
+  std::map<Int_t, std::map<LocalCoord_t,Float_t> > edeps_xy;
+  void resetEdeps() { edeps_xy.clear(); }
 
   TH1F         *h_rawEn,          *h_en,    *h_enFit, *h_showerMax;
   TH2F         *h_enVsOverburden, *h_enVsDistToShowerMax, *h_enfracVsOverburden;

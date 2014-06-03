@@ -1,7 +1,14 @@
 #include "HGCSSCaloProperties.hh"
 #include "HGCSSSimHit.hh"
+#include "HGCSSSamplingSection.hh"
+#include "HGCSSEvent.hh"
 #include "RooGaussian.h"
 #include "RooPlot.h"
+#include "TRandom.h"
+#include "TChain.h"
+
+using namespace std;
+
 GraphToTF1::GraphToTF1(TString name, TGraph *g){ sp_ = new TSpline3(name,g) ; }
 double GraphToTF1::operator()(double *x,double *p) { return sp_->Eval( x[0] ) - p[0]; }
 
@@ -20,7 +27,7 @@ void ShowerProfile::writeTo(TDirectory *dir)
   if(h_en)                  h_en->Clone()->Write();
   if(h_enFit)               h_enFit->Clone()->Write();
   if(h_enVsOverburden)      h_enVsOverburden->Clone()->Write();
-  if(h_enfracVsOverburden)      h_enfracVsOverburden->Clone()->Write();
+  if(h_enfracVsOverburden)  h_enfracVsOverburden->Clone()->Write();
   if(h_enVsDistToShowerMax) h_enVsDistToShowerMax->Clone()->Write();
   if(gr_raw)                gr_raw->Clone()->Write();
   if(gr_frac)               gr_frac->Clone()->Write();
@@ -30,248 +37,307 @@ void ShowerProfile::writeTo(TDirectory *dir)
 }
 
 //
-bool ShowerProfile::buildShowerProfile(Float_t eElec, TString version)
+bool ShowerProfile::buildShowerProfile(Float_t eElec, TString version, TNtuple *tuple)
 {
   TF1 *showerFunc=0;
-  
-  std::ostringstream indirpath;
-  //  indirpath << PATH_TO_G4_FILES << "/"
-  //	    << version << "/"
-  //	    << PARTICLE_TYPE << "/"
-  //	    << "e_" << (Int_t) eElec;
-  indirpath << "root://eoscms//eos/cms/store/cmst3/group/hgcal/Geant4/HGcal_" << version << "_e" << (Int_t) eElec << ".root";
-
-  TString inDir(indirpath.str().c_str()); 
-  
-  //open file
-  //TFile *fIn=TFile::Open(inDir+"/PFcal.root");
-  TFile *fIn=TFile::Open(inDir);
-  if(fIn==0)          return false;
-  if(fIn->IsZombie()) return false;
-  
-  //prepare to run over the ntuple with the information
-  TTree *CaloStack=(TTree *)fIn->Get("HGCSSTree");
-  if (!CaloStack) return false;
-
-  Float_t event,volNb,volX0,den,denWeight;
-  std::vector<HGCSSSimHit> *hitvec = 0;
-  CaloStack->SetBranchAddress("event",&event);
-  CaloStack->SetBranchAddress("volNb",&volNb);
-  CaloStack->SetBranchAddress("volX0trans",&volX0);
-  CaloStack->SetBranchAddress("den", &den);
-  CaloStack->SetBranchAddress("denWeight", &denWeight);
-  CaloStack->SetBranchAddress("HGCSSSimHitVec",&hitvec);
    
-  CaloStack->GetEntry(0);
-  Float_t curEvent(event);
+  //prepare to run over the ntuple with the information
+  TChain *CaloStack=new TChain("HGCSSTree");
+  for(int irun=0; irun<4; irun++)
+    {
+      std::ostringstream indirpath;
+      //indirpath << "/afs/cern.ch/work/a/amagnan/public/HGCalEEGeant4/version_3/e-/e_" << (Int_t) eElec << "/PFcal.root";
+      //indirpath << "root://eoscms//eos/cms/store/cmst3/group/hgcal/Geant4/HGcal_" << version << "_e" << (Int_t) eElec << ".root";
+      indirpath << "root://eoscms//eos/cms/store/user/amagnan/HGCalEEGeant4/gitV00-00-02/e-/HGcal_" << version << "_model3_BOFF_e" << (Int_t) eElec << "_run"<< irun << ".root";
+      TString inDir(indirpath.str().c_str()); 
+      cout << "Adding " << inDir << " for analysis" << endl;
+      CaloStack->Add(inDir);
+    }
+  if (!CaloStack && CaloStack->GetEntries()==0) {
+    cout << "TTree is null or has no entries for analysis..." << endl;
+    return false;
+  }
+
+  UInt_t curEvent(0);
+  Double_t cellSize(0);
+  std::vector<HGCSSSimHit> *hitvec = 0;
+  std::vector<HGCSSSamplingSection> *samplingvec = 0;
+  CaloStack->SetBranchAddress("event_",&curEvent);
+  CaloStack->SetBranchAddress("cellSize_",&cellSize);
+  CaloStack->SetBranchAddress("HGCSSSamplingSectionVec",&samplingvec);
+  CaloStack->SetBranchAddress("HGCSSSimHitVec",&hitvec);   
   
   //energy deposits counter <vol number, < absorber X0, En> >
   std::map<Int_t, std::pair<Float_t,Float_t> > enCounter, enFracCounter;
-  Float_t totalRawEn(0), totalEn(0), totalEnFit(0);
-  rooRawEn = new RooRealVar("rawEn","rawEn",0,1000000);
-  rooEn    = new RooRealVar("En","En",0,1000000);
-  data     = new RooDataSet("data","data",RooArgSet(*rooRawEn,*rooEn));
-
-  Float_t mipEn(54.8);
-  bool showFit(true);
-  float curOverburden(0);
+  Float_t totalRawEn(0), totalEn(0), totalEnFit(0), nemHits(0),totalEnA(0),totalEnB(0),totalEnC(0);
+  Float_t nMipHits(0),totalEn2(0),totalEn7(0),totalEn20(0),totalEnDyn(0);
+  Float_t interCalibSigma(0.00);
+  Int_t siWidthToIntegrate(2);
+  Float_t mipEn(55.1*siWidthToIntegrate/2.);
+  Bool_t showFit(true);
   Float_t refX0(1.0);
-  for(Int_t i=0; i<CaloStack->GetEntriesFast(); i++)
+  for(Int_t i=0; i<CaloStack->GetEntries(); i++)
     {
       CaloStack->GetEntry(i);
-      curOverburden+=volX0;
+      cout << curEvent << " " << cellSize << endl;
 
-      if(i==0) refX0=volX0;
+      Float_t totEnInHits(0),totEnInHits2(0),totEnInHits7(0),totEnInHits20(0), totEnInHitsDyn(0), totNmipHits(0);
+      for (unsigned iH(0); iH<(*hitvec).size(); ++iH)
+	{
 
-      //in case a new event has been found analyze the previous
-      if(curEvent!=event){
-	curOverburden=0;
-
-	TGraphErrors *showerProf=new TGraphErrors;
-	showerProf->SetName("showerprof");
-	showerProf->SetMarkerStyle(20);
-	Float_t overburden(0);
-	for(std::map<Int_t, std::pair<Float_t,Float_t> >::iterator it=enCounter.begin();
-	    it!=enCounter.end();
-	    it++)
-	  {
-	    //float ien=it->second.second;
-	    float ien=enCounter[it->first].second;
-
-	    overburden += it->second.first;
-	    Int_t np=showerProf->GetN();
-	    showerProf->SetPoint(np, overburden, ien);
-	    showerProf->SetPointError(np,0 ,sqrt(ien) );
+	  HGCSSSimHit lHit = (*hitvec)[iH];
+	  int siLayer=lHit.silayer();
+	  if(siWidthToIntegrate==0 && siLayer!=0) continue;
+	  if(siWidthToIntegrate==1 && siLayer==2) continue;
+	  Int_t volNb(lHit.layer());
+	  if(volNb>(Int_t)samplingvec->size()) {
+	    cout << "Received volNb without possible sampling section match" << endl;
+	    continue;
 	  }
-	
-	//instantiate fit function if not yet available
-	if( showerFunc==0 ) 
-	  {
-	    showerFunc=new TF1("showerfunc","[0]*pow(x,[1])*exp(-[2]*x)",0,30);//overburden);
-	    showerFunc->SetParLimits(0,0.,showerProf->GetMaximum()*1.1);
-	    showerFunc->SetParLimits(1,0.,100.);
-	    showerFunc->SetParLimits(2,0.,100.);
-	    showerFunc->SetLineColor(kBlue);
-	 }
-	
-	//fit for the maximum
-	Int_t fitStatus=showerProf->Fit(showerFunc,"RQ+");       
-	if(fitStatus==0)
-	  {
-	    Float_t chi2=showerFunc->GetChisquare();
-	    Int_t ndof=showerFunc->GetNDF();
-	    Float_t a(showerFunc->GetParameter(1)), b(showerFunc->GetParameter(2));
-	    Float_t showerMax(a/b);
-	    totalEnFit = showerFunc->Integral(0,28);//overburden);
+	  HGCSSSamplingSection lSec = (*samplingvec)[volNb];	 
 
-	    //instantiate shower profile histogram if not yet available
-	    if(h_rawEn==0)
-	      {
-		TString name(""); name+= (Int_t)eElec;
-		TString title(""); title+=eElec;  
-		h_rawEn=new TH1F("eraw_"+name,title+";Raw energy;Events",400,0,80000);
-		h_rawEn->Sumw2();
-		h_rawEn->SetDirectory(0);
+	  //radiation length before the Si
+	  Float_t volX0 = lSec.volX0trans();
+	  if(i==0) refX0=volX0;
+	  Float_t weight(volX0/refX0);
+	  double hitEn = lHit.energy()*1e3/mipEn;
+	  if(hitEn>1.0) totNmipHits++;
+	  double posx = lHit.get_x();
+	  double posy = lHit.get_y();
 
-		h_en=new TH1F("e_"+name,title+";Weighted energy;Events",400,0,80000);
-		h_en->SetDirectory(0);
+	  //save in deposits in the transverse plane with fixed cell size
+	  if( edeps_xy.find( volNb ) == edeps_xy.end() )
+	    {
+	      std::map<LocalCoord_t,Float_t> edepsTempl;
+	      edeps_xy[ volNb ]  = edepsTempl;
+	      enCounter[ volNb ] = std::pair<Float_t,Float_t>(volX0,0);
+	    }	  
+	  LocalCoord_t ipos; ipos.first= (Int_t)(posx/cellSize); ipos.second= (Int_t)(posy/cellSize);
+	  if( edeps_xy[ volNb ].find( ipos ) == edeps_xy[ volNb ].end() ) edeps_xy[ volNb ][ipos]=0;
+	  edeps_xy[ volNb ][ipos] += hitEn;
 
-		h_enFit=new TH1F("efit_"+name,title+";Fit energy;Events",400,0,80000);
-		h_enFit->SetDirectory(0);
+	  totEnInHits += hitEn; 
+	  totalRawEn += hitEn; 
+	  totalEn += weight*hitEn;
+	  enCounter[ volNb ].second += hitEn;
+	  if(volNb<11)      totalEnA += hitEn;
+	  else if(volNb<21) totalEnB += hitEn;
+	  else              totalEnC += hitEn;
+	  nemHits+= (lHit.nElectrons()+lHit.nMuons())*weight;
+	  nMipHits += lHit.nMuons()*weight;
+	  double rho=sqrt(posx*posx+posy*posy);
+	  if(rho<2.5)                      { totEnInHits2 += hitEn;   totalEn2 += hitEn*weight; }
+	  if(rho<7)                        { totEnInHits7 += hitEn;   totalEn7 += hitEn*weight; }
+	  if(rho<20)                       { totEnInHits20 += hitEn;  totalEn20 += hitEn*weight; }
+	  if(rho<8.705*exp(0.064*volNb))   { totEnInHitsDyn += hitEn; totalEnDyn += hitEn*weight; }
 
-		h_showerMax=new TH1F("smax_"+name,title+";Shower maximum [1/X_{0}];Events",100,0,20);
-		h_showerMax->SetDirectory(0);
+	  //if(rho>maxRhoToAcquire) {
+	  //  std::cout << posx << "," << posy << " " << rho << " " << hitEn << " @layer" << volNb << std::endl;
+	  //  continue;
+	  //}
+	}
 
-		h_enVsDistToShowerMax = new TH2F("envsdisttoshowermax_"+name, title+";Distance to shower maximum [1/X_{0}]; Energy; Events", 50,-0.5*overburden,1.5*overburden,100,0,500);
-		h_enVsDistToShowerMax->Sumw2();
-		h_enVsDistToShowerMax->SetDirectory(0);
-		
-		h_enVsOverburden = new TH2F("envsoverburden_"+name,title+";Distance transversed [1/X_{0}]; Energy; Events",50,0,overburden,100,0,500);
-		h_enVsOverburden->Sumw2();
-		h_enVsOverburden->SetDirectory(0);
 
-		h_enfracVsOverburden = new TH2F("enfracvsoverburden_"+name,title+";Distance transversed [1/X_{0}]; Energy fraction; Events",50,0,overburden,100,0,1);
-		h_enfracVsOverburden->Sumw2();
-		h_enfracVsOverburden->SetDirectory(0);
-	      }
-	    
-	    //energy distributions
-	    h_rawEn->Fill( totalRawEn );
-	    h_en   ->Fill( totalEn );
-	    h_enFit->Fill( totalEnFit );
-	    h_showerMax->Fill( showerMax );
+      //instantiate histograms if not yet available
+      if(h_rawEn==0)
+	{
+	  TString name(""); name+= (Int_t)eElec;
+	  TString title(""); title+=eElec;  
+	  h_rawEn=new TH1F("eraw_"+name,title+";Raw energy;Events",5000,0,1000000);
+	  h_rawEn->Sumw2();
+	  h_rawEn->SetDirectory(0);
+	  
+	  h_en=new TH1F("e_"+name,title+";Weighted energy;Events",5000,0,1000000);
+	  h_en->SetDirectory(0);
+	  
+	  h_enFit=new TH1F("efit_"+name,title+";Fit energy;Events",5000,0,1000000);
+	  h_enFit->SetDirectory(0);
+	  
+	  h_showerMax=new TH1F("smax_"+name,title+";Shower maximum [1/X_{0}];Events",100,0,20);
+	  h_showerMax->SetDirectory(0);
+	  
+	  h_enVsDistToShowerMax = new TH2F("envsdisttoshowermax_"+name, title+";Distance to shower maximum [1/X_{0}]; Energy/MIP; Events", 50,-0.5*31,1.5*31,5000,0,10000);
+	  h_enVsDistToShowerMax->Sumw2();
+	  h_enVsDistToShowerMax->SetDirectory(0);
+	  
+	  h_enVsOverburden = new TH2F("envsOverburden_"+name,title+";Distance transversed [1/X_{0}]; Energy/MIP; Events",50,0,31,100,0,10000);
+	  h_enVsOverburden->Sumw2();
+	  h_enVsOverburden->SetDirectory(0);
+	  
+	  h_enfracVsOverburden = new TH2F("enfracvsoverburden_"+name,title+";Distance transversed [1/X_{0}]; Energy fraction; Events",50,0,31,100,0,1);
+	  h_enfracVsOverburden->Sumw2();
+	  h_enfracVsOverburden->SetDirectory(0);
 
-	    rooRawEn->setVal(totalRawEn);
-	    rooEn->setVal(totalEn);
-	    data->add(RooArgSet(*rooRawEn,*rooEn));
-	    
-	    //shower profiles
-	    overburden=0;
-	    for(std::map<Int_t, std::pair<Float_t,Float_t> >::iterator it=enCounter.begin();
-		it!=enCounter.end();
-		it++)
-	      {
-		overburden += it->second.first;
-		Float_t ien=enCounter[it->first].second;
-		h_enVsOverburden     ->Fill( overburden,          ien);
-		h_enfracVsOverburden     ->Fill( overburden,          enFracCounter[it->first].second);
-		h_enVsDistToShowerMax->Fill( overburden-showerMax,ien);
-	      }
-	    
-	    //show fits for 10 events for debug purposes
-	    if(showFit){
-	      if(event>100)   showFit=false;
+	  showerFunc=new TF1("showerfunc","[0]*pow(x,[1])*exp(-[2]*x)",0,40);
+	  showerFunc->SetParLimits(0,0.,999999999.);
+	  showerFunc->SetParLimits(1,0.,100.);
+	  showerFunc->SetParLimits(2,0.,100.);
+	  showerFunc->SetLineColor(kBlue);
+	}
+      
+      //shower profile
+      TGraphErrors *showerProf=new TGraphErrors;
+      showerProf->SetName("showerprof");
+      showerProf->SetMarkerStyle(20);
+      Float_t curOverburden(0);
+      for(std::map<Int_t, std::pair<Float_t,Float_t> >::iterator it=enCounter.begin();
+	  it!=enCounter.end();
+	  it++)
+	{
+	  Float_t ien=it->second.second;
+	  curOverburden += it->second.first/refX0;
+	  Int_t np=showerProf->GetN();
+	  showerProf           ->SetPoint(np, curOverburden, ien);
+	  showerProf           ->SetPointError(np,0 ,sqrt(ien) );
+	  h_enVsOverburden     ->Fill( curOverburden,       ien);
+	  h_enfracVsOverburden ->Fill( curOverburden,   ien/totalRawEn);
+	}
+      
 
-	      TCanvas *c=new TCanvas("c","c",500,500);
-	      c->SetTopMargin(0.05);
-	      c->SetLeftMargin(0.15);
-	      c->SetRightMargin(0.05);
-	      
-	      showerProf->Draw("ap");
-	      showerProf->SetMarkerStyle(20);
-	      showerProf->GetXaxis()->SetTitle("Transversed thickness [1/X_{0}]");
-	      showerProf->GetYaxis()->SetTitle("Energy");
-	      showerProf->GetXaxis()->SetLabelSize(0.04);
-	      showerProf->GetYaxis()->SetLabelSize(0.04);
-	      showerProf->GetXaxis()->SetTitleSize(0.05);
-	      showerProf->GetYaxis()->SetTitleSize(0.05);
-	      showerProf->GetYaxis()->SetTitleOffset(1.4);
-		
-	      drawHeader();
-	      
-	      TPaveText *pt=new TPaveText(0.6,0.6,0.9,0.9,"brNDC");
-	      pt->SetBorderSize(0);
-	      pt->SetFillStyle(0);
-	      pt->SetTextFont(42);
-	      pt->SetTextAlign(12);
-	      char buf[200];
-	      sprintf(buf,"E^{gen}=%3.0f",eElec);
-	      pt->AddText(buf);
-	      sprintf(buf,"#Sigma E_{i}=%3.0f",totalRawEn);
-	      pt->AddText(buf);
-	      sprintf(buf,"#Sigma w_{i}E_{i}=%3.0f",totalEn);
-	      pt->AddText(buf);
-	      sprintf(buf,"Fit E=%3.0f",totalEnFit);
-	      pt->AddText(buf);
-	      sprintf(buf,"Shower max=%3.1f",showerMax);
-	      pt->AddText(buf);
-	      sprintf(buf,"#chi^{2}/ndof=%3.0f/%d",chi2,ndof);
-	      pt->AddText(buf);
-	      pt->Draw();
-	   
-	      //save 
-	      TString name("e_"); name += (Int_t) eElec; name += event;
-	      c->SaveAs("PLOTS/"+version+name+"_showerfits.png");
-
-   
+      //fit for the maximum
+      Int_t fitStatus=showerProf->Fit(showerFunc,"RQ+","",0,31);       
+      Float_t leakageFraction(0),showerMax(0);
+      if(fitStatus==0)
+	{
+	  Float_t chi2=showerFunc->GetChisquare();
+	  Int_t ndof=showerFunc->GetNDF();
+	  Float_t a(showerFunc->GetParameter(1)), b(showerFunc->GetParameter(2));
+	  if(b>0) showerMax=a/b;
+	  totalEnFit = showerFunc->Integral(0,31);//curOverburden);
+	  leakageFraction = 100*showerFunc->Integral(31,40)/totalEnFit;
+	  
+	  //energy distributions
+	  h_rawEn->Fill( totalRawEn );
+	  h_en   ->Fill( totalEn );
+	  h_enFit->Fill( totalEnFit );
+	  h_showerMax->Fill( showerMax );
+	  for(std::map<Int_t, std::pair<Float_t,Float_t> >::iterator it=enCounter.begin();
+	      it!=enCounter.end();
+	      it++)
+	    {
+	      h_enVsDistToShowerMax->Fill( curOverburden-showerMax,it->second.second);
 	    }
+	  
+	  //show fits for 10 events for debug purposes
+	  if(showFit){
+	    if(curEvent>10)  showFit=false;
+	    
+	    TCanvas *c=new TCanvas("c","c",500,500);
+	    c->SetTopMargin(0.05);
+	    c->SetLeftMargin(0.15);
+	    c->SetRightMargin(0.05);
+	    
+	    showerProf->Draw("ap");
+	    showerProf->SetMarkerStyle(20);
+	    showerProf->GetXaxis()->SetTitle("Transversed thickness [1/X_{0}]");
+	    showerProf->GetYaxis()->SetTitle("Energy");
+	    showerProf->GetXaxis()->SetLabelSize(0.04);
+	    showerProf->GetYaxis()->SetLabelSize(0.04);
+	    showerProf->GetXaxis()->SetTitleSize(0.05);
+	    showerProf->GetYaxis()->SetTitleSize(0.05);
+	    showerProf->GetYaxis()->SetTitleOffset(1.4);
+	    showerFunc->Draw("same");
+	    drawHeader();
+	    
+	    TPaveText *pt=new TPaveText(0.6,0.56,0.9,0.9,"brNDC");
+	    pt->SetBorderSize(0);
+	    pt->SetFillStyle(0);
+	    pt->SetTextFont(42);
+	    pt->SetTextAlign(12);
+	    char buf[200];
+	    sprintf(buf,"E^{gen}=%3.0f",eElec);
+	    pt->AddText(buf);
+	    sprintf(buf,"#Sigma E_{i}=%3.0f",totalRawEn);
+	    pt->AddText(buf);
+	    sprintf(buf,"#Sigma w_{i}E_{i}=%3.0f",totalEn);
+	    pt->AddText(buf);
+	    sprintf(buf,"Fit E=%3.0f",totalEnFit);
+	    pt->AddText(buf);
+	    sprintf(buf,"Shower max=%3.1f",showerMax);
+	    pt->AddText(buf);
+	    sprintf(buf,"#Sigma w_{i}Hits_{i}=%3.0f",nemHits);
+	    pt->AddText(buf);
+	    sprintf(buf,"Leakage >25X_{0}:%3.1f%%",leakageFraction);
+	    pt->AddText(buf);
+	    sprintf(buf,"#chi^{2}/ndof=%3.0f/%d",chi2,ndof);
+	    pt->AddText(buf);
+	    pt->Draw();
+	    
+	    //save 
+	    TString name("e_"); name += (Int_t) eElec; name+="_"; name += curEvent;
+	    c->SaveAs("PLOTS/"+version+name+"_showerfits.png");
+	    c->SaveAs("PLOTS/"+version+name+"_showerfits.pdf");
 	  }
-	   
-	//clear energy counters for new event
-	enCounter.clear();
-	enFracCounter.clear();
-	totalRawEn=0;
-	totalEn=0;
-	totalEnFit=0;
-	
-	//update event identifier
-	curEvent=event;
-      }
+	}
       
-      //account for energy deposit
-      //enCounter[ Int_t(volNb) ] = std::pair<Float_t,Float_t>(volX0,den);
-      //totalRawEn += den;
-      //totalEn    += denWeight;
+      //prepare to store summary ntuple
+      Float_t en_inf(0),en_1x1(0), en_2x2(0), en_5x5(0), en_dyn(0);
+      Float_t smearen_inf(0),smearen_1x1(0), smearen_2x2(0), smearen_5x5(0), smearen_dyn(0);
+      for(std::map<Int_t, std::map<LocalCoord_t,Float_t> >::iterator it=edeps_xy.begin();
+	  it!= edeps_xy.end();
+	  it++)
+	{
+	  float weight( enCounter[ it->first ].first /refX0 );
+	  for(std::map<LocalCoord_t,Float_t>::iterator jt=it->second.begin();
+	      jt!=it->second.end();
+	      jt++)
+	    {
+	      Float_t smearVal(1.0);//+gRandom->Gaus(0,interCalibSigma*2));
+	      Float_t ien = weight*jt->second*smearVal;
+	      smearVal=1.0+gRandom->Gaus(0,interCalibSigma);///2);
+	      Float_t ismearen = smearVal*weight*jt->second;
+	      int ix=abs(jt->first.first);
+	      int iy=abs(jt->first.second);
+	      en_inf+=ien;
+	      smearen_inf+=ismearen;
+	      
+	      //dynamical cone
+	      if(sqrt(ix*ix+iy*iy)<(8.705/10.)*exp(0.064*it->first))
+		{
+		  en_dyn+=ien;
+		  smearen_dyn+=ismearen; 
+		}
+	      
+	      //square area
+	      if(ix<5 && iy<5)
+		{
+		  en_5x5+=ien;
+		  smearen_5x5+=ismearen;
+		  if(ix<2 && iy<2)
+		    {
+		      en_2x2+=ien;
+		      smearen_2x2+=ismearen;
+		      if(ix<1 && iy<1)
+			{
+			  en_1x1+=ien;
+			  smearen_1x1+=ismearen;
+			}
+		    }
+		}
+	    }
+	}
+      Float_t etupleVars[19]={eElec,eElec,0,totalRawEn,totalEn,totalEnFit,showerMax,nemHits,nMipHits,
+			      en_inf,en_1x1,en_2x2,en_5x5,en_dyn,
+			      smearen_inf,smearen_1x1,smearen_2x2,smearen_5x5,smearen_dyn};
+      tuple->Fill(etupleVars);
       
-      //account for energy deposit with spatial constraints
-      Float_t maxRhoToAcquire(10000);
-      //Float_t maxRhoToAcquire(25);
-      //Float_t maxRhoToAcquire(10);
-      //Float_t maxRhoToAcquire(1.1376*exp(0.1174*volNb));
-      //Float_t maxRhoToAcquire(8.705*exp(0.064*volNb));
-
-      Float_t totEnInHits(0);
-      for (unsigned iH(0); iH<(*hitvec).size(); ++iH){//loop on hits 	
-	HGCSSSimHit lHit = (*hitvec)[iH];
-	lHit.layer(unsigned(volNb));
-	double hitEn = lHit.energy()*1e3/mipEn;
-	//if(hitEn<1.0) continue;
-	double posx = lHit.get_x();
-	double posy = lHit.get_y();
-	double rho=sqrt(posx*posx+posy*posy);
-	if(rho>maxRhoToAcquire) continue;
-	totEnInHits += hitEn;
-      }
-
-      Float_t weight(volX0/refX0);
-      denWeight *= 1.0e3/mipEn;
-      den *= 1.0e3/mipEn;
-      totalRawEn += totEnInHits;
-      if(den>0) totalEn += totEnInHits*weight;
-      enCounter[ Int_t(volNb) ]     = std::pair<Float_t,Float_t>(volX0,totEnInHits);
-      enFracCounter[ Int_t(volNb) ] = std::pair<Float_t,Float_t>(volX0,den>0 ? totEnInHits/den : 0);
+      //clear energy counters for new event
+      enCounter.clear();
+      resetEdeps(); 
+      nMipHits=0;
+      totalEnA=0;
+      totalEnB=0;
+      totalEnC=0;
+      totalEn2=0;
+      totalEn7=0;
+      totalEn20=0;
+      totalEnDyn=0;
+      enFracCounter.clear();
+      totalRawEn=0;
+      totalEn=0;
+      totalEnFit=0;
+      nemHits=0;
     }
-  fIn->Close();
   
 
   TString name("e_"); name += (Int_t) eElec;
@@ -281,13 +347,27 @@ bool ShowerProfile::buildShowerProfile(Float_t eElec, TString version)
   c->cd();
   c->SetTopMargin(0.05);
   c->SetLeftMargin(0.15);
-  c->SetRightMargin(0.05);
+  c->SetRightMargin(0.2);
+  c->SetLogz();
+  TH2F *h2d=h_enVsDistToShowerMax;
+  h2d->Draw("colz");
+  if(eElec<10) h2d->GetYaxis()->SetRangeUser(0,600);
+  else if(eElec<75) h2d->GetYaxis()->SetRangeUser(0,1200);
+  else if(eElec<150) h2d->GetYaxis()->SetRangeUser(0,3000);
+  else h2d->GetYaxis()->SetRangeUser(0,6000);
+  h2d->GetZaxis()->SetRangeUser(0,2000);
+  h2d->GetYaxis()->SetTitleOffset(1.4);
+  h2d->GetXaxis()->SetTitleOffset(0.9);
+  h2d->GetZaxis()->SetTitleOffset(1.4);
+  h2d->GetXaxis()->SetLabelSize(0.04);
+  h2d->GetYaxis()->SetLabelSize(0.04);
+  h2d->GetXaxis()->SetTitleSize(0.05);
+  h2d->GetYaxis()->SetTitleSize(0.05);
   drawHeader();
-  //h_enVsOverburden->Draw("colz");
-  h_enVsDistToShowerMax->Draw("colz");
   c->Modified();
   c->Update();
   c->SaveAs("PLOTS/"+version+name+"_showerprof.png");
+  c->SaveAs("PLOTS/"+version+name+"_showerprof.pdf");
   
   //final graphs
   TString title(""); title+=eElec;  
@@ -354,13 +434,21 @@ CaloProperties::CaloProperties(TString tag)
   tag_=tag; gr_showerMax=0; gr_centeredShowerMax=0; 
   genEn_.push_back(5);
   genEn_.push_back(10);
+  genEn_.push_back(15);
+  genEn_.push_back(20);
   genEn_.push_back(25);
+  genEn_.push_back(30);
+  genEn_.push_back(40);
   genEn_.push_back(50);
-  genEn_.push_back(75);
+  genEn_.push_back(60);
+  genEn_.push_back(80);
   genEn_.push_back(100);
+  genEn_.push_back(150);
+  genEn_.push_back(175);
   genEn_.push_back(200);
-  //  genEn_.push_back(300);
-  //  genEn_.push_back(500);
+  genEn_.push_back(300);
+  genEn_.push_back(400);
+  genEn_.push_back(500);
 }
 
   
@@ -393,13 +481,17 @@ void CaloProperties::characterizeCalo()
   gr_showerMax->SetMarkerColor(kBlue);
   gr_centeredShowerMax = (TGraph *) gr_showerMax->Clone("centeredshowermax_"+tag_);
 
+  TFile*fout=TFile::Open(tag_+"_etuple.root","RECREATE");
+  TNtuple *ntuple = new TNtuple("etuple","etuple","en:pt:eta:sumEn:sumWEn:fitEn:showerMax:nemHits:nMipHits:en_inf:en_1x1:en_2x2:en_5x5:en_dyn:smearen_inf:smearen_1x1:smearen_2x2:smearen_5x5:smearen_dyn");
+  ntuple->SetDirectory(fout);
+
   //build shower profiles
   const Int_t nGenEn=genEn_.size();
   for(Int_t i=0; i<nGenEn; i++)
     {
       Float_t en=genEn_[i];
       ShowerProfile sh;
-      sh.buildShowerProfile(en,tag_);
+      sh.buildShowerProfile(en,tag_,ntuple);
       if(sh.h_rawEn==0) continue;
       showerProfiles_[en]=sh;
       
@@ -415,6 +507,11 @@ void CaloProperties::characterizeCalo()
       ymax=func->GetMaximum();
       gr_centeredShowerMax->SetPoint(gr_centeredShowerMax->GetN(),xmax,ymax);
     }
+
+  fout->cd();
+  ntuple->SetDirectory(fout);
+  ntuple->Write();
+  fout->Close();
   
   //build the calibration and resolution curves
   for(size_t i=0; i<3; i++)
@@ -446,39 +543,27 @@ void CaloProperties::characterizeCalo()
 	  if(i==1) h=it->second.h_en;
 	  if(i==2) h=it->second.h_enFit;
 	  if(i==3) h=it->second.h_showerMax;
-
-	  RooRealVar *varToFit=it->second.rooRawEn;
-	  if(i==1) varToFit=it->second.rooEn;
-	  
-	  float unbAvg=it->second.data->mean(*varToFit);
-	  
-	  varToFit->setRange("fitrange",unbAvg*0.5,unbAvg*2);
-	  RooRealVar *unbinnedGauss_mean=new RooRealVar(mode+"mean","mean",unbAvg*0.5,unbAvg*2);
-	  RooRealVar *unbinnedGauss_sigma=new RooRealVar(mode+"sigma","sigma",unbAvg*0.001,unbAvg*2);
-	  RooGaussian *unbinnedGauss=new RooGaussian(mode+"gauss",title,*varToFit,*unbinnedGauss_mean,*unbinnedGauss_sigma);
-	  unbinnedGauss->fitTo( *(it->second.data),RooFit::Range("fitRange") );
-	  //it->second.data->printMultiline(std::cout,1000,kTRUE,"\t");
-
-	  // TCanvas* c = new TCanvas("rf501_simultaneouspdf","rf403_simultaneouspdf",500,500);
-	  // RooPlot* frame = varToFit->frame(RooFit::Range("fitRange"));
-	  // it->second.data->plotOn(frame);
-	  // unbinnedGauss->plotOn(frame);
-	  // frame ->Draw();
-	  // c->SaveAs(h->GetName()+TString(".png"));
-
 	  Float_t en=it->first;
 	  
 	  if(i!=3){
 	    Int_t np=calibCurve_[i]->GetN();
-	    
-	    //calibCurve_[i]->SetPoint(np,en,h->GetMean());
-	    //calibCurve_[i]->SetPointError(np,0.0,h->GetMeanError());
-	    //resCurve_[i]  ->SetPoint(np,1/sqrt(en),h->GetRMS()/h->GetMean());
-	    //resCurve_[i]  ->SetPointError(np,0,h->GetRMSError()/h->GetMean());
-
-	    h->Fit("gaus","QR+","same",h->GetMean()-1.5*h->GetRMS(),h->GetMean()+1.5*h->GetRMS());
+	    h->Fit("gaus","LQR+","same",h->GetMean()-1.5*h->GetRMS(),h->GetMean()+1.5*h->GetRMS());
 	    TF1 *gaus=h->GetFunction("gaus");
-	    if(gaus){
+	    if(!gaus) { 
+	      h->Fit("gaus","LQR+","same",h->GetMean()-2.5*h->GetRMS(),h->GetMean()+2.5*h->GetRMS());
+	      gaus=h->GetFunction("gaus");
+	      if(!gaus){
+		h->Fit("gaus","LQR+","same",h->GetMean()-3.5*h->GetRMS(),h->GetMean()+3.5*h->GetRMS());
+		gaus=h->GetFunction("gaus");
+		if(!gaus){
+		  h->Fit("gaus","LQ+","same");
+		  gaus=h->GetFunction("gaus");
+		}
+	      }
+	    }
+	    
+	    //if(gaus)
+	    {
 	      float mean=gaus->GetParameter(1), meanError=gaus->GetParError(1);
 	      float sigma=gaus->GetParameter(2), sigmaError=gaus->GetParError(2);
 	      calibCurve_[i]->SetPoint(np,en,mean);
@@ -508,6 +593,7 @@ void CaloProperties::characterizeCalo()
       leg->SetNColumns(iplot);
       leg->Draw();
       drawHeader();
+      cen->SetLogx();
       cen->SaveAs("PLOTS/"+tag_+"_c"+mode+".png");
     }
   
@@ -610,7 +696,13 @@ void CaloProperties::characterizeCalo()
     it->second.gr_raw->SetMarkerStyle(20+igr);
     it->second.gr_raw->SetMarkerColor(igr%2+1);
     it->second.gr_raw->GetXaxis()->SetTitle("Transversed thickness [1/X_{0}]");
-    it->second.gr_raw->GetYaxis()->SetTitle("Energy");
+    it->second.gr_raw->GetYaxis()->SetTitle("Energy/MIP");
+    it->second.gr_raw->GetYaxis()->SetTitleOffset(1.4);
+    it->second.gr_raw->GetXaxis()->SetLabelSize(0.04);
+    it->second.gr_raw->GetYaxis()->SetLabelSize(0.04);
+    it->second.gr_raw->GetXaxis()->SetTitleSize(0.05);
+    it->second.gr_raw->GetYaxis()->SetTitleSize(0.05);
+
     // it->second.gr_raw->GetYaxis()->SetRangeUser(0,it->second.gr_raw->GetMaximum()*1.1);
     leg->AddEntry(it->second.gr_raw,it->second.gr_raw->GetTitle(),"p");
 
@@ -625,6 +717,12 @@ void CaloProperties::characterizeCalo()
     it->second.gr_frac->GetXaxis()->SetTitle("Transversed thickness [1/X_{0}]");
     it->second.gr_frac->GetYaxis()->SetTitle("<Energy fraction>");
     // it->second.gr_raw->GetYaxis()->SetRangeUser(0,it->second.gr_raw->GetMaximum()*1.1);
+    it->second.gr_frac->GetYaxis()->SetTitleOffset(1.4);
+    it->second.gr_frac->GetXaxis()->SetLabelSize(0.04);
+    it->second.gr_frac->GetYaxis()->SetLabelSize(0.04);
+    it->second.gr_frac->GetXaxis()->SetTitleSize(0.05);
+    it->second.gr_frac->GetYaxis()->SetTitleSize(0.05);
+
 
     ccen->cd();
     it->second.gr_centered->Draw(igr==0? "ap" : "p");
@@ -636,7 +734,7 @@ void CaloProperties::characterizeCalo()
     it->second.gr_centered->SetMarkerColor(igr%2+1);
     //  it->second.gr_centered->GetYaxis()->SetRangeUser(0,it->second.gr_centered->GetMaximum()*1.1);
     it->second.gr_centered->GetXaxis()->SetTitle("<Transversed thickness - shower max> [1/X_{0}]");
-    it->second.gr_centered->GetYaxis()->SetTitle("Energy");
+    it->second.gr_centered->GetYaxis()->SetTitle("Energy/MIP");
     
     cunc->cd();
     it->second.gr_unc->Draw(igr==0? "ap" : "p");
@@ -648,7 +746,12 @@ void CaloProperties::characterizeCalo()
     it->second.gr_unc->SetMarkerColor(igr%2+1);
     //  it->second.gr_unc->GetYaxis()->SetRangeUser(0,it->second.gr_unc->GetMaximum()*1.1);
     it->second.gr_unc->GetXaxis()->SetTitle("<Transversed thickness - shower max> [1/X_{0}]");
-    it->second.gr_unc->GetYaxis()->SetTitle("RMS(Energy)");
+    it->second.gr_unc->GetYaxis()->SetTitle("RMS(Energy)/MIP");
+    it->second.gr_unc->GetYaxis()->SetTitleOffset(1.4);
+    it->second.gr_unc->GetXaxis()->SetLabelSize(0.04);
+    it->second.gr_unc->GetYaxis()->SetLabelSize(0.04);
+    it->second.gr_unc->GetXaxis()->SetTitleSize(0.05);
+    it->second.gr_unc->GetYaxis()->SetTitleSize(0.05);
 
     crelunc->cd();
     it->second.gr_relUnc->Draw(igr==0? "ap" : "p");
@@ -661,6 +764,11 @@ void CaloProperties::characterizeCalo()
     // it->second.gr_relUnc->GetYaxis()->SetRangeUser(0,it->second.gr_relUnc->GetMaximum()*1.1);
     it->second.gr_relUnc->GetXaxis()->SetTitle("<Transversed thickness - shower max> [1/X_{0}]");
     it->second.gr_relUnc->GetYaxis()->SetTitle("RMS/<Energy>");
+    it->second.gr_relUnc->GetYaxis()->SetTitleOffset(1.4);
+    it->second.gr_relUnc->GetXaxis()->SetLabelSize(0.04);
+    it->second.gr_relUnc->GetYaxis()->SetLabelSize(0.04);
+    it->second.gr_relUnc->GetXaxis()->SetTitleSize(0.05);
+    it->second.gr_relUnc->GetYaxis()->SetTitleSize(0.05);
   }
   
   craw->cd();
@@ -675,6 +783,7 @@ void CaloProperties::characterizeCalo()
   craw->Modified();
   craw->Update();
   craw->SaveAs("PLOTS/"+tag_+"_rawprof.png");
+  craw->SaveAs("PLOTS/"+tag_+"_rawprof.pdf");
 
   cfrac->cd();
   drawHeader();
@@ -687,6 +796,7 @@ void CaloProperties::characterizeCalo()
   cfrac->Modified();
   cfrac->Update();
   cfrac->SaveAs("PLOTS/"+tag_+"_fracprof.png");
+  cfrac->SaveAs("PLOTS/"+tag_+"_fracprof.pdf");
 
   ccen->cd();
   gr_centeredShowerMax->Draw("l");
@@ -695,6 +805,7 @@ void CaloProperties::characterizeCalo()
   ccen->Modified();
   ccen->Update();
   ccen->SaveAs("PLOTS/"+tag_+"_cenprof.png");
+  ccen->SaveAs("PLOTS/"+tag_+"_cenprof.pdf");
 
   cunc->cd();
   drawHeader();
@@ -702,6 +813,7 @@ void CaloProperties::characterizeCalo()
   cunc->Modified();
   cunc->Update();
   cunc->SaveAs("PLOTS/"+tag_+"_cenunc.png");
+  cunc->SaveAs("PLOTS/"+tag_+"_cenunc.pdf");
 
   crelunc->cd();
   drawHeader();
@@ -709,6 +821,7 @@ void CaloProperties::characterizeCalo()
   crelunc->Modified();
   crelunc->Update();
   crelunc->SaveAs("PLOTS/"+tag_+"_crelunc.png");
+  crelunc->SaveAs("PLOTS/"+tag_+"_crelunc.pdf");
 
   /*
   TFile *fOut=TFile::Open("CaloPerformance_"+tag_+".root","RECREATE");

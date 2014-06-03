@@ -37,8 +37,11 @@ int main()
                          v_HGCALEE_inverted=7,
                          v_HGCALEE_concept=8,
 			 v_HGCALEE_W=9,
-			 v_HGCALEE_gap4=10 
+			 v_HGCALEE_gap4=10 ,
+			 v_HGCALEE_fineSampling=11,
+			 v_HGCALEE_samplingOptim=12
   };
+
   /*
   size_t versions[]={
     v_CALICE,
@@ -48,14 +51,16 @@ int main()
     v_HGCALEE_Si200,
     v_HGCALEE_Si500,
     v_HGCALEE_W,
+    //    v_HGCALEE_fineSampling,
     v_HGCALEE_inverted,
     v_HGCALEE_concept,
     v_HGCALEE_gap1,
+    v_HGCALEE_gap4,
     v_HGCALEE_gap4
   };
   */
-    size_t versions[]={v_HGCALEE_Si200}; 
-
+  size_t versions[]={v_HGCALEE_concept};
+  //size_t versions[]={v_HGCALEE_fineSampling}; 
   //  size_t versions[]={v_HGCALEE_Si200};
   //size_t versions[]={v_CALICE,v_HGCALEE_Si200, v_HGCALEE_Si500,v_HGCALEE_CALICE, v_HGCALEE_W};
   //size_t versions[]={v_HGCALEE_Si80,v_HGCALEE_Si120,v_HGCALEE_Si200,v_HGCALEE_Si500};
@@ -80,12 +85,14 @@ int main()
     if(i==v_HGCALEE_Si500)    binLabel="Si 500 #mum";
     if(i==v_HGCALEE_gap1)     binLabel="Air gap 1mm";
     if(i==v_HGCALEE_CALICE)   binLabel="#splitline{CALICE-like}{sampling}";
+    if(i==v_HGCALEE_fineSampling)   binLabel="Fine sampling";
     if(i==v_HGCALEE_inverted) binLabel="Inverted";
     if(i==v_HGCALEE_concept)  binLabel="Concept";
     if(i==v_HGCALEE_W)        binLabel="W absorber";
     if(i==v_HGCALEE_gap4)     binLabel="Air gap 4mm";
 
-    TString ver("version_"); ver+=i;
+    //TString ver("version_"); ver+=i;
+    TString ver("version"); ver+=i;
 
     CaloProperties props(ver);
     props.characterizeCalo();
