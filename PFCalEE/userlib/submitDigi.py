@@ -53,7 +53,7 @@ elif (opt.version==23) :
     noise='0-53:0.12'
     threshold='0-53:25'
 
-suffix='_100um'
+suffix=''
 
 for en in enlist :
 

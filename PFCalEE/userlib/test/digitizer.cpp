@@ -341,10 +341,10 @@ int main(int argc, char** argv){//main
       double posz = lHit.get_z();
       double realtime = mycalib.correctTime(lHit.time(),posx,posy,posz);
       if (energy>0 && 
-	  lHit.silayer() < 1//geomConv.getNumberOfSiLayers(type)//,lHit.eta()) 
+	  lHit.silayer() < geomConv.getNumberOfSiLayers(type)//,lHit.eta()) 
 	  )
 	geomConv.fill(type,subdetLayer,energy,realtime,posx,posy,posz);
-
+      
     }//loop on input simhits
 
     if (debug>1) {
