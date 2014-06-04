@@ -16,10 +16,21 @@ HGCSSGeometryConversion::HGCSSGeometryConversion(std::string filePath){
 unsigned HGCSSGeometryConversion::getNumberOfSiLayers(const DetectorEnum type,
 						      const double & eta) const
 {
-  if (type == DetectorEnum::FECAL) return 2;
-  else if (type == DetectorEnum::MECAL) return 2;
-  else if (type == DetectorEnum::BECAL) return 2;
-  else if (type == DetectorEnum::FHCAL) return 3;
+  if (type == DetectorEnum::FHCAL) return 3;
+  unsigned etaBin = 0;
+  if (fabs(eta)>=1.4 && fabs(eta)<1.9) etaBin = 1;
+  else if (fabs(eta)>=1.9 && fabs(eta)<2.4) etaBin = 2;
+  else if (fabs(eta) >= 2.4) etaBin = 3;
+  if (etaBin==0){
+    if (type == DetectorEnum::FECAL) return 2;
+    else if (type == DetectorEnum::MECAL) return 2;
+    else if (type == DetectorEnum::BECAL) return 2;
+  }
+  else {
+    if (etaBin==1) return 3;
+    else if (etaBin==2) return 2;
+    else return 1;
+  }
   return 3;
 }
 

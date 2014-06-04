@@ -3,6 +3,9 @@
 
 HGCSSDetector & theDetector(){
   static HGCSSDetector lDet;
+  static bool firstDet=true;
+  if (firstDet) std::cout << " -- Created detector static object." << std::endl;
+  firstDet=false;
   return lDet;
 }
 
@@ -16,7 +19,7 @@ void HGCSSDetector::buildDetector(const unsigned indices[],
   FECAL.name = "FECAL";
   FECAL.layerIdMin = indices[0];
   FECAL.layerIdMax = indices[1];
-  FECAL.mipWeight = 1./0.0548;//mip
+  FECAL.mipWeight = 2./0.0548;//mip for 100um si
   FECAL.absWeight = 1.;//ratio of abs dedx
   FECAL.gevWeight = 1.0;
   FECAL.gevOffset = 0.0;
@@ -28,7 +31,7 @@ void HGCSSDetector::buildDetector(const unsigned indices[],
   MECAL.name = "MECAL";
   MECAL.layerIdMin = indices[1];
   MECAL.layerIdMax = indices[2];
-  MECAL.mipWeight = 1./0.0548;//mip
+  MECAL.mipWeight = 2./0.0548;//mip for 100um si
   MECAL.absWeight = 8.001/5.848;//ratio of abs dedx
   MECAL.gevWeight = 1.0;
   MECAL.gevOffset = 0.0;
@@ -40,7 +43,7 @@ void HGCSSDetector::buildDetector(const unsigned indices[],
   BECAL.name = "BECAL";
   BECAL.layerIdMin = indices[2];
   BECAL.layerIdMax = indices[3];
-  BECAL.mipWeight = 1./0.0548;//mip
+  BECAL.mipWeight = 2./0.0548;//mip for 100um si
   BECAL.absWeight = 10.854/5.848;//ratio of abs dedx
   BECAL.gevWeight = 1.0;
   BECAL.gevOffset = 0.0;
@@ -52,7 +55,7 @@ void HGCSSDetector::buildDetector(const unsigned indices[],
   FHCAL.name = "FHCAL";
   FHCAL.layerIdMin = indices[3];
   FHCAL.layerIdMax = indices[4];
-  FHCAL.mipWeight = 1./0.0849;
+  FHCAL.mipWeight = 3./0.0849;//mip for 100um si
   FHCAL.absWeight = 65.235/5.848;//ratio of abs dedx
   if (!concept) FHCAL.absWeight = 0.5*65.235/5.848;
   FHCAL.gevWeight = 1.;
@@ -139,6 +142,7 @@ void HGCSSDetector::finishInitialisation(){
       if (iL >= indices_[i] && iL < indices_[i+1]) section_[iL] = i;
     }
   }
+  printDetector(std::cout);
 }
 
 const HGCSSSubDetector & HGCSSDetector::subDetector(DetectorEnum adet){
@@ -158,3 +162,16 @@ void HGCSSDetector::reset() {
   section_.clear();
 }
 
+void HGCSSDetector::printDetector(std::ostream & aOs) const{
+  std::cout << " -------------------------- " << std::endl
+	    << " -- Detector information -- " << std::endl
+	    << " -------------------------- " << std::endl
+	    << " - nSections = " << nSections_ << std::endl
+	    << " - nLayers = " << nLayers_ << std::endl
+	    << " - detNames = " ;
+  for (unsigned i(0); i<nSections_;++i){
+    std::cout << " " << detName(i);
+  }
+  std::cout << std::endl;
+  std::cout << " -------------------------- " << std::endl;
+}

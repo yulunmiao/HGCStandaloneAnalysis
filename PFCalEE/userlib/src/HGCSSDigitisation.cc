@@ -58,11 +58,22 @@ void HGCSSDigitisation::addNoise(double & aDigiE, const unsigned & alay ,
 
 unsigned HGCSSDigitisation::adcConverter(double eMIP, DetectorEnum adet){
   if (eMIP<0) eMIP=0;
-  return static_cast<unsigned>(eMIP*mipToADC_[adet]);
+  double eADC = static_cast<unsigned>(eMIP*mipToADC_[adet]);
+  if (eADC > maxADC_[adet]) eADC = maxADC_[adet];
+  return eADC;
 }
 
-double HGCSSDigitisation::adcToMIP(const unsigned adcCounts, DetectorEnum adet){
-  return adcCounts*1.0/mipToADC_[adet];
+double HGCSSDigitisation::adcToMIP(const unsigned adcCounts, DetectorEnum adet, const bool smear){
+  double lE = adcCounts*1.0/mipToADC_[adet];
+  if (!smear) return lE;
+  return rndm_.Gaus(lE,gainSmearing_[adet]*lE);
+}
+
+double HGCSSDigitisation::MIPtoGeV(const HGCSSSubDetector & adet, 
+				   const double & aMipE)
+{
+  double lE = aMipE*adet.absWeight*adet.gevWeight-adet.gevOffset;
+  return lE;
 }
 
 double HGCSSDigitisation::sumBins(const std::vector<TH2D *> & aHistVec,
@@ -89,5 +100,6 @@ void HGCSSDigitisation::Print(std::ostream & aOs) const{
     //<< " = sigmaNoise: ECAL " << noise_.find(DetectorEnum::ECAL)->second << ", FHCAL " << noise_.find(DetectorEnum::FHCAL)->second << ", BHCAL " << noise_.find(DetectorEnum::BHCAL)->second << std::endl
       << " = MIPtoADC conversions: ECAL " << mipToADC_.find(DetectorEnum::FECAL)->second << ", FHCAL " << mipToADC_.find(DetectorEnum::FHCAL)->second << std::endl
       << " = Time cut: ECAL " << timeCut_.find(DetectorEnum::FECAL)->second << ", FHCAL " << timeCut_.find(DetectorEnum::FHCAL)->second << ", BHCAL " << timeCut_.find(DetectorEnum::BHCAL1)->second << std::endl
+      << " = Intercalibration: ECAL " << gainSmearing_.find(DetectorEnum::FECAL)->second << ", FHCAL " << gainSmearing_.find(DetectorEnum::FHCAL)->second << ", BHCAL " << gainSmearing_.find(DetectorEnum::BHCAL1)->second << std::endl
       << "====================================" << std::endl;
 };

@@ -49,7 +49,14 @@ void extractParameterFromStr(std::string aStr,T & vec){
     unsigned beginIdx =  atoi(lLay[0].c_str());
     unsigned endIdx = lLay.size() == 1 ? beginIdx :  atoi(lLay[1].c_str());
     for (unsigned iL(beginIdx); iL<endIdx+1; ++iL){
-      std::istringstream(lPair[1])>>vec[iL];
+      if (iL < vec.size())
+	std::istringstream(lPair[1])>>vec[iL];
+      else {
+	std::cout << " -- WARNING! Input parameter has more layers: " << endIdx << " than detector : " 
+		  << vec.size()
+		  << ". Ignoring additional layer #" << iL << "... PLEASE CHECK SETTINGS ARE CORRECT FOR EXISTING LAYERS!!"
+		  << std::endl;
+      }
     }
   }//loop on elements
 }
@@ -91,7 +98,10 @@ int main(int argc, char** argv){//main
 	    << " -- Input parameters: " << std::endl
 	    << " -- Input file path: " << inFilePath << std::endl
 	    << " -- Output file path: " << outFilePath << std::endl
-	    << " -- Processing " << pNevts << " events." << std::endl
+	    << " -- Processing " ;
+  if (pNevts>0) std::cout << pNevts;
+  else std::cout << "all";
+  std::cout << " events." << std::endl
 	    << " -- Granularities: " << granulStr << std::endl
 	    << " -- noise: " << noiseStr << std::endl
 	    << " -- thresholds: " << threshStr << std::endl
@@ -200,7 +210,7 @@ int main(int argc, char** argv){//main
     myDigitiser.setNoise(iL,pNoiseInMips[iL]);
     //nbCells += N_CELLS_XY_MAX/(granularity[iL]*granularity[iL]);
   }
-        
+  std::cout << std::endl;     
   //std::cout << " -- Total number of cells = " << nbCells << std::endl;
 
   geomConv.setGranularity(granularity);
@@ -329,10 +339,11 @@ int main(int argc, char** argv){//main
       double posx = lHit.get_x(cellSize);
       double posy = lHit.get_y(cellSize);
       double posz = lHit.get_z();
+      double realtime = mycalib.correctTime(lHit.time(),posx,posy,posz);
       if (energy>0 && 
-	  lHit.silayer() < geomConv.getNumberOfSiLayers(type)//,lHit.eta()) 
+	  lHit.silayer() < 1//geomConv.getNumberOfSiLayers(type)//,lHit.eta()) 
 	  )
-	geomConv.fill(type,subdetLayer,energy,lHit.time(),posx,posy,posz);
+	geomConv.fill(type,subdetLayer,energy,realtime,posx,posy,posz);
 
     }//loop on input simhits
 
@@ -349,16 +360,17 @@ int main(int argc, char** argv){//main
       TH2D *histE = geomConv.get2DHist(iL,"E");
       TH2D *histTime = geomConv.get2DHist(iL,"Time");
       TH2D *histZ = geomConv.get2DHist(iL,"Z");
-      DetectorEnum adet = myDetector.subDetector(iL).type;
-      bool isScint = myDetector.subDetector(iL).isScint;
-      bool isSi = myDetector.subDetector(iL).isSi;
+      const HGCSSSubDetector & subdet = myDetector.subDetector(iL);
+      DetectorEnum adet = subdet.type;
+      bool isScint = subdet.isScint;
+      bool isSi = subdet.isSi;
       nTotBins += histE->GetNbinsX()*histE->GetNbinsY();
       if (pSaveDigis) lDigiHits.reserve(nTotBins);
 
       double meanZpos = geomConv.getAverageZ(iL);
 
       if (debug>1){
-	std::cout << " -- Layer " << iL << " " << myDetector.subDetector(iL).name << " z=" << meanZpos
+	std::cout << " -- Layer " << iL << " " << subdet.name << " z=" << meanZpos
 		  << " totbins = " << nTotBins << " histE entries = " << histE->GetEntries() << std::endl;
       }
 
@@ -400,12 +412,12 @@ int main(int argc, char** argv){//main
 	  }
 	  bool aboveThresh = 
 	    (isSi && adc > pThreshInADC[iL]) ||
-	    (isScint && digiE > pThreshInADC[iL]*myDigitiser.adcToMIP(1,adet));
+	    (isScint && digiE > pThreshInADC[iL]*myDigitiser.adcToMIP(1,adet,false));
 	  //histE->SetBinContent(iX,iY,digiE);
 	  if ((!pSaveDigis && aboveThresh) ||
 	      pSaveDigis)
 	    {//save hits
-
+	      //double calibE = myDigitiser.MIPtoGeV(subdet,digiE);
 	      HGCSSRecoHit lRecHit;
 	      lRecHit.layer(iL);
 	      lRecHit.energy(digiE);

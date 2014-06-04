@@ -24,18 +24,31 @@ public:
     //noise_[DetectorEnum::ECAL] = 0.12;
     //noise_[DetectorEnum::FHCAL] = 0.12;
     //noise_[DetectorEnum::BHCAL] = 0.12;
-    mipToADC_[DetectorEnum::FECAL] = 50;
+    maxADC_[DetectorEnum::FECAL] = 65535; // 16-bit
+    maxADC_[DetectorEnum::MECAL] = 65535;
+    maxADC_[DetectorEnum::BECAL] = 65535;
+    maxADC_[DetectorEnum::FHCAL] = 65535;
+    maxADC_[DetectorEnum::BHCAL1] = 65535;
+    maxADC_[DetectorEnum::BHCAL2] = 65535;
+    mipToADC_[DetectorEnum::FECAL] = 50;//ADC per mips.
     mipToADC_[DetectorEnum::MECAL] = 50;
     mipToADC_[DetectorEnum::BECAL] = 50;
     mipToADC_[DetectorEnum::FHCAL] = 50;
     mipToADC_[DetectorEnum::BHCAL1] = 50;
     mipToADC_[DetectorEnum::BHCAL2] = 50;
-    timeCut_[DetectorEnum::FECAL] = 200;//ns
-    timeCut_[DetectorEnum::MECAL] = 200;//ns
-    timeCut_[DetectorEnum::BECAL] = 200;//ns
-    timeCut_[DetectorEnum::FHCAL] = 200;//ns
-    timeCut_[DetectorEnum::BHCAL1] = 200;//ns
-    timeCut_[DetectorEnum::BHCAL2] = 200;//ns
+    timeCut_[DetectorEnum::FECAL] = 20;//ns
+    timeCut_[DetectorEnum::MECAL] = 20;//ns
+    timeCut_[DetectorEnum::BECAL] = 20;//ns
+    timeCut_[DetectorEnum::FHCAL] = 20;//ns
+    timeCut_[DetectorEnum::BHCAL1] = 20;//ns
+    timeCut_[DetectorEnum::BHCAL2] = 20;//ns
+    gainSmearing_[DetectorEnum::FECAL] = 0.02;//2% intercalibration
+    gainSmearing_[DetectorEnum::MECAL] = 0.02;
+    gainSmearing_[DetectorEnum::BECAL] = 0.02;
+    gainSmearing_[DetectorEnum::FHCAL] = 0.02;
+    gainSmearing_[DetectorEnum::BHCAL1] = 0.02;
+    gainSmearing_[DetectorEnum::BHCAL2] = 0.02;
+
   };
 
   ~HGCSSDigitisation(){};
@@ -69,8 +82,16 @@ public:
     mipToADC_[adet] = aMipToADC;
   };
 
+  inline void setMaxADC(DetectorEnum adet, const double & aMaxADC){
+    maxADC_[adet] = aMaxADC;
+  };
+
   inline void setTimeCut(DetectorEnum adet, const double & aTimeCut){
     timeCut_[adet] = aTimeCut;
+  };
+
+  inline void setGainSmearing(DetectorEnum adet, const double & aVal){
+    gainSmearing_[adet] = aVal;
   };
 
   inline bool passTimeCut(DetectorEnum adet, const double & aTime){
@@ -94,7 +115,10 @@ public:
   
   unsigned adcConverter(double eMIP, DetectorEnum adet);
 
-  double adcToMIP(const unsigned acdCounts, DetectorEnum adet);
+  double adcToMIP(const unsigned acdCounts, DetectorEnum adet, const bool smear=true);
+
+  double MIPtoGeV(const HGCSSSubDetector & adet, 
+		  const double & aMipE);
 
   double sumBins(const std::vector<TH2D *> & aHistVec,
 		 const double & aMipThresh);
@@ -102,15 +126,17 @@ public:
   void Print(std::ostream & aOs) const;
 
 private:
-  TRandom3 rndm_;
   unsigned seed_;
   unsigned npe_;
   double crossTalk_;
   unsigned nTotal_;
   double sigmaPix_;
-  std::map<DetectorEnum,double> timeCut_;
-  std::map<unsigned,double> noise_;
+  TRandom3 rndm_;
   std::map<DetectorEnum,unsigned> mipToADC_;
+  std::map<DetectorEnum,unsigned> maxADC_;
+  std::map<DetectorEnum,double> timeCut_;
+  std::map<DetectorEnum,double> gainSmearing_;
+  std::map<unsigned,double> noise_;
 
 };
 

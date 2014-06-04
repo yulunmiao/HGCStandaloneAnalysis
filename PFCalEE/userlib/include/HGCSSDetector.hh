@@ -63,6 +63,11 @@ public:
   const HGCSSSubDetector & subDetector(const unsigned aLayer);
 
   unsigned getSection(const unsigned aLayer) const;
+  inline unsigned section(const DetectorEnum adet){
+    if (enumMap_.find(adet) != enumMap_.end())
+      return enumMap_[adet];
+    return nSections();
+  };
 
   void addSubdetector(const HGCSSSubDetector & adet);
   
@@ -77,6 +82,9 @@ public:
   };
 
   const HGCSSSubDetector & subDetector(DetectorEnum adet);
+  inline const HGCSSSubDetector & subDetector(const unsigned aSection) const{
+    return subdets_[aSection];
+  };
 
   inline unsigned nLayers() const{
     return nLayers_;
@@ -100,6 +108,8 @@ public:
 
 
   void reset();
+
+  void printDetector(std::ostream & aOs) const ;
 
 private:
   HGCSSDetector(){};
