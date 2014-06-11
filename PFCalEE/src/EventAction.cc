@@ -17,9 +17,6 @@ EventAction::EventAction()
   eventMessenger = new EventActionMessenger(this);
   printModulo = 10;
   outF_=TFile::Open("PFcal.root","RECREATE");
-  //ntuple_=new TNtuple("CaloStack","CaloStack","event:volNb:volX0:volX0trans:den:denWeight:denAbs:denTotal:gFrac:eFrac:muFrac:hadFrac:avgTime:nhits");
-  // ntuple_->Branch("dendydz",dendydz_,"dendydz[81]/F");
-  //cellSize_=4;
   tree_=new TTree("HGCSSTree","HGC Standalone simulation tree");
   tree_->Branch("HGCSSEvent","HGCSSEvent",&event_);
   tree_->Branch("HGCSSSamplingSectionVec","std::vector<HGCSSSamplingSection>",&ssvec_);
@@ -31,7 +28,6 @@ EventAction::EventAction()
 EventAction::~EventAction()
 {
   outF_->cd();
-  //ntuple_->Write();
   tree_->Write();
   outF_->Close();
   delete eventMessenger;
@@ -59,13 +55,8 @@ void EventAction::Detect(G4double edep, G4double stepl,G4double globalTime,
   if (genPart.isIncoming()) genvec_.push_back(genPart);
 }
 
-  //void EventAction::Detect(G4double edep, G4double stepl,G4double globalTime, G4int pdgId, G4VPhysicalVolume *volume, int iyiz)
-  //{
-  //for(size_t i=0; i<detector_->size(); i++) (*detector_)[i].add(edep,stepl,globalTime,pdgId,volume,iyiz);
-  //}
-
 //
-void EventAction::EndOfEventAction(const G4Event* evt)
+void EventAction::EndOfEventAction(const G4Event*)
 {
   bool debug(evtNb_%printModulo == 0);
   hitvec_.clear();
@@ -80,11 +71,9 @@ void EventAction::EndOfEventAction(const G4Event* evt)
     {
       HGCSSSamplingSection lSec;
       lSec.volNb(i);
-      lSec.volX0((*detector_)[i].getAbsorberX0());
-      lSec.volX0trans((*detector_)[i].getX0transversed());
+      lSec.volX0trans((*detector_)[i].getAbsorberX0());
       lSec.volLambdatrans((*detector_)[i].getAbsorberLambda());
       lSec.absorberE((*detector_)[i].getAbsorbedEnergy());
-
       lSec.measuredE((*detector_)[i].getMeasuredEnergy(false));
       lSec.totalE((*detector_)[i].getTotalEnergy());
       lSec.gFrac((*detector_)[i].getPhotonFraction());
@@ -93,21 +82,19 @@ void EventAction::EndOfEventAction(const G4Event* evt)
       lSec.neutronFrac((*detector_)[i].getNeutronFraction());
       lSec.hadFrac((*detector_)[i].getHadronicFraction());
       lSec.avgTime((*detector_)[i].getAverageTime());
-      lSec.nSiHits((*detector_)[i].getSiHitVec(0).size()+
-		   (*detector_)[i].getSiHitVec(1).size()+
-		   (*detector_)[i].getSiHitVec(2).size());
+      lSec.nSiHits((*detector_)[i].getTotalSensHits());
       ssvec_.push_back(lSec);
 
-      for (unsigned idx(0); idx<3; ++idx){
+      for (int idx(0); idx<(*detector_)[i].getNumberOfSensEle(); ++idx){
 	std::map<unsigned,HGCSSSimHit> lHitMap;
 	std::pair<std::map<unsigned,HGCSSSimHit>::iterator,bool> isInserted;
-
+	
 	//if (i>0) (*detector_)[i].trackParticleHistory(idx,(*detector_)[i-1].getSiHitVec(idx));
-
+	
 	for (unsigned iSiHit(0); iSiHit<(*detector_)[i].getSiHitVec(idx).size();++iSiHit){
 	  G4SiHit lSiHit = (*detector_)[i].getSiHitVec(idx)[iSiHit];
 	  HGCSSSimHit lHit(lSiHit,idx);
-
+	  
 	  isInserted = lHitMap.insert(std::pair<unsigned,HGCSSSimHit>(lHit.cellid(),lHit));
 	  if (!isInserted.second) isInserted.first->second.Add(lSiHit);
 	}
@@ -118,7 +105,7 @@ void EventAction::EndOfEventAction(const G4Event* evt)
 	  hitvec_.push_back(lIter->second);
 	}
 
-      }//loop on 3 sensitive layers
+      }//loop on sensitive layers
 
       if(debug) {
 	(*detector_)[i].report( (i==0) );

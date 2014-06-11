@@ -16,6 +16,7 @@ class G4VPhysicalVolume;
 class G4Material;
 class G4UniformMagField;
 class DetectorMessenger;
+class G4Colour;
 
 /**
    @class DetectorConstruction
@@ -70,6 +71,7 @@ public:
    */
   void DefineMaterials(); 
   std::map<std::string, G4Material *> m_materials;
+  std::map<std::string, G4Colour > m_colours;
   
   /**
      @short set magnetic field

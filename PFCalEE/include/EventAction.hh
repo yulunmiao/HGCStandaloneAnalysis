@@ -47,14 +47,11 @@ private:
   std::vector<SamplingSection> *detector_;
   G4int     evtNb_,printModulo;
   TFile *outF_;
-  //TNtuple *ntuple_;
   TTree *tree_;
   HGCSSEvent event_;
   HGCSSSamplingSectionVec ssvec_;
-  //Float_t event_[18];
   HGCSSSimHitVec hitvec_;
   HGCSSGenParticleVec genvec_;
-  //  Float_t event_[15], dendydz_[81], cellSize_;
   EventActionMessenger*  eventMessenger;
 
 };
