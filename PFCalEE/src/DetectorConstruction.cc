@@ -51,6 +51,65 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod) : version_(ver)
 	for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(lThick,lEle) );
 	break;
       }
+    case v_HGCALEE_v5:
+      {
+	G4cout << "[DetectorConstruction] starting v_HCALEE_v5"<< G4endl;
+	//first and last layers
+	std::vector<G4double> lThick1;
+	std::vector<std::string> lEle1;
+	lThick1.push_back(0*mm);lEle1.push_back("W");
+	lThick1.push_back(0.5*mm);lEle1.push_back("Cu");
+	lThick1.push_back(2*mm);lEle1.push_back("Air");
+	lThick1.push_back(1.2*mm);lEle1.push_back("PCB");
+	lThick1.push_back(0.1*mm);lEle1.push_back("Si");
+	lThick1.push_back(0.1*mm);lEle1.push_back("Si");
+	lThick1.push_back(0.1*mm);lEle1.push_back("Si");
+	lThick1.push_back(3*mm);lEle1.push_back("Cu");
+	lThick1.push_back(1*mm);lEle1.push_back("Pb");
+	m_caloStruct.push_back( SamplingSection(lThick1,lEle1) );
+
+	std::vector<G4double> lThickL;
+	std::vector<std::string> lEleL;
+	lThickL.push_back(1.75*mm);lEleL.push_back("W");
+	lThickL.push_back(0.5*mm);lEleL.push_back("Cu");
+	lThickL.push_back(2*mm);lEleL.push_back("Air");
+	lThickL.push_back(1.2*mm);lEleL.push_back("PCB");
+	lThickL.push_back(0.1*mm);lEleL.push_back("Si");
+	lThickL.push_back(0.1*mm);lEleL.push_back("Si");
+	lThickL.push_back(0.1*mm);lEleL.push_back("Si");
+	std::vector<G4double> lThickR;
+	std::vector<std::string> lEleR;
+	lThickR.push_back(3*mm);lEleR.push_back("Cu");
+	lThickR.push_back(1*mm);lEleR.push_back("Pb");
+	lThickR.push_back(3*mm);lEleR.push_back("Cu");
+	lThickR.push_back(0.1*mm);lEleR.push_back("Si");
+	lThickR.push_back(0.1*mm);lEleR.push_back("Si");
+	lThickR.push_back(0.1*mm);lEleR.push_back("Si");
+	lThickR.push_back(1.2*mm);lEleR.push_back("PCB");
+	lThickR.push_back(2*mm);lEleR.push_back("Air");
+	lThickR.push_back(0.5*mm);lEleR.push_back("Cu");
+	for(int i=0; i<5; i++) {
+	  m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
+	  m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
+	}
+	lThickL[0] = 2.8*mm;
+	lThickR[1] = 2.1*mm;
+	for(int i=0; i<5; i++) {
+	  m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
+	  m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
+	}
+	lThickL[0] = 4.2*mm;
+	lThickR[1] = 4.4*mm;
+	for(int i=0; i<4; i++) {
+	  m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
+	  m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
+	}
+	//last layer
+	lThick1[0] = 4.2*mm;
+	m_caloStruct.push_back( SamplingSection(lThick1,lEle1) );
+
+	break;
+      }
     case v_HGCALEE_Si80: case v_HGCALEE_Si120: case v_HGCALEE_Si200: case v_HGCALEE_Si500: case v_HGCALEE_gap1: case  v_HGCALEE_CALICE: case v_HGCALEE_inverted: case v_HGCALEE_concept: case v_HGCALEE_W: case v_HGCALEE_gap4: case v_HGCALEE_prePCB: case v_HGCAL:
       {
 	float siWidth(0.300), gap(2),pad(1);
@@ -249,9 +308,9 @@ void DetectorConstruction::DefineMaterials()
   m_materials["Polystyrole"]->AddMaterial(m_materials["H"]  , 50*perCent);
   m_materials["Polystyrole"]->AddMaterial(m_materials["C"]  , 50*perCent);
 
-  m_materials["PVC"]= new G4Material("PVC",1.350*g/cm3,2);
+  m_materials["PVC"]= new G4Material("PVC",1.350*g/cm3,3);
   m_materials["PVC"]->AddMaterial(m_materials["H"]  , 50*perCent);
-  m_materials["PVC"]->AddMaterial(m_materials["C"]  , 33.3*perCent);
+  m_materials["PVC"]->AddMaterial(m_materials["C"]  , 33.33*perCent);
   m_materials["PVC"]->AddMaterial(m_materials["Cl"]  , 16.67*perCent);
 
   m_materials["CFMix"]= new G4Material("CFMix",0.120*g/cm3,3);

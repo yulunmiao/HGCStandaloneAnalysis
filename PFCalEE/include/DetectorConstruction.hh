@@ -39,6 +39,7 @@ public:
     v_HGCALEE_W=9,
     v_HGCALEE_gap4=10,
     v_HGCALEE_prePCB=11,
+    v_HGCALEE_v5=12,
     v_HGCAL=20,
     v_HGCALHE=21,
     v_HGCALHEScint=22,

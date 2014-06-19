@@ -55,6 +55,12 @@ void EventAction::Detect(G4double edep, G4double stepl,G4double globalTime,
   if (genPart.isIncoming()) genvec_.push_back(genPart);
 }
 
+std::string EventAction::GetFirstVolumeName() const{
+  if (detector_->size()>0 && (*detector_)[0].n_elements>0)
+    return ((*detector_)[0].ele_vol[0])->GetName();
+  return "";
+}
+
 //
 void EventAction::EndOfEventAction(const G4Event*)
 {
@@ -85,7 +91,7 @@ void EventAction::EndOfEventAction(const G4Event*)
       lSec.nSiHits((*detector_)[i].getTotalSensHits());
       ssvec_.push_back(lSec);
 
-      for (int idx(0); idx<(*detector_)[i].getNumberOfSensEle(); ++idx){
+      for (int idx(0); idx<(*detector_)[i].n_sens_elements; ++idx){
 	std::map<unsigned,HGCSSSimHit> lHitMap;
 	std::pair<std::map<unsigned,HGCSSSimHit>::iterator,bool> isInserted;
 	

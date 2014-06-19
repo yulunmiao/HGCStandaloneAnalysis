@@ -18,28 +18,42 @@ public:
   SamplingSection(const std::vector<G4double> & aThicknessVec,
 		  const std::vector<std::string> & aMaterialVec)
   {
-    n_elements = aThicknessVec.size();
-    if (aMaterialVec.size() != n_elements) {
-      G4cout << " -- ERROR in sampling section definition. Expect input vectors with same size containing thicknesses (size=" << n_elements << ") and material names (size=" << aMaterialVec.size() << "). Exiting..." << G4endl;
+    if (aMaterialVec.size() != aThicknessVec.size()) {
+      G4cout << " -- ERROR in sampling section definition. Expect input vectors with same size containing thicknesses (size=" << aThicknessVec.size() << ") and material names (size=" << aMaterialVec.size() << "). Exiting..." << G4endl;
       exit(1);
     }
     Total_thick = 0;
     n_sens_elements=0;
-    for (unsigned ie(0);  ie<n_elements; ++ie){
-      ele_thick.push_back(aThicknessVec[ie]);
-      ele_name.push_back(aMaterialVec[ie]);
-      ele_X0.push_back(0);
-      ele_L0.push_back(0);
-      ele_vol.push_back(0);
-      Total_thick+=aThicknessVec[ie];
-      if (isSensitiveElement(ie)) {
-	G4SiHitVec lVec;
-	sens_HitVec.push_back(lVec);
-	++n_sens_elements;
+    n_elements=0;
+    ele_thick.clear();
+    ele_name.clear();
+    ele_X0.clear();
+    ele_L0.clear();
+    ele_vol.clear();
+    for (unsigned ie(0);  ie<aThicknessVec.size(); ++ie){
+      //consider only material with some non-0 width...
+      if (aThicknessVec[ie]>0){
+	ele_thick.push_back(aThicknessVec[ie]);
+	ele_name.push_back(aMaterialVec[ie]);
+	ele_X0.push_back(0);
+	ele_L0.push_back(0);
+	ele_vol.push_back(0);
+	Total_thick+=aThicknessVec[ie];
+	++n_elements;
+	//the following method check the total size...
+	//so incrementing first.
+	if (isSensitiveElement(n_elements-1)) {
+	  G4SiHitVec lVec;
+	  sens_HitVec.push_back(lVec);
+	  ++n_sens_elements;
+	}
       }
     }
     sens_HitVec_size_max = 0;
     resetCounters();
+
+    std::cout << " -- End of sampling section initialisation. Input " << aThicknessVec.size() << " elements, constructing " << n_elements << " elements with " << n_sens_elements << " sensitive elements." << std::endl;
+
   }
 
   //DTOR
@@ -116,14 +130,6 @@ public:
   G4double getAverageTime();
   G4int getTotalSensHits();
   G4double getTotalSensE();
-
-  inline G4int getNumberOfEle() const {
-    return n_elements;
-  };
-
-  inline G4int getNumberOfSensEle() const {
-    return n_sens_elements;
-  };
 
   const G4SiHitVec & getSiHitVec(const unsigned & idx) const;
   void trackParticleHistory(const unsigned & idx,const G4SiHitVec & incoming);

@@ -42,6 +42,8 @@ public:
   void Add( std::vector<SamplingSection> *newDetector ) { detector_=newDetector; }
   //Float_t GetCellSize() { return cellSize_; }
 
+  std::string GetFirstVolumeName() const;
+
 private:
   RunAction*  runAct;
   std::vector<SamplingSection> *detector_;

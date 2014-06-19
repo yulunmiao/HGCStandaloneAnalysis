@@ -11,7 +11,7 @@
 class HGCSSGeometryConversion{
   
 public:
-  HGCSSGeometryConversion(std::string filePath);
+  HGCSSGeometryConversion(std::string filePath,std::string model);
 
   ~HGCSSGeometryConversion();
 
