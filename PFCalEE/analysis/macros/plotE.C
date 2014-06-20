@@ -71,20 +71,21 @@ int plotE(){//main
     //"pi-/twiceSampling/GeVCal/MipThresh_0p5/ECALloss/"
     //"pi-/twiceSampling/GeVCal/EarlyDecay/MipThresh_0p5/"
     //"e-/twiceSampling/MipThresh_0p5/"
-    "pi-/"
+    "e-/"
   };
 
   TString pSuffix = "";
 
-  unsigned rebinSim = 4;//4;//2;
-  unsigned rebinReco = 2;//2;//40;
+  unsigned rebinSim = 8;//4;//2;
+  unsigned rebinReco = 1;//2;//40;
 
   bool addNoiseTerm = false;
+  bool doReco = false;
 
   const unsigned nV = 1;
-  TString version[nV] = {"23"};//,"0"};
+  TString version[nV] = {"12"};//,"0"};
   
-  const unsigned nLayers = 54;//9;//33; //54;
+  const unsigned nLayers = 30;//9;//33; //54;
 
   const bool doVsE = true;
 
@@ -97,11 +98,11 @@ int plotE(){//main
 
   //double MIPtoGeVsim = 39.74;//0.831;//39.22;//183.;//0.914;//41.69;//43.97;//0.92;// 41.98;
   //double offsetsim = 0;//-0.7;//-1.6;//318;//-1.04;//-4.3;//-38;//-1.06;
-  double MIPtoGeV = 1.;//0.90;//39.33;
-  double G4MIPtoGeV = 39.33*0.90;
-  double offset = 0;//-0.77;//-1.8;
+  double MIPtoGeV = 278;//0.90;//39.33;
+  double G4MIPtoGeV = 1;//277.64;//39.33*0.90;
+  double offset = -79;//-0.77;//-1.8;
 
-  char unitStr[10] = "GeV";
+  char unitStr[10] = "MIPs";
 
   const unsigned MAX = 8;
   TString type[MAX];
@@ -116,8 +117,8 @@ int plotE(){//main
   bool isPU = false;
   
   
-  //unsigned genEn[]={10,15,20,25,30,40,50,60,80,150,200,300,500};
-  unsigned genEn[]={10,15,18,20,25,30,35,40,45,50,60,80};
+  unsigned genEn[]={5,10,15,20,25,30,40,50,60,80,100,200,300,500};//150,200,300,500};
+  //unsigned genEn[]={10,15,18,20,25,30,35,40,45,50,60,80};
   //60,80};//,100,200,300,
   //500};//,1000,2000};
   //unsigned genEn[]={10,20,30,40,60,80};
@@ -181,7 +182,7 @@ int plotE(){//main
       
       if (scenario[iS].find("PU") != scenario[iS].npos) isPU = true;
       
-      TString plotDir = "../PLOTS/gitV00-01-00/version"+version[iV]+"/"+scenario[iS]+"/";
+      TString plotDir = "../PLOTS/gitV00-01-01/version"+version[iV]+"/"+scenario[iS]+"/";
       //plotDir += "noWeights/";
       //TString plotDir = "../PLOTS/gitV00-01-00/version_"+version[iV]+"/scenario_"+scenario[iS]+"/";
       //TString plotDir = "../PLOTS/gitV00-01-00/version_"+version[iV]+"/";
@@ -287,7 +288,7 @@ int plotE(){//main
 		    << std::endl;
 
 	  //p_Etotal[iE]->Rebin(rebin[iE]);
-	  p_Etotal[iE]->Rebin(genEn[iE]<25?rebinSim/2:rebinSim);
+	  p_Etotal[iE]->Rebin(genEn[iE]<30?rebinSim/2:genEn[iE]<300?rebinSim:4*rebinSim);
 
 	  lName.str("");
 	  lName << "p_Ereco" << pDetector;
@@ -297,14 +298,17 @@ int plotE(){//main
 	    isG4File = true;
 	  }
 	  else {
-	    std::cout << " --- Reco E = entries " << p_Ereco[iE]->GetEntries() 
-		      << " mean " << p_Ereco[iE]->GetMean() 
-		      << " rms " << p_Ereco[iE]->GetRMS() 
-		      << " overflows " << p_Ereco[iE]->GetBinContent(p_Etotal[iE]->GetNbinsX()+1)
-		      << std::endl;
-
-	    //p_Ereco[iE]->Rebin(rebin[iE]);
-	    p_Ereco[iE]->Rebin(rebinReco);
+	    if (doReco){
+	      std::cout << " --- Reco E = entries " << p_Ereco[iE]->GetEntries() 
+			<< " mean " << p_Ereco[iE]->GetMean() 
+			<< " rms " << p_Ereco[iE]->GetRMS() 
+			<< " overflows " << p_Ereco[iE]->GetBinContent(p_Etotal[iE]->GetNbinsX()+1)
+			<< std::endl;
+	      
+	      //p_Ereco[iE]->Rebin(rebin[iE]);
+	      p_Ereco[iE]->Rebin(genEn[iE]<50?rebinReco:2*rebinReco);
+	    }
+	    else isG4File = true;
 	  }
 
 	}//loop on energies
@@ -630,8 +634,8 @@ int plotE(){//main
 		if (addNoiseTerm) {
 		  fitref->SetParameter(2,0.18*0.18);
 		  fitFunc2->SetParameter(2,0.18*0.18);
-		  fitFunc2->SetParLimits(2,0,0);
-		  fitFunc2->FixParameter(2,0.18*0.18);
+		  fitFunc2->SetParLimits(2,0,2);
+		  //fitFunc2->FixParameter(2,0.18*0.18);
 		}
 		if (i<4) {
 		  //fitFunc2->SetParameter(2,0.);
@@ -642,7 +646,7 @@ int plotE(){//main
 		  //fitFunc2->SetLineColor(6);
 		  //fitFunc2->SetParameter(2,0.);
 		  //fitFunc2->SetParLimits(2,0,0);
-		  fitref->Draw("same");
+		  //fitref->Draw("same");
 		}
 		gr->Fit(fitFunc2,"RME");
 		sigmaStoch[iSm][iS][i] = sqrt(fitFunc2->GetParameter(0));
@@ -660,26 +664,30 @@ int plotE(){//main
 		else sprintf(buf,"#frac{#sigma}{E} #propto #frac{s}{#sqrt{E}} #oplus c");
 		double Emin = doVsE?40 : 1/sqrt(genEn[nGenEn-1]);
 		if (i<4) lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax(),buf);
-		else lat.DrawLatex(doVsE?Emin+20:Emin+0.1,gr->GetYaxis()->GetXmax(),buf);
+		else lat.DrawLatex(doVsE?Emin+80:Emin+0.1,gr->GetYaxis()->GetXmax(),buf);
 		sprintf(buf,"s=%3.3f #pm %3.3f",sigmaStoch[iSm][iS][i],sigmaStochErr[iSm][iS][i]);
-		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.92-i/6*0.22),buf);
+		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.9-i/6*0.22),buf);
 		sprintf(buf,"c=%3.3f #pm %3.3f",sigmaConst[iSm][iS][i],sigmaConstErr[iSm][iS][i]);
-		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.87-i/6*0.22),buf);
+		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.85-i/6*0.22),buf);
 		sprintf(buf,"chi2/NDF = %3.3f/%d = %3.3f",fitFunc2->GetChisquare(),fitFunc2->GetNDF(),fitFunc2->GetChisquare()/fitFunc2->GetNDF());
-		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.77-i/6*0.22),buf);
+		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.75-i/6*0.22),buf);
 		//if (i>3){
 		if (addNoiseTerm) {
 		  sprintf(buf,"n=%3.3f #pm %3.3f",sigmaNoise[iSm][iS][i],sigmaNoiseErr[iSm][iS][i]);
-		  lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.82-i/6*0.22),buf);
+		  lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.8-i/6*0.22),buf);
 		}
 		lat.SetTextColor(7);
 		sprintf(buf,"CALICE s=%3.3f, c=%3.3f",sqrt(fitref->GetParameter(0)),sqrt(fitref->GetParameter(1)));
-		if (i<4) lat.DrawLatex(8,gr->GetYaxis()->GetXmin()*1.1,buf);
+		//if (i<4) lat.DrawLatex(8,gr->GetYaxis()->GetXmin()*1.1,buf);
 	      }
 	    myc[i%4]->Update();
 	    if (doShower) {
 	      myc[i%4]->Print(plotDir+"/"+type[i]+"_Shower.pdf");
 	      myc[i%4]->Print(plotDir+"/"+type[i]+"_Shower.png");
+	    }
+	    else if (i%4>1 && doVsE){
+	      myc[i%4]->Print(plotDir+"/"+type[i]+"_vsE.pdf");
+	      myc[i%4]->Print(plotDir+"/"+type[i]+"_vsE.png");
 	    }
 	    else {
 	      myc[i%4]->Print(plotDir+"/"+type[i]+".pdf");

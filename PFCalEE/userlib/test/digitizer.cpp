@@ -162,6 +162,15 @@ int main(int argc, char** argv){//main
   bool isHCALonly = inFilePath.find("version21")!=inFilePath.npos || isScintOnly;
   bool isCaliceHcal = inFilePath.find("version23")!=inFilePath.npos || inFilePath.find("version_23")!=inFilePath.npos;
 
+  unsigned versionNumber = 0;
+  unsigned nchar = 0;
+  if (inFilePath.substr(inFilePath.find("version")+8,1)=="_") nchar = 1;
+  else nchar = 2;
+  std::string lvers = inFilePath.substr(inFilePath.find("version")+7,nchar);
+  std::istringstream(lvers)>>versionNumber;
+  
+  std::cout << " -- Version number is : " << versionNumber << std::endl;
+
   unsigned indices[7] = {0,0,0,0,0,0,0};
   //fill layer indices
   if (isScintOnly) {
@@ -180,6 +189,15 @@ int main(int argc, char** argv){//main
     indices[4] = 24;
     indices[5] = 33;
     indices[6] = 33;
+  }
+  else if (versionNumber < 20){
+    indices[0] = 0;
+    indices[1] = versionNumber==8?11:10;
+    indices[2] = versionNumber==8?21:20;
+    indices[3] = versionNumber==8?31:30;
+    indices[4] = indices[3];
+    indices[5] = indices[3];
+    indices[6] = indices[3];
   }
   else {
     indices[0] = 0;

@@ -109,6 +109,14 @@ int main(int argc, char** argv){//main
   bool isScintOnly =  inFilePath.find("version22")!=inFilePath.npos;
   bool isHCALonly = inFilePath.find("version21")!=inFilePath.npos || isScintOnly;
   bool isCaliceHcal = inFilePath.find("version23")!=inFilePath.npos || inFilePath.find("version_23")!=inFilePath.npos;
+  unsigned versionNumber = 0;
+  unsigned nchar = 0;
+  if (inFilePath.substr(inFilePath.find("version")+8,1)=="_") nchar = 1;
+  else nchar = 2;
+  std::string lvers = inFilePath.substr(inFilePath.find("version")+7,nchar);
+  std::istringstream(lvers)>>versionNumber;
+
+  std::cout << " -- Version number is : " << versionNumber << std::endl;
 
   unsigned indices[7] = {0,0,0,0,0,0,0};
   //fill layer indices
@@ -128,6 +136,15 @@ int main(int argc, char** argv){//main
     indices[4] = 24;
     indices[5] = 33;
     indices[6] = 33;
+  }
+  else if (versionNumber < 20){
+    indices[0] = 0;
+    indices[1] = versionNumber==8?11:10;
+    indices[2] = versionNumber==8?21:20;
+    indices[3] = versionNumber==8?31:30;
+    indices[4] = indices[3];
+    indices[5] = indices[3];
+    indices[6] = indices[3];
   }
   else {
     indices[0] = 0;
@@ -196,8 +213,8 @@ int main(int argc, char** argv){//main
 			      1000,0,5000);
   p_nRecHits->StatOverflows();
 
-  TH1F *p_EsimTotal = new TH1F("p_EsimTotal",";Esim (MIPs)",5000,0,50000);
-  TH1F *p_ErecoTotal = new TH1F("p_ErecoTotal",";Ereco (GeV)",12000,0,6000);
+  TH1F *p_EsimTotal = new TH1F("p_EsimTotal",";Esim (MIPs)",15000,0,300000);
+  TH1F *p_ErecoTotal = new TH1F("p_ErecoTotal",";Ereco (GeV)",12000,0,3000);
   p_EsimTotal->StatOverflows();
   p_ErecoTotal->StatOverflows();
 
@@ -330,6 +347,17 @@ int main(int argc, char** argv){//main
 
     unsigned firstInteraction = 0;
 
+    double refThicknessOdd = (*ssvec)[1].volX0trans();
+    if (refThicknessOdd == 0) {
+      std::cerr << " ERROR, ref thickness odd is " << refThicknessOdd << ", setting to 1..." << std::endl;
+      refThicknessOdd = 1;
+    }
+    double refThicknessEven = (*ssvec)[2].volX0trans();
+    if (refThicknessEven == 0) {
+      std::cerr << " ERROR, ref thickness odd is " << refThicknessEven << ", setting to 1..." << std::endl;
+      refThicknessEven = 1;
+    }
+
     for (unsigned iH(0); iH<(*simhitvec).size(); ++iH){//loop on hits
       HGCSSSimHit lHit = (*simhitvec)[iH];
 
@@ -337,6 +365,13 @@ int main(int argc, char** argv){//main
       if (lHit.silayer() >= nSiLayers) continue; 
 
       unsigned layer = lHit.layer();
+
+      if (layer >= nLayers) {
+	//std::cout << " WARNING! SimHits with layer " << layer << " outside of detector's definition range ! Please fix the digitiser or the detector definition used here. Ignoring..." << std::endl;
+	continue;
+      }
+
+
       unsigned sec =  myDetector.getSection(layer);
 
       if ( firstInteraction == 0 &&
@@ -366,7 +401,14 @@ int main(int argc, char** argv){//main
       EtotSim[layer] += energy;
       if (debug>1) std::cout << "-hit" << iH << "-" << layer << " " << energy << " " << EtotSim[layer];
 
-      Esim[sec] += energy;
+      double absweight = 1;
+      if (versionNumber==12){
+	//absweight = layer%2==0 ?
+	//(*ssvec)[layer].volX0trans()/refThicknessEven : 
+	//(*ssvec)[layer].volX0trans()/refThicknessOdd;
+	absweight = (*ssvec)[layer].volX0trans();
+      }
+      Esim[sec] += energy*absweight;
       
     }//loop on hits
 
@@ -389,6 +431,11 @@ int main(int argc, char** argv){//main
 
       double energy = lHit.energy();//in MIP already...
       unsigned layer = lHit.layer();
+
+      if (layer >= nLayers) {
+	//std::cout << " WARNING! RecoHits with layer " << layer << " outside of detector's definition range ! Please fix the digitiser or the detector definition used here. Ignoring..." << std::endl;
+	continue;
+      }
       unsigned sec =  myDetector.getSection(layer);
       
       p_recoxy[layer]->Fill(posx,posy,energy);
@@ -423,9 +470,10 @@ int main(int argc, char** argv){//main
     //EtmpSim[iD] = 0;
     //EtmpRec[iD] = 0;
     //}
+    
     double etotmips = 0;
     for (unsigned iD(0); iD<nSections; ++iD){
-      etotmips += Esim[iD]*myDetector.subDetectorBySection(iD).absWeight;
+      etotmips += Esim[iD]*(versionNumber==12?1:myDetector.subDetectorBySection(iD).absWeight);
     }
     
     for (unsigned iL(0);iL<nLayers;++iL){//loop on layers
