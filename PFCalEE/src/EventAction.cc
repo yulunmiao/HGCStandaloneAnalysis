@@ -2,6 +2,9 @@
 
 #include "RunAction.hh"
 #include "EventActionMessenger.hh"
+#include "DetectorConstruction.hh"
+
+#include "HGCSSInfo.hh"
 
 #include "G4RunManager.hh"
 #include "G4Event.hh"
@@ -17,6 +20,17 @@ EventAction::EventAction()
   eventMessenger = new EventActionMessenger(this);
   printModulo = 10;
   outF_=TFile::Open("PFcal.root","RECREATE");
+  outF_->cd();
+  //save some info
+  HGCSSInfo *info = new HGCSSInfo();
+  info->cellSize(CELL_SIZE_X);
+  info->model(((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->getModel());
+  info->version(((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->getVersion());
+  
+  std::cout << " -- check Info: version = " << info->version()
+	    << " model = " << info->model() << std::endl;
+  outF_->WriteObjectAny(info,"HGCSSInfo","Info");
+
   tree_=new TTree("HGCSSTree","HGC Standalone simulation tree");
   tree_->Branch("HGCSSEvent","HGCSSEvent",&event_);
   tree_->Branch("HGCSSSamplingSectionVec","std::vector<HGCSSSamplingSection>",&ssvec_);

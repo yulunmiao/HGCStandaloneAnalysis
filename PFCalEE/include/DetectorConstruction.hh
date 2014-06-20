@@ -63,6 +63,10 @@ public:
    */
   std::vector<SamplingSection> m_caloStruct;
   std::vector<SamplingSection> *getStructure() { return &m_caloStruct; }
+
+  int getModel() const { return model_; }
+  int getVersion() const { return version_; }
+
   const std::vector<G4LogicalVolume*>  & getSiLogVol() {return m_logicSi; }
   const std::vector<G4LogicalVolume*>  & getAbsLogVol() {return m_logicAbs; }
 

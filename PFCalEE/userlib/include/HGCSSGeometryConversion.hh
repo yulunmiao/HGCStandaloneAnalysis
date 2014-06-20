@@ -11,7 +11,7 @@
 class HGCSSGeometryConversion{
   
 public:
-  HGCSSGeometryConversion(std::string filePath,std::string model);
+  HGCSSGeometryConversion(std::string filePath,int model, double cellsize);
 
   ~HGCSSGeometryConversion();
 
@@ -23,10 +23,6 @@ public:
     return width_;
   };
   
-  inline void cellSize(const double & asize){
-    cellSize_ = asize;
-  };
-
   inline double cellSize() const{
     return cellSize_;
   };

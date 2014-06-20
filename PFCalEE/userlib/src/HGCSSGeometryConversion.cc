@@ -3,23 +3,15 @@
 #include <iostream>
 #include <cmath>
 
-HGCSSGeometryConversion::HGCSSGeometryConversion(std::string filePath, std::string model){
+HGCSSGeometryConversion::HGCSSGeometryConversion(std::string filePath, int model, double cellsize){
+
   width_ = 200;//mm
-  model_ = 0;
-  if (model=="model1") {
-    width_ = 500;
-    model_ = 1;
-  }
-  else if (model == "model2") {
-    width_ = 1700*2;
-    model_ = 2;
-  }
-  else if (model == "model3") {
-    width_ = 1000;
-    model_ = 3;
-  }
+  model_ = model;
+  if (model==1) width_ = 500;
+  else if (model == 2) width_ = 1700*2;
+  else if (model == 3) width_ = 1000;
   
-  cellSize_ = 2.5;
+  cellSize_ = cellsize;
   
 }
 
