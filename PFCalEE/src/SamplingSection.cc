@@ -11,12 +11,13 @@ void SamplingSection::add(G4double den, G4double dl,
 			  G4int layerId)
 {
   std::string lstr = vol->GetName();
-  unsigned idx=0;
   for (unsigned ie(0); ie<n_elements;++ie){
     if(ele_vol[ie] && lstr==ele_vol[ie]->GetName()){ 
       ele_den[ie]+=den;
       ele_dl[ie]+=dl;
       if (isSensitiveElement(ie)) {//if Si || sci
+	unsigned idx = getSensitiveLayerIndex(lstr);
+	//std::cout << "sens layer " << idx << " " << lstr << std::endl;
 	sens_time[idx]+=den*globalTime;
 	
 	//discriminate further by particle type
@@ -41,7 +42,6 @@ void SamplingSection::add(G4double den, G4double dl,
 	lHit.parentId = parentID;
 	sens_HitVec[idx].push_back(lHit);
 
-	idx++;	
       }//if Si
     }//if in right material
     

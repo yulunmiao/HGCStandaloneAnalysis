@@ -74,6 +74,17 @@ public:
     return false;
   };
 
+  inline unsigned getSensitiveLayerIndex(std::string astr){
+    size_t pos = astr.find("phys");
+    //std::cout << astr << " " << pos << std::endl;
+    if (pos != astr.npos && pos>1) {
+      unsigned idx = 0;//atoi(astr[pos-1]);
+      std::istringstream(astr.substr(pos-1,1))>>idx;
+      return idx;
+    }
+    return 0;
+  };
+
   inline G4Colour g4Colour(const unsigned & aEle){
     if (isSensitiveElement(aEle)) return G4Colour::White();
     if (ele_name[aEle] == "Cu") return G4Colour::Black();

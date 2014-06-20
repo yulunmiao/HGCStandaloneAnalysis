@@ -90,7 +90,7 @@ void SteppingAction::UserSteppingAction(const G4Step* aStep)
       && (thePostPVname==eventAction_->GetFirstVolumeName())
       ){
     //if (pdgId == 2112) 
-    std::cout << "-- found incoming: " << thePrePVname << " " << thePostPVname << " " << globalTime << std::endl;
+    //std::cout << "-- found incoming: " << thePrePVname << " " << thePostPVname << " " << globalTime << std::endl;
     //const G4ThreeVector & preposition = thePreStepPoint->GetPosition();
     const G4ThreeVector & postposition = thePostStepPoint->GetPosition();
     //std::cout << "pre " << preposition[0] << " " << preposition[1] << " " << postposition[2]

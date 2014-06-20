@@ -64,6 +64,7 @@ public:
       exit(1);
     }
     layer_ = 3*layer+silayer;
+    //if (silayer>0) std::cout << layer_ << " " << layer << " " << silayer << std::endl;
   };
 
   inline unsigned cellid() const {

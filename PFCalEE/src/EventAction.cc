@@ -91,12 +91,16 @@ void EventAction::EndOfEventAction(const G4Event*)
       lSec.nSiHits((*detector_)[i].getTotalSensHits());
       ssvec_.push_back(lSec);
 
-      for (int idx(0); idx<(*detector_)[i].n_sens_elements; ++idx){
+      //std::cout << " n_sens_ele = " << (*detector_)[i].n_sens_elements << std::endl;
+
+      for (unsigned idx(0); idx<(*detector_)[i].n_sens_elements; ++idx){
 	std::map<unsigned,HGCSSSimHit> lHitMap;
 	std::pair<std::map<unsigned,HGCSSSimHit>::iterator,bool> isInserted;
 	
 	//if (i>0) (*detector_)[i].trackParticleHistory(idx,(*detector_)[i-1].getSiHitVec(idx));
 	
+	//std::cout << " si layer " << idx << " " << (*detector_)[i].getSiHitVec(idx).size() << std::endl;
+
 	for (unsigned iSiHit(0); iSiHit<(*detector_)[i].getSiHitVec(idx).size();++iSiHit){
 	  G4SiHit lSiHit = (*detector_)[i].getSiHitVec(idx)[iSiHit];
 	  HGCSSSimHit lHit(lSiHit,idx);

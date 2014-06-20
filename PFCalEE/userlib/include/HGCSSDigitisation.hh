@@ -30,9 +30,9 @@ public:
     maxADC_[DetectorEnum::FHCAL] = 65535;
     maxADC_[DetectorEnum::BHCAL1] = 65535;
     maxADC_[DetectorEnum::BHCAL2] = 65535;
-    mipToADC_[DetectorEnum::FECAL] = 50;//ADC per mips.
-    mipToADC_[DetectorEnum::MECAL] = 50;
-    mipToADC_[DetectorEnum::BECAL] = 50;
+    mipToADC_[DetectorEnum::FECAL] = 4;//ADC per mips.
+    mipToADC_[DetectorEnum::MECAL] = 4;
+    mipToADC_[DetectorEnum::BECAL] = 4;
     mipToADC_[DetectorEnum::FHCAL] = 50;
     mipToADC_[DetectorEnum::BHCAL1] = 50;
     mipToADC_[DetectorEnum::BHCAL2] = 50;

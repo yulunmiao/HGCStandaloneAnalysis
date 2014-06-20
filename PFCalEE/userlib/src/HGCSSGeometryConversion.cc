@@ -5,9 +5,19 @@
 
 HGCSSGeometryConversion::HGCSSGeometryConversion(std::string filePath, std::string model){
   width_ = 200;//mm
-  if (model=="model1") width_ = 500;
-  else if (model == "model2") width_ = 1700*2;
-  else if (model == "model3") width_ = 1000;
+  model_ = 0;
+  if (model=="model1") {
+    width_ = 500;
+    model_ = 1;
+  }
+  else if (model == "model2") {
+    width_ = 1700*2;
+    model_ = 2;
+  }
+  else if (model == "model3") {
+    width_ = 1000;
+    model_ = 3;
+  }
   
   cellSize_ = 2.5;
   
@@ -16,6 +26,7 @@ HGCSSGeometryConversion::HGCSSGeometryConversion(std::string filePath, std::stri
 unsigned HGCSSGeometryConversion::getNumberOfSiLayers(const DetectorEnum type,
 						      const double & eta) const
 {
+  if (model_ != 2) return 3;
   if (type == DetectorEnum::FHCAL) return 3;
   unsigned etaBin = 0;
   if (fabs(eta)>=1.4 && fabs(eta)<1.9) etaBin = 1;
