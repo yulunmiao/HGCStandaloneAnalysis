@@ -36,10 +36,14 @@ granularity='0-20:4,21-63:6'
 noise='0-63:0.12'
 threshold='0-63:25'
 
-if opt.version<20:
+if (opt.version==8) :
     granularity='0-20:4,21-30:6'
     noise='0-30:0.12'
     threshold='0-30:2'
+elif opt.version<20 :
+    granularity='0-19:4,20-29:6'
+    noise='0-29:0.12'
+    threshold='0-29:2'
 elif opt.version==21:
     granularity='0-32:6'
     noise='0-32:0.12'
