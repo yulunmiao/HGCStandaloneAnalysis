@@ -71,7 +71,7 @@ int plotE(){//main
     //"pi-/twiceSampling/GeVCal/MipThresh_0p5/ECALloss/"
     //"pi-/twiceSampling/GeVCal/EarlyDecay/MipThresh_0p5/"
     //"e-/twiceSampling/MipThresh_0p5/"
-    "e-/"
+    "e-/300um/"
   };
 
   TString pSuffix = "";
@@ -117,7 +117,7 @@ int plotE(){//main
   bool isPU = false;
   
   
-  unsigned genEn[]={5,10,15,20,25,30,40,50,60,80,100,200,300,500};//150,200,300,500};
+  unsigned genEn[]={5,10,15,20,25,30,40,50,60,80,100,150,200,300,500};//150,200,300,500};
   //unsigned genEn[]={10,15,18,20,25,30,35,40,45,50,60,80};
   //60,80};//,100,200,300,
   //500};//,1000,2000};
@@ -182,7 +182,7 @@ int plotE(){//main
       
       if (scenario[iS].find("PU") != scenario[iS].npos) isPU = true;
       
-      TString plotDir = "../PLOTS/gitV00-01-01/version"+version[iV]+"/"+scenario[iS]+"/";
+      TString plotDir = "../PLOTS/gitV00-01-02/version"+version[iV]+"/"+scenario[iS]+"/";
       //plotDir += "noWeights/";
       //TString plotDir = "../PLOTS/gitV00-01-00/version_"+version[iV]+"/scenario_"+scenario[iS]+"/";
       //TString plotDir = "../PLOTS/gitV00-01-00/version_"+version[iV]+"/";
@@ -801,7 +801,7 @@ int plotE(){//main
     
     
     saveName.str("");
-    saveName << "../PLOTS/gitV00-01-00/version" << version[0] << "/" << scenario[0] << "/Intercalibration";
+    saveName << "../PLOTS/gitV00-01-02/version" << version[0] << "/" << scenario[0] << "/Intercalibration";
     mycF->Update();
     mycF->Print((saveName.str()+".png").c_str());
     mycF->Print((saveName.str()+".pdf").c_str());

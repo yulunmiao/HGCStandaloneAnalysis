@@ -82,7 +82,7 @@ void EventAction::EndOfEventAction(const G4Event*)
   hitvec_.clear();
 
   event_.eventNumber(evtNb_);
-  event_.cellSize(CELL_SIZE_X);
+  //event_.cellSize(CELL_SIZE_X);
 
   ssvec_.clear();
   ssvec_.reserve(detector_->size());

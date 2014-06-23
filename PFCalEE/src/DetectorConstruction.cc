@@ -51,15 +51,18 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod) : version_(ver)
 	for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(lThick,lEle) );
 	break;
       }
-    case v_HGCALEE_v5:
+    case v_HGCALEE_v5: case v_HGCALEE_v5_gap4:
       {
 	G4cout << "[DetectorConstruction] starting v_HCALEE_v5"<< G4endl;
+	G4double airThick = 2*mm;
+	if(version_==v_HGCALEE_v5_gap4) airThick = 4*mm;
+
 	//first and last layers
 	std::vector<G4double> lThick1;
 	std::vector<std::string> lEle1;
 	lThick1.push_back(0*mm);lEle1.push_back("W");
 	lThick1.push_back(0.5*mm);lEle1.push_back("Cu");
-	lThick1.push_back(2*mm);lEle1.push_back("Air");
+	lThick1.push_back(airThick);lEle1.push_back("Air");
 	lThick1.push_back(1.2*mm);lEle1.push_back("PCB");
 	lThick1.push_back(0.1*mm);lEle1.push_back("Si");
 	lThick1.push_back(0.1*mm);lEle1.push_back("Si");
@@ -72,7 +75,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod) : version_(ver)
 	std::vector<std::string> lEleL;
 	lThickL.push_back(1.75*mm);lEleL.push_back("W");
 	lThickL.push_back(0.5*mm);lEleL.push_back("Cu");
-	lThickL.push_back(2*mm);lEleL.push_back("Air");
+	lThickL.push_back(airThick);lEleL.push_back("Air");
 	lThickL.push_back(1.2*mm);lEleL.push_back("PCB");
 	lThickL.push_back(0.1*mm);lEleL.push_back("Si");
 	lThickL.push_back(0.1*mm);lEleL.push_back("Si");
@@ -86,7 +89,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod) : version_(ver)
 	lThickR.push_back(0.1*mm);lEleR.push_back("Si");
 	lThickR.push_back(0.1*mm);lEleR.push_back("Si");
 	lThickR.push_back(1.2*mm);lEleR.push_back("PCB");
-	lThickR.push_back(2*mm);lEleR.push_back("Air");
+	lThickR.push_back(airThick);lEleR.push_back("Air");
 	lThickR.push_back(0.5*mm);lEleR.push_back("Cu");
 	for(int i=0; i<5; i++) {
 	  m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
