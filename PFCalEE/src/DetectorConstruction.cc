@@ -51,7 +51,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod) : version_(ver)
 	for(int i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(lThick,lEle) );
 	break;
       }
-    case v_HGCALEE_v5: case v_HGCALEE_v5_gap4:
+    case v_HGCALEE_v5: case v_HGCALEE_v5_gap4: case v_HGCAL_v5:
       {
 	G4cout << "[DetectorConstruction] starting v_HCALEE_v5"<< G4endl;
 	G4double airThick = 2*mm;
@@ -126,6 +126,41 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod) : version_(ver)
 	lThick1.push_back(3*mm);lEle1.push_back("Cu");
 	lThick1.push_back(1*mm);lEle1.push_back("Pb");
 	m_caloStruct.push_back( SamplingSection(lThick1,lEle1) );
+
+	if(version_==v_HGCAL_v5){
+	  //add HCAL
+	  std::vector<G4double> lThick;
+	  std::vector<std::string> lEle;
+	  lThick.push_back(26*mm);lEle.push_back("Brass");
+	  lThick.push_back(3*mm); lEle.push_back("Cu");
+	  lThick.push_back(0.1*mm);lEle.push_back("Si");
+	  lThick.push_back(0.1*mm);lEle.push_back("Si");
+	  lThick.push_back(0.1*mm);lEle.push_back("Si");
+	  lThick.push_back(1*mm);lEle.push_back("PCB");
+	  lThick.push_back(2*mm);lEle.push_back("Air");
+	  
+	  for(int i=0; i<12; i++) {
+	    //add an intermediate Si layer to study resolution improvement
+	    lThick[1] = 0;
+	    lThick[5] = 0;
+	    lThick[6] = 0;
+	    m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+	    lThick[1] = 3*mm;
+	    lThick[5] = 1*mm;
+	    lThick[6] = 2*mm;
+	    m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+	  }
+	  lThick.clear(); lEle.clear();
+	  lThick.push_back(78.*mm);lEle.push_back("Brass");
+	  lThick.push_back(9.*mm);lEle.push_back("Scintillator");
+	  lThick.push_back(2*mm);lEle.push_back("Air");
+	  for(int i=0; i<9; i++) m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+	
+	}
+
+
+
+
 
 	break;
       }

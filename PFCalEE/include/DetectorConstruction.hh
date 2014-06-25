@@ -44,7 +44,8 @@ public:
     v_HGCAL=20,
     v_HGCALHE=21,
     v_HGCALHEScint=22,
-    v_HGCALHE_CALICE=23
+    v_HGCALHE_CALICE=23,
+    v_HGCAL_v5=24
   };
 
   enum DetectorModel {

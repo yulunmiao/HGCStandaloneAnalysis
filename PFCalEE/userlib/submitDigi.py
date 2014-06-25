@@ -56,6 +56,10 @@ elif (opt.version==23) :
     granularity='0-53:12'
     noise='0-53:0.12'
     threshold='0-53:25'
+elif opt.version==24:
+    granularity='0-19:4,20-62:6'
+    noise='0-62:0.12'
+    threshold='0-62:25'
 
 suffix='' #highnoise'
 
