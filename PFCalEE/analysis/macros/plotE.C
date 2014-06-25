@@ -71,12 +71,12 @@ int plotE(){//main
     //"pi-/twiceSampling/GeVCal/MipThresh_0p5/ECALloss/"
     //"pi-/twiceSampling/GeVCal/EarlyDecay/MipThresh_0p5/"
     //"e-/twiceSampling/MipThresh_0p5/"
-    "e-/300um/"
+    "e-/100um/"
   };
 
   TString pSuffix = "";
 
-  unsigned rebinSim = 8;//4;//2;
+  unsigned rebinSim = 2;//4;//2;
   unsigned rebinReco = 1;//2;//40;
 
   bool addNoiseTerm = false;
@@ -98,9 +98,9 @@ int plotE(){//main
 
   //double MIPtoGeVsim = 39.74;//0.831;//39.22;//183.;//0.914;//41.69;//43.97;//0.92;// 41.98;
   //double offsetsim = 0;//-0.7;//-1.6;//318;//-1.04;//-4.3;//-38;//-1.06;
-  double MIPtoGeV = 278;//0.90;//39.33;
+  double MIPtoGeV = 93.46;//467.6;//312.58;//157.03;//0.90;//39.33;
   double G4MIPtoGeV = 1;//277.64;//39.33*0.90;
-  double offset = -79;//-0.77;//-1.8;
+  double offset = 0;//-9;//-0.77;//-1.8;
 
   char unitStr[10] = "MIPs";
 
@@ -117,7 +117,7 @@ int plotE(){//main
   bool isPU = false;
   
   
-  unsigned genEn[]={5,10,15,20,25,30,40,50,60,80,100,150,200,300,500};//150,200,300,500};
+  unsigned genEn[]={5,10,15,20,25,30,40,50,60,80,100,300,500};//150,200,300,500};
   //unsigned genEn[]={10,15,18,20,25,30,35,40,45,50,60,80};
   //60,80};//,100,200,300,
   //500};//,1000,2000};
