@@ -75,6 +75,7 @@ public:
   };
 
   inline unsigned getSensitiveLayerIndex(std::string astr){
+    if (astr.find("_")== astr.npos) return 0;
     size_t pos = astr.find("phys");
     //std::cout << astr << " " << pos << std::endl;
     if (pos != astr.npos && pos>1) {

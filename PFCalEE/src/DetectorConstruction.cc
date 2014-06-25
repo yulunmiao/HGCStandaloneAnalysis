@@ -60,6 +60,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod) : version_(ver)
 	//first and last layers
 	std::vector<G4double> lThick1;
 	std::vector<std::string> lEle1;
+	lThick1.push_back(0*mm);lEle1.push_back("Cu");
 	lThick1.push_back(0*mm);lEle1.push_back("W");
 	lThick1.push_back(0.5*mm);lEle1.push_back("Cu");
 	lThick1.push_back(airThick);lEle1.push_back("Air");
@@ -67,12 +68,12 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod) : version_(ver)
 	lThick1.push_back(0.1*mm);lEle1.push_back("Si");
 	lThick1.push_back(0.1*mm);lEle1.push_back("Si");
 	lThick1.push_back(0.1*mm);lEle1.push_back("Si");
-	lThick1.push_back(3*mm);lEle1.push_back("Cu");
-	lThick1.push_back(1*mm);lEle1.push_back("Pb");
 	m_caloStruct.push_back( SamplingSection(lThick1,lEle1) );
 
 	std::vector<G4double> lThickL;
 	std::vector<std::string> lEleL;
+	lThickL.push_back(3*mm);lEleL.push_back("Cu");
+	lThickL.push_back(1*mm);lEleL.push_back("Pb");
 	lThickL.push_back(1.75*mm);lEleL.push_back("W");
 	lThickL.push_back(0.5*mm);lEleL.push_back("Cu");
 	lThickL.push_back(airThick);lEleL.push_back("Air");
@@ -80,6 +81,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod) : version_(ver)
 	lThickL.push_back(0.1*mm);lEleL.push_back("Si");
 	lThickL.push_back(0.1*mm);lEleL.push_back("Si");
 	lThickL.push_back(0.1*mm);lEleL.push_back("Si");
+
 	std::vector<G4double> lThickR;
 	std::vector<std::string> lEleR;
 	lThickR.push_back(3*mm);lEleR.push_back("Cu");
@@ -90,25 +92,39 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod) : version_(ver)
 	lThickR.push_back(0.1*mm);lEleR.push_back("Si");
 	lThickR.push_back(1.2*mm);lEleR.push_back("PCB");
 	lThickR.push_back(airThick);lEleR.push_back("Air");
-	lThickR.push_back(0.5*mm);lEleR.push_back("Cu");
-	for(int i=0; i<5; i++) {
+
+	//second layer with Cu/Pb in front
+	m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
+	m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
+
+	//reset to 0.5 Cu and no lead for following layers
+	lThickL[0] = 0.5;
+	lThickL[1] = 0;
+
+
+	//lThickR.push_back(0.5*mm);lEleR.push_back("Cu");
+	for(int i=0; i<4; i++) {
 	  m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
 	  m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
 	}
-	lThickL[0] = 2.8*mm;
+	lThickL[2] = 2.8*mm;
 	lThickR[1] = 2.1*mm;
 	for(int i=0; i<5; i++) {
 	  m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
 	  m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
 	}
-	lThickL[0] = 4.2*mm;
+	lThickL[2] = 4.2*mm;
 	lThickR[1] = 4.4*mm;
 	for(int i=0; i<4; i++) {
 	  m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
 	  m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
 	}
-	//last layer
-	lThick1[0] = 4.2*mm;
+	//last layer: add Cu+W+Cu...
+	lThick1[0] = 0.5*mm;
+	lThick1[1] = 4.2*mm;
+	//add last structure layers
+	lThick1.push_back(3*mm);lEle1.push_back("Cu");
+	lThick1.push_back(1*mm);lEle1.push_back("Pb");
 	m_caloStruct.push_back( SamplingSection(lThick1,lEle1) );
 
 	break;
