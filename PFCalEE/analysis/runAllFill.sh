@@ -1,21 +1,21 @@
 #!/bin/sh
 
-INPATH=root://eoscms//eos/cms/store/user/amagnan/HGCalEEGeant4/gitV00-01-02/
+INPATH=root://eoscms//eos/cms/store/user/amagnan/HGCalEEGeant4/gitV00-02-02/
 
-for v in 12
+for v in 12 13
 do
     for p in e-
     do
-	MYDIR=PLOTS/gitV00-01-02/version$v/$p/100um/
+	MYDIR=PLOTS/gitV00-02-02/version$v/$p/300um/
 	mkdir -p $MYDIR
 	for r in 0
 	do
 	    #for e in 10 15 18 20 25 30 35 40 45 50 60 80
 	    #for e in 50 60 80 100 150 200 300 400 500
-	    for e in 5 10 15 20 25 30 40 50 60 80 100 150 200 300 400 500
+	    for e in 5 10 15 20 25 30 40 50 60 #80 100 150 200 300 400 500
 	    do
 		echo "Processing v${v}_p${p}_e${e}_run${r}"
-		./bin/validation 0 $INPATH/$p/ HGcal_version${v}_model1_BOFF_e${e}.root Digi_version${v}_model1_BOFF_e${e}.root $MYDIR/validation_e${e}.root 1 >& v${v}_p${p}_e${e}_100um.log &
+		./bin/validation 0 $INPATH/$p/ HGcal_version${v}_model1_BOFF_e${e}.root Digi_version${v}_model1_BOFF_e${e}.root $MYDIR/validation_e${e}.root 3 >& v${v}_p${p}_e${e}_300um.log &
 	    done
 	done
     done

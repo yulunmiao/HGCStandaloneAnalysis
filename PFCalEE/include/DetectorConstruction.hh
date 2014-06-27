@@ -60,6 +60,8 @@ public:
    */
   DetectorConstruction(G4int ver=DetectorConstruction::v_CALICE, G4int mod=DetectorConstruction::m_SIMPLE_20);
 
+  void buildHGCALFHE(const unsigned aVersion);
+  void buildHGCALBHE(const unsigned aVersion);
   /**
      @short calorimeter structure (sampling sections)
    */

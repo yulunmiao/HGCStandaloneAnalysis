@@ -15,6 +15,7 @@
 #include "TRandom3.h"
 
 #include "HGCSSEvent.hh"
+#include "HGCSSInfo.hh"
 #include "HGCSSSamplingSection.hh"
 #include "HGCSSSimHit.hh"
 #include "HGCSSRecoHit.hh"
@@ -104,23 +105,72 @@ int main(int argc, char** argv){//main
   TRandom3 lRndm(0);
   std::cout << " -- Random number seed: " << lRndm.GetSeed() << std::endl;
 
+  /////////////////////////////////////////////////////////////
+  //input
+  /////////////////////////////////////////////////////////////
+
+
+  std::ostringstream input;
+  input << filePath << "/" << simFileName;
+
+  TFile *simFile = TFile::Open(input.str().c_str());
+
+  if (!simFile) {
+    std::cout << " -- Error, input file " << input.str() << " cannot be opened. Exiting..." << std::endl;
+    return 1;
+  }
+  else std::cout << " -- input file " << simFile->GetName() << " successfully opened." << std::endl;
+  
+  TTree *lSimTree = (TTree*)simFile->Get("HGCSSTree");
+  if (!lSimTree){
+    std::cout << " -- Error, tree HGCSSTree cannot be opened. Exiting..." << std::endl;
+    return 1;
+  }
+
+  input.str("");
+  input << filePath << "/" << recoFileName;
+  
+  TFile *recFile = TFile::Open(input.str().c_str());
+
+  if (!recFile) {
+    std::cout << " -- Error, input file " << input.str() << " cannot be opened. Exiting..." << std::endl;
+    return 1;
+  }
+  else std::cout << " -- input file " << recFile->GetName() << " successfully opened." << std::endl;
+
+  TTree *lRecTree = (TTree*)recFile->Get("RecoTree");
+  if (!lRecTree){
+    std::cout << " -- Error, tree RecoTree cannot be opened. Exiting..." << std::endl;
+    return 1;
+  }
+
+
+  /////////////////////////////////////////////////////////////
+  //Info
+  /////////////////////////////////////////////////////////////
+
+  HGCSSInfo * info=(HGCSSInfo*)simFile->Get("Info");
+  const double cellSize = info->cellSize();
+  const unsigned versionNumber = info->version();
+  const unsigned model = info->model();
+  
+  //models 0,1 or 3.
+  bool isTBsetup = (model != 2);
+  bool isCaliceHcal = versionNumber==23;//inFilePath.find("version23")!=inFilePath.npos || inFilePath.find("version_23")!=inFilePath.npos;
+
+
+  std::cout << " -- Version number is : " << versionNumber 
+	    << ", model = " << model
+	    << ", cellSize = " << cellSize
+	    << std::endl;
+
+
   //initialise detector
   HGCSSDetector & myDetector = theDetector();
-  bool isScintOnly =  inFilePath.find("version22")!=inFilePath.npos;
-  bool isHCALonly = inFilePath.find("version21")!=inFilePath.npos || isScintOnly;
-  bool isCaliceHcal = inFilePath.find("version23")!=inFilePath.npos || inFilePath.find("version_23")!=inFilePath.npos;
-  unsigned versionNumber = 0;
-  unsigned nchar = 0;
-  if (inFilePath.substr(inFilePath.find("version")+8,1)=="_") nchar = 1;
-  else nchar = 2;
-  std::string lvers = inFilePath.substr(inFilePath.find("version")+7,nchar);
-  std::istringstream(lvers)>>versionNumber;
-
-  std::cout << " -- Version number is : " << versionNumber << std::endl;
 
   unsigned indices[7] = {0,0,0,0,0,0,0};
   //fill layer indices
-  if (isScintOnly) {
+  if (versionNumber==22) {
     indices[4] = 0;
     indices[5] = 9;
     indices[6] = 9;
@@ -131,7 +181,7 @@ int main(int argc, char** argv){//main
     indices[5] = 47;
     indices[6] = 54;
   }
-  else if (isHCALonly) {
+  else if (versionNumber==21) {
     indices[3] = 0;
     indices[4] = 24;
     indices[5] = 33;
@@ -156,17 +206,28 @@ int main(int argc, char** argv){//main
     indices[6] = 64;
   }
 
+
   myDetector.buildDetector(indices,concept,isCaliceHcal);
 
   //initialise calibration class
   HGCSSCalibration mycalib(inFilePath);
   HGCSSDigitisation myDigitiser;
+  HGCSSGeometryConversion geomConv(inFilePath,model,cellSize);
+  std::vector<unsigned> granularity;
 
   const unsigned nLayers = myDetector.nLayers();
   const unsigned nSections = myDetector.nSections();
 
   std::cout << " -- N layers = " << nLayers << std::endl
 	    << " -- N sections = " << nSections << std::endl;
+
+  granularity.resize(nLayers,4);
+  if (isCaliceHcal) granularity.resize(nLayers,12);
+
+  geomConv.setGranularity(granularity);
+  geomConv.initialiseHistos();
+
+
 
   TFile *outputFile = TFile::Open(outPath.c_str(),"RECREATE");
   
@@ -218,6 +279,9 @@ int main(int argc, char** argv){//main
   p_EsimTotal->StatOverflows();
   p_ErecoTotal->StatOverflows();
 
+  TH1F *p_simhitEnergy = new TH1F("p_simhitEnergy",";log(E_{hit} (MeV))",1000,-10,10);
+  TH1F *p_rechitEnergy = new TH1F("p_rechitEnergy",";log(E_{hit} (MeV))",1000,-10,10);
+
   TH2F *p_xy[nLayers];
   TH2F *p_recoxy[nLayers];
   TH1F *p_EfracSim[nLayers];
@@ -258,40 +322,6 @@ int main(int argc, char** argv){//main
     p_Ereco[iD]->StatOverflows();
   }
 
-
-  std::ostringstream input;
-  input << filePath << "/" << simFileName;
-
-  TFile *simFile = TFile::Open(input.str().c_str());
-
-  if (!simFile) {
-    std::cout << " -- Error, input file " << input.str() << " cannot be opened. Exiting..." << std::endl;
-    return 1;
-  }
-  else std::cout << " -- input file " << simFile->GetName() << " successfully opened." << std::endl;
-  
-  TTree *lSimTree = (TTree*)simFile->Get("HGCSSTree");
-  if (!lSimTree){
-    std::cout << " -- Error, tree HGCSSTree cannot be opened. Exiting..." << std::endl;
-    return 1;
-  }
-
-  input.str("");
-  input << filePath << "/" << recoFileName;
-  
-  TFile *recFile = TFile::Open(input.str().c_str());
-
-  if (!recFile) {
-    std::cout << " -- Error, input file " << input.str() << " cannot be opened. Exiting..." << std::endl;
-    return 1;
-  }
-  else std::cout << " -- input file " << recFile->GetName() << " successfully opened." << std::endl;
-
-  TTree *lRecTree = (TTree*)recFile->Get("RecoTree");
-  if (!lRecTree){
-    std::cout << " -- Error, tree RecoTree cannot be opened. Exiting..." << std::endl;
-    return 1;
-  }
 
 
   HGCSSEvent * event = 0;
@@ -358,6 +388,11 @@ int main(int argc, char** argv){//main
       refThicknessEven = 1;
     }
 
+    //to get simhit energy in final granularity
+    unsigned prevLayer = 10000;
+    DetectorEnum type = DetectorEnum::FECAL;
+    unsigned subdetLayer=0;
+
     for (unsigned iH(0); iH<(*simhitvec).size(); ++iH){//loop on hits
       HGCSSSimHit lHit = (*simhitvec)[iH];
 
@@ -370,7 +405,13 @@ int main(int argc, char** argv){//main
 	//std::cout << " WARNING! SimHits with layer " << layer << " outside of detector's definition range ! Please fix the digitiser or the detector definition used here. Ignoring..." << std::endl;
 	continue;
       }
-
+      if (layer != prevLayer){
+	const HGCSSSubDetector & subdet = myDetector.subDetectorByLayer(layer);
+	type = subdet.type;
+	subdetLayer = layer-subdet.layerIdMin;
+	prevLayer = layer;
+	if (debug > 1) std::cout << " - layer " << layer << " " << subdet.name << " " << subdetLayer << std::endl;
+      }     
 
       unsigned sec =  myDetector.getSection(layer);
 
@@ -381,12 +422,29 @@ int main(int argc, char** argv){//main
 	   lHit.mainParentTrackID() > 0
 	   ) firstInteraction = layer;
 
-      double posx = lHit.get_x();
-      double posy = lHit.get_y();
+      double posx = lHit.get_x(cellSize);
+      double posy = lHit.get_y(cellSize);
       double posz = lHit.get_z();
       double radius = sqrt(posx*posx+posy*posy);
-	
+      double lRealTime = mycalib.correctTime(lHit.time(),posx,posy,posz);
       double energy = lHit.energy()*mycalib.MeVToMip(layer);
+
+      //bool passTime = myDigitiser.passTimeCut(type,realtime);
+      //if (!passTime) continue;
+
+      //fill map to have simhits in final granularity
+      if (energy>0 && 
+	  lHit.silayer() < geomConv.getNumberOfSiLayers(type)//,lHit.eta()) 
+	  ){
+	if (debug > 1) std::cout << " hit " << iH 
+				 << " lay " << layer  
+				 << " x " << posx 
+				 << " y " << posy
+				 << " z " << posz
+				 << " t " << lHit.time() << " " << lRealTime
+				 << std::endl;
+	geomConv.fill(type,subdetLayer,lHit.energy(),lRealTime,posx,posy,posz);
+      }
       if (debug>1) {
 	std::cout << " --  SimHit " << iH << "/" << (*simhitvec).size() << " --" << std::endl
 		  << " --  position x,y " << posx << "," << posy << std::endl;
@@ -395,22 +453,34 @@ int main(int argc, char** argv){//main
 
       p_xy[layer]->Fill(posx,posy,energy);
       //correct for time of flight
-      double lRealTime = mycalib.correctTime(lHit.time(),posx,posy,posz);
       p_timeSim->Fill(lRealTime);
       
       EtotSim[layer] += energy;
       if (debug>1) std::cout << "-hit" << iH << "-" << layer << " " << energy << " " << EtotSim[layer];
 
       double absweight = 1;
-      if (versionNumber==12){
+      //if (versionNumber==12){
 	//absweight = layer%2==0 ?
 	//(*ssvec)[layer].volX0trans()/refThicknessEven : 
 	//(*ssvec)[layer].volX0trans()/refThicknessOdd;
-	absweight = (*ssvec)[layer].volX0trans();
-      }
+      absweight = (*ssvec)[layer].volX0trans();
+	//}
       Esim[sec] += energy*absweight;
       
     }//loop on hits
+
+    //fill hit energy in final granularity
+    for (unsigned iL(0); iL<nLayers; ++iL){//loop on layers
+      TH2D *histE = geomConv.get2DHist(iL,"E");
+      for (int iX(1); iX<histE->GetNbinsX()+1;++iX){
+	for (int iY(1); iY<histE->GetNbinsY()+1;++iY){
+	  double simE = histE->GetBinContent(iX,iY);
+
+	  if (simE>0) p_simhitEnergy->Fill(log10(simE));
+	}
+      }
+    }
+
 
     p_nSimHits->Fill((*simhitvec).size());
     p_firstInteraction->Fill(firstInteraction);
@@ -431,6 +501,8 @@ int main(int argc, char** argv){//main
 
       double energy = lHit.energy();//in MIP already...
       unsigned layer = lHit.layer();
+
+      p_rechitEnergy->Fill(log10(energy/mycalib.MeVToMip(layer)));
 
       if (layer >= nLayers) {
 	//std::cout << " WARNING! RecoHits with layer " << layer << " outside of detector's definition range ! Please fix the digitiser or the detector definition used here. Ignoring..." << std::endl;
@@ -473,7 +545,7 @@ int main(int argc, char** argv){//main
     
     double etotmips = 0;
     for (unsigned iD(0); iD<nSections; ++iD){
-      etotmips += Esim[iD]*(versionNumber==12?1:myDetector.subDetectorBySection(iD).absWeight);
+      etotmips += Esim[iD];//*(versionNumber==12?1:myDetector.subDetectorBySection(iD).absWeight);
     }
     
     for (unsigned iL(0);iL<nLayers;++iL){//loop on layers
