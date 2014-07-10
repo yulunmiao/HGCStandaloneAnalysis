@@ -26,6 +26,215 @@
 #include "HGCSSDetector.hh"
 #include "HGCSSGeometryConversion.hh"
 
+unsigned encodeChannelId(const unsigned iL,const unsigned rebin,
+			 const unsigned binX,const unsigned binY)
+{
+
+  return 
+    (rebin & 0x000F) | 
+    ((binX & 0x00FF)<<4) |
+    ((binY & 0x00FF)<<12) |
+    ((iL & 0x0FFF)<<20)
+    ;
+
+}
+
+void fillHitHistos(TH1F *p_simhitEnergy,
+		   TH1F *p_simnoisehitEnergy,
+		   TH1F *p_xtalknoisehitEnergy,
+		   TH1F *p_rechitEnergy,
+		   TH2F *p_outvsinEnergy,
+		   const std::vector<double> & simE, 
+		   const double & MeVToMip,
+		   const double & absweight,
+		   const unsigned layer,
+		   HGCSSDigitisation & myDigitiser,
+		   TH1F *p_noise,
+		   const unsigned rebin,
+		   std::vector<double> & energies){
+
+  double sim = simE[0]*MeVToMip;
+  energies[0] += sim*absweight;
+  p_simhitEnergy->Fill(sim);//log10(simE));
+  if (sim>0.5){
+    energies[13] += sim*absweight;
+  }
+
+  //just noise
+  double digiE = sim;
+  myDigitiser.setNoise(layer,0.12);
+  myDigitiser.addNoise(digiE,layer,p_noise);
+  if (digiE > 0.5){
+    energies[1] += digiE*absweight;
+    p_simnoisehitEnergy->Fill(digiE);
+  }
+  digiE = sim;
+  myDigitiser.setNoise(layer,0.15);
+  myDigitiser.addNoise(digiE,layer,p_noise);
+  if (digiE > 0.5){
+    energies[2] += digiE*absweight;
+  }
+  digiE = sim;
+  myDigitiser.setNoise(layer,0.2);
+  myDigitiser.addNoise(digiE,layer,p_noise);
+  if (digiE > 0.5){
+    energies[3] += digiE*absweight;
+  }
+
+  //inter-pixel crosstalk+noise
+  myDigitiser.setNoise(layer,0.12);
+  myDigitiser.setIPCrossTalk(0.025*rebin);
+  double xtalkE = myDigitiser.ipXtalk(simE)*MeVToMip;
+  digiE = xtalkE;
+  myDigitiser.addNoise(digiE,layer,p_noise);
+  if (digiE > 0.5){
+    energies[4] += digiE*absweight;
+    p_xtalknoisehitEnergy->Fill(digiE);
+  }
+  myDigitiser.setIPCrossTalk(0.035*rebin);
+  xtalkE = myDigitiser.ipXtalk(simE)*MeVToMip;
+  digiE = xtalkE;
+  myDigitiser.addNoise(digiE,layer,p_noise);
+  if (digiE > 0.5){
+    energies[5] += digiE*absweight;
+  }
+  myDigitiser.setIPCrossTalk(0.05*rebin);
+  xtalkE = myDigitiser.ipXtalk(simE)*MeVToMip;
+  digiE = xtalkE;
+  myDigitiser.addNoise(digiE,layer,p_noise);
+  if (digiE > 0.5){
+    energies[6] += digiE*absweight;
+  }
+
+  //randomisation
+  myDigitiser.setNoise(layer,0.12);
+  myDigitiser.setCrossTalk(0.25);
+  myDigitiser.setNTotalPixels(1156);
+  myDigitiser.setSigmaPix(3);
+  digiE = myDigitiser.digiE(sim);
+  myDigitiser.addNoise(digiE,layer,p_noise);	      
+  if (digiE > 0.5){
+    energies[7] += digiE*absweight;
+  }
+
+  myDigitiser.setSigmaPix(6);
+  digiE = myDigitiser.digiE(sim);
+  myDigitiser.addNoise(digiE,layer,p_noise);	      
+  if (digiE > 0.5){
+    energies[8] += digiE*absweight;
+  }
+
+  myDigitiser.setNTotalPixels(925);
+  myDigitiser.setSigmaPix(3);
+  digiE = myDigitiser.digiE(sim);
+  myDigitiser.addNoise(digiE,layer,p_noise);	      
+  if (digiE > 0.5){
+    energies[9] += digiE*absweight;
+  }
+
+  myDigitiser.setSigmaPix(6);
+  digiE = myDigitiser.digiE(sim);
+  myDigitiser.addNoise(digiE,layer,p_noise);	      
+  if (digiE > 0.5){
+    energies[10] += digiE*absweight;
+  }
+
+  myDigitiser.setIPCrossTalk(0.025*rebin);
+  xtalkE = myDigitiser.ipXtalk(simE)*MeVToMip;
+  
+  myDigitiser.setNTotalPixels(1156);
+  myDigitiser.setSigmaPix(3);
+  digiE = myDigitiser.digiE(xtalkE);
+  myDigitiser.addNoise(digiE,layer,p_noise);	      
+  if (digiE > 0.5){
+    p_rechitEnergy->Fill(digiE);
+    energies[11] += digiE*absweight;
+    p_outvsinEnergy->Fill(sim,digiE);
+  }
+
+  myDigitiser.setIPCrossTalk(0.035*rebin);
+  xtalkE = myDigitiser.ipXtalk(simE)*MeVToMip;
+  myDigitiser.setNTotalPixels(925);
+  myDigitiser.setSigmaPix(6);
+  myDigitiser.setNoise(layer,0.15);
+  digiE = myDigitiser.digiE(xtalkE);
+  myDigitiser.addNoise(digiE,layer,p_noise);	      
+  if (digiE > 0.5){
+    energies[12] += digiE*absweight;
+  }
+
+}
+
+void fillBHHistos(TH2D *histE,
+		  const unsigned iL,
+		  bool firstEvent,
+		  TRandom3 & lRndm,
+		  std::map<unsigned,bool> & channelAlive,
+		  TH1F *p_simhitEnergy,
+		  TH1F *p_simnoisehitEnergy,
+		  TH1F *p_xtalknoisehitEnergy,
+		  TH1F *p_rechitEnergy,
+		  TH2F *p_outvsinEnergy,
+		  const double & MeVtoMip,
+		  const double & absweight,
+		  HGCSSDigitisation & myDigitiser,
+		  TH1F *p_noise,
+		  std::vector<double> & Etotcal,
+		  double minx, double maxx,
+		  double miny, double maxy
+		  ){
+  //std::cout << " rebin 4: " << histE->GetNbinsX() << " " << histE->GetNbinsY() << std::endl;
+  for (int iX(1); iX<histE->GetNbinsX()+1;++iX){
+    for (int iY(1); iY<histE->GetNbinsY()+1;++iY){
+      //discard corners...
+      if ((iX==1 && (iY==1 || iY==histE->GetNbinsY())) ||
+	  (iX==histE->GetNbinsX() && (iY==1 || iY==histE->GetNbinsY()))
+	  ) continue;
+     
+      double simE = histE->GetBinContent(iX,iY);
+      //if (simE==0) continue;
+      std::vector<double> simEvec;
+      simEvec.push_back(simE);
+      if (iX>1) simEvec.push_back(histE->GetBinContent(iX-1,iY));
+      if (iX<histE->GetNbinsX()) simEvec.push_back(histE->GetBinContent(iX+1,iY));
+      if (iY>1) simEvec.push_back(histE->GetBinContent(iX,iY-1));
+      if (iY<histE->GetNbinsY()) simEvec.push_back(histE->GetBinContent(iX,iY+1));
+      //assemble in real granularity
+      double posx = histE->GetXaxis()->GetBinCenter(iX);
+      double posy = histE->GetYaxis()->GetBinCenter(iY);
+      
+      if (posx > minx &&
+	  posx < maxx && 
+	  posy > miny && 
+	  posy < maxy){
+
+	//if (iL==0) std::cout << iL << " " << counter << " " << histE->GetName() << " " << iX << " " << iY << " " << posx << " " << posy << std::endl;
+	
+	unsigned channelId = encodeChannelId(iL,4,iX,iY);
+	//discard 2% randomly
+	if (firstEvent){
+	  double keep = lRndm.Rndm();
+	  if (keep<0.02) {
+	    channelAlive[channelId] = false;
+	    std::cout << " Channel " << iL << " " << posx << " " << posy << " set to dead." << std::endl;
+	  }
+	  else channelAlive[channelId] = true;
+	}
+	if (!channelAlive[channelId]) continue;
+	
+	fillHitHistos(p_simhitEnergy,
+		      p_simnoisehitEnergy,
+		      p_xtalknoisehitEnergy,
+		      p_rechitEnergy,
+		      p_outvsinEnergy,
+		      simEvec,MeVtoMip,absweight,iL,
+		      myDigitiser,p_noise,4,Etotcal);
+      }
+      
+    }//iY   
+  }//iX
+}//method
+
 int main(int argc, char** argv){//main  
 
   if (argc < 7) {
@@ -59,11 +268,15 @@ int main(int argc, char** argv){//main
   unsigned nX=(maxX-minX)/10,nY=(maxY-minY)/10;
   unsigned nZ=maxZ-minZ;
 
-  double HcalPionCalib = 0.901;//1./0.9;//1/0.846;
-  double HcalPionOffset = -0.81;
+  double HcalEMCalib = 1;//39.81;//38;
+  double HcalEMOffset = 0;//1.9;//-15;
+  double HcalPionCalib = 1;//0.901;//1./0.9;//1/0.846;
+  double HcalPionOffset = 0;//-0.81;
   // choose a jet definition
   //double R = 0.5;
   //JetDefinition jet_def(antikt_algorithm, R);
+
+  bool plotHitSpectra = true;
 
   //////////////////////////////////////////////////////////
   //// End Hardcoded config ////////////////////////////////////
@@ -84,11 +297,12 @@ int main(int argc, char** argv){//main
   if (argc >7) debug = atoi(argv[7]);
 
 
+  bool isEM = false;
 
-  if (selectEarlyDecays && 
-      (inFilePath.find("e-")!=inFilePath.npos || 
-       inFilePath.find("e+")!=inFilePath.npos)
-      ) {
+  if (inFilePath.find("e-")!=inFilePath.npos || 
+      inFilePath.find("e+")!=inFilePath.npos) isEM = true;
+
+  if (selectEarlyDecays && isEM) {
     selectEarlyDecays = false;
     HcalPionCalib = 1;
     HcalPionOffset = 0;
@@ -102,7 +316,7 @@ int main(int argc, char** argv){//main
   if (pNevts == 0) std::cout << "all events." << std::endl;
   else std::cout << pNevts << " events." << std::endl;
 
-  TRandom3 lRndm(0);
+  TRandom3 lRndm(1);
   std::cout << " -- Random number seed: " << lRndm.GetSeed() << std::endl;
 
   /////////////////////////////////////////////////////////////
@@ -212,22 +426,49 @@ int main(int argc, char** argv){//main
   //initialise calibration class
   HGCSSCalibration mycalib(inFilePath);
   HGCSSDigitisation myDigitiser;
+  myDigitiser.setRandomSeed(lRndm.GetSeed());
+
   HGCSSGeometryConversion geomConv(inFilePath,model,cellSize);
   std::vector<unsigned> granularity;
-
+  std::vector<double> pNoiseInMips;
+ 
   const unsigned nLayers = myDetector.nLayers();
   const unsigned nSections = myDetector.nSections();
 
   std::cout << " -- N layers = " << nLayers << std::endl
 	    << " -- N sections = " << nSections << std::endl;
 
-  granularity.resize(nLayers,4);
-  if (isCaliceHcal) granularity.resize(nLayers,12);
 
-  geomConv.setGranularity(granularity);
-  geomConv.initialiseHistos();
+  if (isCaliceHcal && plotHitSpectra) {
+    granularity.resize(nLayers,12);
+    pNoiseInMips.resize(nLayers,0.15);
+ 
+    std::cout << " -- Granularities are setup like this:" << std::endl;
+    for (unsigned iL(0); iL<nLayers; ++iL){
+      std::cout << "Layer " ;
+      if (iL<10) std::cout << " ";
+      std::cout << iL << " : " << granularity[iL] << ", ";
+      if (iL%5==4) std::cout << std::endl;
+      myDigitiser.setNoise(iL,pNoiseInMips[iL]);
+    }
+    std::cout << std::endl;
+    geomConv.setGranularity(granularity);
+    geomConv.initialiseHistos();
+  }
 
-
+  //fill histos for 12*12 cells
+  TH2D *bottom = new TH2D("bottom",";x;y",
+			  7,-450,390,
+			  7,-450,390);
+  TH2D *right = new TH2D("right",";x;y",
+			 7,-390,450,
+			 7,-450,390);
+  TH2D *top = new TH2D("top",";x;y",
+		       7,-390,450,
+		       7,-390,450);
+  TH2D *left = new TH2D("left",";x;y",
+			7,-450,390,
+			7,-390,450);
 
   TFile *outputFile = TFile::Open(outPath.c_str(),"RECREATE");
   
@@ -246,6 +487,25 @@ int main(int argc, char** argv){//main
 	    << " -- Z: " << nZ << " " << minZ << " " << maxZ << std::endl
     ;
   outputFile->cd();
+
+  //tree
+  TTree *outtree = new TTree("Estudy","Tree to study energy resolution");
+  std::vector<double> energies;
+  energies.resize(14,0);
+  outtree->Branch("G4",&energies[0]);
+  outtree->Branch("G4mipcut",&energies[13]);
+  outtree->Branch("G4Noise12",&energies[1]);
+  outtree->Branch("G4Noise15",&energies[2]);
+  outtree->Branch("G4Noise20",&energies[3]);
+  outtree->Branch("G4XT2d5Noise",&energies[4]);
+  outtree->Branch("G4XT3d5Noise",&energies[5]);
+  outtree->Branch("G4XT5Noise",&energies[6]);
+  outtree->Branch("G4Rand1156N3Noise",&energies[7]);
+  outtree->Branch("G4Rand1156N6Noise",&energies[8]);
+  outtree->Branch("G4Rand925N3Noise",&energies[9]);
+  outtree->Branch("G4Rand925N6Noise",&energies[10]);
+  outtree->Branch("G4XT2d5Rand1156N3Noise12",&energies[11]);
+  outtree->Branch("G4XT3d5Rand925N6Noise15",&energies[12]);
 
   TH2F *p_EsimvsLayer = new TH2F("p_EsimvsLayer",";layer ; Esim (MIPs)",
 				 nLayers,0,nLayers,
@@ -275,40 +535,46 @@ int main(int argc, char** argv){//main
   p_nRecHits->StatOverflows();
 
   TH1F *p_EsimTotal = new TH1F("p_EsimTotal",";Esim (MIPs)",15000,0,300000);
-  TH1F *p_ErecoTotal = new TH1F("p_ErecoTotal",";Ereco (GeV)",12000,0,3000);
+  TH1F *p_ErecoTotal = new TH1F("p_ErecoTotal",";Ereco (GeV)",20000,0,5000);
   p_EsimTotal->StatOverflows();
   p_ErecoTotal->StatOverflows();
 
-  TH1F *p_simhitEnergy = new TH1F("p_simhitEnergy",";log(E_{hit} (MeV))",1000,-10,10);
-  TH1F *p_rechitEnergy = new TH1F("p_rechitEnergy",";log(E_{hit} (MeV))",1000,-10,10);
+  TH1F *p_simhitEnergy = new TH1F("p_simhitEnergy",";E_{hit} (MIPs)",200,0,10);
+  TH1F *p_simnoisehitEnergy = new TH1F("p_simnoisehitEnergy",";E_{hit} (MIPs)",200,0,10);
+  TH1F *p_xtalknoisehitEnergy = new TH1F("p_xtalknoisehitEnergy",";E_{hit} (MIPs)",200,0,10);
+  TH1F *p_rechitEnergy = new TH1F("p_rechitEnergy",";E_{hit} (MIPs)",200,0,10);
+  TH2F *p_outvsinEnergy = new TH2F("p_outvsinEnergy",";E_{hit}^{sim} (MIPs);E_{hit}^{rec} (MIPs)",500,0,500,500,0,500);
 
-  TH2F *p_xy[nLayers];
-  TH2F *p_recoxy[nLayers];
-  TH1F *p_EfracSim[nLayers];
-  TH1F *p_EfracReco[nLayers];
+  TH1F * p_noise = new TH1F("noiseCheck",";noise (MIPs)",100,-5,5);
+
+  //TH2F *p_xy[nLayers];
+  //TH2F *p_recoxy[nLayers];
+  // TH1F *p_EfracSim[nLayers];
+  // TH1F *p_EfracReco[nLayers];
   TH1F *p_Esim[nSections];
   TH1F *p_Ereco[nSections];
 
   std::ostringstream lName;
-  for (unsigned iL(0); iL<nLayers; ++iL){
+  /*for (unsigned iL(0); iL<nLayers; ++iL){
     lName.str("");
     lName << "p_xy_" << iL;
     p_xy[iL] = new TH2F(lName.str().c_str(),";x(mm);y(mm)",
-			nX,minX,maxX,
-			nY,minY,maxY);
+   			nX,minX,maxX,
+   			nY,minY,maxY);
     lName.str("");
     lName << "p_recoxy_" << iL;
     p_recoxy[iL] = new TH2F(lName.str().c_str(),";x(mm);y(mm)",
-			    nX,minX,maxX,
-			    nY,minY,maxY);
-    lName.str("");
-    lName << "p_EfracSim_" << iL;
-    p_EfracSim[iL] = new TH1F(lName.str().c_str(),";integrated sim E_{layer}/E_{total}",101,0,1.01);
-    lName.str("");
-    lName << "p_EfracReco_" << iL;
-    p_EfracReco[iL] = new TH1F(lName.str().c_str(),";integrated reco E_{layer}/E_{total}",101,0,1.01); 
+   			    nX,minX,maxX,
+   			    nY,minY,maxY);
+  //   lName.str("");
+  //   lName << "p_EfracSim_" << iL;
+  //   p_EfracSim[iL] = new TH1F(lName.str().c_str(),";integrated sim E_{layer}/E_{total}",101,0,1.01);
+  //   lName.str("");
+  //   lName << "p_EfracReco_" << iL;
+  //   p_EfracReco[iL] = new TH1F(lName.str().c_str(),";integrated reco E_{layer}/E_{total}",101,0,1.01); 
   }
-  
+  */
+
   for (unsigned iD(0); iD<nSections; ++iD){
     lName.str("");
     lName << "p_Esim_" << myDetector.detName(iD);
@@ -358,6 +624,9 @@ int main(int argc, char** argv){//main
     Ereco[iD] = 0;
   }
 
+  bool firstEvent = true;
+  std::map<unsigned,bool> channelAlive;
+
   for (unsigned ievt(0); ievt<nEvts; ++ievt){//loop on entries
     if (debug) std::cout << "... Processing entry: " << ievt << std::endl;
     else if (ievt%50 == 0) std::cout << "... Processing entry: " << ievt << std::endl;
@@ -377,16 +646,16 @@ int main(int argc, char** argv){//main
 
     unsigned firstInteraction = 0;
 
-    double refThicknessOdd = (*ssvec)[1].volX0trans();
-    if (refThicknessOdd == 0) {
-      std::cerr << " ERROR, ref thickness odd is " << refThicknessOdd << ", setting to 1..." << std::endl;
-      refThicknessOdd = 1;
-    }
-    double refThicknessEven = (*ssvec)[2].volX0trans();
-    if (refThicknessEven == 0) {
-      std::cerr << " ERROR, ref thickness odd is " << refThicknessEven << ", setting to 1..." << std::endl;
-      refThicknessEven = 1;
-    }
+    // double refThicknessOdd = (*ssvec)[1].volX0trans();
+    // if (refThicknessOdd == 0) {
+    //   std::cerr << " ERROR, ref thickness odd is " << refThicknessOdd << ", setting to 1..." << std::endl;
+    //   refThicknessOdd = 1;
+    // }
+    // double refThicknessEven = (*ssvec)[2].volX0trans();
+    // if (refThicknessEven == 0) {
+    //   std::cerr << " ERROR, ref thickness odd is " << refThicknessEven << ", setting to 1..." << std::endl;
+    //   refThicknessEven = 1;
+    // }
 
     //to get simhit energy in final granularity
     unsigned prevLayer = 10000;
@@ -425,7 +694,7 @@ int main(int argc, char** argv){//main
       double posx = lHit.get_x(cellSize);
       double posy = lHit.get_y(cellSize);
       double posz = lHit.get_z();
-      double radius = sqrt(posx*posx+posy*posy);
+      //double radius = sqrt(posx*posx+posy*posy);
       double lRealTime = mycalib.correctTime(lHit.time(),posx,posy,posz);
       double energy = lHit.energy()*mycalib.MeVToMip(layer);
 
@@ -433,16 +702,7 @@ int main(int argc, char** argv){//main
       //if (!passTime) continue;
 
       //fill map to have simhits in final granularity
-      if (energy>0 && 
-	  lHit.silayer() < geomConv.getNumberOfSiLayers(type)//,lHit.eta()) 
-	  ){
-	if (debug > 1) std::cout << " hit " << iH 
-				 << " lay " << layer  
-				 << " x " << posx 
-				 << " y " << posy
-				 << " z " << posz
-				 << " t " << lHit.time() << " " << lRealTime
-				 << std::endl;
+      if (energy>0 && isCaliceHcal && plotHitSpectra){
 	geomConv.fill(type,subdetLayer,lHit.energy(),lRealTime,posx,posy,posz);
       }
       if (debug>1) {
@@ -451,7 +711,7 @@ int main(int argc, char** argv){//main
 	lHit.Print(std::cout);
       }
 
-      p_xy[layer]->Fill(posx,posy,energy);
+      //p_xy[layer]->Fill(posx,posy,energy);
       //correct for time of flight
       p_timeSim->Fill(lRealTime);
       
@@ -463,24 +723,178 @@ int main(int argc, char** argv){//main
 	//absweight = layer%2==0 ?
 	//(*ssvec)[layer].volX0trans()/refThicknessEven : 
 	//(*ssvec)[layer].volX0trans()/refThicknessOdd;
-      absweight = (*ssvec)[layer].volX0trans();
+      absweight = (*ssvec)[layer].volX0trans()/(*ssvec)[0].volX0trans();
+      //std::cout << layer << " " << absweight << std::endl;
 	//}
       Esim[sec] += energy*absweight;
       
     }//loop on hits
 
-    //fill hit energy in final granularity
-    for (unsigned iL(0); iL<nLayers; ++iL){//loop on layers
-      TH2D *histE = geomConv.get2DHist(iL,"E");
-      for (int iX(1); iX<histE->GetNbinsX()+1;++iX){
-	for (int iY(1); iY<histE->GetNbinsY()+1;++iY){
-	  double simE = histE->GetBinContent(iX,iY);
+    for (unsigned iE(0);iE<energies.size();++iE) energies[iE] = 0;
 
-	  if (simE>0) p_simhitEnergy->Fill(log10(simE));
+    if (isCaliceHcal && plotHitSpectra){
+      //fill hit energy in final granularity
+
+      bool doCoarse = false;
+      //for (unsigned iL(0); iL<myDetector.nLayers(DetectorEnum::FHCAL); ++iL){//loop on layers
+
+      for (unsigned iL(0); iL<nLayers; ++iL){//loop on layers
+	TH2D *histE = (TH2D*)geomConv.get2DHist(iL,"E");//->Clone();
+	if (iL>=30) doCoarse = true;
+	
+	double MeVtoMip = mycalib.MeVToMip(iL);
+	double absweight = ((*ssvec)[iL].volX0trans())/((*ssvec)[0].volX0trans());
+	//3*3 cells
+	if (!doCoarse){
+	  //std::cout << iL << " rebin 1: " << histE->GetNbinsX() << " " << histE->GetNbinsY() << std::endl;
+	  for (int iX(1); iX<histE->GetNbinsX()+1;++iX){
+	    for (int iY(1); iY<histE->GetNbinsY()+1;++iY){
+	      double simE = histE->GetBinContent(iX,iY);
+	      //0 energy hits could still have some from cross-talk and noise...	      		
+	      //if (simE==0) continue;
+	      std::vector<double> simEvec;
+	      simEvec.push_back(simE);
+	      if (iX>1) simEvec.push_back(histE->GetBinContent(iX-1,iY));
+	      if (iX<histE->GetNbinsX()) simEvec.push_back(histE->GetBinContent(iX+1,iY));
+	      if (iY>1) simEvec.push_back(histE->GetBinContent(iX,iY-1));
+	      if (iY<histE->GetNbinsY()) simEvec.push_back(histE->GetBinContent(iX,iY+1));
+
+	      //assemble in real granularity
+	      double posx = histE->GetXaxis()->GetBinCenter(iX);
+	      double posy = histE->GetYaxis()->GetBinCenter(iY);
+	      if (fabs(posx)<150 && fabs(posy)<150){
+		//if (iL==0) std::cout << iL << " " << counter << " " << iX << " " << iY << " " << posx << " " << posy << std::endl;
+
+		unsigned channelId = encodeChannelId(iL,1,iX,iY);
+		//discard 2% randomly
+		if (firstEvent){
+		  double keep = lRndm.Rndm();
+		  if (keep<0.02) {
+		    channelAlive[channelId] = false;
+		    std::cout << " Channel " << iL << " " << posx << " " << posy << " set to dead." << std::endl;
+		  }
+		  else channelAlive[channelId] = true;
+		}
+		if (!channelAlive[channelId]) continue;
+
+
+		fillHitHistos(p_simhitEnergy,
+			      p_simnoisehitEnergy,
+			      p_xtalknoisehitEnergy,
+			      p_rechitEnergy,
+			      p_outvsinEnergy,
+			      simEvec,MeVtoMip,absweight,iL,
+			      myDigitiser,p_noise,1,
+			      energies);
+	      }
+	    }
+	  }
 	}
-      }
-    }
+	//6*6 cells
+	histE->Rebin2D(2,2);
+	//std::cout << " rebin 2: " << histE->GetNbinsX() << " " << histE->GetNbinsY() << std::endl;
 
+	for (int iX(1); iX<histE->GetNbinsX()+1;++iX){
+	  for (int iY(1); iY<histE->GetNbinsY()+1;++iY){
+
+	    double simE = histE->GetBinContent(iX,iY);
+	    std::vector<double> simEvec;
+	    simEvec.push_back(simE);
+	    if (iX>1) simEvec.push_back(histE->GetBinContent(iX-1,iY));
+	    if (iX<histE->GetNbinsX()) simEvec.push_back(histE->GetBinContent(iX+1,iY));
+	    if (iY>1) simEvec.push_back(histE->GetBinContent(iX,iY-1));
+	    if (iY<histE->GetNbinsY()) simEvec.push_back(histE->GetBinContent(iX,iY+1));
+
+	    //assemble in real granularity
+	    double posx = histE->GetXaxis()->GetBinCenter(iX);
+	    double posy = histE->GetYaxis()->GetBinCenter(iY);
+
+	    bottom->Fill(posx,posy,simE);
+	    right->Fill(posx,posy,simE);
+	    top->Fill(posx,posy,simE);
+	    left->Fill(posx,posy,simE);
+
+	    if ( (doCoarse && fabs(posx)<330 && fabs(posy)<330) ||
+		 (!doCoarse && 
+		  ((fabs(posx)>150 && fabs(posx)<330 && fabs(posy)<330) ||
+		   (fabs(posy)>150 && fabs(posy)<330 && fabs(posx)<330))
+		  )){
+	      //if (iL==0) std::cout << iL << " " << counter << " " << iX << " " << iY << " " << posx << " " << posy << std::endl;
+	      unsigned channelId = encodeChannelId(iL,2,iX,iY);
+	      //discard 2% randomly
+	      if (firstEvent){
+		double keep = lRndm.Rndm();
+		if (keep<0.02) {
+		  channelAlive[channelId] = false;
+		  std::cout << " Channel " << iL << " " << posx << " " << posy << " set to dead." << std::endl;
+		}
+		else channelAlive[channelId] = true;
+	      }
+	      if (!channelAlive[channelId]) continue;
+	      fillHitHistos(p_simhitEnergy,
+			    p_simnoisehitEnergy,
+			    p_xtalknoisehitEnergy,
+			    p_rechitEnergy,
+			    p_outvsinEnergy,
+			    simEvec,MeVtoMip,absweight,iL,
+			    myDigitiser,p_noise,2,energies);
+	    }
+	  }
+	}
+
+	
+	//for bottom row
+	fillBHHistos(bottom,iL,firstEvent,lRndm,channelAlive,
+		     p_simhitEnergy,
+		     p_simnoisehitEnergy,
+		     p_xtalknoisehitEnergy,
+		     p_rechitEnergy,
+		     p_outvsinEnergy,
+		     MeVtoMip,absweight,
+		     myDigitiser,p_noise,energies,
+		     -330,270,-450,-330);
+	//for right column
+	fillBHHistos(right,iL,firstEvent,lRndm,channelAlive,
+		     p_simhitEnergy,
+		     p_simnoisehitEnergy,
+		     p_xtalknoisehitEnergy,
+		     p_rechitEnergy,
+		     p_outvsinEnergy,
+		     MeVtoMip,absweight,
+		     myDigitiser,p_noise,energies,
+		     330,450,-330,270);
+	//for top row
+	fillBHHistos(top,iL,firstEvent,lRndm,channelAlive,
+		     p_simhitEnergy,
+		     p_simnoisehitEnergy,
+		     p_xtalknoisehitEnergy,
+		     p_rechitEnergy,
+		     p_outvsinEnergy,
+		     MeVtoMip,absweight,
+		     myDigitiser,p_noise,energies,
+		     -270,330,330,450);
+	//for left column
+	fillBHHistos(left,iL,firstEvent,lRndm,channelAlive,
+		     p_simhitEnergy,
+		     p_simnoisehitEnergy,
+		     p_xtalknoisehitEnergy,
+		     p_rechitEnergy,
+		     p_outvsinEnergy,
+		     MeVtoMip,absweight,
+		     myDigitiser,p_noise,energies,
+		     -450,-330,-270,330);
+	
+
+	bottom->Reset();
+	right->Reset();
+	top->Reset();
+	left->Reset();
+
+
+      }//loop on layers
+
+      geomConv.initialiseHistos(true,false);
+    }//isCaliceHcal
 
     p_nSimHits->Fill((*simhitvec).size());
     p_firstInteraction->Fill(firstInteraction);
@@ -502,7 +916,7 @@ int main(int argc, char** argv){//main
       double energy = lHit.energy();//in MIP already...
       unsigned layer = lHit.layer();
 
-      p_rechitEnergy->Fill(log10(energy/mycalib.MeVToMip(layer)));
+      //p_rechitEnergy->Fill(log10(energy/mycalib.MeVToMip(layer)));
 
       if (layer >= nLayers) {
 	//std::cout << " WARNING! RecoHits with layer " << layer << " outside of detector's definition range ! Please fix the digitiser or the detector definition used here. Ignoring..." << std::endl;
@@ -510,7 +924,7 @@ int main(int argc, char** argv){//main
       }
       unsigned sec =  myDetector.getSection(layer);
       
-      p_recoxy[layer]->Fill(posx,posy,energy);
+      //p_recoxy[layer]->Fill(posx,posy,energy);
       EtotRec[layer] += energy;
       if (debug>1) std::cout << "-hit" << iH << "-" << layer << " " << energy << " " << EtotRec[layer];
 
@@ -529,15 +943,15 @@ int main(int argc, char** argv){//main
     if (myDetector.section(DetectorEnum::BHCAL1)<nSections) Ebhcal += myDigitiser.MIPtoGeV(myDetector.subDetectorByEnum(DetectorEnum::BHCAL1),Ereco[myDetector.section(DetectorEnum::BHCAL1)]);
     if (myDetector.section(DetectorEnum::BHCAL2)<nSections) Ebhcal += myDigitiser.MIPtoGeV(myDetector.subDetectorByEnum(DetectorEnum::BHCAL2),Ereco[myDetector.section(DetectorEnum::BHCAL2)]);
 
-    double Etotcal = Eecal+(Efhcal+Ebhcal-HcalPionOffset)/HcalPionCalib;
+    //double Etotcal = Eecal+(Efhcal+Ebhcal-HcalPionOffset)/HcalPionCalib;
 
     bool doFill = true;
     if (selectEarlyDecays && firstInteraction>5) doFill = false;
 
 
     //fill histos
-    double EtmpSim = 0;//[nSections];
-    double EtmpRec = 0;//[nSections];  
+    //double EtmpSim = 0;//[nSections];
+    //double EtmpRec = 0;//[nSections];  
     //for (unsigned iD(0); iD<nSections; ++iD){
     //EtmpSim[iD] = 0;
     //EtmpRec[iD] = 0;
@@ -556,14 +970,14 @@ int main(int argc, char** argv){//main
       unsigned sec =  myDetector.getSection(iL);
       if (doFill) p_EsimvsLayer->Fill(iL,EtotSim[iL]);
       if (doFill) p_ErecovsLayer->Fill(iL,EtotRec[iL]);
-      EtmpSim += EtotSim[iL];
-      EtmpRec += EtotRec[iL];
-      if (doFill) {
-	if (etotmips>0) p_EfracSim[iL]->Fill(EtmpSim/etotmips);
-	else p_EfracSim[iL]->Fill(0);
-	if (Etotcal>0) p_EfracReco[iL]->Fill(EtmpRec/Etotcal);
-	else p_EfracReco[iL]->Fill(0);
-      }
+      //EtmpSim += EtotSim[iL];
+      //EtmpRec += EtotRec[iL];
+      // if (doFill) {
+      // 	if (etotmips>0) p_EfracSim[iL]->Fill(EtmpSim/etotmips);
+      // 	else p_EfracSim[iL]->Fill(0);
+      // 	if (Etotcal>0) p_EfracReco[iL]->Fill(EtmpRec/Etotcal);
+      // 	else p_EfracReco[iL]->Fill(0);
+      // }
       EtotSim[iL] = 0;
       EtotRec[iL] = 0;
 	
@@ -581,28 +995,22 @@ int main(int argc, char** argv){//main
     }
     
     if (doFill){
+      outtree->Fill();
       p_EsimTotal->Fill(etotmips);
-      p_ErecoTotal->Fill(Etotcal);
+      double Etotcal = energies[11];
+      double EtotcalEM = (Etotcal-HcalEMOffset)/HcalEMCalib;
+      double EtotcalHAD = (EtotcalEM-HcalPionOffset)/HcalPionCalib;
+      p_ErecoTotal->Fill(EtotcalHAD);
     }
     
+    if (firstEvent){
+      std::cout << " Check of channelAlive size: " << channelAlive.size() << "/" << static_cast<unsigned>(216*30+141*24) << std::endl;
+    }
+    firstEvent = false;
   }//loop on entries
   
   //write
-  // for (unsigned iL(0); iL<nLayers; ++iL){
-  //     outputFile->cd();
-  //     p_xy[iL]->Write();
-  //     p_recoxy[iL]->Write();
-  //     p_EfracSim[iL]->Write();
-  //     p_EfracReco[iL]->Write();
-  //   }
-  // p_timeSim->Write();
-  // p_EsimvsLayer->Write();
-  // p_ErecovsLayer->Write();
-  // p_nGenPart->Write();
-  // p_genPartId->Write();
   for (unsigned iD(0); iD<nSections; ++iD){
-    //p_Esim[iD]->Write();
-    //p_Ereco[iD]->Write();
     std::cout << " -- Summary of sim energies " 
 	      << myDetector.detName(iD) << std::endl
 	      <<  p_Esim[iD]->GetEntries() 
@@ -638,13 +1046,8 @@ int main(int argc, char** argv){//main
 	      << " overflows " << p_ErecoTotal->GetBinContent(p_ErecoTotal->GetNbinsX()+1)
 	      << std::endl;
 
-
-  //p_HCALvsECAL->Write();
-  //p_BHCALvsFHCAL->Write();
-  //p_nSimHits->Write();
-  //p_nRecHits->Write();
-  
   outputFile->Write();
+  //outputFile->Close();
   
   return 0;
 

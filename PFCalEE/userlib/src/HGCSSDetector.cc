@@ -62,7 +62,7 @@ void HGCSSDetector::buildDetector(const unsigned indices[],
   FHCAL.gevOffset = 0.;
   FHCAL.isSi = true;
   if (isCaliceHcal) {
-    FHCAL.mipWeight = 1./0.807;
+    FHCAL.mipWeight = 1./0.816;
     FHCAL.absWeight = 1.;
     FHCAL.gevWeight = 1./39.32;//MIPtoGeV
     FHCAL.gevOffset = -1.8/39.32;//offset in GeV
@@ -84,7 +84,7 @@ void HGCSSDetector::buildDetector(const unsigned indices[],
   
   if (isCaliceHcal) {
     BHCAL.name = "BHCAL1";
-    BHCAL.mipWeight = 1./0.807;
+    BHCAL.mipWeight = FHCAL.mipWeight;
     BHCAL.absWeight = 1.;
     BHCAL.gevWeight = FHCAL.gevWeight;//MIPtoGeV
     BHCAL.gevOffset = 0.0;
@@ -96,7 +96,7 @@ void HGCSSDetector::buildDetector(const unsigned indices[],
   BHCAL2.name = "BHCAL2";
   BHCAL2.layerIdMin = indices[5];
   BHCAL2.layerIdMax = indices[6];
-  BHCAL2.mipWeight = 1./0.807;
+  BHCAL2.mipWeight = FHCAL.mipWeight;
   BHCAL2.absWeight = 104./21.;
   BHCAL2.gevWeight = FHCAL.gevWeight;//MIPtoGeV
   BHCAL2.gevOffset = 0.0;

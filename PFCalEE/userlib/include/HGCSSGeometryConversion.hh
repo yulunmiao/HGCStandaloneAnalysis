@@ -23,6 +23,10 @@ public:
     return width_;
   };
   
+  inline void setXYwidth(double width) {
+    width_ = width;
+  };
+  
   inline double cellSize() const{
     return cellSize_;
   };
@@ -30,7 +34,8 @@ public:
   unsigned getNumberOfSiLayers(const DetectorEnum type,
 			       const double & eta=0) const;
 
-  void initialiseHistos(const bool recreate=false);
+  void initialiseHistos(const bool recreate=false, 
+			const bool print=true);
 
   void fill(const DetectorEnum type,
 	    const unsigned newlayer,
@@ -50,7 +55,8 @@ public:
 		   std::string aString,
 		   const HGCSSSubDetector & aDet,
 		   const unsigned nLayers,
-		   bool recreate=false);
+		   bool recreate=false,
+		   bool print=true);
 
 
   void deleteHistos(std::vector<TH2D *> & aVec);

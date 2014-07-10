@@ -13,19 +13,19 @@ unsigned HGCSSDigitisation::nRandomPhotoElec(const double & aMipE){
   return static_cast<unsigned>(result);
 }
 
-double HGCSSDigitisation::nPixels(const double & aMipE){
+unsigned HGCSSDigitisation::nPixels(const double & aMipE){
   unsigned npe = nRandomPhotoElec(aMipE);
   double x = exp(-1.*npe/nTotal_);
-  double npix = nTotal_*(1-x)/(1-crossTalk_*x);
-  double result = positiveRandomGaus(npix);
-  if (result<0) std::cout << "WARNING!! HGCSSDigitisation::nPixels negative result!! " << npe << " " << x << " " << npix << " " << result << std::endl;
+  unsigned npix = static_cast<unsigned>(nTotal_*(1-x)/(1-crossTalk_*x));
+  unsigned result = positiveRandomGaus(npix);
   return result;
 }
 
-double HGCSSDigitisation::positiveRandomGaus(const double & mean){
+unsigned HGCSSDigitisation::positiveRandomGaus(const unsigned & mean){
   double result = rndm_.Gaus(mean,sigmaPix_);
-  if (result<0) result = positiveRandomGaus(mean);
-  return result;
+  if (result<0) result = 0;//positiveRandomGaus(mean);
+  if (result >= nTotal_) result = nTotal_-1;
+  return static_cast<unsigned>(result);
 }
 
 double HGCSSDigitisation::mipCor(const double & aMipE,
@@ -38,9 +38,26 @@ double HGCSSDigitisation::mipCor(const double & aMipE,
 }
 
 double HGCSSDigitisation::digiE(const double & aMipE){
-  double npix = nPixels(aMipE);
-  double result = nTotal_/npe_*log((nTotal_-crossTalk_*npix)/(nTotal_-npix));
-  if (result<0) std::cout << "WARNING!! HGCSSDigitisation::digiE negative result!! " << npix << " " << result << std::endl;
+  if (aMipE==0) return 0;
+  unsigned npix = nPixels(aMipE);
+  double result = nTotal_*1.0/npe_*log((nTotal_-crossTalk_*npix)/(nTotal_-npix));
+  if (result<0) {
+    std::cout << "WARNING!! HGCSSDigitisation::digiE negative result!! " << npix << " " << nTotal_ << " " << result << std::endl;
+    result = 0;
+  }
+  return result;
+}
+
+double HGCSSDigitisation::ipXtalk(const std::vector<double> & aSimEvec){
+  double result = 0;
+  const unsigned nEdges = aSimEvec.size()-1;
+  //give away X% per edge
+  result = aSimEvec[0]*(1-ipXtalk_*4);//nEdges);
+  //get X% back from neighbours
+  for (unsigned i(1); i<nEdges+1;++i){
+    result += ipXtalk_*aSimEvec[i];
+  }
+  
   return result;
 }
 
