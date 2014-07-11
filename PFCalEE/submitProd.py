@@ -45,21 +45,21 @@ elif opt.version<20 :
     noise='0-29:0.12'
     threshold='0-29:2'
 elif opt.version==21:
-    granularity='0-32:6'
-    noise='0-32:0.12'
-    threshold='0-32:25'
+    granularity='0-23:6,24-33:8'
+    noise='0-33:0.12'
+    threshold='0-33:2'
 elif opt.version==22:
-    granularity='0-8:6'
-    noise='0-8:0.12'
-    threshold='0-8:25'
+    granularity='0-9:8'
+    noise='0-9:0.12'
+    threshold='0-9:2'
 elif opt.version==23:
     granularity='0-53:12'
     noise='0-53:0.12'
-    threshold='0-53:25'
+    threshold='0-53:2'
 elif opt.version==24:
-    granularity='0-19:4,20-62:6'
-    noise='0-62:0.12'
-    threshold='0-62:25'
+    granularity='0-19:4,20-53:6,54-65:8'
+    noise='0-65:0.12'
+    threshold='0-65:2'
 
 for en in enlist :
 
