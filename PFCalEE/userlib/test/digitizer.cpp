@@ -288,6 +288,7 @@ int main(int argc, char** argv){//main
 
   TRandom3 *lRndm = new TRandom3();
   lRndm->SetSeed(pSeed);
+  myDigitiser.setRandomSeed(pSeed);
 
   std::cout << " -- Random3 seed = " << lRndm->GetSeed() << std::endl
 	    << " ----------------------------------------" << std::endl;
@@ -422,12 +423,33 @@ int main(int argc, char** argv){//main
 		  << " totbins = " << nTotBins << " histE entries = " << histE->GetEntries() << std::endl;
       }
 
+      //cell-to-cell cross-talk for scintillator
+      if (isScint){
+	//2.5% per 30-mm edge
+	myDigitiser.setIPCrossTalk(0.025*histE->GetXaxis()->GetBinWidth(1)/30.);
+      }
+      else {
+	myDigitiser.setIPCrossTalk(0);
+      }
+
       for (int iX(1); iX<histE->GetNbinsX()+1;++iX){
 	for (int iY(1); iY<histE->GetNbinsY()+1;++iY){
 	  double digiE = 0;
 	  double simE = histE->GetBinContent(iX,iY);
 	  //double time = 0;
 	  //if (simE>0) time = histTime->GetBinContent(iX,iY)/simE;
+
+	  //fill vector with neighbours and calculate cross-talk
+	  double xtalkE = simE;
+	  if (isScint){
+	    std::vector<double> simEvec;
+	    simEvec.push_back(simE);
+	    if (iX>1) simEvec.push_back(histE->GetBinContent(iX-1,iY));
+	    if (iX<histE->GetNbinsX()) simEvec.push_back(histE->GetBinContent(iX+1,iY));
+	    if (iY>1) simEvec.push_back(histE->GetBinContent(iX,iY-1));
+	    if (iY<histE->GetNbinsY()) simEvec.push_back(histE->GetBinContent(iX,iY+1));
+	    xtalkE = myDigitiser.ipXtalk(simEvec);
+	  }
 
 	  //bool passTime = myDigitiser.passTimeCut(adet,time);
 	  //if (!passTime) continue;
@@ -443,7 +465,7 @@ int main(int argc, char** argv){//main
 	  //if (fabs(x) > 500 || fabs(y)>500) std::cout << " x=" << x << ", y=" << y << std::endl;
 
 	  //correct for particle angle in conversion to MIP
-	  double simEcor = isTBsetup ? simE : myDigitiser.mipCor(simE,x,y,posz);
+	  double simEcor = isTBsetup ? xtalkE : myDigitiser.mipCor(xtalkE,x,y,posz);
 	  digiE = simEcor;
 
 	  if (isScint && simEcor>0) {
