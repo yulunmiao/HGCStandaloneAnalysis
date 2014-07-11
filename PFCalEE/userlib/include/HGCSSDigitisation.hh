@@ -2,6 +2,7 @@
 #define HGCSSDigitisation_h
 
 
+#include <iostream>
 #include <string>
 #include <vector>
 #include <map>
@@ -49,6 +50,8 @@ public:
     gainSmearing_[DetectorEnum::FHCAL] = 0.02;
     gainSmearing_[DetectorEnum::BHCAL1] = 0.02;
     gainSmearing_[DetectorEnum::BHCAL2] = 0.02;
+
+    Print(std::cout);
 
   };
 
@@ -114,6 +117,12 @@ public:
 		const double & posy,
 		const double & posz);
 
+  double digiE(const double & aMipE,
+	       TH2F * & p_pixvspe,
+	       TH1F * & p_npixels,
+	       TH1F * & p_npixelssmeared,
+	       TH2F * & p_outvsnpix);
+
   double digiE(const double & aMipE);
 
   double ipXtalk(const std::vector<double> & aSimEvec);
@@ -138,7 +147,7 @@ private:
   double crossTalk_;
   double ipXtalk_;
   unsigned nTotal_;
-  double sigmaPix_;
+  unsigned sigmaPix_;
   TRandom3 rndm_;
   std::map<DetectorEnum,unsigned> mipToADC_;
   std::map<DetectorEnum,unsigned> maxADC_;

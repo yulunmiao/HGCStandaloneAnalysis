@@ -698,8 +698,8 @@ int main(int argc, char** argv){//main
       double lRealTime = mycalib.correctTime(lHit.time(),posx,posy,posz);
       double energy = lHit.energy()*mycalib.MeVToMip(layer);
 
-      //bool passTime = myDigitiser.passTimeCut(type,realtime);
-      //if (!passTime) continue;
+      bool passTime = myDigitiser.passTimeCut(type,lRealTime);
+      if (!passTime) continue;
 
       //fill map to have simhits in final granularity
       if (energy>0 && isCaliceHcal && plotHitSpectra){

@@ -4,7 +4,7 @@ INPATH=root://eoscms//eos/cms/store/user/amagnan/HGCalHEGeant4/gitV00-02-01/
 
 for v in 23
 do
-    for p in pi-
+    for p in e- pi-
     do
 	MYDIR=PLOTS/gitV00-02-03/version$v/$p/
 	mkdir -p $MYDIR

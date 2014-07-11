@@ -16,9 +16,9 @@ unsigned HGCSSDigitisation::nRandomPhotoElec(const double & aMipE){
 unsigned HGCSSDigitisation::nPixels(const double & aMipE){
   unsigned npe = nRandomPhotoElec(aMipE);
   double x = exp(-1.*npe/nTotal_);
-  unsigned npix = static_cast<unsigned>(nTotal_*(1-x)/(1-crossTalk_*x));
-  unsigned result = positiveRandomGaus(npix);
-  return result;
+  double res = nTotal_*1.0*(1-x)/(1-crossTalk_*x);
+  unsigned npix = static_cast<unsigned>(res);
+  return npix;
 }
 
 unsigned HGCSSDigitisation::positiveRandomGaus(const unsigned & mean){
@@ -37,12 +37,33 @@ double HGCSSDigitisation::mipCor(const double & aMipE,
   return aMipE;
 }
 
+double HGCSSDigitisation::digiE(const double & aMipE,
+				TH2F * & p_pixvspe,
+				TH1F * & p_npixels,
+				TH1F * & p_npixelssmeared,
+				TH2F * & p_outvsnpix){
+  if (aMipE==0) return 0;
+  unsigned npix = nPixels(aMipE);
+  if (p_pixvspe) p_pixvspe->Fill(nRandomPhotoElec(aMipE),npix);
+  if (p_npixels) p_npixels->Fill(npix);
+  unsigned npixsmear = positiveRandomGaus(npix);
+  if (p_npixelssmeared) p_npixelssmeared->Fill(npixsmear);
+  double result = nTotal_*1.0/npe_*log((nTotal_-crossTalk_*npixsmear)/(nTotal_-npixsmear));
+  if (result<0) {
+    std::cout << "WARNING!! HGCSSDigitisation::digiE negative result!! " << npix << " " << npixsmear << " " << nTotal_ << " " << result << std::endl;
+    result = 0;
+  }
+  p_outvsnpix->Fill(npixsmear,result);
+  return result;
+}
+
 double HGCSSDigitisation::digiE(const double & aMipE){
   if (aMipE==0) return 0;
   unsigned npix = nPixels(aMipE);
-  double result = nTotal_*1.0/npe_*log((nTotal_-crossTalk_*npix)/(nTotal_-npix));
+  unsigned npixsmear = positiveRandomGaus(npix);
+  double result = nTotal_*1.0/npe_*log((nTotal_-crossTalk_*npixsmear)/(nTotal_-npixsmear));
   if (result<0) {
-    std::cout << "WARNING!! HGCSSDigitisation::digiE negative result!! " << npix << " " << nTotal_ << " " << result << std::endl;
+    std::cout << "WARNING!! HGCSSDigitisation::digiE negative result!! " << npix << " " << npixsmear << " " << nTotal_ << " " << result << std::endl;
     result = 0;
   }
   return result;
@@ -109,6 +130,8 @@ double HGCSSDigitisation::sumBins(const std::vector<TH2D *> & aHistVec,
 }
 void HGCSSDigitisation::Print(std::ostream & aOs) const{
   aOs << "====================================" << std::endl
+      << "=== INIT DIGITISATION PARAMETERS ===" << std::endl
+      << "====================================" << std::endl
       << " = Random seed: " << rndm_.GetSeed() << std::endl
       << " = Nphoto-electrons: " << npe_ << std::endl
       << " = cross-talk: " << crossTalk_ << std::endl
