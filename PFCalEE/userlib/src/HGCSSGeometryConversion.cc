@@ -73,20 +73,21 @@ void HGCSSGeometryConversion::setGranularity(const std::vector<unsigned> & granu
 }
 
 
- void HGCSSGeometryConversion::initialiseHistos(const bool recreate){
+void HGCSSGeometryConversion::initialiseHistos(const bool recreate,
+					       const bool print){
 
    for (unsigned iS(0); iS<theDetector().nSections();++iS){
-     resetVector(HistMapE_[theDetector().detType(iS)],"EmipHits",theDetector().detName(iS),theDetector().subDetectorBySection(iS),theDetector().nLayers(iS),recreate);
+     resetVector(HistMapE_[theDetector().detType(iS)],"EmipHits",theDetector().detName(iS),theDetector().subDetectorBySection(iS),theDetector().nLayers(iS),recreate,print);
      //std::cout << " check: " << HistMapE_[theDetector().detType(iS)].size() << std::endl;
      
      std::vector<double> avgvecE;
      avgvecE.resize(theDetector().nLayers(iS),0);
      avgMapE_[theDetector().detType(iS)]=avgvecE;
      
-     resetVector(HistMapTime_[theDetector().detType(iS)],"TimeHits",theDetector().detName(iS),theDetector().subDetectorBySection(iS),theDetector().nLayers(iS),recreate);
+     resetVector(HistMapTime_[theDetector().detType(iS)],"TimeHits",theDetector().detName(iS),theDetector().subDetectorBySection(iS),theDetector().nLayers(iS),recreate,print);
      //std::cout << " check: " << HistMapTime_[theDetector().detType(iS)].size() << std::endl;
 
-     resetVector(HistMapZ_[theDetector().detType(iS)],"zHits",theDetector().detName(iS),theDetector().subDetectorBySection(iS),theDetector().nLayers(iS),recreate);
+     resetVector(HistMapZ_[theDetector().detType(iS)],"zHits",theDetector().detName(iS),theDetector().subDetectorBySection(iS),theDetector().nLayers(iS),recreate,print);
      //std::cout << " check: " << HistMapZ_[theDetector().detType(iS)].size() << std::endl;
      
      std::vector<double> avgvecZ;
@@ -141,7 +142,8 @@ void HGCSSGeometryConversion::resetVector(std::vector<TH2D *> & aVec,
 					  std::string aString,
 					  const HGCSSSubDetector & aDet,
 					  const unsigned nLayers,
-					  bool recreate)
+					  bool recreate, 
+					  bool print)
 {
   //std::cout << " vector size: " << aVar << " " << aString << " = " << aVec.size() << std::endl;
   if (recreate){
@@ -158,7 +160,7 @@ void HGCSSGeometryConversion::resetVector(std::vector<TH2D *> & aVec,
   else {
     if (nLayers > 0){
       aVec.resize(nLayers,0);
-      std::cout << " -- Creating " << nLayers << " 2D histograms for " << aVar << " " << aString 
+      if (print) std::cout << " -- Creating " << nLayers << " 2D histograms for " << aVar << " " << aString 
 	//<< " with " << nBins << " bins between " << min << " and " << max 
 		<< std::endl;
       for (unsigned iL(0); iL<nLayers;++iL){
@@ -167,11 +169,11 @@ void HGCSSGeometryConversion::resetVector(std::vector<TH2D *> & aVec,
 	double newcellsize = cellSize_*getGranularity(iL,aDet);
 	//take smallest pair integer to be sure to fit in the geometry
 	//even if small dead area introduced at the edge
-	unsigned nBins = static_cast<unsigned>(width_*1./(newcellsize*2.))*2;
+	unsigned nBins = static_cast<unsigned>(width_*1./(newcellsize*2.))*2-2;
 	double min = -1.0*nBins*newcellsize/2.;
 	double max = nBins*newcellsize/2.;
 	aVec[iL] = new TH2D(lname.str().c_str(),";x(mm);y(mm)",nBins,min,max,nBins,min,max);
-	if (iL==0) std::cout << " ---- bins, min, max = " << nBins << " " << min << " " << max << std::endl;
+	if (print && iL==0) std::cout << " ---- bins, min, max = " << nBins << " " << min << " " << max << std::endl;
       }
     }
   }
