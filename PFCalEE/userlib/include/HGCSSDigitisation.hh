@@ -35,9 +35,9 @@ public:
     mipToADC_[DetectorEnum::FECAL] = 4;//ADC per mips.
     mipToADC_[DetectorEnum::MECAL] = 4;
     mipToADC_[DetectorEnum::BECAL] = 4;
-    mipToADC_[DetectorEnum::FHCAL] = 50;
-    mipToADC_[DetectorEnum::BHCAL1] = 50;
-    mipToADC_[DetectorEnum::BHCAL2] = 50;
+    mipToADC_[DetectorEnum::FHCAL] = 4;
+    mipToADC_[DetectorEnum::BHCAL1] = 4;
+    mipToADC_[DetectorEnum::BHCAL2] = 4;
     timeCut_[DetectorEnum::FECAL] = 25;//ns
     timeCut_[DetectorEnum::MECAL] = 25;//ns
     timeCut_[DetectorEnum::BECAL] = 25;//ns
