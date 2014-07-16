@@ -432,6 +432,15 @@ int main(int argc, char** argv){//main
       double lRealTime = mycalib.correctTime(lHit.time(),posx,posy,posz);
       double energy = lHit.energy()*mycalib.MeVToMip(layer);
 
+      if (type == DetectorEnum::FECAL ||
+	  type == DetectorEnum::MECAL ||
+	  type == DetectorEnum::BECAL){
+	//correct for si thickness
+	//default for 200um
+	energy *= 2./nSiLayers;
+      }
+
+ 
       bool passTime = myDigitiser.passTimeCut(type,lRealTime);
       if (!passTime) continue;
 
@@ -449,13 +458,12 @@ int main(int argc, char** argv){//main
       if (debug>1) std::cout << "-hit" << iH << "-" << layer << " " << energy << " " << EtotSim[layer];
 
       //double absweight = myDetector.subDetectorByLayer(layer).absWeight;
-      double absweight = (*ssvec)[layer].volX0trans()/(*ssvec)[0].volX0trans();
+      double absweight = (*ssvec)[layer].volX0trans()/(*ssvec)[1].volX0trans();
 
       //if (versionNumber==12){
 	//absweight = layer%2==0 ?
 	//(*ssvec)[layer].volX0trans()/refThicknessEven : 
 	//(*ssvec)[layer].volX0trans()/refThicknessOdd;
-      //std::cout << layer << " " << absweight << std::endl;
 	//}
       Esim[sec] += energy*absweight;
       
@@ -492,7 +500,7 @@ int main(int argc, char** argv){//main
       EtotRec[layer] += energy;
       if (debug>1) std::cout << "-hit" << iH << "-" << layer << " " << energy << " " << EtotRec[layer];
 
-      double absweight = (*ssvec)[layer].volX0trans()/(*ssvec)[0].volX0trans();
+      double absweight = (*ssvec)[layer].volX0trans()/(*ssvec)[1].volX0trans();
 
       Ereco[sec] += energy*absweight;
     }//loop on rechits
@@ -528,15 +536,19 @@ int main(int argc, char** argv){//main
     //EtmpRec[iD] = 0;
     //}
     
-    double etotmips = Esim[0]+Esim[1]/G4BHcalSlope;
-    //for (unsigned iD(0); iD<nSections; ++iD){
-    //etotmips += Esim[iD];//*(versionNumber==12?1:myDetector.subDetectorBySection(iD).absWeight);
-    //}
+    double etotmips = 0;
+    if (versionNumber==21) etotmips = Esim[0]+Esim[1]/G4BHcalSlope;
+    else{ 
+      for (unsigned iD(0); iD<nSections; ++iD){
+	etotmips += Esim[iD];//*(versionNumber==12?1:myDetector.subDetectorBySection(iD).absWeight);
+      }
+    }
     
     for (unsigned iL(0);iL<nLayers;++iL){//loop on layers
       if (debug) std::cout << " -- Layer " << iL 
 			   << " total sim E = " << EtotSim[iL] 
 			   << " total rec E = " << EtotRec[iL] 
+			   << " absweight = " << (*ssvec)[iL].volX0trans() << "/" << (*ssvec)[0].volX0trans() << " = " << (*ssvec)[iL].volX0trans()/(*ssvec)[0].volX0trans() << std::endl
 			   << std::endl;
       //unsigned sec =  myDetector.getSection(iL);
       if (doFill) p_EsimvsLayer->Fill(iL,EtotSim[iL]);
@@ -551,7 +563,7 @@ int main(int argc, char** argv){//main
       // }
       EtotSim[iL] = 0;
       EtotRec[iL] = 0;
-	
+
     }//loop on layers
     if (doFill) {
       p_HCALvsECAL->Fill(Eecal,Efhcal+Ebhcal);

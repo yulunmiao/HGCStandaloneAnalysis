@@ -100,7 +100,8 @@ public:
 	(
 	 ele_name[aEle] == "Pb" || ele_name[aEle] == "Cu" || 
 	 ele_name[aEle] == "W" || ele_name[aEle] == "Brass" ||
-	 ele_name[aEle] == "Fe" || ele_name[aEle] == "Steel" 
+	 ele_name[aEle] == "Fe" || ele_name[aEle] == "Steel" || 
+	 ele_name[aEle] == "SSteel" 
 	 )
 	) return true;
     return false;
