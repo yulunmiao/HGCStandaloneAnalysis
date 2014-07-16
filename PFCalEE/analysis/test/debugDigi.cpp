@@ -206,7 +206,17 @@ int main(int argc, char** argv){//main
   }
   
   outputFile->cd();
-  
+    //tree
+  TTree *outtree = new TTree("Estudy","Tree to study energy resolution");
+  std::vector<double> energies;
+  energies.resize(6,0);
+  outtree->Branch("G4",&energies[0]);
+  outtree->Branch("G4mipcut",&energies[1]);
+  outtree->Branch("G4XT",&energies[2]);
+  outtree->Branch("G4XTRandN3",&energies[3]);
+  outtree->Branch("G4XTRandN3Noise",&energies[4]);
+  outtree->Branch("G4XTRandN6Noise",&energies[5]);
+
   TH1F *p_simhitEnergy = new TH1F("p_simhitEnergy",";E_{hit} (MIPs)",200,0,10);
   TH1F *p_xtalkhitEnergy = new TH1F("p_xtalkhitEnergy",";E_{hit} (MIPs)",200,0,10);
 
@@ -299,6 +309,8 @@ int main(int argc, char** argv){//main
       
     }//loop on hits
 
+    for (unsigned iE(0);iE<energies.size();++iE) energies[iE] = 0;
+
     for (unsigned iL(0); iL<nLayers; ++iL){//loop on layers
       TH2D *histE = (TH2D*)geomConv.get2DHist(iL,"E");//->Clone();
       
@@ -338,14 +350,17 @@ int main(int argc, char** argv){//main
 	  double sim = simEvec[0]*MeVtoMip;
 	  p_simhitEnergy->Fill(sim);
 	  p_simhitEnergy_tail->Fill(sim);
-	  
+	  energies[0] += sim;
+	  if (sim>0.5) energies[1] += sim;
+
 	  //inter-pixel crosstalk+noise
 	  myDigitiser.setIPCrossTalk(0.025);
 	  double xtalkE = myDigitiser.ipXtalk(simEvec)*MeVtoMip;
 	  double digiE = xtalkE;
 	  p_xtalkhitEnergy->Fill(digiE);
 	  p_xtalkhitEnergy_tail->Fill(digiE);
-	  
+	  if (digiE>0.5) energies[2] += digiE;
+
 	  //randomisation
 	  myDigitiser.setCrossTalk(0.25);
 	  myDigitiser.setNTotalPixels(1156);
@@ -353,12 +368,14 @@ int main(int argc, char** argv){//main
 	  digiE = myDigitiser.digiE(xtalkE,p_pixvspe,p_npixels,p_npixelssmeared3,p_outvsnpix3);
 	  p_rand3hitEnergy->Fill(digiE);
 	  p_rand3hitEnergy_tail->Fill(digiE);
+	  if (digiE>0.5) energies[3] += digiE;
 
 	  //noise
 	  myDigitiser.setNoise(iL,0.15);
 	  myDigitiser.addNoise(digiE,iL,p_noise);	      
 	  p_rechitEnergy->Fill(digiE);
 	  p_rechitEnergy_tail->Fill(digiE);
+	  if (digiE>0.5) energies[4] += digiE;
 
 	  p_outvsinEnergy->Fill(sim,digiE);
 
@@ -369,6 +386,7 @@ int main(int argc, char** argv){//main
 	  digiE = myDigitiser.digiE(xtalkE,ht1,ht2,p_npixelssmeared6,p_outvsnpix6);
 	  p_rand6hitEnergy->Fill(digiE);
 	  p_rand6hitEnergy_tail->Fill(digiE);
+	  if (digiE>0.5) energies[5] += digiE;
 
 
 	}//binY
@@ -376,6 +394,7 @@ int main(int argc, char** argv){//main
     }//loop on layers
 
     geomConv.initialiseHistos(true,false);
+    outtree->Fill();
 
     if (firstEvent){
       std::cout << " Check of channelAlive size: " << channelAlive.size() << "/" << static_cast<unsigned>(216*30+141*24) << std::endl;

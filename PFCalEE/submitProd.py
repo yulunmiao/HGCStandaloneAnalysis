@@ -34,7 +34,7 @@ if opt.dogun : enlist=[5,10,15,20,25,30,40,50,60,80,100,150,200,300,400,500]
 
 granularity='0-20:4,21-63:6'
 noise='0-63:0.12'
-threshold='0-63:25'
+threshold='0-63:2'
 
 if (opt.version==8) :
     granularity='0-20:4,21-30:6'

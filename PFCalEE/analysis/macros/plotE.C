@@ -71,25 +71,27 @@ int plotE(){//main
     //"pi-/twiceSampling/GeVCal/MipThresh_0p5/ECALloss/"
     //"pi-/twiceSampling/GeVCal/EarlyDecay/MipThresh_0p5/"
     //"e-/twiceSampling/MipThresh_0p5/"
-    "e-/calib/"
+    "pi-/"
   };
 
   bool isCalib = scenario[0].find("calib")!=scenario[0].npos;
 
   bool isEM = scenario[0].find("e-")!=scenario[0].npos;
 
+  std::string particle = isEM? "e-":"pi-";
+
   TString pSuffix = "";
 
-  unsigned rebinSim = 1;//4;//2;
-  unsigned rebinReco = (isCalib && isEM) ? 2: isEM? 50 : 2;//2;//40;
+  unsigned rebinSim = 4;//4;//2;
+  unsigned rebinReco = (isCalib && isEM) ? 2: isEM? 1 : 4;//2;//40;
 
   bool addNoiseTerm = false;
   bool doReco = true;
 
   const unsigned nV = 1;
-  TString version[nV] = {"23"};//,"0"};
+  TString version[nV] = {"21"};//,"0"};
   
-  const unsigned nLayers = 54;//9;//33; //54;
+  const unsigned nLayers = 34;//34;//9;//33; //54;
 
   const bool doVsE = true;
 
@@ -102,13 +104,13 @@ int plotE(){//main
 
   //double MIPtoGeVsim = 39.74;//0.831;//39.22;//183.;//0.914;//41.69;//43.97;//0.92;// 41.98;
   //double offsetsim = 0;//-0.7;//-1.6;//318;//-1.04;//-4.3;//-38;//-1.06;
-  double MIPtoGeV = isCalib? 1 : isEM ? 39.81 : 0.95;//467.6;//312.58;//157.03;//0.90;//39.33;
-  double G4MIPtoGeV = isCalib ? 39.81*(isEM?1:0.95) : !isEM? 39.81 : 1;//277.64;//39.33*0.90;
-  double offset = isCalib? 0 : isEM ? 1.9 : -2;//-9;//-0.77;//-1.8;
+  double MIPtoGeV = isCalib? 1 : isEM ? 118 : 1.;//0.95;//467.6;//312.58;//157.03;//0.90;//39.33;
+  double G4MIPtoGeV = isCalib ? 118*(isEM?1:0.92) : !isEM? 118 : 1;//277.64;//39.33*0.90;
+  double offset = isCalib? 0 : isEM ? -209 : 0;//-2;//-9;//-0.77;//-1.8;
 
   bool doLinCor = false;
-  double linScale = 39.81;
-  double linOffset = 1.9;
+  double linScale = 40.4;
+  double linOffset = -3.4;
 
   std::string unit = (isCalib || !isEM) ? "GeV" : "MIPs";
   const char* unitStr = unit.c_str();
@@ -126,8 +128,9 @@ int plotE(){//main
   bool isPU = false;
   
   
-  //unsigned genEn[]={5,10,15,20,25,30,40,50,60,80,100,300,500};//150,200,300,500};
-  unsigned genEn[]={10,15,18,20,25,30,35,40,45,50,60,80};
+  unsigned genEn[]={15,20,25,30,40,50,60,80,100,150,200,300,400,500};//150,200,300,500};
+  //unsigned genEn[]={5,10,15,20,30,50,60,80,100,400};//150,200,300,500};
+  //unsigned genEn[]={10,15,18,20,25,30,35,40,45,50,60,80};
   //60,80};//,100,200,300,
   //500};//,1000,2000};
   //unsigned genEn[]={10,20,30,40,60,80};
@@ -191,7 +194,7 @@ int plotE(){//main
       
       if (scenario[iS].find("PU") != scenario[iS].npos) isPU = true;
       
-      TString plotDir = "../PLOTS/gitV00-02-03/version"+version[iV]+"/"+scenario[iS]+"/";
+      TString plotDir = "../PLOTS/gitV00-02-04/version"+version[iV]+"/"+scenario[iS]+"/";
       //plotDir += "noWeights/";
       //TString plotDir = "../PLOTS/gitV00-01-00/version_"+version[iV]+"/scenario_"+scenario[iS]+"/";
       //TString plotDir = "../PLOTS/gitV00-01-00/version_"+version[iV]+"/";
@@ -297,7 +300,7 @@ int plotE(){//main
 		    << std::endl;
 
 	  //p_Etotal[iE]->Rebin(rebin[iE]);
-	  p_Etotal[iE]->Rebin(genEn[iE]<30?rebinSim/2:genEn[iE]<300?rebinSim:4*rebinSim);
+	  p_Etotal[iE]->Rebin(genEn[iE]<10?rebinSim:genEn[iE]<50?2*rebinSim:genEn[iE]<150?4*rebinSim:8*rebinSim);
 
 	  lName.str("");
 	  lName << "p_Ereco" << pDetector;
@@ -315,7 +318,7 @@ int plotE(){//main
 			<< std::endl;
 	      
 	      //p_Ereco[iE]->Rebin(rebin[iE]);
-	      p_Ereco[iE]->Rebin(genEn[iE]<50?rebinReco:2*rebinReco);
+	      p_Ereco[iE]->Rebin(genEn[iE]<50?rebinReco/2:genEn[iE]<150?2*rebinReco:4*rebinReco);
 	    }
 	    else isG4File = true;
 	  }
@@ -417,6 +420,9 @@ int plotE(){//main
 	  double eMax = p_Etotal[iE]->GetMean()+10*p_Etotal[iE]->GetRMS();
 	  p_Etotal[iE]->GetXaxis()->SetRangeUser(eMin,eMax);
 	  p_Etotal[iE]->Draw("PE");
+	  char buf[500];
+	  sprintf(buf,"%s, E=%d GeV",particle.c_str(),genEn[iE]);
+	  p_Etotal[iE]->SetTitle(buf);
 	  p_Etotal[iE]->Fit("gaus","LR0","",
 			    p_Etotal[iE]->GetMean()-2*p_Etotal[iE]->GetRMS(),
 			    p_Etotal[iE]->GetMean()+2*p_Etotal[iE]->GetRMS());
@@ -429,7 +435,6 @@ int plotE(){//main
 	  TLatex lat;
 	  double latx = std::max(0.,p_Etotal[iE]->GetMean()-5*p_Etotal[iE]->GetRMS());
 	  double laty = p_Etotal[iE]->GetMaximum();
-	  char buf[500];
 	  sprintf(buf,"<E> = %3.3f %s",p_Etotal[iE]->GetMean(),doMIPconv?"MIP":unitStr);
 	  lat.DrawLatex(latx,laty*0.9,buf);
 	  sprintf(buf,"RMS = %3.3f #pm %3.1f %s",p_Etotal[iE]->GetRMS(),p_Etotal[iE]->GetRMSError(),doMIPconv?"MIP":unitStr);
@@ -482,6 +487,10 @@ int plotE(){//main
 	    //p_Ereco[iE]->GetXaxis()->SetRangeUser(p_Ereco[iE]->GetMean()-5*p_Ereco[iE]->GetRMS(),p_Ereco[iE]->GetMean()+5*p_Ereco[iE]->GetRMS());
 	    p_Ereco[iE]->GetXaxis()->SetRangeUser(p_Ereco[iE]->GetMean()-10*p_Ereco[iE]->GetRMS(),p_Ereco[iE]->GetMean()+10*p_Ereco[iE]->GetRMS());
 	    p_Ereco[iE]->Draw("PE");
+	    char buf[500];
+	    sprintf(buf,"%s, E=%d GeV",particle.c_str(),genEn[iE]);
+	    p_Ereco[iE]->SetTitle(buf);
+
 	    p_Ereco[iE]->Fit("gaus","LR0","same",
 			     p_Ereco[iE]->GetMean()-2*p_Ereco[iE]->GetRMS(),
 			     p_Ereco[iE]->GetMean()+2*p_Ereco[iE]->GetRMS());
@@ -500,7 +509,6 @@ int plotE(){//main
 	    TLatex lat;
 	    double latx = std::max(0.,p_Ereco[iE]->GetMean()-5*p_Ereco[iE]->GetRMS());
 	    double laty = p_Ereco[iE]->GetMaximum();
-	    char buf[500];
 	    sprintf(buf,"<E> = %3.3f %s",p_Ereco[iE]->GetMean(),doMIPconv?"MIP":unitStr);
 	    lat.DrawLatex(latx,laty*0.9,buf);
 	    sprintf(buf,"RMS = %3.3f #pm %3.1f %s",p_Ereco[iE]->GetRMS(),p_Ereco[iE]->GetRMSError(),doMIPconv?"MIP":unitStr);
@@ -592,7 +600,7 @@ int plotE(){//main
 	    char buf[500];
 	    if(i<2 || (!isG4File && (i==4 || i==5))) {
 	      //TF1 *fitFunc=new TF1("calib","[0]+[1]*x",gr->GetXaxis()->GetXmin(),gr->GetXaxis()->GetXmax());
-	      TF1 *fitFunc=new TF1("calib","[0]+[1]*x",9,51);
+	      TF1 *fitFunc=new TF1("calib","[0]+[1]*x",20,100);
 	      if (i<4) fitFunc->SetLineColor(1);
 	      else fitFunc->SetLineColor(6);
 	      gr->Fit(fitFunc,"RME");
@@ -602,11 +610,11 @@ int plotE(){//main
 	      sprintf(buf,"<E> #propto a + b #times E ");
 	      if (i<2) lat.DrawLatex(genEn[0],gr->GetYaxis()->GetXmax()*0.9,buf);
 	      sprintf(buf,"a = %3.3f #pm %3.3f %s",fitFunc->GetParameter(0),fitFunc->GetParError(0),unitStr);
-	      lat.DrawLatex(genEn[0]+i/2*15,gr->GetYaxis()->GetXmax()*(0.8-i/2*0.25),buf);
+	      lat.DrawLatex(genEn[0]+i/2*150,gr->GetYaxis()->GetXmax()*(0.8-i/2*0.25),buf);
 	      sprintf(buf,"b = %3.3f #pm %3.3f %s/GeV",fitFunc->GetParameter(1),fitFunc->GetParError(1),unitStr);
-	      lat.DrawLatex(genEn[0]+i/2*15,gr->GetYaxis()->GetXmax()*(0.7-i/2*0.25),buf);
+	      lat.DrawLatex(genEn[0]+i/2*150,gr->GetYaxis()->GetXmax()*(0.7-i/2*0.25),buf);
 	      sprintf(buf,"chi2/NDF = %3.3f/%d = %3.3f",fitFunc->GetChisquare(),fitFunc->GetNDF(),fitFunc->GetChisquare()/fitFunc->GetNDF());
-	      lat.DrawLatex(genEn[0]+i/2*15,gr->GetYaxis()->GetXmax()*(0.6-i/2*0.25),buf);
+	      lat.DrawLatex(genEn[0]+i/2*150,gr->GetYaxis()->GetXmax()*(0.6-i/2*0.25),buf);
 
 	      //draw deltaE/E vs E
 	      if (i==1 || i==5){
@@ -616,8 +624,8 @@ int plotE(){//main
 		gPad->SetGridy(1);
 		TGraphErrors * grDelta = i==1?deltaFit : deltaRecoFit;
 		grDelta->SetTitle("");
-		grDelta->SetMinimum(-0.03);
-		grDelta->SetMaximum(0.03);
+		grDelta->SetMinimum(-0.1);
+		grDelta->SetMaximum(0.1);
 		grDelta->GetXaxis()->SetLabelSize(0.15);
 		grDelta->GetXaxis()->SetTitleSize(0.15);
 		grDelta->GetYaxis()->SetLabelSize(0.12);
@@ -665,12 +673,12 @@ int plotE(){//main
 		fitFunc2->SetParameter(1,0.01);
 		fitFunc2->SetParLimits(1,0,1);
 		if (addNoiseTerm) {
-		  if (!isEM) fitref->SetParameter(2,0.18*0.18);
+		  if (!isEM) fitref->SetParameter(2,0.1*0.1);
 		  else fitref->SetParameter(2,0.06*0.06);
 		  if (!isEM) fitFunc2->SetParameter(2,0.18*0.18);
 		  else fitFunc2->SetParameter(2,0.06*0.06);
 		  fitFunc2->SetParLimits(2,0,2);
-		  if (!isEM) fitFunc2->FixParameter(2,0.18*0.18);
+		  if (!isEM) fitFunc2->FixParameter(2,0.02*0.02);
 		  else fitFunc2->FixParameter(2,0.06*0.06);
 		}
 		if (i<4) {
@@ -682,7 +690,7 @@ int plotE(){//main
 		  //fitFunc2->SetLineColor(6);
 		  //fitFunc2->SetParameter(2,0.);
 		  //fitFunc2->SetParLimits(2,0,0);
-		  fitref->Draw("same");
+		  //fitref->Draw("same");
 		}
 		gr->Fit(fitFunc2,"RME");
 		sigmaStoch[iSm][iS][i] = sqrt(fitFunc2->GetParameter(0));
@@ -698,26 +706,26 @@ int plotE(){//main
 		else lat.SetTextColor(1);
 		if (addNoiseTerm) sprintf(buf,"#oplus #frac{n}{E}");
 		else sprintf(buf,"#frac{#sigma}{E} #propto #frac{s}{#sqrt{E}} #oplus c");
-		double Emin = doVsE?40 : 1/sqrt(genEn[nGenEn-1]);
+		double Emin = doVsE?200 : 1/sqrt(genEn[nGenEn-1]);
 		if (i<4) lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax(),buf);
-		else lat.DrawLatex(doVsE?Emin+80:Emin+0.1,gr->GetYaxis()->GetXmax(),buf);
+		else lat.DrawLatex(doVsE?Emin+125:Emin+0.1,gr->GetYaxis()->GetXmax()*1.15,buf);
 		sprintf(buf,"s=%3.3f #pm %3.3f",sigmaStoch[iSm][iS][i],sigmaStochErr[iSm][iS][i]);
 		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.9-i/6*0.25),buf);
 		sprintf(buf,"c=%3.3f #pm %3.3f",sigmaConst[iSm][iS][i],sigmaConstErr[iSm][iS][i]);
-		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.85-i/6*0.25),buf);
+		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.82-i/6*0.25),buf);
 		sprintf(buf,"chi2/NDF = %3.3f/%d = %3.3f",fitFunc2->GetChisquare(),fitFunc2->GetNDF(),fitFunc2->GetChisquare()/fitFunc2->GetNDF());
-		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.75-i/6*0.25),buf);
+		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.66-i/6*0.25),buf);
 		//if (i>3){
 		if (addNoiseTerm) {
 		  sprintf(buf,"n=%3.3f #pm %3.3f",sigmaNoise[iSm][iS][i],sigmaNoiseErr[iSm][iS][i]);
-		  lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.8-i/6*0.25),buf);
+		  lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.74-i/6*0.25),buf);
 		}
 		lat.SetTextColor(7);
 		sprintf(buf,"CALICE s=%3.3f, c=%3.3f",sqrt(fitref->GetParameter(0)),sqrt(fitref->GetParameter(1)));
 		if (addNoiseTerm) {
 		  sprintf(buf,"CALICE s=%3.3f, c=%3.3f, n=%3.3f",sqrt(fitref->GetParameter(0)),sqrt(fitref->GetParameter(1)),sqrt(fitref->GetParameter(2)));
 		}
-		if (i>3) lat.DrawLatex(8,gr->GetYaxis()->GetXmin()*1.1,buf);
+		//if (i>3) lat.DrawLatex(8,gr->GetYaxis()->GetXmin()*1.1,buf);
 	      }
 	    myc[i%4]->Update();
 	    if (doShower) {

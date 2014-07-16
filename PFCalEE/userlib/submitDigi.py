@@ -28,13 +28,13 @@ parser.add_option('-S', '--no-submit'   ,    action="store_true",  dest='nosubmi
 (opt, args) = parser.parse_args()
 
 enlist=[0]
-if opt.dogun : enlist=[5,10,15,20,25,30,40,50,60,80,100,150,200,300,400,500]
-#if opt.dogun : enlist=[10,20,30,40,50,100]
+#if opt.dogun : enlist=[5,10,15,20,25,30,40,50,60,80,100,150,200,300,400,500]
+if opt.dogun : enlist=[25]
 #if opt.dogun : enlist=[10,15,18,20,25,30,35,40,45,50,60,80] #,100,150,200,300,400,500]
 
 granularity='0-20:4,21-63:6'
 noise='0-63:0.12'
-threshold='0-63:25'
+threshold='0-63:2'
 
 if (opt.version==8) :
     granularity='0-20:4,21-30:6'
@@ -44,22 +44,22 @@ elif opt.version<20 :
     granularity='0-19:4,20-29:6'
     noise='0-29:0.12'
     threshold='0-29:2'
-elif (opt.version==21) :
-    granularity='0-32:6'
-    noise='0-32:0.12'
-    threshold='0-32:25'
-elif (opt.version==22) :
-    granularity='0-8:6'
-    noise='0-8:0.12'
-    threshold='0-8:25'
-elif (opt.version==23) :
+elif opt.version==21:
+    granularity='0-23:6,24-33:8'
+    noise='0-33:0.12'
+    threshold='0-33:2'
+elif opt.version==22:
+    granularity='0-9:8'
+    noise='0-9:0.12'
+    threshold='0-9:2'
+elif opt.version==23:
     granularity='0-53:12'
     noise='0-53:0.12'
-    threshold='0-53:25'
+    threshold='0-53:2'
 elif opt.version==24:
-    granularity='0-19:4,20-62:6'
-    noise='0-62:0.12'
-    threshold='0-62:25'
+    granularity='0-19:4,20-53:6,54-65:8'
+    noise='0-65:0.12'
+    threshold='0-65:2'
 
 suffix='' #highnoise'
 

@@ -27,46 +27,40 @@ int plotPions(){//main
   std::string scenario[nS] = {
     //"pi-/twiceSampling/GeVCal/"
     //"pi-/concept/GeVCal/"
-    "pi-/twiceSampling/GeVCal/EarlyDecay/MipThresh_0p5/ECALloss/"
+    "pi-/"
   };
   
   const unsigned nV = 1;
-  TString version[nV] = {"23"};
+  TString version[nV] = {"21"};
 
-  std::string pDetector = "HCALvsECAL";
+  TString pSuffix = "";
+
+  std::string pDetector = "G4_BHCALvsFHCAL";
 
   //const double EmipSi = 0.0822;//in MeV
 
-  const unsigned nLayers = 54;//64 //54
-  const unsigned nEcalLayers = 38;
+  const unsigned nLayers = 34;//64 //54
+  const unsigned nEcalLayers = 24;
 
-  //unsigned genEn[]={5,10,25,40,50,60,80,100,150,200,300,400,500};//,1000,2000};
-  unsigned genEn[]={10,15,18,20,25,30,35,40,45,50,60,80};
+  unsigned genEn[]={20,30,40,50,60,80,100,150,200,300,400,500};//,1000,2000};
+  //unsigned genEn[]={10,15,18,20,25,30,35,40,45,50,60,80};
   //unsigned genEn[]={10};
   unsigned nGenEn=sizeof(genEn)/sizeof(unsigned);
 
   TCanvas *mycECAL = new TCanvas("mycECAL","mycECAL",1500,1000);
   TCanvas *myc = new TCanvas("myc","myc",1);
-  mycECAL->Divide(5,3);
+  mycECAL->Divide(4,3);
 
   std::ostringstream saveName;
-  
-  for (unsigned iV(0); iV<nV;++iV){//loop on versions
-    for (unsigned iS(0); iS<nS;++iS){//loop on scenarios
+  unsigned iV = 0;
+  unsigned iS = 0;
+  // for (unsigned iV(0); iV<nV;++iV){//loop on versions
+  //   for (unsigned iS(0); iS<nS;++iS){//loop on scenarios
     
-      TString plotDir = "../PLOTS/version"+version[iV]+"/"+scenario[iS]+"/";
+      TString plotDir = "../PLOTS/gitV00-02-04/version"+version[iV]+"/"+scenario[iS]+"/";
       
-      std::ostringstream lName;
-      lName << plotDir << "CalibHistos_time200.root";
-      TFile *inputFile = TFile::Open(lName.str().c_str());
-      if (!inputFile) {
-	std::cout << " -- Error, input file " << lName.str() << " cannot be opened. Going to next..." << std::endl;
-	continue;
-	//return 1;
-      }
-
-
       TH2F *p_HCALvsECAL[nGenEn];
+      TProfile *prof[nGenEn];
 
       double slope[nGenEn];
       double slopeErr[nGenEn];
@@ -75,32 +69,58 @@ int plotPions(){//main
 
       for (unsigned iE(0); iE<nGenEn; ++iE){
 
+	std::ostringstream linputStr;
+	linputStr << plotDir << "validation_e" << genEn[iE] << pSuffix << ".root";
+	TFile *inputFile = TFile::Open(linputStr.str().c_str());
+	if (!inputFile) {
+	  std::cout << " -- Error, input file " << linputStr.str() << " cannot be opened. Exiting..." << std::endl;
+	  return 1;
+	}
+	else std::cout << " -- File " << inputFile->GetName() << " sucessfully opened." << std::endl;
+	
+	
 	std::cout << " -- Processing energy " << genEn[iE] << std::endl;
 	genEnErr[iE] = 0;
 	grgenEn[iE] = genEn[iE];
 
+	std::ostringstream lName;
 	lName.str("");
-	lName << "p_HCALvsECAL_" << genEn[iE];
+	lName << "p_" << pDetector;
 	p_HCALvsECAL[iE] = (TH2F*)gDirectory->Get(lName.str().c_str());
 	if (!p_HCALvsECAL[iE]) {
 	  std::cout << " -- ERROR, pointer for histogram is null for energy: " << genEn[iE] << ". Exiting..." << std::endl;
 	  return 1;
 	}
-	if (pDetector.find("ScivsSi") != pDetector.npos) {
+	if (pDetector.find("BHCALvsFHCAL") != pDetector.npos) {
 	  p_HCALvsECAL[iE]->GetXaxis()->SetTitle("HCAL Si");
 	  p_HCALvsECAL[iE]->GetYaxis()->SetTitle("HCAL Scint");
 	}
-	p_HCALvsECAL[iE]->RebinX(4);
-	p_HCALvsECAL[iE]->RebinY(4);
-
+	
+	if (genEn[iE]>150){
+	  p_HCALvsECAL[iE]->RebinX(40);
+	  p_HCALvsECAL[iE]->RebinY(40);
+	}
+	else if (genEn[iE]>80){
+	  p_HCALvsECAL[iE]->RebinX(20);
+	  p_HCALvsECAL[iE]->RebinY(20);
+	}
+	else if (genEn[iE]>40){
+	  p_HCALvsECAL[iE]->RebinX(10);
+	  p_HCALvsECAL[iE]->RebinY(10);
+	}
+	else {
+	  p_HCALvsECAL[iE]->RebinX(10);
+	  p_HCALvsECAL[iE]->RebinY(10);
+	}
+	
 	gStyle->SetOptStat(0);
 
 	mycECAL->cd(iE+1);
 	//gPad->SetLogz(1);
-	p_HCALvsECAL[iE]->GetXaxis()->SetLabelSize(0.04);
-	p_HCALvsECAL[iE]->GetYaxis()->SetLabelSize(0.04);
-	p_HCALvsECAL[iE]->GetXaxis()->SetTitleSize(0.04);
-	p_HCALvsECAL[iE]->GetYaxis()->SetTitleSize(0.04);
+	p_HCALvsECAL[iE]->GetXaxis()->SetLabelSize(0.05);
+	p_HCALvsECAL[iE]->GetYaxis()->SetLabelSize(0.05);
+	p_HCALvsECAL[iE]->GetXaxis()->SetTitleSize(0.05);
+	p_HCALvsECAL[iE]->GetYaxis()->SetTitleSize(0.05);
 
 	double maxX = 0;
 	double minX = 10000;
@@ -137,7 +157,7 @@ int plotPions(){//main
 	maxY = maxY*1.3;
 	p_HCALvsECAL[iE]->GetXaxis()->SetRangeUser(0,maxX);
 	p_HCALvsECAL[iE]->GetYaxis()->SetRangeUser(0,maxY);
-	p_HCALvsECAL[iE]->GetYaxis()->SetTitleOffset(1.3);
+	p_HCALvsECAL[iE]->GetYaxis()->SetTitleOffset(1.1);
 	//p_HCALvsECAL[iE]->GetZaxis()->SetTitle("Events");
 	
 	//p_HCALvsECAL[iE]->Draw("colz");
@@ -147,15 +167,17 @@ int plotPions(){//main
 
 	//p_HCALvsECAL[iE]->Draw("LEGO2z");
 	p_HCALvsECAL[iE]->Draw("colz");
-	TProfile *prof = p_HCALvsECAL[iE]->ProfileX();
-	prof->SetMarkerStyle(23);
-	prof->SetMarkerColor(1);
-	prof->Draw("PEsame");
+	lName.str("");
+	lName << "prof" << iE;
+	prof[iE] = p_HCALvsECAL[iE]->ProfileX(lName.str().c_str());
+	prof[iE]->SetMarkerStyle(23);
+	prof[iE]->SetMarkerColor(1);
+	prof[iE]->Draw("PEsame");
 	TF1 *mypol1 = new TF1("mypol1","[0]+[1]*x",0,2000);
 	mypol1->SetParameters(maxY,-1.4);
-	mypol1->SetParLimits(1,-2,-1);
+	//mypol1->SetParLimits(1,-2,-1);
 	double tmpRange = Xintercept-minX;
-	prof->Fit("mypol1","R+","same",minX+tmpRange/5.,Xintercept-tmpRange/5.);//,maxX/20,maxX);
+	prof[iE]->Fit("mypol1","R+","same",minX+tmpRange/5.,Xintercept-tmpRange/5.);//,maxX/20,maxX);
 
 	TLatex lat;
 	sprintf(buf,"y = #alpha + #beta #times x");
@@ -192,7 +214,7 @@ int plotPions(){//main
       //gr->SetMaximum(0);
       gr->GetXaxis()->SetTitle("Energy (GeV");
       gr->GetYaxis()->SetTitle("Slope HCAL/ECAL");
-      if (pDetector.find("ScivsSi") != pDetector.npos) gr->GetYaxis()->SetTitle("Slope Scint/Si");
+      if (pDetector.find("BHCALvsFHCAL") != pDetector.npos) gr->GetYaxis()->SetTitle("Slope Scint/Si");
       gr->SetTitle("");
       gr->Draw("AP");
 
@@ -206,11 +228,11 @@ int plotPions(){//main
       myc->Print((saveName.str()+".png").c_str());
       myc->Print((saveName.str()+".pdf").c_str());
 
-    }//loop on scenarios
+  //   }//loop on scenarios
     
-  }//loop on versions
+  // }//loop on versions
   
-  return 0;
+  //return 0;
 
 
 }//main

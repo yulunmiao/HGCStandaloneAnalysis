@@ -212,8 +212,8 @@ int main(int argc, char** argv){//main
   //fill layer indices
   if (versionNumber==22) {
     indices[4] = 0;
-    indices[5] = 9;
-    indices[6] = 9;
+    indices[5] = 10;
+    indices[6] = 10;
   }
   else if (isCaliceHcal) {
     indices[3] = 0;
@@ -224,8 +224,8 @@ int main(int argc, char** argv){//main
   else if (versionNumber==21) {
     indices[3] = 0;
     indices[4] = 24;
-    indices[5] = 33;
-    indices[6] = 33;
+    indices[5] = 34;
+    indices[6] = 34;
   }
   else if (versionNumber < 20){
     indices[0] = 0;
@@ -242,8 +242,8 @@ int main(int argc, char** argv){//main
     indices[2] = 21;
     indices[3] = 31;
     indices[4] = 55;
-    indices[5] = 64;
-    indices[6] = 64;
+    indices[5] = 65;
+    indices[6] = 65;
   }
 
   myDetector.buildDetector(indices,concept,isCaliceHcal);
@@ -263,7 +263,7 @@ int main(int argc, char** argv){//main
   std::vector<double> pNoiseInMips;
   pNoiseInMips.resize(nLayers,0.12);
   std::vector<unsigned> pThreshInADC;
-  pThreshInADC.resize(nLayers,25);
+  pThreshInADC.resize(nLayers,2);
 
   extractParameterFromStr<std::vector<unsigned> >(granulStr,granularity);
   extractParameterFromStr<std::vector<double> >(noiseStr,pNoiseInMips);
