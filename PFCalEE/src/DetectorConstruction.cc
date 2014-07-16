@@ -192,10 +192,11 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod) : version_(ver)
 	}
 	break;
       }
-    case v_HGCALHE:
+    case v_HGCALHE: case v_HGCALHE_CMSSWv4:
       {
 	//add HCAL
-	buildHGCALFHE(4);
+	if (version_== v_HGCALHE_CMSSWv4) buildHGCALFHE(41);
+	else buildHGCALFHE(4);
 	buildHGCALBHE(4);
 	break;
       }
@@ -248,7 +249,8 @@ void DetectorConstruction::buildHGCALFHE(const unsigned aVersion){
   std::vector<G4double> lThick;
   std::vector<std::string> lEle;
   lThick.push_back(50.*mm);lEle.push_back("SSteel");
-  lThick.push_back(26.*mm);lEle.push_back("Brass");
+  if (aVersion==41) {lThick.push_back(52.*mm);lEle.push_back("Pb");}
+  else {lThick.push_back(26.*mm);lEle.push_back("Brass");}
   lThick.push_back(3*mm); lEle.push_back("Cu");
   lThick.push_back(0.1*mm);lEle.push_back("Si");
   lThick.push_back(0.1*mm);lEle.push_back("Si");
@@ -260,14 +262,16 @@ void DetectorConstruction::buildHGCALFHE(const unsigned aVersion){
   for(unsigned i=0; i<12; i++) {
     //add an intermediate Si layer to study resolution improvement
     if (i>0) lThick[0] = 0;
-    lThick[2] = 0;
-    lThick[6] = 0;
-    lThick[7] = 0;
-    m_caloStruct.push_back( SamplingSection(lThick,lEle) );
-    lThick[0] = 0;
-    lThick[2] = 3*mm;
-    lThick[6] = pcbthick;
-    lThick[7] = 2*mm;
+    if (aVersion!=41){
+      lThick[2] = 0;
+      lThick[6] = 0;
+      lThick[7] = 0;
+      m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+      lThick[0] = 0;
+      lThick[2] = 3*mm;
+      lThick[6] = pcbthick;
+      lThick[7] = 2*mm;
+    }
     if (i==11) lThick[7] = 103.6*mm;
     m_caloStruct.push_back( SamplingSection(lThick,lEle) );
   }
