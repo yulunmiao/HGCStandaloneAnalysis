@@ -166,9 +166,9 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod) : version_(ver)
 	if (addPrePCB_) {
 	  lThick.push_back(pad);lEle.push_back("PCB");
 	}
-	lThick.push_back(2*siWidth/3.);lEle.push_back("Si");
-	//lThick.push_back(siWidth/3.);lEle.push_back("Si");
-	//lThick.push_back(siWidth/3.);lEle.push_back("Si");
+	lThick.push_back(siWidth/3.);lEle.push_back("Si");
+	lThick.push_back(siWidth/3.);lEle.push_back("Si");
+	lThick.push_back(siWidth/3.);lEle.push_back("Si");
 	lThick.push_back(pad);lEle.push_back("PCB");
 	lThick.push_back(gap);lEle.push_back("Air");
 
