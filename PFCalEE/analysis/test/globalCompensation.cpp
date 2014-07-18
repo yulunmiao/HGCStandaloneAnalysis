@@ -70,18 +70,17 @@ int main(int argc, char** argv){//main
 
   bool selectEarlyDecay = true;
 
-  const unsigned nLimits = 15;//5;
-  const double pElim[nLimits] = {10,15,20,25,30,35,40,45,50,55,60,65,70,75,80};
-  const unsigned idxRef = 8;
+  const unsigned nLimits = 10;//5;
+  const double pElim[nLimits] = {5,6,7,8,9,10,11,12,13,14};
+  const unsigned idxRef = 5;
 
-  double FHcalEMCalib = 118;//40.4;//39.81;//38;
-  double FHcalEMOffset = -209;//-3.9;//1.9;//-15;
-  double BHcalEMCalib = 9.92;//40.4;//39.81;//38;
-  double BHcalEMOffset = -5.1;//1.9;//-15;
-  double HcalPionCalib = 0.92;//1/1.19;//0.901;//1./0.9;//1/0.846;
-  double HcalPionOffset = 0;//-0.81;
-  double BHcalSlope = 2.7;
-  double G4BHcalSlope = 0.24;
+  double FHcalEMCalib = 37.8;//39.81;//38;
+  double FHcalEMOffset = -14;//1.9;//-15;
+  double BHcalEMCalib = FHcalEMCalib;//39.81;//38;
+  double BHcalEMOffset = 0;//1.9;//-15;
+  double HcalPionCalib = 0.9;
+  double HcalPionOffset = 1.3;//-0.81;
+  double BHcalSlope = 1;
 
   //////////////////////////////////////////////////////////
   //// End Hardcoded config ////////////////////////////////////
@@ -400,8 +399,7 @@ int main(int argc, char** argv){//main
 	continue;
       }
       unsigned sec =  myDetector.getSection(layer);
-      if (sec==0) energy = energy/3.;//in MIP for 300um Si...
-      
+            
       //p_recoxy[layer]->Fill(posx,posy,energy);
       //EtotRec[layer] += energy;
       //if (debug>1) std::cout << "-hit" << iH << "-" << layer << " " << energy << " " << EtotRec[layer];
@@ -428,7 +426,7 @@ int main(int argc, char** argv){//main
     if (myDetector.section(DetectorEnum::BHCAL1)<nSections) Ebhcal += myDigitiser.MIPtoGeV(myDetector.subDetectorByEnum(DetectorEnum::BHCAL1),Ereco[myDetector.section(DetectorEnum::BHCAL1)]);
     if (myDetector.section(DetectorEnum::BHCAL2)<nSections) Ebhcal += myDigitiser.MIPtoGeV(myDetector.subDetectorByEnum(DetectorEnum::BHCAL2),Ereco[myDetector.section(DetectorEnum::BHCAL2)]);*/
     double Efhcal = 0;
-    if (myDetector.section(DetectorEnum::FHCAL)<nSections) Efhcal += (Ereco[myDetector.section(DetectorEnum::FHCAL)]*3-FHcalEMOffset)/FHcalEMCalib;
+    if (myDetector.section(DetectorEnum::FHCAL)<nSections) Efhcal += (Ereco[myDetector.section(DetectorEnum::FHCAL)]-FHcalEMOffset)/FHcalEMCalib;
     double Ebhcal = 0;
     if (myDetector.section(DetectorEnum::BHCAL1)<nSections) Ebhcal += (Ereco[myDetector.section(DetectorEnum::BHCAL1)]-BHcalEMOffset)/BHcalEMCalib;
     if (myDetector.section(DetectorEnum::BHCAL2)<nSections) Ebhcal += (Ereco[myDetector.section(DetectorEnum::BHCAL2)]-BHcalEMOffset)/BHcalEMCalib;
@@ -461,7 +459,6 @@ int main(int argc, char** argv){//main
 	 double energy = lHit.energy();
 	 unsigned sec =  myDetector.getSection(lHit.layer());
 	 if (sec==0){//use just fhcal
-	   energy = energy/3.;//in MIP for 300um Si...
 	   if (energy<=pElim[iLim]) nHitsCountNum[iLim]++;
 	   //do just once
 	   if (iLim==0){
@@ -477,7 +474,7 @@ int main(int argc, char** argv){//main
        }
        double Cglobal = 0;
        if (nHitsCountDen>0) Cglobal = nHitsCountNum[iLim]*1.0/nHitsCountDen;
-       if (iLim==idxRef && Cglobal>0.999 && Cglobal<1.001) std::cout << nHitsCountNum[iLim] << "/" << nHitsCountDen << " = " << Cglobal << std::endl;
+       //if (iLim==idxRef && Cglobal>0.999 && Cglobal<1.001) std::cout << nHitsCountNum[iLim] << "/" << nHitsCountDen << " = " << Cglobal << std::endl;
        p_Cglobal[iLim]->Fill(Cglobal);
        p_EvsCglobal[iLim]->Fill(Cglobal,Efhcal);
        p_Eshower[iLim]->Fill(showerEnergy(Cglobal,Etotcal,false));

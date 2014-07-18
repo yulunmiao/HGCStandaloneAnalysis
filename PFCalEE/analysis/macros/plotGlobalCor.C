@@ -36,19 +36,19 @@ int plotGlobalCor(){//main
   };
   
   const unsigned nV = 1;
-  TString version[nV] = {"21"};
+  TString version[nV] = {"23"};
 
   TString pSuffix = "";
 
-  const unsigned nLayers = 34;//64 //54
+  const unsigned nLayers = 54;//64 //54
   //const unsigned nHcalLayers = 38;
 
-  //unsigned genEn[]={//10,30,80};
-  //  10,15,18,20,25,
-  //  30,35,40,45,50,
-  //  60,80};//,100,200,300,400,500
+  unsigned genEn[]={//10,30,80};
+    10,15,18,20,25,
+    30,35,40,45,50,
+    60,80};//,100,200,300,400,500
   //,1000,2000};
-  unsigned genEn[]={10,15,20,25,30,40,50,60,80,100,150,200,300,400,500};//,1000,2000};
+  //unsigned genEn[]={10,15,20,25,30,40,50,60,80,100,150,200,300,400,500};//,1000,2000};
   //unsigned genEn[]={50,100,150,200};
   //unsigned genEn[]={10,80};
   unsigned nGenEn=sizeof(genEn)/sizeof(unsigned);
@@ -56,9 +56,9 @@ int plotGlobalCor(){//main
   //const unsigned nLimits = 1;//5;
   //const double pElim[nLimits] = {5};
   const unsigned nLimits = 10;//5;
-  const double pElim[nLimits] = {10,15,20,25,30,35,40,45,50,55};
+  const double pElim[nLimits] = {5,6,7,8,9,10,11,12,13,14};
 
-  const unsigned limRef = 7;
+  const unsigned limRef = 5;
 
   std::ostringstream lName;
 
