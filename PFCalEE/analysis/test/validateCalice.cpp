@@ -26,6 +26,29 @@
 #include "HGCSSDetector.hh"
 #include "HGCSSGeometryConversion.hh"
 
+double getResolution(unsigned genEn,unsigned versionNumber){
+  double s = 0.73;
+  double c = 0.044;
+  double n = 0.02;
+  if (versionNumber==23){
+    s = 0.48;
+    c = 0.045;
+    n = 0.18;
+  }
+  return genEn*sqrt(pow(s/sqrt(genEn),2)+pow(n/genEn,2)+pow(c,2));
+};
+
+double showerEnergy(const double Cglobal,
+		    const double Etotcal,
+		    const bool correctLinearity){
+  double a1 = 1.06;
+  double a2 = 0.001;
+  double a3 = 0;//1.2e-5;
+  double Esh = Cglobal*Etotcal;
+  if (!correctLinearity) return Esh;
+  return Esh*(a1+a2*Esh+a3*Esh*Esh);
+};
+
 unsigned encodeChannelId(const unsigned iL,const unsigned rebin,
 			 const unsigned binX,const unsigned binY)
 {
@@ -51,7 +74,9 @@ void fillHitHistos(TH1F *p_simhitEnergy,
 		   HGCSSDigitisation & myDigitiser,
 		   TH1F *p_noise,
 		   const unsigned rebin,
-		   std::vector<double> & energies){
+		   std::vector<double> & energies,
+		   std::vector<double> & hitEnergies
+		   ){
 
   double sim = simE[0]*MeVToMip;
   energies[0] += sim*absweight;
@@ -147,6 +172,7 @@ void fillHitHistos(TH1F *p_simhitEnergy,
   digiE = myDigitiser.digiE(xtalkE);
   myDigitiser.addNoise(digiE,layer,p_noise);	      
   if (digiE > 0.5){
+    if (layer<38) hitEnergies.push_back(digiE);
     p_rechitEnergy->Fill(digiE);
     energies[11] += digiE*absweight;
     p_outvsinEnergy->Fill(sim,digiE);
@@ -180,6 +206,7 @@ void fillBHHistos(TH2D *histE,
 		  HGCSSDigitisation & myDigitiser,
 		  TH1F *p_noise,
 		  std::vector<double> & Etotcal,
+		  std::vector<double> & hitEnergies,
 		  double minx, double maxx,
 		  double miny, double maxy
 		  ){
@@ -228,7 +255,8 @@ void fillBHHistos(TH2D *histE,
 		      p_rechitEnergy,
 		      p_outvsinEnergy,
 		      simEvec,MeVtoMip,absweight,iL,
-		      myDigitiser,p_noise,4,Etotcal);
+		      myDigitiser,p_noise,4,Etotcal,
+		      hitEnergies);
       }
       
     }//iY   
@@ -277,6 +305,10 @@ int main(int argc, char** argv){//main
   //JetDefinition jet_def(antikt_algorithm, R);
 
   bool plotHitSpectra = true;
+
+  const unsigned nLimits = 10;//5;
+  const double pElim[nLimits] = {3,4,5,6,7,8,9,10,11,12};
+  const unsigned idxRef = 2;
 
   //////////////////////////////////////////////////////////
   //// End Hardcoded config ////////////////////////////////////
@@ -506,6 +538,15 @@ int main(int argc, char** argv){//main
   outtree->Branch("G4Rand925N6Noise",&energies[10]);
   outtree->Branch("G4XT2d5Rand1156N3Noise12",&energies[11]);
   outtree->Branch("G4XT3d5Rand925N6Noise15",&energies[12]);
+  double gcCorEnergy = 0;
+  std::vector<double> gcCglobal;
+  gcCglobal.resize(nLimits,0);
+  outtree->Branch("GlobalCorE",&gcCorEnergy);
+  for (unsigned ilim(0);ilim<nLimits;++ilim){
+    std::ostringstream bname;
+    bname << "Cglobal_" << static_cast<unsigned>(pElim[ilim]) << "mip";
+    outtree->Branch(bname.str().c_str(),&gcCglobal[ilim]);
+  }
 
   TH2F *p_EsimvsLayer = new TH2F("p_EsimvsLayer",";layer ; Esim (MIPs)",
 				 nLayers,0,nLayers,
@@ -536,13 +577,23 @@ int main(int argc, char** argv){//main
 
   TH1F *p_EsimTotal = new TH1F("p_EsimTotal",";Esim (MIPs)",15000,0,300000);
   TH1F *p_ErecoTotal = new TH1F("p_ErecoTotal",";Ereco (GeV)",20000,0,5000);
+  TH1F *p_EcorTotal = new TH1F("p_EcorTotal",";Ereco (GeV)",20000,0,5000);
   p_EsimTotal->StatOverflows();
   p_ErecoTotal->StatOverflows();
+  p_EcorTotal->StatOverflows();
+  TH1F *p_nHitsFHCAL = new TH1F("p_nHitsFHCAL","n_{Hits} (FHCAL)",
+			   1000,0,1000);
+  p_nHitsFHCAL->StatOverflows();
+  TH2F *p_HCALvsCglobal = new TH2F("p_HCALvsCglobal",
+				   ";Cglobal (e_{lim}=5 MIP);E_{HCAL} (GeV)",
+				   200,0.,2.0,
+				   100,0,100);
 
   TH1F *p_simhitEnergy = new TH1F("p_simhitEnergy",";E_{hit} (MIPs)",200,0,10);
   TH1F *p_simnoisehitEnergy = new TH1F("p_simnoisehitEnergy",";E_{hit} (MIPs)",200,0,10);
   TH1F *p_xtalknoisehitEnergy = new TH1F("p_xtalknoisehitEnergy",";E_{hit} (MIPs)",200,0,10);
-  TH1F *p_rechitEnergy = new TH1F("p_rechitEnergy",";E_{hit} (MIPs)",200,0,10);
+  TH1F *p_rechitEnergy = new TH1F("p_rechitEnergy",";E_{hit} (MIPs)",500,0,20);
+  p_rechitEnergy->StatOverflows();
   TH2F *p_outvsinEnergy = new TH2F("p_outvsinEnergy",";E_{hit}^{sim} (MIPs);E_{hit}^{rec} (MIPs)",500,0,500,500,0,500);
 
   TH1F * p_noise = new TH1F("noiseCheck",";noise (MIPs)",100,-5,5);
@@ -733,6 +784,9 @@ int main(int argc, char** argv){//main
 
     for (unsigned iE(0);iE<energies.size();++iE) energies[iE] = 0;
 
+    std::vector<double> hitEnergies;
+    hitEnergies.reserve(1000);
+
     if (isCaliceHcal && plotHitSpectra){
       //fill hit energy in final granularity
 
@@ -792,7 +846,8 @@ int main(int argc, char** argv){//main
 			      p_outvsinEnergy,
 			      simEvec,MeVtoMip,absweight,iL,
 			      myDigitiser,p_noise,1,
-			      energies);
+			      energies,
+			      hitEnergies);
 	      }
 	    }
 	  }
@@ -844,7 +899,8 @@ int main(int argc, char** argv){//main
 			    p_rechitEnergy,
 			    p_outvsinEnergy,
 			    simEvec,MeVtoMip,absweight,iL,
-			    myDigitiser,p_noise,2,energies);
+			    myDigitiser,p_noise,2,energies,
+			    hitEnergies);
 	    }
 	  }
 	}
@@ -858,7 +914,7 @@ int main(int argc, char** argv){//main
 		     p_rechitEnergy,
 		     p_outvsinEnergy,
 		     MeVtoMip,absweight,
-		     myDigitiser,p_noise,energies,
+		     myDigitiser,p_noise,energies,hitEnergies,
 		     -330,270,-450,-330);
 	//for right column
 	fillBHHistos(right,iL,firstEvent,lRndm,channelAlive,
@@ -868,7 +924,7 @@ int main(int argc, char** argv){//main
 		     p_rechitEnergy,
 		     p_outvsinEnergy,
 		     MeVtoMip,absweight,
-		     myDigitiser,p_noise,energies,
+		     myDigitiser,p_noise,energies,hitEnergies,
 		     330,450,-330,270);
 	//for top row
 	fillBHHistos(top,iL,firstEvent,lRndm,channelAlive,
@@ -878,7 +934,7 @@ int main(int argc, char** argv){//main
 		     p_rechitEnergy,
 		     p_outvsinEnergy,
 		     MeVtoMip,absweight,
-		     myDigitiser,p_noise,energies,
+		     myDigitiser,p_noise,energies,hitEnergies,
 		     -270,330,330,450);
 	//for left column
 	fillBHHistos(left,iL,firstEvent,lRndm,channelAlive,
@@ -888,7 +944,7 @@ int main(int argc, char** argv){//main
 		     p_rechitEnergy,
 		     p_outvsinEnergy,
 		     MeVtoMip,absweight,
-		     myDigitiser,p_noise,energies,
+		     myDigitiser,p_noise,energies,hitEnergies,
 		     -450,-330,-270,330);
 	
 
@@ -900,7 +956,9 @@ int main(int argc, char** argv){//main
 
       }//loop on layers
 
+
       geomConv.initialiseHistos(true,false);
+
     }//isCaliceHcal
 
     p_nSimHits->Fill((*simhitvec).size());
@@ -1002,12 +1060,43 @@ int main(int argc, char** argv){//main
     }
     
     if (doFill){
-      outtree->Fill();
-      p_EsimTotal->Fill(etotmips);
       double Etotcal = energies[11];
       double EtotcalEM = (Etotcal-HcalEMOffset)/HcalEMCalib;
       double EtotcalHAD = (EtotcalEM-HcalPionOffset)/HcalPionCalib;
+
+      unsigned nHits = hitEnergies.size();
+      p_nHitsFHCAL->Fill(nHits);
+      //std::cout << " Check: nHits = " << nHits << std::endl;
+      double efhcal = 0;
+      for (unsigned iH(0); iH<nHits;++iH){
+	efhcal += hitEnergies[iH];
+      }
+      double EmipMean = efhcal/nHits;
+      //double EmipMean = p_rechitEnergy->GetMean();
+      unsigned nHitsCountNum[nLimits];
+      //int binMin = 0;
+      //int binMax = p_rechitEnergy->FindBin(EmipMean);
+      unsigned nHitsCountDen = 0;//p_rechitEnergy->Integral(binMin,binMax);
+      for (unsigned iLim(0); iLim<nLimits;++iLim){
+	nHitsCountNum[iLim] = 0;
+	for (unsigned iH(0); iH<nHits;++iH){
+	  //binMax = p_rechitEnergy->FindBin(pElim[iLim]);
+	  //nHitsCountNum[iLim] = p_rechitEnergy->Integral(binMin,binMax);
+	  if (hitEnergies[iH]<=pElim[iLim]) nHitsCountNum[iLim]++;
+	  if (iLim==0 && hitEnergies[iH]<=EmipMean) nHitsCountDen++;
+	}
+	double Cglobal = 0;
+	if (nHitsCountDen>0) Cglobal = nHitsCountNum[iLim]*1.0/nHitsCountDen;
+	gcCglobal[iLim] = Cglobal;
+	if (iLim==idxRef) {
+	  gcCorEnergy = showerEnergy(Cglobal,EtotcalHAD,true);
+	  p_HCALvsCglobal->Fill(Cglobal,(efhcal-10)/(38));
+	}
+      }
+      outtree->Fill();
+      p_EsimTotal->Fill(etotmips);
       p_ErecoTotal->Fill(EtotcalHAD);
+      p_EcorTotal->Fill(gcCorEnergy);
     }
     
     if (firstEvent){

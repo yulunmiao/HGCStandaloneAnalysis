@@ -32,23 +32,49 @@ void extractMeanEnergy(int *color, int *marker,
 		       float *meanFitEerr,float *rmsFitEerr,
 		       std::string plotDir,
 		       double *offset,
-		       double *slope){
+		       double *slope,
+		       double * a, double * b, double * c){
   TCanvas *mycE = new TCanvas("mycE","mycE",1500,1000);
 
   TH1F *hrefit[nPts];
+  double lmax = 0;
   for (unsigned iP(0); iP<nPts; ++iP){
     //if (iP==0) 
     mycE->cd();
-    TString varname = "("+Enames[iP]+"-";
-    varname += offset[iP];
-    varname += ")/";
-    varname += slope[iP];
-    tree->Draw(varname,"","");
+    TString varname;
+    if (iP<2){
+      varname = "("+Enames[iP]+"-";
+      varname += offset[iP];
+      varname += ")/";
+      varname += slope[iP];
+    }
+    else {
+      varname = Enames[iP];
+      varname += "*(G4XT2d5Rand1156N3Noise12-";
+      varname += offset[iP];
+      varname += ")/";
+      varname += slope[iP];
+    }
+    TString full = varname;
+    full += "*(";
+    full += a[iP];
+    full += "+";
+    full += b[iP];
+    full += "*";
+    full += varname;
+    full += "+";
+    full += c[iP];
+    full += "*";
+    full += varname;
+    full += "*";
+    full += varname;
+    full += ")";
+    tree->Draw(full,"","");
 
     std::ostringstream varstr;
     varstr << Enames[iP] << "_e" << genEn;
     hrefit[iP] = (TH1F*)(gPad->GetPrimitive("htemp"))->Clone(varstr.str().c_str()); // 1D
-    hrefit[iP]->Rebin(2);
+    //hrefit[iP]->Rebin(2);
     hrefit[iP]->SetLineColor(color[iP]);
     hrefit[iP]->SetMarkerColor(color[iP]);
     hrefit[iP]->SetMarkerStyle(marker[iP]);
@@ -73,12 +99,13 @@ void extractMeanEnergy(int *color, int *marker,
     varstr << "Egen = " << genEn << " GeV";
     hrefit[iP]->SetTitle(varstr.str().c_str());
     hrefit[iP]->GetXaxis()->SetTitle("Energy");
-
+    if (hrefit[iP]->GetMaximum()>lmax) lmax = hrefit[iP]->GetMaximum();
 
   }
   //fit
   mycE->cd();
   for (unsigned iP(0); iP<nPts; ++iP){
+    hrefit[iP]->SetMaximum(lmax);
     if (iP==0) hrefit[iP]->Draw("PE");
     else hrefit[iP]->Draw("PEsame");
     //fit
@@ -153,7 +180,9 @@ TPad* plot_ratio(TCanvas *canv, bool up){
 
 int plotEfromTree(){//main
 
-  std::string baseDir = "../PLOTS/gitV00-02-03/version23/e-/";
+  std::string baseDir = "../PLOTS/gitV00-02-04/version23/e-/";
+  std::string baseDirPi = "../PLOTS/gitV00-02-04/version23/pi-/";
+
   bool isEM = baseDir.find("e-")!=baseDir.npos;
 
   TString pSuffix = "";
@@ -179,44 +208,74 @@ int plotEfromTree(){//main
   
   // mycE->Divide(nx,ny);
   // std::cout << " Divide: " << nx <<  " " << ny << std::endl;
- 
-  const unsigned nPts = 14;
-  TString Enames[nPts] = {
-  "G4",
-  "G4mipcut",
-  "G4Noise12",
-  "G4Noise15",
-  "G4Noise20",
-  "G4XT2d5Noise",
-  "G4XT3d5Noise",
-  "G4XT5Noise",
-  "G4Rand1156N3Noise",
-  "G4Rand1156N6Noise",
-  "G4Rand925N3Noise",
-  "G4Rand925N6Noise",
-  "G4XT2d5Rand1156N3Noise12",
-  "G4XT3d5Rand925N6Noise15"
-  };
+  const unsigned nLimits = 10;//5;
+  const double pElim[nLimits] = {3,4,5,6,7,8,9,10,11,12};
+  const unsigned idxRef = 2;
 
-  int marker[nPts] = {20,28,21,22,23,21,22,23,24,24,25,25,26,27};
-  int color[nPts] = {1,1,kRed-2,kRed,kRed+2,kGreen-2,kGreen,kGreen+2,kCyan,kBlue,kYellow,kYellow+2,kViolet-1,kViolet+1};
+  const unsigned nEPts = 2;//14;
+  TString EnamesE[nEPts] = {
+  "G4",
+  //"G4mipcut",
+  //"G4Noise12",
+  //"G4Noise15",
+  //"G4Noise20",
+  //"G4XT2d5Noise",
+  //"G4XT3d5Noise",
+  //"G4XT5Noise",
+  //"G4Rand1156N3Noise",
+  //"G4Rand1156N6Noise",
+  //"G4Rand925N3Noise",
+  //"G4Rand925N6Noise",
+  "G4XT2d5Rand1156N3Noise12",
+  //"G4XT3d5Rand925N6Noise15"
+  };
+  TString EnamesC[nLimits];
+
+  for (unsigned ilim(0);ilim<nLimits;++ilim){
+    std::ostringstream bname;
+    bname << "Cglobal_" << static_cast<unsigned>(pElim[ilim]) << "mip";
+    EnamesC[ilim] = bname.str();
+  }
+  unsigned nPts = nEPts+nLimits;
+
+  TString Enames[nPts];
+  for (unsigned i(0);i<nPts;++i){
+    if (i<nEPts) Enames[i] = EnamesE[i];
+    else Enames[i] = EnamesC[i-nEPts];
+  }
+
+
+  int marker[14] = {20,28,21,22,23,21,22,23,24,24,25,25,26,27};
+  int color[14] = {1,1,kRed-2,kRed,kRed+2,kGreen-2,kGreen,kGreen+2,kCyan,kBlue,kYellow,kYellow+2,kViolet-1,kViolet+1};
 
   const unsigned nCanvas = nPts+6;
   TCanvas *myc[nCanvas];
+  TCanvas *mycinv[nPts];
   for (unsigned iC(0);iC<nCanvas;++iC){
     std::ostringstream lName;
     lName << "myc" << iC;
     myc[iC] = new TCanvas(lName.str().c_str(),lName.str().c_str(),1);
+    lName.str("");
+    if (iC<nPts){
+      lName << "mycinv" << iC;
+      mycinv[iC] = new TCanvas(lName.str().c_str(),lName.str().c_str(),1);
+    }
   }
 
   double offsetVal[nPts];
   double slopeVal[nPts];
+  double aVal[nPts];
+  double bVal[nPts];
+  double cVal[nPts];
   for (unsigned iP(0); iP<nPts; ++iP){
     offsetVal[iP] = 0;
     slopeVal[iP] = 1;
+    aVal[iP] = 1;
+    bVal[iP] = 0;
+    cVal[iP] = 0;
   }
 
-  for (unsigned iC(0); iC<3;++iC){//calib
+  for (unsigned iC(0); iC<4;++iC){//calib
 
     TLegend *leg = new TLegend(0,0,1,1);
     leg->SetFillColor(10);
@@ -232,12 +291,12 @@ int plotEfromTree(){//main
     
     gStyle->SetOptStat(0);
     std::string plotDir;
-    if (iC==1) plotDir = baseDir+"calib/";
+    if (iC==1 || iC==3) plotDir = baseDir+"calib/";
     else if (iC==2) {
-      baseDir = "../PLOTS/gitV00-02-03/version23/pi-/";
+      baseDir = baseDirPi;
       isEM = false;
       plotDir = baseDir;
-      for (unsigned iP(0); iP<nPts; ++iP){
+      for (unsigned iP(0); iP<nEPts; ++iP){
 	slopeVal[iP] = slopeVal[iP]/1.19;
       }
     }
@@ -249,7 +308,7 @@ int plotEfromTree(){//main
       
       TFile *inputFile = 0;
       std::ostringstream linputStr;
-      linputStr << baseDir << "validation_e" << genEn[iE] << pSuffix << ".root";
+      linputStr << baseDir << "validateCalice_e" << genEn[iE] << pSuffix << ".root";
       inputFile = TFile::Open(linputStr.str().c_str());
       if (!inputFile) {
 	std::cout << " -- Error, input file " << linputStr.str() << " cannot be opened. Exiting..." << std::endl;
@@ -272,7 +331,8 @@ int plotEfromTree(){//main
 			meanFitE[iE],rmsFitE[iE],
 			meanFitEerr[iE],rmsFitEerr[iE],
 			plotDir,
-			offsetVal,slopeVal);
+			offsetVal,slopeVal,
+			aVal,bVal,cVal);
       
       inputFile->Close();
       
@@ -284,6 +344,7 @@ int plotEfromTree(){//main
     TGraphErrors *calib[nPts];
     TGraphErrors *sigma[nPts];
     TGraphErrors *reso[nPts];
+    TGraphErrors *calibinv[nPts];
     TGraphErrors *calibFit[nPts];
     TGraphErrors *deltaFit[nPts];
     TGraphErrors *sigmaFit[nPts];
@@ -322,6 +383,7 @@ int plotEfromTree(){//main
       calibFit[iP]->SetLineStyle(1);
       calibFit[iP]->SetLineColor(color[iP]);
       calibFit[iP]->SetMarkerColor(color[iP]);
+      calibinv[iP] = (TGraphErrors *) calibFit[iP]->Clone("calibinv"+lSuf);
       deltaFit[iP] = (TGraphErrors *) calibFit[iP]->Clone("deltaFit"+lSuf);
       sigmaFit[iP] = (TGraphErrors *) calibFit[iP]->Clone("sigmaFit"+lSuf);
       
@@ -337,6 +399,8 @@ int plotEfromTree(){//main
 	double err = rmsE[iE][iP]/meanE[iE][iP]*sqrt(pow(rmsEerr[iE][iP]/rmsE[iE][iP],2)+pow(meanEerr[iE][iP]/meanE[iE][iP],2));
 	reso[iP]->SetPointError(np,0,err);
 	
+	calibinv[iP]->SetPoint(np,meanFitE[iE][iP],genEn[iE]);
+	calibinv[iP]->SetPointError(np,meanFitEerr[iE][iP],0.01*genEn[iE]);
 	calibFit[iP]->SetPoint(np,genEn[iE],meanFitE[iE][iP]);
 	calibFit[iP]->SetPointError(np,0.0,meanFitEerr[iE][iP]);
 	sigmaFit[iP]->SetPoint(np,genEn[iE],rmsFitE[iE][iP]);
@@ -354,7 +418,59 @@ int plotEfromTree(){//main
 	std::cout << " Pb..." << upper << " " << lower << std::endl;
 	return 1;
       }
+
+      //draw inverted calib
+      mycinv[iP]->cd();
+      gPad->SetGridx(1);
+      gPad->SetGridy(1);
+      gr[iP] = calibinv[iP];
       
+      //gr[iP]->GetXaxis()->SetLabelSize(0.06);
+      //gr[iP]->GetXaxis()->SetTitleSize(0.06);
+      //gr[iP]->GetYaxis()->SetLabelSize(0.06);
+      //gr[iP]->GetYaxis()->SetTitleSize(0.06);
+      //gr[iP]->GetXaxis()->SetTitleOffset(0.7);
+      //gr[iP]->GetYaxis()->SetTitleOffset(0.8);
+      
+      gr[iP]->SetTitle(Enames[iP]);
+      gr[iP]->Draw("ap");
+      gr[iP]->GetYaxis()->SetTitle("Beam energy [GeV]");
+      if (iC==0) gr[iP]->GetXaxis()->SetTitle("Corrected energy deposited [MIPs]");
+      else gr[iP]->GetXaxis()->SetTitle("Corrected energy deposited [GeV]");
+      //gr[iP]->GetXaxis()->SetTitle(doVsE?"Beam energy [GeV]" :"1/#sqrt{Beam energy} [1/#sqrt{GeV}]"); 
+      
+      char buf[500];
+      //TF1 *fitFunc=new TF1("calib","[0]+[1]*x",gr->GetXaxis()->GetXmin(),gr->GetXaxis()->GetXmax());
+      TF1 *fitFuncinv=new TF1("calibinv","[0]*x+[1]*x*x+[2]*x*x*x",gr[iP]->GetXaxis()->GetXmin(),gr[iP]->GetXaxis()->GetXmax());
+      fitFuncinv->SetLineColor(1);
+      gr[iP]->Fit(fitFuncinv,"RME");
+      gr[iP]->GetFunction("calibinv")->SetLineColor(color[iP]);
+      TLatex lat;
+      lat.SetTextColor(1);
+      sprintf(buf,"<E> #propto E #times (a + b #times E +c #times E^{2})");
+      lat.DrawLatex(genEn[0],gr[iP]->GetYaxis()->GetXmax()*0.9,buf);
+      sprintf(buf,"a = %3.3f #pm %3.3f %s",fitFuncinv->GetParameter(0),fitFuncinv->GetParError(0),iC==0?"MIPs":"GeV");
+      lat.DrawLatex(genEn[0],gr[iP]->GetYaxis()->GetXmax()*(0.8),buf);
+      sprintf(buf,"b = %3.3f #pm %3.3f %s/GeV",fitFuncinv->GetParameter(1),fitFuncinv->GetParError(1),iC==0?"MIPs":"GeV");
+      lat.DrawLatex(genEn[0],gr[iP]->GetYaxis()->GetXmax()*(0.7),buf);
+      sprintf(buf,"c = %3.6f #pm %3.6f %s/GeV",fitFuncinv->GetParameter(2),fitFuncinv->GetParError(2),iC==0?"MIPs":"GeV");
+      lat.DrawLatex(genEn[0],gr[iP]->GetYaxis()->GetXmax()*(0.6),buf);
+      sprintf(buf,"chi2/NDF = %3.3f/%d = %3.3f",fitFuncinv->GetChisquare(),fitFuncinv->GetNDF(),fitFuncinv->GetChisquare()/fitFuncinv->GetNDF());
+      lat.DrawLatex(genEn[0],gr[iP]->GetYaxis()->GetXmax()*(0.5),buf);
+      
+      if (iP>=nEPts && iC==2) {
+	aVal[iP] = fitFuncinv->GetParameter(0);
+	bVal[iP] = fitFuncinv->GetParameter(1);
+	cVal[iP] = fitFuncinv->GetParameter(2);
+      }
+
+      mycinv[iP]->Update();
+      saveName.str("");
+      saveName << plotDir << "/CalibEshower_" << Enames[iP];
+      mycinv[iP]->Update();
+      mycinv[iP]->Print((saveName.str()+".png").c_str());
+      mycinv[iP]->Print((saveName.str()+".pdf").c_str());
+     
       //draw calib
       upper->cd();
       gPad->SetGridx(1);
@@ -377,13 +493,11 @@ int plotEfromTree(){//main
       else gr[iP]->GetYaxis()->SetTitle("Average energy deposited [GeV]");
       //gr[iP]->GetXaxis()->SetTitle(doVsE?"Beam energy [GeV]" :"1/#sqrt{Beam energy} [1/#sqrt{GeV}]"); 
       
-      char buf[500];
       //TF1 *fitFunc=new TF1("calib","[0]+[1]*x",gr->GetXaxis()->GetXmin(),gr->GetXaxis()->GetXmax());
       TF1 *fitFunc=new TF1("calib","[0]+[1]*x",9,51);
       fitFunc->SetLineColor(1);
       gr[iP]->Fit(fitFunc,"RME");
       gr[iP]->GetFunction("calib")->SetLineColor(color[iP]);
-      TLatex lat;
       lat.SetTextColor(1);
       sprintf(buf,"<E> #propto a + b #times E ");
       lat.DrawLatex(genEn[0],gr[iP]->GetYaxis()->GetXmax()*0.9,buf);
@@ -397,9 +511,11 @@ int plotEfromTree(){//main
       groffset->SetPoint(iP,iP,fitFunc->GetParameter(0));
       groffset->SetPointError(iP,0.0,fitFunc->GetParError(0));
       if (iC==0) offsetVal[iP] = fitFunc->GetParameter(0);
+      if (iP>=nEPts && iC==0) offsetVal[iP] = offsetVal[1];
       grslope->SetPoint(iP,iP,fitFunc->GetParameter(1));
       grslope->SetPointError(iP,0.0,fitFunc->GetParError(1));
       if (iC==0) slopeVal[iP] = fitFunc->GetParameter(1);
+      if (iP>=nEPts && iC==0) slopeVal[iP] = slopeVal[1];
       //groffset->GetXaxis()->SetBinLabel(iP+1,Enames[iP].Data());
       //grslope->GetHistogram()->GetXaxis()->SetBinLabel(iP+1,Enames[iP].Data());
       //draw deltaE/E vs E
@@ -484,7 +600,10 @@ int plotEfromTree(){//main
       
       TF1* fitref =new TF1("reso","sqrt([0]/x+[1]+[2]/(x*x))",resoFit[iP]->GetXaxis()->GetXmin(),resoFit[iP]->GetXaxis()->GetXmax());
       if (isEM) fitref->SetParameters(0.215*0.215,0.007*0.007,0.06*0.06);
-      else fitref->SetParameters(0.518*0.518,0.04*0.04,0.18*0.18);
+      else {
+	if (iP<nEPts) fitref->SetParameters(0.518*0.518,0.04*0.04,0.18*0.18);
+	else fitref->SetParameters(0.436*0.436,0.0*0.0,0.18*0.18);
+      }
       fitref->SetLineColor(7);
       fitref->Draw("same");
       lat.SetTextColor(7);

@@ -16,7 +16,8 @@ do
 	    #for e in 5 10 15 20 25 30 40 50 60 80 100 150 200 300 400 500
 	    do
 		echo "Processing v${v}_p${p}_e${e}_run${r}"
-		./bin/globalCompensation 0 $INPATH/$p/ HGcal_version${v}_model3_BOFF_e${e}.root Digi_version${v}_model3_BOFF_e${e}.root $MYDIR/globalCompensation_e${e}.root 3 >& gc_v${v}_p${p}_e${e}.log &
+		./bin/validateCalice 0 $INPATH/$p/ HGcal_version${v}_model3_BOFF_e${e}.root Digi_version${v}_model3_BOFF_e${e}.root $MYDIR/validateCalice_e${e}.root 3 >& vc_v${v}_p${p}_e${e}.log &
+		#./bin/globalCompensation 0 $INPATH/$p/ HGcal_version${v}_model3_BOFF_e${e}.root Digi_version${v}_model3_BOFF_e${e}.root $MYDIR/globalCompensation_e${e}.root 3 >& gc_v${v}_p${p}_e${e}.log &
 	    done
 	done
     done
