@@ -591,12 +591,12 @@ int plotEfromTree(){//main
       gPad->SetGridx(1);
       gPad->SetGridy(1);
       resoFit[iP]->SetTitle("");
-      resoFit[iP]->SetMaximum(std::max(reso[iP]->GetMaximum(),resoFit[iP]->GetMaximum()));
+      //resoFit[iP]->SetMaximum(std::max(reso[iP]->GetMaximum(),resoFit[iP]->GetMaximum()));
       if (iP==0) resoFit[iP]->Draw("ap");
       else resoFit[iP]->Draw("p");
       //reso[iP]->Draw("pl");
-      resoFit[iP]->GetXaxis()->SetTitle("Beam energy [GeV]");
-      resoFit[iP]->GetYaxis()->SetTitle("Energy resolution");
+      resoFit[iP]->GetXaxis()->SetTitle("Beam energy (GeV)");
+      resoFit[iP]->GetYaxis()->SetTitle("Relative energy resolution");
       
       TF1* fitref =new TF1("reso","sqrt([0]/x+[1]+[2]/(x*x))",resoFit[iP]->GetXaxis()->GetXmin(),resoFit[iP]->GetXaxis()->GetXmax());
       if (isEM) fitref->SetParameters(0.215*0.215,0.007*0.007,0.06*0.06);
@@ -607,6 +607,7 @@ int plotEfromTree(){//main
       fitref->SetLineColor(7);
       fitref->Draw("same");
       lat.SetTextColor(7);
+      //sprintf(buf,"CALICE");
       sprintf(buf,"CALICE s=%3.3f, c=%3.3f, n=%3.3f",sqrt(fitref->GetParameter(0)),sqrt(fitref->GetParameter(1)),sqrt(fitref->GetParameter(2)));
       if (iP==0) lat.DrawLatex(30,resoFit[iP]->GetYaxis()->GetXmax()*0.9,buf);
 
@@ -616,8 +617,16 @@ int plotEfromTree(){//main
       gPad->SetGridx(1);
       gPad->SetGridy(1);
       resoFit[iP]->SetMaximum(std::max(reso[iP]->GetMaximum(),resoFit[iP]->GetMaximum()));
+      resoFit[iP]->GetXaxis()->SetLabelSize(0.05);
+      resoFit[iP]->GetXaxis()->SetTitleSize(0.05);
+      resoFit[iP]->GetYaxis()->SetLabelSize(0.05);
+      resoFit[iP]->GetYaxis()->SetTitleSize(0.05);
+      //resoFit[iP]->GetXaxis()->SetTitleOffset(0.7);
+      resoFit[iP]->GetYaxis()->SetTitleOffset(1.2);
+      
+
       resoFit[iP]->Draw("ap");
-      reso[iP]->Draw("l");
+      //reso[iP]->Draw("l");
       bool addNoiseTerm = false;
       if (iP>0) addNoiseTerm = true;
       TF1 *fitFunc2;
@@ -658,21 +667,25 @@ int plotEfromTree(){//main
       }
       lat.SetTextColor(1);
       sprintf(buf,"#frac{#sigma}{E} #propto #frac{s}{#sqrt{E}} #oplus c #oplus #frac{n}{E}");
-      double Emin = doVsE?40 : 1/sqrt(genEn[nGenEn-1]);
-      lat.DrawLatex(Emin,resoFit[iP]->GetYaxis()->GetXmax(),buf);
+      double Emin = doVsE?50 : 1/sqrt(genEn[nGenEn-1]);
+      lat.DrawLatex(Emin,resoFit[iP]->GetYaxis()->GetXmax()*0.94,buf);
       sprintf(buf,"s=%3.3f #pm %3.3f",sigmaStoch,sigmaStochErr);
-      lat.DrawLatex(Emin,resoFit[iP]->GetYaxis()->GetXmax()*0.9,buf);
+      lat.DrawLatex(Emin,resoFit[iP]->GetYaxis()->GetXmax()*0.84,buf);
       sprintf(buf,"c=%3.3f #pm %3.3f",sigmaConst,sigmaConstErr);
-      lat.DrawLatex(Emin,resoFit[iP]->GetYaxis()->GetXmax()*0.8,buf);
+      lat.DrawLatex(Emin,resoFit[iP]->GetYaxis()->GetXmax()*0.74,buf);
       sprintf(buf,"chi2/NDF = %3.3f/%d = %3.3f",fitFunc2->GetChisquare(),fitFunc2->GetNDF(),fitFunc2->GetChisquare()/fitFunc2->GetNDF());
-      lat.DrawLatex(Emin,resoFit[iP]->GetYaxis()->GetXmax()*0.6,buf);
+      //lat.DrawLatex(Emin,resoFit[iP]->GetYaxis()->GetXmax()*0.54,buf);
       if (addNoiseTerm) {
-	sprintf(buf,"n=%3.3f #pm %3.3f",sigmaNoise,sigmaNoiseErr);
-	lat.DrawLatex(Emin,resoFit[iP]->GetYaxis()->GetXmax()*0.7,buf);
+	sprintf(buf,"n=%3.2f",sigmaNoise);
+	lat.DrawLatex(Emin,resoFit[iP]->GetYaxis()->GetXmax()*0.64,buf);
       }
       lat.SetTextColor(7);
-      sprintf(buf,"CALICE s=%3.3f, c=%3.3f, n=%3.3f",sqrt(fitref->GetParameter(0)),sqrt(fitref->GetParameter(1)),sqrt(fitref->GetParameter(2)));
-      lat.DrawLatex(8,resoFit[iP]->GetYaxis()->GetXmin()*1.1,buf);
+      //sprintf(buf,"CALICE s=%3.3f, c=%3.3f, n=%3.3f",sqrt(fitref->GetParameter(0)),sqrt(fitref->GetParameter(1)),sqrt(fitref->GetParameter(2)));
+      sprintf(buf,"CALICE");
+      lat.DrawLatex(70,resoFit[iP]->GetYaxis()->GetXmin()*1.35,buf);
+      lat.SetTextColor(1);
+      lat.DrawLatex(20,resoFit[iP]->GetYaxis()->GetXmax()*1.03,"Geant4 QGSP_BERT, #pi^{-} gun");
+
 
       myc[iP]->Update();
       saveName.str("");
