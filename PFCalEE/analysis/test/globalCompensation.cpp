@@ -71,8 +71,8 @@ int main(int argc, char** argv){//main
   bool selectEarlyDecay = true;
 
   const unsigned nLimits = 15;//5;
-  const double pElim[nLimits] = {10,15,20,25,30,35,40,45,50,55,60,65,70,75,80};
-  const unsigned idxRef = 8;
+  const double pElim[nLimits] = {2.5,5,7.5,10,15,20,25,30,35,40,45,50,60,70,80};
+  const unsigned idxRef = 3;
 
   double FHcalEMCalib = 118;//40.4;//39.81;//38;
   double FHcalEMOffset = -209;//-3.9;//1.9;//-15;
@@ -319,8 +319,8 @@ int main(int argc, char** argv){//main
     lName.str("");
     lName << "p_EvsCglobal_" << iLim;
     p_EvsCglobal[iLim] =  new TH2F(lName.str().c_str(),";C_{global};Etot (GeV)",
-				   1000,0,2,
-				   2000,0,1000);
+				   200,0,2,
+				   700,0,700);
 
   }
 
@@ -448,6 +448,9 @@ int main(int argc, char** argv){//main
      unsigned nHitsCountDen = 0;
 
      EmipMean = EmipMean/nHits;
+
+     //std::cout << "Etot = " << Etotcal << " ---> <Ehit> = " << EmipMean << std::endl;
+
      bool lowTail = Etotcal < (genEn-getResolution(genEn,versionNumber));
      bool highTail = Etotcal > (genEn+getResolution(genEn,versionNumber));
      //fill Cglobal histos

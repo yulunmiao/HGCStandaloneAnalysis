@@ -55,10 +55,10 @@ int plotGlobalCor(){//main
 
   //const unsigned nLimits = 1;//5;
   //const double pElim[nLimits] = {5};
-  const unsigned nLimits = 10;//5;
-  const double pElim[nLimits] = {10,15,20,25,30,35,40,45,50,55};
+  const unsigned nLimits = 15;//5;
+  const double pElim[nLimits] = {2.5,5,7.5,10,15,20,25,30,35,40,45,50,60,70,80};
 
-  const unsigned limRef = 7;
+  const unsigned limRef = 3;
 
   std::ostringstream lName;
 
@@ -71,7 +71,7 @@ int plotGlobalCor(){//main
     myc[iC] = new TCanvas(lName.str().c_str(),lName.str().c_str(),1000,700);
   }
   myc[0]->Divide(3,2);
-  myc[1]->Divide(4,3);
+  myc[1]->Divide(5,3);
   myc[2]->Divide(4,3);
   myc[3]->Divide(4,3);
   myc[4]->Divide(2,1);
@@ -249,14 +249,6 @@ int plotGlobalCor(){//main
 	  p_hitSpectrum_ratio[iE]->Draw("");
 	}
 
-	myc[1]->cd(iE+1);
-	p_EvsCglobal[iE][limRef]->RebinX(2);
-	p_EvsCglobal[iE][limRef]->RebinY(2);
-	p_EvsCglobal[iE][limRef]->GetXaxis()->SetRangeUser(p_Cglobal[iE][limRef]->GetMean()-5*p_Cglobal[iE][limRef]->GetRMS(),p_Cglobal[iE][limRef]->GetMean()+5*p_Cglobal[iE][limRef]->GetRMS());
-	p_EvsCglobal[iE][limRef]->GetYaxis()->SetRangeUser(p_Etotal[iE]->GetMean()-5*p_Etotal[iE]->GetRMS(),p_Etotal[iE]->GetMean()+5*p_Etotal[iE]->GetRMS());
-	p_EvsCglobal[iE][limRef]->SetTitle(buf);
-	p_EvsCglobal[iE][limRef]->Draw("colz");
-
 	myc[2]->cd(iE+1);
 	p_Eshower[iE][limRef]->SetMarkerStyle(20);
 	p_Eshower[iE][limRef]->SetMarkerColor(1);
@@ -305,6 +297,18 @@ int plotGlobalCor(){//main
 	  double lresoErr = lreso*sqrt(pow(fitResult->GetParError(1)/fitResult->GetParameter(1),2)+pow(fitResult->GetParError(2)/fitResult->GetParameter(2),2));
 	  reso[iLim]->SetPoint(np,1/sqrt(genEn[iE]),lreso);
 	  reso[iLim]->SetPointError(np,0,lresoErr);
+	}
+
+	if (genEn[iE] == 40){
+	  for (unsigned iLim(0); iLim<nLimits;++iLim){
+	    myc[1]->cd(iLim+1);
+	    //p_EvsCglobal[iE][iLim]->RebinX(2);
+	    //p_EvsCglobal[iE][iLim]->RebinY(2);
+	    p_EvsCglobal[iE][iLim]->GetXaxis()->SetRangeUser(p_Cglobal[iE][iLim]->GetMean()-5*p_Cglobal[iE][iLim]->GetRMS(),p_Cglobal[iE][iLim]->GetMean()+5*p_Cglobal[iE][iLim]->GetRMS());
+	    p_EvsCglobal[iE][iLim]->GetYaxis()->SetRangeUser(p_Etotal[iE]->GetMean()-5*p_Etotal[iE]->GetRMS(),p_Etotal[iE]->GetMean()+5*p_Etotal[iE]->GetRMS());
+	    p_EvsCglobal[iE][iLim]->SetTitle(buf);
+	    p_EvsCglobal[iE][iLim]->Draw("colz");
+	  }
 	}
 
 	Int_t np = reso[nLimits]->GetN();
