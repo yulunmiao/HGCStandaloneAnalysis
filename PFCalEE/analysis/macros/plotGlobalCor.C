@@ -55,8 +55,8 @@ int plotGlobalCor(){//main
 
   //const unsigned nLimits = 1;//5;
   //const double pElim[nLimits] = {5};
-  const unsigned nLimits = 15;//5;
-  const double pElim[nLimits] = {2.5,5,7.5,10,15,20,25,30,35,40,45,50,60,70,80};
+  const unsigned nLimits = 5;//5;
+  const double pElim[nLimits] = {2.5,5,7.5,10,15};//,20,25,30,35,40,45,50,60,70,80};
 
   const unsigned limRef = 3;
 
@@ -413,6 +413,7 @@ int plotGlobalCor(){//main
       gr->GetXaxis()->SetTitle("Eshower [GeV]");
       gr->Draw("ap");
       TF1 *fitFunc=new TF1("calibFunc","[0]*x+[1]*x*x+[2]*x*x*x",gr->GetXaxis()->GetXmin(),gr->GetXaxis()->GetXmax());
+      fitFunc->SetParameters(0.98,0.002,0);
       fitFunc->SetLineColor(6);
       gr->Fit(fitFunc,"RME");
       TLatex lat;

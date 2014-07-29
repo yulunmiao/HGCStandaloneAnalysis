@@ -39,12 +39,13 @@ double getResolution(unsigned genEn,unsigned versionNumber){
 double showerEnergy(const double Cglobal,
 		    const double Etotcal,
 		    const bool correctLinearity){
-  double a1 = 0.89;
-  double a2 = 0.001;
+  double a0 = -1.8;
+  double a1 = 0.916;
+  double a2 = 0.0003;
   double a3 = 0;//1.2e-5;
   double Esh = Cglobal*Etotcal;
   if (!correctLinearity) return Esh;
-  return Esh*(a1+a2*Esh+a3*Esh*Esh);
+  return a0+Esh*(a1+a2*Esh+a3*Esh*Esh);
 };
 
 int main(int argc, char** argv){//main  
