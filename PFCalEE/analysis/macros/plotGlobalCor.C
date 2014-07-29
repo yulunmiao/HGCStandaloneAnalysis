@@ -58,7 +58,7 @@ int plotGlobalCor(){//main
   const unsigned nLimits = 10;//5;
   const double pElim[nLimits] = {5,6,7,8,9,10,11,12,13,14};
 
-  const unsigned limRef = 5;
+  const unsigned limRef = 0;
 
   std::ostringstream lName;
 
@@ -211,14 +211,14 @@ int plotGlobalCor(){//main
 	p_hitSpectrum_lowTail[iE]->SetTitle(buf);
 	p_hitSpectrum_lowTail[iE]->Rebin(4);
 	p_hitSpectrum_highTail[iE]->Rebin(4);
-	p_hitSpectrum_lowTail[iE]->GetXaxis()->SetRangeUser(0.5,50);
-	p_hitSpectrum_highTail[iE]->GetXaxis()->SetRangeUser(0.5,50);
+	p_hitSpectrum_lowTail[iE]->GetXaxis()->SetRangeUser(0.5,20);
+	p_hitSpectrum_highTail[iE]->GetXaxis()->SetRangeUser(0.5,20);
 	//p_hitSpectrum_lowTail[iE]->GetYaxis()->SetRangeUser(0,0.025);
 
 	p_hitSpectrum_ratio[iE]->GetYaxis()->SetTitle("Ratio highTail/LowTail");
-	p_hitSpectrum_ratio[iE]->GetXaxis()->SetRangeUser(0.5,50);
+	p_hitSpectrum_ratio[iE]->GetXaxis()->SetRangeUser(0.5,20);
 	p_hitSpectrum_ratio[iE]->GetYaxis()->SetRangeUser(0.,2.);
-	if (genEn[iE]==20) {
+	if (genEn[iE]==10) {
 	  myc[0]->cd(1);
 	  p_hitSpectrum_lowTail[iE]->Draw("");
 	  p_hitSpectrum_highTail[iE]->Draw("same");
@@ -250,8 +250,8 @@ int plotGlobalCor(){//main
 	}
 
 	myc[1]->cd(iE+1);
-	p_EvsCglobal[iE][limRef]->RebinX(2);
-	p_EvsCglobal[iE][limRef]->RebinY(2);
+	p_EvsCglobal[iE][limRef]->RebinX(4);
+	p_EvsCglobal[iE][limRef]->RebinY(4);
 	p_EvsCglobal[iE][limRef]->GetXaxis()->SetRangeUser(p_Cglobal[iE][limRef]->GetMean()-5*p_Cglobal[iE][limRef]->GetRMS(),p_Cglobal[iE][limRef]->GetMean()+5*p_Cglobal[iE][limRef]->GetRMS());
 	p_EvsCglobal[iE][limRef]->GetYaxis()->SetRangeUser(p_Etotal[iE]->GetMean()-5*p_Etotal[iE]->GetRMS(),p_Etotal[iE]->GetMean()+5*p_Etotal[iE]->GetRMS());
 	p_EvsCglobal[iE][limRef]->SetTitle(buf);
@@ -316,14 +316,14 @@ int plotGlobalCor(){//main
 	p_meanHitSpectrum_lowTail[iE]->SetLineColor(4);
 	p_meanHitSpectrum_highTail[iE]->SetLineColor(2);
 	//p_meanHitSpectrum_lowTail[iE]->SetLineWidth(iE%3+1);
-	p_meanHitSpectrum_lowTail[iE]->Rebin(8);
-	p_meanHitSpectrum_highTail[iE]->Rebin(8);
-	//p_meanHitSpectrum_lowTail[iE]->GetXaxis()->SetRangeUser(0,50);
+	p_meanHitSpectrum_lowTail[iE]->Rebin(2);
+	p_meanHitSpectrum_highTail[iE]->Rebin(2);
+	p_meanHitSpectrum_lowTail[iE]->GetXaxis()->SetRangeUser(0,20);
 	//p_meanHitSpectrum_lowTail[iE]->GetYaxis()->SetRangeUser(0,0.025);
 	p_meanHitSpectrum_lowTail[iE]->GetYaxis()->SetTitle("Normalised entries");
 	p_meanHitSpectrum_lowTail[iE]->SetTitle(buf);
 
-	if (genEn[iE]==20) {
+	if (genEn[iE]==10) {
 	  myc[4]->cd(1);
 	  p_meanHitSpectrum_lowTail[iE]->Draw("");
 	  p_meanHitSpectrum_highTail[iE]->Draw("same");
@@ -344,8 +344,8 @@ int plotGlobalCor(){//main
 	  //p_Cglobal[iE][iLim]->SetFillColor(lColor[iE]);
 	  p_Cglobal[iE][iLim]->Scale(1./p_Cglobal[iE][iLim]->GetEntries());
 	  p_Cglobal[iE][iLim]->Rebin(4);
-	  p_Cglobal[iE][iLim]->GetXaxis()->SetRangeUser(0.,1.5);
-	  //p_Cglobal[iE][iLim]->GetYaxis()->SetRangeUser(0,300);
+	  p_Cglobal[iE][iLim]->GetXaxis()->SetRangeUser(0.8,1.7);
+	  p_Cglobal[iE][iLim]->GetYaxis()->SetRangeUser(0,0.07);
 
 	  sprintf(buf,"C_{global} (e_{lim} = %1.1f MIP)",pElim[iLim]);
 
