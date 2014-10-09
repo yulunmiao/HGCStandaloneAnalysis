@@ -74,20 +74,21 @@ void HGCSSGeometryConversion::setGranularity(const std::vector<unsigned> & granu
 
 
 void HGCSSGeometryConversion::initialiseHistos(const bool recreate,
+					       std::string uniqStr,
 					       const bool print){
 
    for (unsigned iS(0); iS<theDetector().nSections();++iS){
-     resetVector(HistMapE_[theDetector().detType(iS)],"EmipHits",theDetector().detName(iS),theDetector().subDetectorBySection(iS),theDetector().nLayers(iS),recreate,print);
+     resetVector(HistMapE_[theDetector().detType(iS)],"EmipHits"+uniqStr,theDetector().detName(iS),theDetector().subDetectorBySection(iS),theDetector().nLayers(iS),recreate,print);
      //std::cout << " check: " << HistMapE_[theDetector().detType(iS)].size() << std::endl;
      
      std::vector<double> avgvecE;
      avgvecE.resize(theDetector().nLayers(iS),0);
      avgMapE_[theDetector().detType(iS)]=avgvecE;
      
-     resetVector(HistMapTime_[theDetector().detType(iS)],"TimeHits",theDetector().detName(iS),theDetector().subDetectorBySection(iS),theDetector().nLayers(iS),recreate,print);
+     resetVector(HistMapTime_[theDetector().detType(iS)],"TimeHits"+uniqStr,theDetector().detName(iS),theDetector().subDetectorBySection(iS),theDetector().nLayers(iS),recreate,print);
      //std::cout << " check: " << HistMapTime_[theDetector().detType(iS)].size() << std::endl;
 
-     resetVector(HistMapZ_[theDetector().detType(iS)],"zHits",theDetector().detName(iS),theDetector().subDetectorBySection(iS),theDetector().nLayers(iS),recreate,print);
+     resetVector(HistMapZ_[theDetector().detType(iS)],"zHits"+uniqStr,theDetector().detName(iS),theDetector().subDetectorBySection(iS),theDetector().nLayers(iS),recreate,print);
      //std::cout << " check: " << HistMapZ_[theDetector().detType(iS)].size() << std::endl;
      
      std::vector<double> avgvecZ;
@@ -169,9 +170,21 @@ void HGCSSGeometryConversion::resetVector(std::vector<TH2D *> & aVec,
 	double newcellsize = cellSize_*getGranularity(iL,aDet);
 	//take smallest pair integer to be sure to fit in the geometry
 	//even if small dead area introduced at the edge
-	unsigned nBins = static_cast<unsigned>(width_*1./(newcellsize*2.))*2-2;
-	double min = -1.0*nBins*newcellsize/2.;
-	double max = nBins*newcellsize/2.;
+	//take 0,0,0 as center of new cell.
+	unsigned nBins = 0;
+	double min=0;
+	double max=0;
+	if (getGranularity(iL,aDet) == 1) {
+	  nBins = static_cast<unsigned>(width_*1./cellSize_);
+	  min = -1.0*nBins*newcellsize/2.;
+	  max = nBins*newcellsize/2.;
+	}
+	else {
+	  nBins = static_cast<unsigned>(width_*1./(newcellsize*2.))*2-2;
+	  min = -1.0*nBins*newcellsize/2.-newcellsize/2.;
+	  max = nBins*newcellsize/2.+newcellsize/2.;
+	  nBins+=1;
+	}
 	aVec[iL] = new TH2D(lname.str().c_str(),";x(mm);y(mm)",nBins,min,max,nBins,min,max);
 	if (print && iL==0) std::cout << " ---- bins, min, max = " << nBins << " " << min << " " << max << std::endl;
       }

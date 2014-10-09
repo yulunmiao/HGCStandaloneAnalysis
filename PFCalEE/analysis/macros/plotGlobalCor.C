@@ -55,10 +55,10 @@ int plotGlobalCor(){//main
 
   //const unsigned nLimits = 1;//5;
   //const double pElim[nLimits] = {5};
-  const unsigned nLimits = 5;//5;
-  const double pElim[nLimits] = {2.5,5,7.5,10,15};//,20,25,30,35,40,45,50,60,70,80};
+  const unsigned nLimits = 9;//5;
+  const double pElim[nLimits] = {5,7.5,10,15,20,25,30,35,40};//,45,50,60,70,80};
 
-  const unsigned limRef = 3;
+  const unsigned limRef = 2;
 
   std::ostringstream lName;
 
@@ -71,9 +71,9 @@ int plotGlobalCor(){//main
     myc[iC] = new TCanvas(lName.str().c_str(),lName.str().c_str(),1000,700);
   }
   myc[0]->Divide(3,2);
-  myc[1]->Divide(5,3);
-  myc[2]->Divide(4,3);
-  myc[3]->Divide(4,3);
+  myc[1]->Divide(3,3);
+  myc[2]->Divide(5,3);
+  myc[3]->Divide(5,3);
   myc[4]->Divide(2,1);
 
 
@@ -203,7 +203,7 @@ int plotGlobalCor(){//main
 
 	sprintf(buf,"#pi^{-} %d GeV",genEn[iE]);
 
-	myc[0]->cd(1);
+	//myc[0]->cd(6);
 	p_hitSpectrum_lowTail[iE]->SetLineColor(4);
 	p_hitSpectrum_highTail[iE]->SetLineColor(2);
 	//p_hitSpectrum_lowTail[iE]->SetLineWidth(iE%3+1);
@@ -211,12 +211,12 @@ int plotGlobalCor(){//main
 	p_hitSpectrum_lowTail[iE]->SetTitle(buf);
 	p_hitSpectrum_lowTail[iE]->Rebin(4);
 	p_hitSpectrum_highTail[iE]->Rebin(4);
-	p_hitSpectrum_lowTail[iE]->GetXaxis()->SetRangeUser(0.5,50);
-	p_hitSpectrum_highTail[iE]->GetXaxis()->SetRangeUser(0.5,50);
+	p_hitSpectrum_lowTail[iE]->GetXaxis()->SetRangeUser(0.5,20);
+	p_hitSpectrum_highTail[iE]->GetXaxis()->SetRangeUser(0.5,20);
 	//p_hitSpectrum_lowTail[iE]->GetYaxis()->SetRangeUser(0,0.025);
 
 	p_hitSpectrum_ratio[iE]->GetYaxis()->SetTitle("Ratio highTail/LowTail");
-	p_hitSpectrum_ratio[iE]->GetXaxis()->SetRangeUser(0.5,50);
+	p_hitSpectrum_ratio[iE]->GetXaxis()->SetRangeUser(0.5,20);
 	p_hitSpectrum_ratio[iE]->GetYaxis()->SetRangeUser(0.,2.);
 	if (genEn[iE]==20) {
 	  myc[0]->cd(1);
@@ -320,9 +320,9 @@ int plotGlobalCor(){//main
 	p_meanHitSpectrum_lowTail[iE]->SetLineColor(4);
 	p_meanHitSpectrum_highTail[iE]->SetLineColor(2);
 	//p_meanHitSpectrum_lowTail[iE]->SetLineWidth(iE%3+1);
-	p_meanHitSpectrum_lowTail[iE]->Rebin(8);
-	p_meanHitSpectrum_highTail[iE]->Rebin(8);
-	//p_meanHitSpectrum_lowTail[iE]->GetXaxis()->SetRangeUser(0,50);
+	p_meanHitSpectrum_lowTail[iE]->Rebin(2);
+	p_meanHitSpectrum_highTail[iE]->Rebin(2);
+	p_meanHitSpectrum_lowTail[iE]->GetXaxis()->SetRangeUser(0,20);
 	//p_meanHitSpectrum_lowTail[iE]->GetYaxis()->SetRangeUser(0,0.025);
 	p_meanHitSpectrum_lowTail[iE]->GetYaxis()->SetTitle("Normalised entries");
 	p_meanHitSpectrum_lowTail[iE]->SetTitle(buf);
@@ -347,9 +347,9 @@ int plotGlobalCor(){//main
 	  //p_Cglobal[iE][iLim]->SetFillStyle();
 	  //p_Cglobal[iE][iLim]->SetFillColor(lColor[iE]);
 	  p_Cglobal[iE][iLim]->Scale(1./p_Cglobal[iE][iLim]->GetEntries());
-	  p_Cglobal[iE][iLim]->Rebin(4);
-	  p_Cglobal[iE][iLim]->GetXaxis()->SetRangeUser(0.,1.5);
-	  //p_Cglobal[iE][iLim]->GetYaxis()->SetRangeUser(0,300);
+	  p_Cglobal[iE][iLim]->Rebin(8);
+	  p_Cglobal[iE][iLim]->GetXaxis()->SetRangeUser(0.8,1.7);
+	  p_Cglobal[iE][iLim]->GetYaxis()->SetRangeUser(0,0.15);
 
 	  sprintf(buf,"C_{global} (e_{lim} = %1.1f MIP)",pElim[iLim]);
 
@@ -447,7 +447,7 @@ int plotGlobalCor(){//main
       gr->GetXaxis()->SetTitle("1/#sqrt{Beam energy} [1/#sqrt{GeV}]");
       gr->GetYaxis()->SetTitle("#sigma/E");
       gr->SetMinimum(0);
-      gr->SetMaximum(0.2);
+      gr->SetMaximum(0.25);
       gr->Draw("ap");
       TF1 *fitFunc2 =new TF1("resoFunc","sqrt([0]*[0]*x*x+[1]*[1])",gr->GetXaxis()->GetXmin(),gr->GetXaxis()->GetXmax());
 

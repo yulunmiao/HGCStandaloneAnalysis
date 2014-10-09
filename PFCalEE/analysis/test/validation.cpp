@@ -227,6 +227,27 @@ int main(int argc, char** argv){//main
   std::cout << " -- N layers = " << nLayers << std::endl
 	    << " -- N sections = " << nSections << std::endl;
 
+  HGCSSGeometryConversion geomConv5(inFilePath,model,cellSize);
+     //assemble in 5*5 and 10*10 to fill maxE
+  std::vector<unsigned> granularity5;
+  granularity5.resize(nLayers,2);
+  geomConv5.setGranularity(granularity5);
+  geomConv5.initialiseHistos(false,"_5");
+  HGCSSGeometryConversion geomConv10(inFilePath,model,cellSize);
+  std::vector<unsigned> granularity10;
+  granularity10.resize(nLayers,4);
+  geomConv10.setGranularity(granularity10);
+  geomConv10.initialiseHistos(false,"_10");
+  HGCSSGeometryConversion geomConv15(inFilePath,model,cellSize);
+  std::vector<unsigned> granularity15;
+  granularity15.resize(nLayers,6);
+  geomConv15.setGranularity(granularity15);
+  geomConv15.initialiseHistos(false,"_15");
+  HGCSSGeometryConversion geomConv2d5(inFilePath,model,cellSize);
+  std::vector<unsigned> granularity2d5;
+  granularity2d5.resize(nLayers,1);
+  geomConv2d5.setGranularity(granularity2d5);
+  geomConv2d5.initialiseHistos(false,"_2d5");
 
   TFile *outputFile = TFile::Open(outPath.c_str(),"RECREATE");
   
@@ -269,6 +290,11 @@ int main(int argc, char** argv){//main
   TH1F *p_genPartId = new TH1F("p_genPartId",";pdgid",12000,-6000,6000);
 
   TH1F *p_firstInteraction = new TH1F("p_firstInteraction",";layer with 1st nucl. int.",nLayers,0,nLayers);
+
+  TH1F *p_maxEhit_2d5 = new TH1F("p_maxEhit_2d5",";maxE (MIPS) in 2.5 #times 2.5 mm^{2} cell; n_{events}",5000,0,5000);
+  TH1F *p_maxEhit_5 = new TH1F("p_maxEhit_5",";maxE (MIPS) in 5 #times 5 mm^{2} cell; n_{events}",5000,0,15000);
+  TH1F *p_maxEhit_10 = new TH1F("p_maxEhit_10",";maxE (MIPS) in 10 #times 10 mm^{2} cell; n_{events}",5000,0,15000);
+  TH1F *p_maxEhit_15 = new TH1F("p_maxEhit_15",";maxE (MIPS) in 15 #times 15 mm^{2} cell; n_{events}",5000,0,15000);
 
   TH1F *p_nSimHits = new TH1F("p_nSimHits","n(SimHits)",
 			      1000,0,500000);
@@ -432,6 +458,8 @@ int main(int argc, char** argv){//main
       double lRealTime = mycalib.correctTime(lHit.time(),posx,posy,posz);
       double energy = lHit.energy()*mycalib.MeVToMip(layer);
 
+      //if (energy>1) std::cout << "Hit " << layer << " " << posx << " " << posy << " " << posz << " " << energy << std::endl;
+
       if (type == DetectorEnum::FECAL ||
 	  type == DetectorEnum::MECAL ||
 	  type == DetectorEnum::BECAL){
@@ -440,7 +468,11 @@ int main(int argc, char** argv){//main
 	energy *= 2./nSiLayers;
       }
 
- 
+      geomConv2d5.fill(type,subdetLayer,energy,lRealTime,posx,posy,posz);
+      geomConv5.fill(type,subdetLayer,energy,lRealTime,posx,posy,posz);
+      geomConv10.fill(type,subdetLayer,energy,lRealTime,posx,posy,posz);
+      geomConv15.fill(type,subdetLayer,energy,lRealTime,posx,posy,posz);
+
       bool passTime = myDigitiser.passTimeCut(type,lRealTime);
       if (!passTime) continue;
 
@@ -469,6 +501,34 @@ int main(int argc, char** argv){//main
       
     }//loop on hits
 
+    double maxE2d5 = 0;
+    double maxE5 = 0;
+    double maxE10 = 0;
+    double maxE15 = 0;
+    for (unsigned iL(0); iL<nLayers; ++iL){//loop on layers
+      TH2D *hist = geomConv2d5.get2DHist(iL,"E");
+      double Emax = hist->GetBinContent(hist->GetMaximumBin());
+      if (Emax>maxE2d5)	maxE2d5=Emax;
+      hist = geomConv5.get2DHist(iL,"E");
+      Emax = hist->GetBinContent(hist->GetMaximumBin());
+      if (Emax>maxE5) maxE5=Emax;
+      hist = geomConv10.get2DHist(iL,"E");
+      Emax = hist->GetBinContent(hist->GetMaximumBin());
+      if (Emax>maxE10) maxE10=Emax;
+      hist = geomConv15.get2DHist(iL,"E");
+      Emax = hist->GetBinContent(hist->GetMaximumBin());
+      if (Emax>maxE15) maxE15=Emax;
+    }
+
+    p_maxEhit_2d5->Fill(maxE2d5);
+    p_maxEhit_5->Fill(maxE5);
+    p_maxEhit_10->Fill(maxE10);
+    p_maxEhit_15->Fill(maxE15);
+
+    geomConv2d5.initialiseHistos();
+    geomConv5.initialiseHistos();
+    geomConv10.initialiseHistos();
+    geomConv15.initialiseHistos();
 
     p_nSimHits->Fill((*simhitvec).size());
     p_firstInteraction->Fill(firstInteraction);
