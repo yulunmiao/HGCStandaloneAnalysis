@@ -34,7 +34,8 @@ public:
   unsigned getNumberOfSiLayers(const DetectorEnum type,
 			       const double & eta=0) const;
 
-  void initialiseHistos(const bool recreate=false, 
+  void initialiseHistos(const bool recreate=false,
+			std::string uniqStr="",
 			const bool print=true);
 
   void fill(const DetectorEnum type,
