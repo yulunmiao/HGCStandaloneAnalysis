@@ -39,12 +39,13 @@ double getResolution(unsigned genEn,unsigned versionNumber){
 double showerEnergy(const double Cglobal,
 		    const double Etotcal,
 		    const bool correctLinearity){
-  double a1 = 0.89;
-  double a2 = 0.001;
+  double a0 = -1.8;
+  double a1 = 0.916;
+  double a2 = 0.0003;
   double a3 = 0;//1.2e-5;
   double Esh = Cglobal*Etotcal;
   if (!correctLinearity) return Esh;
-  return Esh*(a1+a2*Esh+a3*Esh*Esh);
+  return a0+Esh*(a1+a2*Esh+a3*Esh*Esh);
 };
 
 int main(int argc, char** argv){//main  
@@ -70,17 +71,18 @@ int main(int argc, char** argv){//main
 
   bool selectEarlyDecay = true;
 
-  const unsigned nLimits = 10;//5;
-  const double pElim[nLimits] = {5,6,7,8,9,10,11,12,13,14};
-  const unsigned idxRef = 5;
+  const unsigned nLimits = 15;//5;
+  const double pElim[nLimits] = {2.5,5,7.5,10,15,20,25,30,35,40,45,50,60,70,80};
+  const unsigned idxRef = 3;
 
-  double FHcalEMCalib = 37.8;//39.81;//38;
-  double FHcalEMOffset = -14;//1.9;//-15;
-  double BHcalEMCalib = FHcalEMCalib;//39.81;//38;
-  double BHcalEMOffset = 0;//1.9;//-15;
-  double HcalPionCalib = 0.9;
-  double HcalPionOffset = 1.3;//-0.81;
-  double BHcalSlope = 1;
+  double FHcalEMCalib = 118;//40.4;//39.81;//38;
+  double FHcalEMOffset = -209;//-3.9;//1.9;//-15;
+  double BHcalEMCalib = 9.92;//40.4;//39.81;//38;
+  double BHcalEMOffset = -5.1;//1.9;//-15;
+  double HcalPionCalib = 0.92;//1/1.19;//0.901;//1./0.9;//1/0.846;
+  double HcalPionOffset = 0;//-0.81;
+  double BHcalSlope = 2.7;
+  double G4BHcalSlope = 0.24;
 
   //////////////////////////////////////////////////////////
   //// End Hardcoded config ////////////////////////////////////
@@ -318,8 +320,8 @@ int main(int argc, char** argv){//main
     lName.str("");
     lName << "p_EvsCglobal_" << iLim;
     p_EvsCglobal[iLim] =  new TH2F(lName.str().c_str(),";C_{global};Etot (GeV)",
-				   1000,0,2,
-				   2000,0,1000);
+				   200,0,2,
+				   700,0,700);
 
   }
 
@@ -446,6 +448,9 @@ int main(int argc, char** argv){//main
      unsigned nHitsCountDen = 0;
 
      EmipMean = EmipMean/nHits;
+
+     //std::cout << "Etot = " << Etotcal << " ---> <Ehit> = " << EmipMean << std::endl;
+
      bool lowTail = Etotcal < (genEn-getResolution(genEn,versionNumber));
      bool highTail = Etotcal > (genEn+getResolution(genEn,versionNumber));
      //fill Cglobal histos

@@ -28,9 +28,9 @@ parser.add_option('-S', '--no-submit'   ,    action="store_true",  dest='nosubmi
 (opt, args) = parser.parse_args()
 
 enlist=[0]
-#if opt.dogun : enlist=[5,10,15,20,25,30,40,50,60,80,100,150,200,300,400,500]
+if opt.dogun : enlist=[10,20,30,40,50,60,80,100,150,200,300,400,500]
 #if opt.dogun : enlist=[10,15,18,20,25] #30,35,40,45,50,60,80]
-if opt.dogun : enlist=[10]
+#if opt.dogun : enlist=[1000,2000]
 
 granularity='0-20:4,21-63:6'
 noise='0-63:0.12'
@@ -41,7 +41,7 @@ if (opt.version==8) :
     noise='0-30:0.12'
     threshold='0-30:2'
 elif opt.version<20 :
-    granularity='0-19:4,20-29:6'
+    granularity='0-19:4,20-29:4'
     noise='0-29:0.12'
     threshold='0-29:2'
 elif (opt.version==21 or opt.version==25):

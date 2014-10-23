@@ -55,10 +55,10 @@ int plotGlobalCor(){//main
 
   //const unsigned nLimits = 1;//5;
   //const double pElim[nLimits] = {5};
-  const unsigned nLimits = 10;//5;
-  const double pElim[nLimits] = {5,6,7,8,9,10,11,12,13,14};
+  const unsigned nLimits = 9;//5;
+  const double pElim[nLimits] = {5,7.5,10,15,20,25,30,35,40};//,45,50,60,70,80};
 
-  const unsigned limRef = 0;
+  const unsigned limRef = 2;
 
   std::ostringstream lName;
 
@@ -71,9 +71,9 @@ int plotGlobalCor(){//main
     myc[iC] = new TCanvas(lName.str().c_str(),lName.str().c_str(),1000,700);
   }
   myc[0]->Divide(3,2);
-  myc[1]->Divide(4,3);
-  myc[2]->Divide(4,3);
-  myc[3]->Divide(4,3);
+  myc[1]->Divide(3,3);
+  myc[2]->Divide(5,3);
+  myc[3]->Divide(5,3);
   myc[4]->Divide(2,1);
 
 
@@ -203,7 +203,7 @@ int plotGlobalCor(){//main
 
 	sprintf(buf,"#pi^{-} %d GeV",genEn[iE]);
 
-	myc[0]->cd(1);
+	//myc[0]->cd(6);
 	p_hitSpectrum_lowTail[iE]->SetLineColor(4);
 	p_hitSpectrum_highTail[iE]->SetLineColor(2);
 	//p_hitSpectrum_lowTail[iE]->SetLineWidth(iE%3+1);
@@ -248,14 +248,6 @@ int plotGlobalCor(){//main
 	  gPad->SetGridy(1);
 	  p_hitSpectrum_ratio[iE]->Draw("");
 	}
-
-	myc[1]->cd(iE+1);
-	p_EvsCglobal[iE][limRef]->RebinX(4);
-	p_EvsCglobal[iE][limRef]->RebinY(4);
-	p_EvsCglobal[iE][limRef]->GetXaxis()->SetRangeUser(p_Cglobal[iE][limRef]->GetMean()-5*p_Cglobal[iE][limRef]->GetRMS(),p_Cglobal[iE][limRef]->GetMean()+5*p_Cglobal[iE][limRef]->GetRMS());
-	p_EvsCglobal[iE][limRef]->GetYaxis()->SetRangeUser(p_Etotal[iE]->GetMean()-5*p_Etotal[iE]->GetRMS(),p_Etotal[iE]->GetMean()+5*p_Etotal[iE]->GetRMS());
-	p_EvsCglobal[iE][limRef]->SetTitle(buf);
-	p_EvsCglobal[iE][limRef]->Draw("colz");
 
 	myc[2]->cd(iE+1);
 	p_Eshower[iE][limRef]->SetMarkerStyle(20);
@@ -307,6 +299,18 @@ int plotGlobalCor(){//main
 	  reso[iLim]->SetPointError(np,0,lresoErr);
 	}
 
+	if (genEn[iE] == 40){
+	  for (unsigned iLim(0); iLim<nLimits;++iLim){
+	    myc[1]->cd(iLim+1);
+	    //p_EvsCglobal[iE][iLim]->RebinX(2);
+	    //p_EvsCglobal[iE][iLim]->RebinY(2);
+	    p_EvsCglobal[iE][iLim]->GetXaxis()->SetRangeUser(p_Cglobal[iE][iLim]->GetMean()-5*p_Cglobal[iE][iLim]->GetRMS(),p_Cglobal[iE][iLim]->GetMean()+5*p_Cglobal[iE][iLim]->GetRMS());
+	    p_EvsCglobal[iE][iLim]->GetYaxis()->SetRangeUser(p_Etotal[iE]->GetMean()-5*p_Etotal[iE]->GetRMS(),p_Etotal[iE]->GetMean()+5*p_Etotal[iE]->GetRMS());
+	    p_EvsCglobal[iE][iLim]->SetTitle(buf);
+	    p_EvsCglobal[iE][iLim]->Draw("colz");
+	  }
+	}
+
 	Int_t np = reso[nLimits]->GetN();
 	reso[nLimits]->SetPoint(np,1/sqrt(genEn[iE]),p_Etotal[iE]->GetRMS()/p_Etotal[iE]->GetMean());
 	reso[nLimits]->SetPointError(np,0,p_Etotal[iE]->GetRMSError()/p_Etotal[iE]->GetMean());
@@ -343,9 +347,9 @@ int plotGlobalCor(){//main
 	  //p_Cglobal[iE][iLim]->SetFillStyle();
 	  //p_Cglobal[iE][iLim]->SetFillColor(lColor[iE]);
 	  p_Cglobal[iE][iLim]->Scale(1./p_Cglobal[iE][iLim]->GetEntries());
-	  p_Cglobal[iE][iLim]->Rebin(4);
+	  p_Cglobal[iE][iLim]->Rebin(8);
 	  p_Cglobal[iE][iLim]->GetXaxis()->SetRangeUser(0.8,1.7);
-	  p_Cglobal[iE][iLim]->GetYaxis()->SetRangeUser(0,0.07);
+	  p_Cglobal[iE][iLim]->GetYaxis()->SetRangeUser(0,0.15);
 
 	  sprintf(buf,"C_{global} (e_{lim} = %1.1f MIP)",pElim[iLim]);
 
@@ -409,6 +413,7 @@ int plotGlobalCor(){//main
       gr->GetXaxis()->SetTitle("Eshower [GeV]");
       gr->Draw("ap");
       TF1 *fitFunc=new TF1("calibFunc","[0]*x+[1]*x*x+[2]*x*x*x",gr->GetXaxis()->GetXmin(),gr->GetXaxis()->GetXmax());
+      fitFunc->SetParameters(0.98,0.002,0);
       fitFunc->SetLineColor(6);
       gr->Fit(fitFunc,"RME");
       TLatex lat;
@@ -442,7 +447,7 @@ int plotGlobalCor(){//main
       gr->GetXaxis()->SetTitle("1/#sqrt{Beam energy} [1/#sqrt{GeV}]");
       gr->GetYaxis()->SetTitle("#sigma/E");
       gr->SetMinimum(0);
-      gr->SetMaximum(0.2);
+      gr->SetMaximum(0.25);
       gr->Draw("ap");
       TF1 *fitFunc2 =new TF1("resoFunc","sqrt([0]*[0]*x*x+[1]*[1])",gr->GetXaxis()->GetXmin(),gr->GetXaxis()->GetXmax());
 

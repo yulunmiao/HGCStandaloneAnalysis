@@ -89,9 +89,9 @@ int plotEcor(){//main
   bool doReco = true;
 
   const unsigned nV = 1;
-  TString version[nV] = {"23"};//,"0"};
+  TString version[nV] = {"21"};//,"0"};
   
-  const unsigned nLayers = 54;//34;//9;//33; //54;
+  const unsigned nLayers = 34;//34;//9;//33; //54;
 
   const bool doVsE = true;
 
@@ -128,9 +128,9 @@ int plotEcor(){//main
   bool isPU = false;
   
   
-  //unsigned genEn[]={15,20,25,30,40,50,60,80,100,150,200,300,400,500};//150,200,300,500};
+  unsigned genEn[]={15,20,25,30,40,50,60,80,100,150,200,300,400,500};//150,200,300,500};
   //unsigned genEn[]={5,10,15,20,30,50,60,80,100,400};//150,200,300,500};
-  unsigned genEn[]={10,15,18,20,25,30,35,40,45,50,60,80};
+  //unsigned genEn[]={10,15,18,20,25,30,35,40,45,50,60,80};
   //60,80};//,100,200,300,
   //500};//,1000,2000};
   //unsigned genEn[]={10,20,30,40,60,80};
@@ -300,7 +300,7 @@ int plotEcor(){//main
 		    << std::endl;
 
 	  //p_Etotal[iE]->Rebin(rebin[iE]);
-	  p_Etotal[iE]->Rebin(genEn[iE]<50?rebinSim:genEn[iE]<150?2*rebinSim:genEn[iE]<250?4*rebinSim:8*rebinSim);
+	  p_Etotal[iE]->Rebin(genEn[iE]<25?rebinSim:genEn[iE]<80?2*rebinSim:genEn[iE]<250?4*rebinSim:8*rebinSim);
 
 	  lName.str("");
 	  lName << "p_Ereco" << pDetector;
@@ -577,8 +577,8 @@ int plotEcor(){//main
 	    gr->GetXaxis()->SetTitleSize(0.06);
 	    gr->GetYaxis()->SetLabelSize(0.06);
 	    gr->GetYaxis()->SetTitleSize(0.06);
-	    gr->GetXaxis()->SetTitleOffset(0.7);
-	    gr->GetYaxis()->SetTitleOffset(0.8);
+	    gr->GetXaxis()->SetTitleOffset(0.8);
+	    gr->GetYaxis()->SetTitleOffset(0.9);
 
 	    gPad->SetGridx(1);
 	    gPad->SetGridy(1);
@@ -676,12 +676,12 @@ int plotEcor(){//main
 		fitFunc2->SetParameter(1,0.01);
 		fitFunc2->SetParLimits(1,0,1);
 		if (addNoiseTerm) {
-		  if (!isEM) fitref->SetParameter(2,0.18*0.18);
+		  if (!isEM) fitref->SetParameter(2,0.02*0.02);
 		  else fitref->SetParameter(2,0.06*0.06);
-		  if (!isEM) fitFunc2->SetParameter(2,0.18*0.18);
+		  if (!isEM) fitFunc2->SetParameter(2,0.02*0.02);
 		  else fitFunc2->SetParameter(2,0.06*0.06);
 		  fitFunc2->SetParLimits(2,0,2);
-		  if (!isEM) fitFunc2->FixParameter(2,0.18*0.18);
+		  if (!isEM) fitFunc2->FixParameter(2,0.02*0.02);
 		  else fitFunc2->FixParameter(2,0.06*0.06);
 		}
 		if (i<4) {
@@ -693,7 +693,7 @@ int plotEcor(){//main
 		  //fitFunc2->SetLineColor(6);
 		  //fitFunc2->SetParameter(2,0.);
 		  //fitFunc2->SetParLimits(2,0,0);
-		  fitref->Draw("same");
+		  //fitref->Draw("same");
 		}
 		gr->Fit(fitFunc2,"RME");
 		sigmaStoch[iSm][iS][i] = sqrt(fitFunc2->GetParameter(0));
@@ -710,26 +710,26 @@ int plotEcor(){//main
 		//if (addNoiseTerm) sprintf(buf,"#oplus #frac{n}{E}");
 		//else sprintf(buf,"#frac{#sigma}{E} #propto #frac{s}{#sqrt{E}} #oplus c");
 		sprintf(buf,"#frac{#sigma}{E} #propto #frac{s}{#sqrt{E}} #oplus c #oplus #frac{n}{E}");
-		double Emin = doVsE?40 : 1/sqrt(genEn[nGenEn-1]);
+		double Emin = doVsE?140 : 1/sqrt(genEn[nGenEn-1]);
 		if (i<4) lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax(),buf);
 		//else lat.DrawLatex(doVsE?Emin+20:Emin+0.1,gr->GetYaxis()->GetXmax()*0.95,buf);
 		sprintf(buf,"s=%3.3f #pm %3.3f",sigmaStoch[iSm][iS][i],sigmaStochErr[iSm][iS][i]);
-		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.9-i/6*0.25),buf);
+		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.9-i/6*0.3),buf);
 		sprintf(buf,"c=%3.3f #pm %3.3f",sigmaConst[iSm][iS][i],sigmaConstErr[iSm][iS][i]);
-		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.85-i/6*0.25),buf);
+		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.85-i/6*0.3),buf);
 		sprintf(buf,"chi2/NDF = %3.3f/%d = %3.3f",fitFunc2->GetChisquare(),fitFunc2->GetNDF(),fitFunc2->GetChisquare()/fitFunc2->GetNDF());
-		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.75-i/6*0.25),buf);
+		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.75-i/6*0.3),buf);
 		//if (i>3){
 		if (addNoiseTerm) {
 		  sprintf(buf,"n=%3.3f #pm %3.3f",sigmaNoise[iSm][iS][i],sigmaNoiseErr[iSm][iS][i]);
-		  lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.8-i/6*0.25),buf);
+		  lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.8-i/6*0.3),buf);
 		}
 		lat.SetTextColor(7);
 		sprintf(buf,"CALICE s=%3.3f, c=%3.3f",sqrt(fitref->GetParameter(0)),sqrt(fitref->GetParameter(1)));
 		if (addNoiseTerm) {
 		  sprintf(buf,"CALICE s=%3.3f, c=%3.3f, n=%3.3f",sqrt(fitref->GetParameter(0)),sqrt(fitref->GetParameter(1)),sqrt(fitref->GetParameter(2)));
 		}
-		if (i>3) lat.DrawLatex(8,gr->GetYaxis()->GetXmin()*0.9,buf);
+		//if (i>3) lat.DrawLatex(8,gr->GetYaxis()->GetXmin()*0.9,buf);
 	      }
 	    myc[i%4]->Update();
 	    if (doShower) {
