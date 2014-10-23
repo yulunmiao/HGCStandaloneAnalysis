@@ -9,6 +9,7 @@
 #include "TH3F.h"
 #include "TH2F.h"
 #include "TH1F.h"
+#include "TF1.h"
 #include "TStyle.h"
 #include "TCanvas.h"
 #include "TLatex.h"
@@ -90,6 +91,11 @@ int main(int argc, char** argv){//main
   if (argc >7) debug = atoi(argv[7]);
 
 
+  unsigned genEn;
+  size_t end=outPath.find_last_of(".root");
+  size_t start=outPath.find_last_of("e");
+  std::istringstream(outPath.substr(start+1,end))>>genEn;
+
   bool isEM = false;
 
   if (inFilePath.find("e-")!=inFilePath.npos || 
@@ -104,6 +110,7 @@ int main(int argc, char** argv){//main
   std::cout << " -- Input parameters: " << std::endl
 	    << " -- Input file path: " << filePath << std::endl
 	    << " -- Output file path: " << outPath << std::endl
+	    << " -- Generated energy: " << genEn << std::endl
 	    << " -- Requiring " << nSiLayers << " si layers." << std::endl
 	    << " -- Processing ";
   if (pNevts == 0) std::cout << "all events." << std::endl;
@@ -165,6 +172,7 @@ int main(int argc, char** argv){//main
   bool isTBsetup = (model != 2);
   bool isCaliceHcal = versionNumber==23;//inFilePath.find("version23")!=inFilePath.npos || inFilePath.find("version_23")!=inFilePath.npos;
 
+  //extract input energy
 
   std::cout << " -- Version number is : " << versionNumber 
 	    << ", model = " << model
@@ -295,6 +303,44 @@ int main(int argc, char** argv){//main
   TH1F *p_maxEhit_5 = new TH1F("p_maxEhit_5",";maxE (MIPS) in 5 #times 5 mm^{2} cell; n_{events}",5000,0,15000);
   TH1F *p_maxEhit_10 = new TH1F("p_maxEhit_10",";maxE (MIPS) in 10 #times 10 mm^{2} cell; n_{events}",5000,0,15000);
   TH1F *p_maxEhit_15 = new TH1F("p_maxEhit_15",";maxE (MIPS) in 15 #times 15 mm^{2} cell; n_{events}",5000,0,15000);
+
+  p_maxEhit_2d5->StatOverflows();
+  p_maxEhit_5->StatOverflows();
+  p_maxEhit_10->StatOverflows();
+  p_maxEhit_15->StatOverflows();
+
+  //  TH1F *p_nAboveMax_2d5 = new TH1F("p_nAboveMax_2d5",";n(E>maxE) 2.5 #times 2.5 mm^{2} cell; n_{events}",500,0,500);
+  TH1F *p_nAboveMax_5 = new TH1F("p_nAboveMax_5",";n(E>maxE) 5 #times 5 mm^{2} cell; n_{events}",50,0,50);
+  TH1F *p_nAboveMax_10 = new TH1F("p_nAboveMax_10",";n(E>maxE) 10 #times 10 mm^{2} cell; n_{events}",50,0,50);
+  TH1F *p_nAboveMax_15 = new TH1F("p_nAboveMax_15",";n(E>maxE) 15 #times 15 mm^{2} cell; n_{events}",50,0,50);
+
+  TH1F *p_nAbove1_5 = new TH1F("p_nAbove1_5",";n(E>1 MIP) 5 #times 5 mm^{2} cell; n_{events}",1000,0,1000);
+  TH1F *p_nAbove1_10 = new TH1F("p_nAbove1_10",";n(E>1 MIP) 10 #times 10 mm^{2} cell; n_{events}",1000,0,1000);
+  TH1F *p_nAbove1_15 = new TH1F("p_nAbove1_15",";n(E>1 MIP) 15 #times 15 mm^{2} cell; n_{events}",1000,0,1000);
+  p_nAbove1_5->StatOverflows();
+  p_nAbove1_10->StatOverflows();
+  p_nAbove1_15->StatOverflows();
+
+  TH1F *p_fracEmissed_5 = new TH1F("p_fracEmissed_5",";#frac{E_{missed}}{E_{tot}} 5 #times 5 mm^{2} cell;n_{events}",500,0,1);
+  TH1F *p_fracEmissed_10 = new TH1F("p_fracEmissed_10",";#frac{E_{missed}}{E_{tot}} 10 #times 10 mm^{2} cell;n_{events}",500,0,1);
+  TH1F *p_fracEmissed_15 = new TH1F("p_fracEmissed_15",";#frac{E_{missed}}{E_{tot}} 15 #times 15 mm^{2} cell;n_{events}",500,0,1);
+
+  //mean+3*rms -> leads at most 2 more cells in <1% of events
+  //TF1 *fit5 = new TF1("fit5","72+5.32*x",0,2000);
+  //TF1 *fit10 = new TF1("fit10","92+7.60*x",0,2000);
+  //TF1 *fit15 = new TF1("fit15","106+8.86*x",0,2000);
+  //mean max
+  TF1 *fit5 = new TF1("fit5","21+4.15*x-0.000331*x*x",0,2000);
+  TF1 *fit10 = new TF1("fit10","28+6.04*x-0.000536*x*x",0,2000);
+  TF1 *fit15 = new TF1("fit15","34+7.13*x-0.000676*x*x",0,2000);
+
+  double maxEavg5 = 5000;//fit5->Eval(genEn);
+  double maxEavg10 = 5000;//fit10->Eval(genEn);
+  double maxEavg15 = 5000;//fit15->Eval(genEn);
+
+  std::cout << " -- Values taken for <MaxEhit>: 5x5="
+	    << maxEavg5 << ", 10x10=" << maxEavg10 << ", 15x15=" << maxEavg15
+	    << std::endl;
 
   TH1F *p_nSimHits = new TH1F("p_nSimHits","n(SimHits)",
 			      1000,0,500000);
@@ -505,25 +551,84 @@ int main(int argc, char** argv){//main
     double maxE5 = 0;
     double maxE10 = 0;
     double maxE15 = 0;
+    double Eabove5 = 0;
+    double Eabove10 = 0;
+    double Eabove15 = 0;
+    double Etot5 = 0;
+    double Etot10 = 0;
+    double Etot15 = 0;
+    unsigned nAbove5 = 0;
+    unsigned nAbove10 = 0;
+    unsigned nAbove15 = 0;
+    unsigned nAbove1_5 = 0;
+    unsigned nAbove1_10 = 0;
+    unsigned nAbove1_15 = 0;
     for (unsigned iL(0); iL<nLayers; ++iL){//loop on layers
+      double absweight = (*ssvec)[iL].volX0trans()/(*ssvec)[1].volX0trans();
       TH2D *hist = geomConv2d5.get2DHist(iL,"E");
       double Emax = hist->GetBinContent(hist->GetMaximumBin());
       if (Emax>maxE2d5)	maxE2d5=Emax;
+
       hist = geomConv5.get2DHist(iL,"E");
       Emax = hist->GetBinContent(hist->GetMaximumBin());
       if (Emax>maxE5) maxE5=Emax;
+      for (int bin(1);bin<(hist->GetNbinsX()*hist->GetNbinsY()+1);++bin){
+	double E = hist->GetBinContent(bin);
+	Etot5 += E*absweight;
+	if (E>maxEavg5) {
+	  nAbove5++;
+	  Eabove5+=(E-maxEavg5)*absweight;
+	}
+	if (E>1.) nAbove1_5++;
+      }
+
       hist = geomConv10.get2DHist(iL,"E");
       Emax = hist->GetBinContent(hist->GetMaximumBin());
       if (Emax>maxE10) maxE10=Emax;
+      for (int bin(1);bin<(hist->GetNbinsX()*hist->GetNbinsY()+1);++bin){
+	double E = hist->GetBinContent(bin);
+	Etot10 += E*absweight;
+	if (E>maxEavg10) {
+	  nAbove10++;
+	  Eabove10+=(E-maxEavg10)*absweight;
+	}
+	if (E>1.) nAbove1_10++;
+      }
+
       hist = geomConv15.get2DHist(iL,"E");
       Emax = hist->GetBinContent(hist->GetMaximumBin());
       if (Emax>maxE15) maxE15=Emax;
+      for (int bin(1);bin<(hist->GetNbinsX()*hist->GetNbinsY()+1);++bin){
+	double E = hist->GetBinContent(bin);
+	Etot15 += E*absweight;
+	if (E>maxEavg15) {
+	  nAbove15++;
+	  Eabove15+=(E-maxEavg15)*absweight;
+	}
+	if (E>1.) nAbove1_15++;
+      }
+
     }
 
     p_maxEhit_2d5->Fill(maxE2d5);
     p_maxEhit_5->Fill(maxE5);
     p_maxEhit_10->Fill(maxE10);
     p_maxEhit_15->Fill(maxE15);
+
+    p_nAboveMax_5->Fill(nAbove5);
+    p_nAboveMax_10->Fill(nAbove10);
+    p_nAboveMax_15->Fill(nAbove15);
+
+    p_nAbove1_5->Fill(nAbove1_5);
+    p_nAbove1_10->Fill(nAbove1_10);
+    p_nAbove1_15->Fill(nAbove1_15);
+
+    if (Eabove5>0) 
+      p_fracEmissed_5->Fill(Eabove5/Etot5);
+    if (Eabove10>0) 
+      p_fracEmissed_10->Fill(Eabove10/Etot10);
+    if (Eabove15>0) 
+      p_fracEmissed_15->Fill(Eabove15/Etot15);
 
     geomConv2d5.initialiseHistos();
     geomConv5.initialiseHistos();
