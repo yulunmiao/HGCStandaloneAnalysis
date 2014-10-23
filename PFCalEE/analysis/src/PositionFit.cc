@@ -558,14 +558,14 @@ bool PositionFit::fillMatrixFromFile(){
   }
 
   matrix_.ResizeTo(nLayers_,nLayers_);
-  if (debug) std::cout << " -- Error matrix: " << std::endl;
+  if (debug_) std::cout << " -- Error matrix: " << std::endl;
   while (!fmatrix.eof()){
     unsigned iL=nLayers_;
     unsigned jL=nLayers_;
     double m=0;
     fmatrix>>iL>>jL>>m;
     if (iL<nLayers_ && jL<nLayers_){
-      if (debug) std::cout << std::setprecision(15) << iL << " " << jL << " " << m << std::endl;
+      if (debug_) std::cout << std::setprecision(15) << iL << " " << jL << " " << m << std::endl;
       matrix_[iL][jL] = m;
     }
   }
