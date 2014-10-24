@@ -28,9 +28,11 @@ parser.add_option('-S', '--no-submit'   ,    action="store_true",  dest='nosubmi
 (opt, args) = parser.parse_args()
 
 enlist=[0]
-if opt.dogun : enlist=[10,20,30,40,50,60,80,100,150,200,300,400,500]
+#if opt.dogun : enlist=[10,20,30,40,50,60,80,100,150,200,300,400,500]
 #if opt.dogun : enlist=[10,15,18,20,25] #30,35,40,45,50,60,80]
 #if opt.dogun : enlist=[1000,2000]
+#do constant ET
+if opt.dogun : enlist=[20,30,40,50,60,70,80,90,100,125,150,175,200]
 
 granularity='0-20:4,21-63:6'
 noise='0-63:0.12'
@@ -61,19 +63,19 @@ elif opt.version==24:
     noise='0-65:0.12'
     threshold='0-65:2'
 
-for en in enlist :
+for et in enlist :
 
     nevents=opt.nevts
-    if en>150: nevents=nevents/2
+    #if en>150: nevents=nevents/2
     
     myqueue=opt.lqueue
-    if en>0 and en<100 : myqueue=opt.squeue
+    if et>0 and et<100 : myqueue=opt.squeue
     
     bval="BOFF"
     if opt.Bfield>0 : bval="BON" 
     
     outDir='%s/git_%s/version_%d/model_%d/%s/%s'%(opt.out,opt.gittag,opt.version,opt.model,opt.datatype,bval)
-    if en>0 : outDir='%s/e_%d'%(outDir,en)
+    if et>0 : outDir='%s/et_%d'%(outDir,et)
     eosDir='%s/git%s/%s'%(opt.eos,opt.gittag,opt.datatype)
     if opt.alpha>0 : outDir='%s/a_%3.3f/'%(outDir,opt.alpha) 
     if (opt.run>=0) : outDir='%s/run_%d/'%(outDir,opt.run)
@@ -90,7 +92,7 @@ for en in enlist :
     scriptFile.write('cp %s/g4steer.mac .\n'%(outDir))
     scriptFile.write('PFCalEE g4steer.mac %d %d | tee g4.log\n'%(opt.version,opt.model))
     outTag='version%d_model%d_%s'%(opt.version,opt.model,bval)
-    if en>0 : outTag='%s_e%d'%(outTag,en)
+    if et>0 : outTag='%s_et%d'%(outTag,et)
     if opt.alpha>0 : outTag='%s_alpha%3.3f'%(outTag,opt.alpha) 
     if (opt.run>=0) : outTag='%s_run%d'%(outTag,opt.run)
     scriptFile.write('mv PFcal.root HGcal_%s.root\n'%(outTag))
@@ -146,9 +148,12 @@ for en in enlist :
     g4Macro.write('/random/setSeeds %d %d\n'%( random.uniform(0,100000), random.uniform(0,100000) ) )
     if opt.dogun :
         g4Macro.write('/generator/select particleGun\n')
-        g4Macro.write('/gun/particle %s\n'%(opt.datatype))    
+        g4Macro.write('/gun/particle %s\n'%(opt.datatype))
+        eta=-1.0*math.log(math.tan(opt.alpha/2.))
+        en=et*math.cosh(eta)
         g4Macro.write('/gun/energy %f GeV\n'%(en))
         g4Macro.write('/gun/direction %f %f %f\n'%(0.,math.sin(opt.alpha),math.cos(opt.alpha)))
+        #g4Macro.write('/gun/direction %f %f %f\n'%(random.uniform(0,1000)/100.-5.,math.sin(opt.alpha),math.cos(opt.alpha)))
     else :
         g4Macro.write('/generator/select hepmcAscii\n')
         g4Macro.write('/generator/hepmcAscii/open %s\n'%(opt.datafile))
