@@ -48,6 +48,7 @@ int main(int argc, char** argv){//main
 	      << " <name of input reco file>"
 	      << " <full path to output file>"
 	      << " <number of si layers to consider: 1,2 or 3>" 
+	      << " <optional: force redo errormatrix (=1) or all (=2)>"
 	      << " <optional: debug (default=0)>"
 	      << std::endl;
     return 1;
@@ -80,8 +81,11 @@ int main(int argc, char** argv){//main
   unsigned nSiLayers = 2;
   nSiLayers = atoi(argv[6]);
 
+  unsigned redoStep = 0;
+  if (argc >7) redoStep = atoi(argv[7]);
+
   unsigned debug = 0;
-  if (argc >7) debug = atoi(argv[7]);
+  if (argc >8) debug = atoi(argv[8]);
 
   size_t end=outPath.find_last_of(".");
   std::string outFolder = outPath.substr(0,end);
@@ -242,15 +246,15 @@ int main(int argc, char** argv){//main
 
   //try getting z position from input file, if doesn't exit,
   //perform first loop over simhits to find z positions of layers
-  if (!lChi2Fit.getZpositions())
+  if ((redoStep<2 && !lChi2Fit.getZpositions()) || redoStep>1)
     lChi2Fit.getZpositions(lSimTree,nEvts);
   
   //perform second loop over events to find positions to fit.
   //from input file or from event loop
-  if (!lChi2Fit.performLeastSquareFit(nEvts)){
+  if ((redoStep<1 && !lChi2Fit.performLeastSquareFit(lRecTree,nEvts)) || redoStep>0){
     lChi2Fit.getInitialPositions(lSimTree,lRecTree,nEvts);
     lChi2Fit.finaliseErrorMatrix();
-    lChi2Fit.performLeastSquareFit(nEvts);
+    lChi2Fit.performLeastSquareFit(lRecTree,nEvts);
   }
 
   outputFile->Write();

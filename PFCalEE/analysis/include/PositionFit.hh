@@ -66,9 +66,15 @@ public:
 			   std::vector<double> & posy,
 			   std::vector<double> & posz,
 			   std::vector<double> & posxtruth,
-			   std::vector<double> & posytruth);
+			   std::vector<double> & posytruth,
+			   bool cutOutliers=false);
 
-  bool performLeastSquareFit(const unsigned nEvts);
+  bool performLeastSquareFit(TTree *recoTree, const unsigned nEvts);
+
+  bool fitEvent(const unsigned ievt,
+		unsigned & nInvalidFits,
+		std::ofstream & fout,
+		const bool cutOutliers=false);
 
   inline void setOutputFile(TFile *outputFile){
     outputFile_ = outputFile;
@@ -88,6 +94,7 @@ private:
 
   unsigned nSR_;
   double residualMax_;
+  double chi2ndfmax_;
   unsigned nLayers_;
   unsigned nSiLayers_;
   double cellSize_;
@@ -111,6 +118,15 @@ private:
   std::vector<TH2F *> p_recoxy;
   TH1F *p_residuals_x;
   TH1F *p_residuals_y;
+  TH2F *p_etavsphi_max;
+  TH1F *p_nLayersFit;
+  TH2F *p_recoXvsLayer;
+  TH2F *p_recoYvsLayer;
+  TH2F *p_recoZvsLayer;
+  TH2F *p_truthXvsLayer;
+  TH2F *p_truthYvsLayer;
+  TH2F *p_fitXvsLayer;
+  TH2F *p_fitYvsLayer;
   TH2D *p_errorMatrix;
   TH2D *p_corrMatrix;
   TH1F *p_chi2[2];
