@@ -140,8 +140,12 @@ int main(int argc, char** argv){//main
 
   TTree *lRecTree = (TTree*)recFile->Get("RecoTree");
   if (!lRecTree){
-    std::cout << " -- Error, tree RecoTree cannot be opened. Exiting..." << std::endl;
-    return 1;
+    std::cout << " -- Error, tree RecoTree cannot be opened. Trying PU tree..." << std::endl;
+    lRecTree = (TTree*)recFile->Get("PUTree");
+    if (!lRecTree){
+      std::cout << " -- Error, PUTree  cannot be opened. Exiting..." << std::endl;
+      return 1;
+    }
   }
 
 

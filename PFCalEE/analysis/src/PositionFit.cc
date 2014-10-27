@@ -312,8 +312,8 @@ void PositionFit::getZpositions(TTree *aSimTree,
 }
 
 void PositionFit::getInitialPositions(TTree *aSimTree, 
-				     TTree *aRecTree,
-				     const unsigned nEvts){
+				      TTree *aRecTree,
+				      const unsigned nEvts){
 
   initialisePositionHistograms();
   //HGCSSDetector & myDetector = theDetector();
@@ -335,7 +335,7 @@ void PositionFit::getInitialPositions(TTree *aSimTree,
   aSimTree->SetBranchAddress("HGCSSGenParticleVec",&genvec);
   
   aRecTree->SetBranchAddress("HGCSSRecoHitVec",&rechitvec);
-  aRecTree->SetBranchAddress("nPuVtx",&nPuVtx);
+  if (aRecTree->GetBranch("nPuVtx")) aRecTree->SetBranchAddress("nPuVtx",&nPuVtx);
 
   std::cout << "- Processing = " << nEvts  << " events out of " << aSimTree->GetEntries() << std::endl;
 
@@ -346,7 +346,10 @@ void PositionFit::getInitialPositions(TTree *aSimTree,
     else if (ievt%50 == 0) std::cout << "... Processing entry: " << ievt << std::endl;
     
     aSimTree->GetEntry(ievt);
+
     aRecTree->GetEntry(ievt);
+
+    std::cout << " nPuVtx = " << nPuVtx << std::endl;
 
     if (debug_){
       std::cout << "... Size of hit vectors: sim = " <<  (*simhitvec).size() << ", reco = " << (*rechitvec).size()<< std::endl;
@@ -448,6 +451,9 @@ void PositionFit::getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec
   
   std::vector<double> eSum;
   eSum.resize(nLayers_,0);
+  double step = geomConv_.cellSize()*nSR_/2.+0.1;//+0.1 to accomodate double precision
+  if (debug_) std::cout << "step = " << step << std::endl;
+
   for (unsigned iH(0); iH<(*rechitvec).size(); ++iH){//loop on rechits
     const HGCSSRecoHit & lHit = (*rechitvec)[iH];
     double energy = lHit.energy();//in MIP already...
@@ -455,12 +461,13 @@ void PositionFit::getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec
     double posx = lHit.get_x();
     double posy = lHit.get_y();
 
-    double step = geomConv_.cellSize()*nSR_/2.+0.1;//+0.1 to accomodate double precision
     if (fabs(posx-xmax[layer]) < step && 
 	fabs(posy-ymax[layer]) < step){
       if (puSubtracted) {
 	double leta = lHit.eta();
-	energy = std::max(0.,energy - puDensity_.getDensity(leta,layer,geomConv_.cellSize(layer,leta),nPU));
+	if (debug_>1) std::cout << " -- Hit " << iH << ", energy before PU subtraction: " << energy << " after: " ;
+	energy = std::max(0.,energy - puDensity_.getDensity(leta,layer,geomConv_.cellSizeInCm(layer,leta),nPU));
+	if (debug_>1) std::cout << energy << std::endl;
       }
       recoPos[layer].SetX(recoPos[layer].X() + posx*energy);
       recoPos[layer].SetY(recoPos[layer].Y() + posy*energy);

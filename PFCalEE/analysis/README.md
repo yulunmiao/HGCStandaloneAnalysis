@@ -24,28 +24,9 @@ root://eoscms//eos/cms/
 Info on existing Executables:
 ###################################
 
-######################
-## digitizer.cpp
-# Submit script is submitDigi.py. Example:
-##default baseline
-python submitDigi.py -s 0 -o /afs/cern.ch/work/a/amagnan/public/HGCalEEDigi
-
-#Note: the scenario number is decided when submitting the script, with the option -s, taking an integer:
-#this is to avoid overwritting the output file ! A directory "scenario_i" is created.
-
-# Example command lines for different scenarios in:
-./runDigiForAll.sh
-
-
-#######################
-## fillHistos.cpp
-# Run on G4 or on digitized files, to fill histograms, e.g. energy per layer, total energy, ...
-# This is practical to then have just a plot macro to execute interactively in root to make nice plots.
-#Example command line:
-## on digi file
-./bin/fillHistos 0 /afs/cern.ch/work/a/amagnan/public/HGCalEEDigi/version_$v/scenario_$s/ DigiPFcal.root
-## on G4 file:
-./bin/fillHistos 0 ../version_20/ PFcal.root
+#MixPUSignal
+#to submit all jobs:
+for alpha in 0.361 0.297 0.244 0.200 0.164 0.134 0.110; do ./submitPuMixing.py -S -q 1nd -t V00-02-09 -g -v 12 -m 2 -d gamma -a $alpha -n 0 -o /afs/cern.ch/work/a/amagnan/public/HGCalEEGeant4/ -e /store/user/amagnan/HGCalEEGeant4 ; done
 
 # Example submit script in:
 ./runAllFill.sh

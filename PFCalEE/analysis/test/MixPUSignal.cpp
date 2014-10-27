@@ -28,14 +28,15 @@
 
 int main(int argc, char** argv){//main  
 
-  if (argc < 7) {
+  if (argc < 8) {
     std::cout << " Usage: "
               << argv[0] << " <nEvts to process (0=all)>"
               << " <path to MinBias file>"
               << " <MinBias file name>"
               << " <path to signal file>"
 	      << " <signal file name>"
- 	      << " <full path to output file>"
+ 	      << " <name of input sim file>"
+	      << " <full path to output file>"
 	      << " <Number of PU to add (140)>"
               << std::endl;
     return 1;
@@ -62,8 +63,9 @@ int main(int argc, char** argv){//main
   std::string pileName = argv[3];
   std::string signalPath = argv[4];
   std::string signalName = argv[5];
-  std::string outPath = argv[6];
-  unsigned nPU = atoi(argv[7]);
+  std::string simFileName = argv[6];
+  std::string outPath = argv[7];
+  unsigned nPU = atoi(argv[8]);
 
   std::cout << " -- Input parameters: " << std::endl
 	    << " -- Input minbias file path: " << pilePath << std::endl
@@ -81,6 +83,19 @@ int main(int argc, char** argv){//main
 
 
   //***************** Get Signal Tree *******************************//  
+
+
+  std::ostringstream input;
+  input << signalPath << "/" << simFileName;
+
+  TFile *simFile = TFile::Open(input.str().c_str());
+
+  if (!simFile) {
+    std::cout << " -- Error, input file " << input.str() << " cannot be opened. Exiting..." << std::endl;
+    return 1;
+  }
+  else std::cout << " -- input file " << simFile->GetName() << " successfully opened." << std::endl;
+  
   std::ostringstream signalInput;
   signalInput << signalPath << signalName ;
   TFile *signalFile = TFile::Open(signalInput.str().c_str());
@@ -132,7 +147,8 @@ int main(int argc, char** argv){//main
   //Info
   /////////////////////////////////////////////////////////////
 
-  HGCSSInfo * info=(HGCSSInfo*)signalFile->Get("Info");
+  HGCSSInfo * info=(HGCSSInfo*)simFile->Get("Info");
+  //HGCSSInfo * info=(HGCSSInfo*)signalFile->Get("Info");
   const double cellSize = info->cellSize();
   const unsigned versionNumber = info->version();
   const unsigned model = info->model();
@@ -199,6 +215,14 @@ int main(int argc, char** argv){//main
   std::cout << " -- N layers = " << nLayers << std::endl
 	    << " -- N sections = " << nSections << std::endl;
   
+  //utility to add cells together to have only one recohit per cell
+  HGCSSGeometryConversion geomConv(signalInput.str(),model,cellSize);
+  std::vector<unsigned> granularity;
+  granularity.resize(nLayers,1);
+  geomConv.setGranularity(granularity);
+  geomConv.initialiseHistos();
+
+
   //////////////////////////////////////////////////
   //////////////////////////////////////////////////
   ///////// Event loop /////////////////////////////
@@ -213,10 +237,10 @@ int main(int argc, char** argv){//main
  const unsigned nPuEvts = puTree->GetEntries();
  std::cout << "- Number of PU events available: " << nPuEvts  << std::endl;
 
- TFile *outputFile = TFile::Open(outPath.c_str(),"RECREATE");
+ TFile *outputFile = TFile::Open((outPath+"/PuMix.root").c_str(),"RECREATE");
 
   if (!outputFile) {
-    std::cout << " -- Error, output file " << outPath << " cannot be opened. Please create output directory. Exiting..." << std::endl;
+    std::cout << " -- Error, output file " << outPath << "/PuMix.root cannot be opened. Please create output directory. Exiting..." << std::endl;
     return 1;
   }
   else {
@@ -224,7 +248,6 @@ int main(int argc, char** argv){//main
   }
 
   outputFile->cd();
-
   TTree *outputTree = new TTree("PUTree","140 PU tree");
   
   HGCSSRecoHitVec lRecoHits;
@@ -234,19 +257,33 @@ int main(int argc, char** argv){//main
 
   for (unsigned ievt(0); ievt<nEvts;++ievt){//loop on output events
     
-    lRecoHits.clear();
-    lRecoHits.reserve((*signalhitvec).size());
     //get signal event
     signalTree->GetEntry(ievt);
-    for(unsigned iH(0); iH<(*signalhitvec).size(); ++iH){
+    unsigned prevLayer = 10000;
+    DetectorEnum type = DetectorEnum::FECAL;
+    unsigned subdetLayer=0;
+     for(unsigned iH(0); iH<(*signalhitvec).size(); ++iH){
       //copy to fill output vec
       HGCSSRecoHit lHit = (*signalhitvec)[iH];         
       //double posz = lHit.get_z();
       double eta = lHit.eta();
       bool inFid = fabs(eta) > etamin && fabs(eta) < etamax;
       // && posz>minZ && posz<maxZ;
-      if (inFid) lRecoHits.push_back(lHit);
-    }
+      if (inFid) {
+	unsigned layer = lHit.layer();
+	if (layer != prevLayer){
+	  const HGCSSSubDetector & subdet = myDetector.subDetectorByLayer(layer);
+	  type = subdet.type;
+	  subdetLayer = layer-subdet.layerIdMin;
+	  prevLayer = layer;
+	}      
+	double energy = lHit.energy();
+	double posx = lHit.get_x();
+	double posy = lHit.get_y();
+	double posz = lHit.get_z();
+	geomConv.fill(type,subdetLayer,energy,0,posx,posy,posz);
+      }
+     }
     
     //get PU events
     std::vector<unsigned> ipuevt;
@@ -255,27 +292,79 @@ int main(int argc, char** argv){//main
     nPuVtx = lRndm.Poisson(nPU);
     ipuevt.resize(nPuVtx,1);
 
+    std::cout << " -- Adding " << nPuVtx << " events to signal event: " << ievt << std::endl;
+
     for (unsigned iV(0); iV<nPuVtx; ++iV){//loop on interactions
       ipuevt[iV] = lRndm.Integer(nPuEvts);
       //get random PU events among available;
-      std::cout << " -- PU Random number #" << iV << " for event " << ievt << " is " << ipuevt[iV] << std::endl;
+      //std::cout << " -- PU Random number #" << iV << " for event " << ievt << " is " << ipuevt[iV] << std::endl;
 
       puTree->GetEntry(ipuevt[iV]);
-      lRecoHits.reserve(lRecoHits.size()+(*rechitvec).size());
+      //lRecoHits.reserve(lRecoHits.size()+(*rechitvec).size());
+      prevLayer = 10000;
+      type = DetectorEnum::FECAL;
+      subdetLayer=0;
       for (unsigned iH(0); iH<(*rechitvec).size(); ++iH){//loop on hits
 	HGCSSRecoHit lHit = (*rechitvec)[iH];
 	//double posz = lHit.get_z();
 	double eta = lHit.eta();
 	bool inFid = fabs(eta) > etamin && fabs(eta) < etamax;
 	// && posz>minZ && posz<maxZ;
-	if (inFid) lRecoHits.push_back(lHit);
+	if (inFid){
+	unsigned layer = lHit.layer();
+	if (layer != prevLayer){
+	  const HGCSSSubDetector & subdet = myDetector.subDetectorByLayer(layer);
+	  type = subdet.type;
+	  subdetLayer = layer-subdet.layerIdMin;
+	  prevLayer = layer;
+	  //std::cout << " - layer " << layer << " " << subdet.name << " " << subdetLayer << std::endl;
+	}      
+	double energy = lHit.energy();
+	double posx = lHit.get_x();
+	double posy = lHit.get_y();
+	double posz = lHit.get_z();
+	geomConv.fill(type,subdetLayer,energy,0,posx,posy,posz);
+	}
 	
       }//loop on hits
     }//loop on interactions
 
+    //fill rechitvec
+    lRecoHits.clear();
+    unsigned nTotBins = 0;
+    for (unsigned iL(0); iL<nLayers; ++iL){//loop on layers
+      TH2D *histE = geomConv.get2DHist(iL,"E");
+      TH2D *histZ = geomConv.get2DHist(iL,"Z");
+      const HGCSSSubDetector & subdet = myDetector.subDetectorByLayer(iL);
+      nTotBins += histE->GetNbinsX()*histE->GetNbinsY();
+      lRecoHits.reserve(nTotBins);
+      for (int iX(1); iX<histE->GetNbinsX()+1;++iX){
+	for (int iY(1); iY<histE->GetNbinsY()+1;++iY){
+	  double recE = histE->GetBinContent(iX,iY);
+	  if (recE<0.5) continue;
+	  double posz = histZ->GetBinContent(iX,iY)/recE;
+	  
+	  double x = histE->GetXaxis()->GetBinCenter(iX);
+	  double y = histE->GetYaxis()->GetBinCenter(iY);
+	  HGCSSRecoHit lRecHit;
+	  lRecHit.layer(iL);
+	  lRecHit.energy(recE);
+	  lRecHit.adcCounts(0);
+	  lRecHit.x(x);
+	  lRecHit.y(y);
+	  lRecHit.z(posz);
+	  lRecHit.noiseFraction(0);
+	  lRecoHits.push_back(lRecHit);
+	}//loop on x
+      }//loop on y
+    }//loop on layers
+
     //fill tree
+    outputFile->cd();
     outputTree->Fill();
-    
+
+    geomConv.initialiseHistos();
+
   }//loop on out events
 
   outputFile->cd();

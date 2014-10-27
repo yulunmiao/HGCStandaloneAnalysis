@@ -42,9 +42,9 @@ HGCSSPUenergy::HGCSSPUenergy(const std::string filePath){
 HGCSSPUenergy::~HGCSSPUenergy(){
 }
 
-double HGCSSPUenergy::getDensity(const double & eta, const unsigned layer, const double & cellSize, const unsigned PU) const{
+double HGCSSPUenergy::getDensity(const double & eta, const unsigned layer, const double & cellSizeincm, const unsigned PU) const{
     
-  return TMath::Exp(p0_[layer] + eta*p1_[layer])*cellSize*cellSize*PU;
+  return TMath::Exp(p0_[layer] + eta*p1_[layer])*cellSizeincm*cellSizeincm*PU;
 }
 
  

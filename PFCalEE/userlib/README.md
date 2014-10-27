@@ -7,3 +7,14 @@ make dictionary
 
 #to make the library
 make
+
+###################################
+Info on existing Executables:
+###################################
+
+######################
+## digitizer.cpp
+# Submit script is submitDigi.py.
+
+
+

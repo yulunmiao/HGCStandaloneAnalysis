@@ -37,8 +37,12 @@ public:
   inline double cellSize(const unsigned aLayer, const double aEta) const{
     if (fabs(aEta)<10) 
       return cellSize_*granularity_[aLayer];
-    //else return cellSize_*3;
+    return cellSize_*3;
   };
+
+  inline double cellSizeInCm(const unsigned aLayer, const double aEta) const{
+    return cellSize(aLayer, aEta)/10.;
+  }
 
   unsigned getNumberOfSiLayers(const DetectorEnum type,
 			       const double & eta=0) const;
