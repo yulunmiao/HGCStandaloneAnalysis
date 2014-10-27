@@ -9,13 +9,17 @@
 #include "HGCSSGenParticle.hh"
 #include "HGCSSDetector.hh"
 
-PositionFit::PositionFit(const unsigned nSR,const double & residualMax, const unsigned nLayers, const unsigned nSiLayers, const double & cellSize,unsigned debug){
+
+PositionFit::PositionFit(const unsigned nSR,
+			 const double & residualMax, 
+			 const unsigned nLayers, 
+			 const unsigned nSiLayers,
+			 unsigned debug){
   nSR_ = nSR;
   residualMax_ = residualMax;
   chi2ndfmax_ = 20;
   nLayers_ = nLayers;
   nSiLayers_ = nSiLayers;
-  cellSize_ = cellSize;
   debug_ = debug;
 
   p_residuals_x = 0;
@@ -40,14 +44,18 @@ PositionFit::PositionFit(const unsigned nSR,const double & residualMax, const un
   p_positionReso[1] = 0;
   p_angularReso[1] = 0;
 
-
 }
 
-void PositionFit::initialise(TFile *outputFile, std::string outFolder){
+void PositionFit::initialise(TFile *outputFile, 
+			     std::string outFolder, 
+			     const HGCSSGeometryConversion & geomConv, 
+			     const HGCSSPUenergy & puDensity){
   setOutputFile(outputFile);
 
   outFolder_ = outFolder;
 
+  geomConv_ = geomConv;
+  puDensity_ = puDensity;
 
   nL_mean_.resize(nLayers_,0);
   mean_[0].resize(nLayers_,0);
@@ -319,13 +327,15 @@ void PositionFit::getInitialPositions(TTree *aSimTree,
   std::vector<HGCSSSimHit> * simhitvec = 0;
   std::vector<HGCSSRecoHit> * rechitvec = 0;
   std::vector<HGCSSGenParticle> * genvec = 0;
-  
+  unsigned nPuVtx = 0;
+
   aSimTree->SetBranchAddress("HGCSSEvent",&event);
   aSimTree->SetBranchAddress("HGCSSSamplingSectionVec",&ssvec);
   aSimTree->SetBranchAddress("HGCSSSimHitVec",&simhitvec);
   aSimTree->SetBranchAddress("HGCSSGenParticleVec",&genvec);
   
   aRecTree->SetBranchAddress("HGCSSRecoHitVec",&rechitvec);
+  aRecTree->SetBranchAddress("nPuVtx",&nPuVtx);
 
   std::cout << "- Processing = " << nEvts  << " events out of " << aSimTree->GetEntries() << std::endl;
 
@@ -369,7 +379,7 @@ void PositionFit::getInitialPositions(TTree *aSimTree,
     nHits.resize(nLayers_,0);
 
     //get energy-weighted position around maximum
-    getEnergyWeightedPosition(rechitvec,xmax,ymax,recoPos,nHits);
+    getEnergyWeightedPosition(rechitvec,nPuVtx,xmax,ymax,recoPos,nHits);
 
     std::ofstream fout;
     std::ostringstream foutname;
@@ -434,7 +444,7 @@ void PositionFit::getMaximumCell(std::vector<HGCSSRecoHit> *rechitvec,const doub
     
 }
 
-void PositionFit::getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec,const std::vector<double> & xmax,const std::vector<double> & ymax,std::vector<ROOT::Math::XYPoint> & recoPos,std::vector<unsigned> & nHits,const bool puSubtracted){
+void PositionFit::getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec,const unsigned nPU, const std::vector<double> & xmax,const std::vector<double> & ymax,std::vector<ROOT::Math::XYPoint> & recoPos,std::vector<unsigned> & nHits,const bool puSubtracted){
   
   std::vector<double> eSum;
   eSum.resize(nLayers_,0);
@@ -445,11 +455,12 @@ void PositionFit::getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec
     double posx = lHit.get_x();
     double posy = lHit.get_y();
 
-    double step = cellSize_*nSR_/2.+0.1;//+0.1 to accomodate double precision
+    double step = geomConv_.cellSize()*nSR_/2.+0.1;//+0.1 to accomodate double precision
     if (fabs(posx-xmax[layer]) < step && 
 	fabs(posy-ymax[layer]) < step){
       if (puSubtracted) {
-	//energy = ;
+	double leta = lHit.eta();
+	energy = std::max(0.,energy - puDensity_.getDensity(leta,layer,geomConv_.cellSize(layer,leta),nPU));
       }
       recoPos[layer].SetX(recoPos[layer].X() + posx*energy);
       recoPos[layer].SetY(recoPos[layer].Y() + posy*energy);

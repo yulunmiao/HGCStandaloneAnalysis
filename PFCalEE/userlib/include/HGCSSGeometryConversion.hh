@@ -4,6 +4,7 @@
 
 #include <string>
 #include <vector>
+#include <cmath>
 #include "TH2D.h"
 
 #include "HGCSSDetector.hh"
@@ -11,6 +12,7 @@
 class HGCSSGeometryConversion{
   
 public:
+  HGCSSGeometryConversion(){};
   HGCSSGeometryConversion(std::string filePath,int model, double cellsize);
 
   ~HGCSSGeometryConversion();
@@ -29,6 +31,13 @@ public:
   
   inline double cellSize() const{
     return cellSize_;
+  };
+
+  //hardcode fine granularity at high eta ?
+  inline double cellSize(const unsigned aLayer, const double aEta) const{
+    if (fabs(aEta)<10) 
+      return cellSize_*granularity_[aLayer];
+    //else return cellSize_*3;
   };
 
   unsigned getNumberOfSiLayers(const DetectorEnum type,

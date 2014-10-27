@@ -29,6 +29,8 @@
 #include "HGCSSDigitisation.hh"
 #include "HGCSSDetector.hh"
 #include "HGCSSGeometryConversion.hh"
+#include "HGCSSPUenergy.hh"
+
 #include "PositionFit.hh"
 
 #include "Math/Vector3D.h"
@@ -214,6 +216,13 @@ int main(int argc, char** argv){//main
   std::cout << " -- N layers = " << nLayers << std::endl
 	    << " -- N sections = " << nSections << std::endl;
 
+
+  HGCSSGeometryConversion geomConv(inFilePath,model,cellSize);
+  //set granularity to get cellsize for PU subtraction
+  std::vector<unsigned> granularity;
+  granularity.resize(nLayers,4);
+  geomConv.setGranularity(granularity);
+
   //////////////////////////////////////////////////
   //////////////////////////////////////////////////
   ///////// Output File // /////////////////////////
@@ -232,6 +241,11 @@ int main(int argc, char** argv){//main
   outputFile->cd();
 
 
+  ///initialise PU density object
+
+  HGCSSPUenergy puDensity("data/EnergyDensity.dat");
+
+
     //////////////////////////////////////////////////
     //////////////////////////////////////////////////
     ///////// positionFit /////////////////////////////
@@ -241,8 +255,8 @@ int main(int argc, char** argv){//main
   const unsigned nEvts = ((pNevts > lSimTree->GetEntries() || pNevts==0) ? static_cast<unsigned>(lSimTree->GetEntries()) : pNevts) ;
   
 
-  PositionFit lChi2Fit(nSR,residualMax,nLayers,nSiLayers,cellSize,debug);
-  lChi2Fit.initialise(outputFile,outFolder);
+  PositionFit lChi2Fit(nSR,residualMax,nLayers,nSiLayers,debug);
+  lChi2Fit.initialise(outputFile,outFolder,geomConv,puDensity);
 
   //try getting z position from input file, if doesn't exit,
   //perform first loop over simhits to find z positions of layers

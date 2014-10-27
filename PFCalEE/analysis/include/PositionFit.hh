@@ -19,6 +19,8 @@
 #include "HGCSSSimHit.hh"
 #include "HGCSSRecoHit.hh"
 #include "HGCSSGenParticle.hh"
+#include "HGCSSPUenergy.hh"
+#include "HGCSSGeometryConversion.hh"
 
 #include "Math/Vector3D.h"
 #include "Math/Vector3Dfwd.h"
@@ -29,11 +31,14 @@ class PositionFit{
 
 public:
 
-  PositionFit(const unsigned nSR,const double & residualMax, const unsigned nLayers, const unsigned nSiLayers, const double & cellSize, const unsigned debug=0);
+  PositionFit(const unsigned nSR,const double & residualMax, const unsigned nLayers, const unsigned nSiLayers, const unsigned debug=0);
   ~PositionFit(){};
 
 
-  void initialise(TFile *outputFile, const std::string outFolder);
+  void initialise(TFile *outputFile, 
+		  const std::string outFolder, 
+		  const HGCSSGeometryConversion & geomConv, 
+		  const HGCSSPUenergy & puDensity);
 
   void initialisePositionHistograms();
   void initialiseFitHistograms();
@@ -52,7 +57,7 @@ public:
 
   void getMaximumCell(std::vector<HGCSSRecoHit> *rechitvec,const double & phimax,const double & etamax,std::vector<double> & xmax,std::vector<double> & ymax);
 
-  void getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec,const std::vector<double> & xmax,const std::vector<double> & ymax,std::vector<ROOT::Math::XYPoint> & recoPos,std::vector<unsigned> & nHits,const bool puSubtracted=true);
+  void getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec,const unsigned nPU, const std::vector<double> & xmax,const std::vector<double> & ymax,std::vector<ROOT::Math::XYPoint> & recoPos,std::vector<unsigned> & nHits,const bool puSubtracted=true);
 
   void fillErrorMatrix(const std::vector<ROOT::Math::XYPoint> & recoPos,const std::vector<ROOT::Math::XYPoint> & truthPos, const std::vector<unsigned> & nHits);
 
@@ -99,6 +104,9 @@ private:
   unsigned nSiLayers_;
   double cellSize_;
   unsigned debug_;
+
+  HGCSSGeometryConversion geomConv_;
+  HGCSSPUenergy puDensity_;
 
   std::vector<double> avgZ_;
 

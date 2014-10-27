@@ -8,15 +8,16 @@
 #include "TMath.h"
 
 class HGCSSPUenergy{
-
+  
 public:
-    HGCSSPUenergy(std::string filePath);
-    ~HGCSSPUenergy(); 
-    double getDensity(double eta, int layer, double cellSize, int PU);
-
+  HGCSSPUenergy(){}; 
+  HGCSSPUenergy(const std::string filePath);
+  ~HGCSSPUenergy(); 
+  double getDensity(const double & eta, const unsigned layer, const double & cellSize, const unsigned PU) const;
+  
 private:
-    std::vector<double> p0_;
-    std::vector<double> p1_;
+  std::vector<double> p0_;
+  std::vector<double> p1_;
 };
 
 #endif 
