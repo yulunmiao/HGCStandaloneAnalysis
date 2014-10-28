@@ -180,44 +180,44 @@ void SignalRegion::initialiseHistograms(){
     outputFile_->cd();
 
   //check if already defined
-    p_rawESR0 = new TH1F("p_rawESR0"," E, SR0", 5000,0,50000);
-    p_rawESR1 = new TH1F("p_rawESR1"," E, SR1", 5000,0,50000);
-    p_rawESR2 = new TH1F("p_rawESR2"," E, SR2", 5000,0,50000);
-    p_rawESR3 = new TH1F("p_rawESR3"," E, SR3", 5000,0,50000);
-    p_rawESR4 = new TH1F("p_rawESR4"," E, SR4", 5000,0,50000);
+    p_rawESR0 = new TH1F("p_rawESR0"," E, SR0", 5000,0,200000);
+    p_rawESR1 = new TH1F("p_rawESR1"," E, SR1", 5000,0,200000);
+    p_rawESR2 = new TH1F("p_rawESR2"," E, SR2", 5000,0,200000);
+    p_rawESR3 = new TH1F("p_rawESR3"," E, SR3", 5000,0,200000);
+    p_rawESR4 = new TH1F("p_rawESR4"," E, SR4", 5000,0,200000);
     p_rawESR0->StatOverflows();
     p_rawESR1->StatOverflows();
     p_rawESR2->StatOverflows();
     p_rawESR3->StatOverflows();
     p_rawESR4->StatOverflows();
     
-    p_wgtESR0 = new TH1F("p_wgtESR0"," E, SR0", 5000,0,50000);
-    p_wgtESR1 = new TH1F("p_wgtESR1"," E, SR1", 5000,0,50000);
-    p_wgtESR2 = new TH1F("p_wgtESR2"," E, SR2", 5000,0,50000);
-    p_wgtESR3 = new TH1F("p_wgtESR3"," E, SR3", 5000,0,50000);
-    p_wgtESR4 = new TH1F("p_wgtESR4"," E, SR4", 5000,0,50000);
+    p_wgtESR0 = new TH1F("p_wgtESR0"," E, SR0", 5000,0,200000);
+    p_wgtESR1 = new TH1F("p_wgtESR1"," E, SR1", 5000,0,200000);
+    p_wgtESR2 = new TH1F("p_wgtESR2"," E, SR2", 5000,0,200000);
+    p_wgtESR3 = new TH1F("p_wgtESR3"," E, SR3", 5000,0,200000);
+    p_wgtESR4 = new TH1F("p_wgtESR4"," E, SR4", 5000,0,200000);
     p_wgtESR0->StatOverflows();
     p_wgtESR1->StatOverflows();
     p_wgtESR2->StatOverflows();
     p_wgtESR3->StatOverflows();
     p_wgtESR4->StatOverflows();
    
-    p_rawSubtractESR0 = new TH1F("p_rawSubtractESR0"," E (with PU subtraction), SR0", 5000,0,50000);
-    p_rawSubtractESR1 = new TH1F("p_rawSubtractESR1"," E (with PU subtraction), SR1", 5000,0,50000);
-    p_rawSubtractESR2 = new TH1F("p_rawSubtractESR2"," E (with PU subtraction), SR2", 5000,0,50000);
-    p_rawSubtractESR3 = new TH1F("p_rawSubtractESR3"," E (with PU subtraction), SR3", 5000,0,50000);
-    p_rawSubtractESR4 = new TH1F("p_rawSubtractESR4"," E (with PU subtraction), SR4", 5000,0,50000);
+    p_rawSubtractESR0 = new TH1F("p_rawSubtractESR0"," E (with PU subtraction), SR0", 5000,0,200000);
+    p_rawSubtractESR1 = new TH1F("p_rawSubtractESR1"," E (with PU subtraction), SR1", 5000,0,200000);
+    p_rawSubtractESR2 = new TH1F("p_rawSubtractESR2"," E (with PU subtraction), SR2", 5000,0,200000);
+    p_rawSubtractESR3 = new TH1F("p_rawSubtractESR3"," E (with PU subtraction), SR3", 5000,0,200000);
+    p_rawSubtractESR4 = new TH1F("p_rawSubtractESR4"," E (with PU subtraction), SR4", 5000,0,200000);
     p_rawSubtractESR0->StatOverflows();
     p_rawSubtractESR1->StatOverflows();
     p_rawSubtractESR2->StatOverflows();
     p_rawSubtractESR3->StatOverflows();
     p_rawSubtractESR4->StatOverflows();
 
-    p_wgtSubtractESR0 = new TH1F("p_wgtSubtractESR0"," E (with PU subtraction), SR0", 5000,0,50000);
-    p_wgtSubtractESR1 = new TH1F("p_wgtSubtractESR1"," E (with PU subtraction), SR1", 5000,0,50000);
-    p_wgtSubtractESR2 = new TH1F("p_wgtSubtractESR2"," E (with PU subtraction), SR2", 5000,0,50000);
-    p_wgtSubtractESR3 = new TH1F("p_wgtSubtractESR3"," E (with PU subtraction), SR3", 5000,0,50000);
-    p_wgtSubtractESR4 = new TH1F("p_wgtSubtractESR4"," E (with PU subtraction), SR4", 5000,0,50000);
+    p_wgtSubtractESR0 = new TH1F("p_wgtSubtractESR0"," E (with PU subtraction), SR0", 5000,0,200000);
+    p_wgtSubtractESR1 = new TH1F("p_wgtSubtractESR1"," E (with PU subtraction), SR1", 5000,0,200000);
+    p_wgtSubtractESR2 = new TH1F("p_wgtSubtractESR2"," E (with PU subtraction), SR2", 5000,0,200000);
+    p_wgtSubtractESR3 = new TH1F("p_wgtSubtractESR3"," E (with PU subtraction), SR3", 5000,0,200000);
+    p_wgtSubtractESR4 = new TH1F("p_wgtSubtractESR4"," E (with PU subtraction), SR4", 5000,0,200000);
     p_wgtSubtractESR0->StatOverflows();
     p_wgtSubtractESR1->StatOverflows();
     p_wgtSubtractESR2->StatOverflows();
