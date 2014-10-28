@@ -8,8 +8,14 @@
 
 #include "TFile.h"
 #include "TTree.h"
+#include "TH1F.h"
 
 #include "HGCSSRecoHit.hh"
+#include "HGCSSSimHit.hh"
+#include "HGCSSSamplingSection.hh"
+#include "HGCSSPUenergy.hh"
+#include "HGCSSGeometryConversion.hh"
+#include "HGCSSCalibration.hh"
 
 #include "Math/Vector3D.h"
 #include "Math/Vector3Dfwd.h"
@@ -20,86 +26,147 @@
 class SignalRegion{
 
 public:
-    SignalRegion(const std::string inputFolder, double cellSize, unsigned nLayers, unsigned nevt);
+    SignalRegion(const std::string inputFolder, 
+                 unsigned nLayers, 
+                 unsigned nevt,
+                 const HGCSSGeometryConversion & geomConv,
+                 const HGCSSPUenergy & puDensity);
+
     ~SignalRegion();
 
-    void initialise(std::vector<HGCSSRecoHit> *rechitvec, unsigned ievt);
+    void initialise(TTree *aSimTree, TTree *aRecoTree, HGCSSCalibration *mycalib, TFile *outputFile);
+   
+    void initialiseHistograms();
 
-    double getEtotalSR0(unsigned ievt){
+    void fillHistograms();
+
+    inline void setOutputFile(TFile *outputFile){
+      outputFile_ = outputFile;
+    };
+
+    double getEtotalSR0(unsigned ievt, bool subtractPU){
         double Etotal(0);
         for(unsigned iL(0);iL<nLayers_;iL++){
-            Etotal += energySR0_[ievt][iL];
+            if(subtractPU) Etotal += subtractedenergySR0_[ievt][iL];
+            else Etotal += energySR0_[ievt][iL];
         }
         return Etotal;
     }
 
-    double getEtotalSR1(unsigned ievt){
+    double getEtotalSR1(unsigned ievt, bool subtractPU){
         double Etotal(0);
         for(unsigned iL(0);iL<nLayers_;iL++){
-            Etotal += energySR1_[ievt][iL];
+            if(subtractPU) Etotal += subtractedenergySR1_[ievt][iL];
+            else Etotal += energySR1_[ievt][iL];
         }
         return Etotal;
     }
 
-    double getEtotalSR2(unsigned ievt){
+    double getEtotalSR2(unsigned ievt, bool subtractPU){
         double Etotal(0);
         for(unsigned iL(0);iL<nLayers_;iL++){
-            Etotal += energySR2_[ievt][iL];
+            if(subtractPU) Etotal += subtractedenergySR2_[ievt][iL];
+            else Etotal += energySR2_[ievt][iL];
         }
         return Etotal;
     }
 
-    double getEtotalSR3(unsigned ievt){
+    double getEtotalSR3(unsigned ievt, bool subtractPU){
         double Etotal(0);
         for(unsigned iL(0);iL<nLayers_;iL++){
-            Etotal += energySR3_[ievt][iL];
+            if(subtractPU) Etotal += subtractedenergySR3_[ievt][iL];
+            else Etotal += energySR3_[ievt][iL];
         }
         return Etotal;
     }
 
-    double getEtotalSR4(unsigned ievt){
+    double getEtotalSR4(unsigned ievt, bool subtractPU){
         double Etotal(0);
         for(unsigned iL(0);iL<nLayers_;iL++){
-            Etotal += energySR4_[ievt][iL];
+            if(subtractPU) Etotal += subtractedenergySR4_[ievt][iL];
+            else Etotal += energySR4_[ievt][iL];
         }
         return Etotal;
     }
 
-    double getSR0(unsigned ievt, unsigned layer){
-        return energySR0_[ievt][layer];
+    double getSR0(unsigned ievt, unsigned layer, bool subtractPU){
+        if(subtractPU) {return subtractedenergySR0_[ievt][layer];}
+        else {return energySR0_[ievt][layer];}
     }
 
-    double getSR1(unsigned ievt, unsigned layer){
-        return energySR1_[ievt][layer];
+    double getSR1(unsigned ievt, unsigned layer, bool subtractPU){
+        if(subtractPU){ return subtractedenergySR1_[ievt][layer];}
+        else{ return energySR1_[ievt][layer];}
     }
 
-    double getSR2(unsigned ievt, unsigned layer){
-        return energySR2_[ievt][layer];
+    double getSR2(unsigned ievt, unsigned layer, bool subtractPU){
+        if(subtractPU){ return subtractedenergySR2_[ievt][layer];}
+        else{ return energySR2_[ievt][layer];}
     }
 
-    double getSR3(unsigned ievt, unsigned layer){
-        return energySR3_[ievt][layer];
+    double getSR3(unsigned ievt, unsigned layer, bool subtractPU){
+        if(subtractPU){ return subtractedenergySR3_[ievt][layer];}
+        else{ return energySR3_[ievt][layer];}
     }
 
-    double getSR4(unsigned ievt, unsigned layer){
-        return energySR4_[ievt][layer];
+    double getSR4(unsigned ievt, unsigned layer, bool subtractPU){
+        if(subtractPU){ return subtractedenergySR4_[ievt][layer];}
+        else{ return energySR4_[ievt][layer];}
     }
 
+    double absweight(unsigned ievt, unsigned layer){
+        if(layer >= nLayers_) return 0;
+        return absweight_[ievt][layer];
+    }
 
 private:
 
     unsigned nevt_;
-    double cellSize_; 
     unsigned nLayers_;    
+
+    TFile *outputFile_;
+
+    HGCSSGeometryConversion geomConv_;
+    HGCSSPUenergy puDensity_;
+    HGCSSCalibration *mycalib_;
+
     std::vector<double> zPos_;
     std::vector<std::vector<ROOT::Math::XYZVector> > accuratePos_;
+    std::vector<std::vector<double> > absweight_;
+
     std::vector<std::vector<double> > energySR0_;
     std::vector<std::vector<double> > energySR1_;
     std::vector<std::vector<double> > energySR2_;
     std::vector<std::vector<double> > energySR3_;
     std::vector<std::vector<double> > energySR4_;
 
-};
+    std::vector<std::vector<double> > subtractedenergySR0_;
+    std::vector<std::vector<double> > subtractedenergySR1_;
+    std::vector<std::vector<double> > subtractedenergySR2_;
+    std::vector<std::vector<double> > subtractedenergySR3_;
+    std::vector<std::vector<double> > subtractedenergySR4_;
 
+    TH1F *p_rawESR0;
+    TH1F *p_rawESR1;
+    TH1F *p_rawESR2;
+    TH1F *p_rawESR3;
+    TH1F *p_rawESR4;
+    TH1F *p_wgtESR0;
+    TH1F *p_wgtESR1;
+    TH1F *p_wgtESR2;
+    TH1F *p_wgtESR3;
+    TH1F *p_wgtESR4;
+
+    TH1F *p_rawSubtractESR0;
+    TH1F *p_rawSubtractESR1;
+    TH1F *p_rawSubtractESR2;
+    TH1F *p_rawSubtractESR3;
+    TH1F *p_rawSubtractESR4;
+    TH1F *p_wgtSubtractESR0;
+    TH1F *p_wgtSubtractESR1;
+    TH1F *p_wgtSubtractESR2;
+    TH1F *p_wgtSubtractESR3;
+    TH1F *p_wgtSubtractESR4;
+};
 
 #endif
