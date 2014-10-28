@@ -71,7 +71,7 @@ int plotE(){//main
     //"pi-/twiceSampling/GeVCal/MipThresh_0p5/ECALloss/"
     //"pi-/twiceSampling/GeVCal/EarlyDecay/MipThresh_0p5/"
     //"e-/twiceSampling/MipThresh_0p5/"
-    "e-/"
+    "gitV00-02-09/gamma/200um/"
   };
 
   bool isCalib = scenario[0].find("calib")!=scenario[0].npos;

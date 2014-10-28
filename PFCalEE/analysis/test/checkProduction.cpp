@@ -40,11 +40,12 @@
 
 int main(int argc, char** argv){//main  
 
-  if (argc < 4) {
+  if (argc < 5) {
     std::cout << " Usage: " 
 	      << " <path to input files>"
 	      << " <name of input sim file>"
 	      << " <name of input reco file>"
+	      << " <name of input reco PUmix file>"
 	      << std::endl;
     return 1;
   }
@@ -56,6 +57,7 @@ int main(int argc, char** argv){//main
   std::string filePath = argv[1];
   std::string simFileName = argv[2];
   std::string recoFileName = argv[3];
+  std::string pumixFileName = argv[4];
 
   std::string inFilePath = filePath+simFileName;
 
@@ -97,7 +99,26 @@ int main(int argc, char** argv){//main
     return 1;
   }
 
-  std::cout << "--- Sim evts: " << lSimTree->GetEntries()  << " reco evts: " << lRecTree->GetEntries() << std::endl;
+  input.str("");
+  input << filePath << "/" << pumixFileName;
+  
+  TFile *pumixFile = TFile::Open(input.str().c_str());
+
+  if (!pumixFile) {
+    std::cout << " -- Error, input file " << input.str() << " cannot be opened. Exiting..." << std::endl;
+    return 1;
+  }
+  else std::cout << " -- input file " << pumixFile->GetName() << " successfully opened." << std::endl;
+
+  TTree *lPumixTree = (TTree*)pumixFile->Get("PUTree");
+  if (!lPumixTree){
+    std::cout << " -- Error, tree PumixoTree cannot be opened. Exiting..." << std::endl;
+    return 1;
+  }
+
+  std::cout << "--- Sim evts: " << lSimTree->GetEntries()  
+	    << " reco evts: " << lRecTree->GetEntries()
+	    << " pumix evts: " << lPumixTree->GetEntries() << std::endl;
 
   
   return 0;

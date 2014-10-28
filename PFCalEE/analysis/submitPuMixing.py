@@ -63,7 +63,7 @@ for et in enlist :
     if opt.alpha>0 : outTag='%s_alpha%3.3f'%(outTag,opt.alpha) 
     if (opt.run>=0) : outTag='%s_run%d'%(outTag,opt.run)
     scriptFile.write('localdir=`pwd`\n')
-    scriptFile.write('%s/bin/MixPUSignal %s %s \* root://eoscms//eos/cms%s/ Digi_%s.root $localdir/ %s | tee %s\n'%(os.getcwd(),opt.nevts,INPATHPU,eosDir,outTag,nPuVtx,outlog))
+    scriptFile.write('%s/bin/MixPUSignal %s %s \* root://eoscms//eos/cms%s/ Digi_%s.root HGcal_%s.root $localdir/ %s | tee %s\n'%(os.getcwd(),opt.nevts,INPATHPU,eosDir,outTag,outTag,nPuVtx,outlog))
     scriptFile.write('echo "--Local directory is " $localdir >> %s\n'%(g4log))
     scriptFile.write('ls * >> %s\n'%(g4log))
     if len(opt.eos)>0:

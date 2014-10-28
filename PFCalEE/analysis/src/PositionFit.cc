@@ -32,17 +32,19 @@ PositionFit::PositionFit(const unsigned nSR,
   p_chi2overNDF[0] = 0;
   p_impactX[0] = 0;
   p_impactY[0] = 0;
-  p_angleX[0] = 0;
-  p_angleY[0] = 0;
-  p_positionReso[0] = 0;
-  p_angularReso[0] = 0;
+  p_impactX_residual = 0;
+  p_impactY_residual = 0;
+  p_tanAngleX[0] = 0;
+  p_tanAngleY[0] = 0;
+  p_tanAngleX_residual = 0;
+  p_tanAngleY_residual = 0;
+  p_positionReso = 0;
+  p_angularReso = 0;
   p_chi2overNDF[1] = 0;
   p_impactX[1] = 0;
   p_impactY[1] = 0;
-  p_angleX[1] = 0;
-  p_angleY[1] = 0;
-  p_positionReso[1] = 0;
-  p_angularReso[1] = 0;
+  p_tanAngleX[1] = 0;
+  p_tanAngleY[1] = 0;
 
 }
 
@@ -117,12 +119,12 @@ void PositionFit::initialiseFitHistograms(){
   if (!p_chi2[0]){
 
     p_recoXvsLayer = new TH2F("p_recoXvsLayer",";layer;weighted x (mm);n_{events}",nLayers_,0,nLayers_,200,-100,100);
-    p_recoYvsLayer = new TH2F("p_recoYvsLayer",";layer;weighted y (mm);n_{events}",nLayers_,0,nLayers_,700,300,1000);
+    p_recoYvsLayer = new TH2F("p_recoYvsLayer",";layer;weighted y (mm);n_{events}",nLayers_,0,nLayers_,1200,300,1500);
     p_recoZvsLayer = new TH2F("p_recoZvsLayer",";layer;avg z (mm);n_{events}",nLayers_,0,nLayers_,3000,3170,3470);
     p_truthXvsLayer = new TH2F("p_truthXvsLayer",";layer;weighted x (mm);n_{events}",nLayers_,0,nLayers_,200,-100,100);
-    p_truthYvsLayer = new TH2F("p_truthYvsLayer",";layer;weighted x (mm);n_{events}",nLayers_,0,nLayers_,700,300,1000);
+    p_truthYvsLayer = new TH2F("p_truthYvsLayer",";layer;weighted x (mm);n_{events}",nLayers_,0,nLayers_,1200,300,1500);
     p_fitXvsLayer = new TH2F("p_fitXvsLayer",";layer;fit x (mm);n_{events}",nLayers_,0,nLayers_,200,-100,100);
-    p_fitYvsLayer = new TH2F("p_fitYvsLayer",";layer;fit y (mm);n_{events}",nLayers_,0,nLayers_,700,300,1000);
+    p_fitYvsLayer = new TH2F("p_fitYvsLayer",";layer;fit y (mm);n_{events}",nLayers_,0,nLayers_,1200,300,1500);
     p_nLayersFit = new TH1F("p_nLayersFit",";#layers in fit;n_{events}",31,-0.5,30.5);
 
     p_chi2[0] = new TH1F("p_chi2",";#chi^{2};n_{events}",1000,0,5000);
@@ -136,17 +138,21 @@ void PositionFit::initialiseFitHistograms(){
     
     p_impactX[0] = new TH1F("p_impactX",";x front face impact (mm);n_{events}",500,-100,100);
     p_impactX[1] = new TH1F("p_impactX_truth",";x front face impact (mm);n_{events}",500,-100,100);
-    p_impactY[0] = new TH1F("p_impactY",";y front face impact (mm);n_{events}",700,300,1000);
-    p_impactY[1] = new TH1F("p_impactY_truth",";y front face impact (mm);n_{events}",700,300,1000);
-    p_angleX[0] = new TH1F("p_angleX",";x direction angle (rad);n_{events}",500,-1,1);
-    p_angleX[1] = new TH1F("p_angleX_truth",";x direction angle (rad);n_{events}",500,-1,1);
-    p_angleY[0] = new TH1F("p_angleY",";y direction angle (rad);n_{events}",500,-1,1);
-    p_angleY[1] = new TH1F("p_angleY_truth",";y direction angle (rad);n_{events}",500,-1,1);
+    p_impactY[0] = new TH1F("p_impactY",";y front face impact (mm);n_{events}",1200,300,1500);
+    p_impactY[1] = new TH1F("p_impactY_truth",";y front face impact (mm);n_{events}",1200,300,1500);
+    p_tanAngleX[0] = new TH1F("p_tanAngleX",";x direction tanAngle (rad);n_{events}",500,-1,1);
+    p_tanAngleX[1] = new TH1F("p_tanAngleX_truth",";x direction tanAngle (rad);n_{events}",500,-1,1);
+    p_tanAngleY[0] = new TH1F("p_tanAngleY",";y direction tanAngle (rad);n_{events}",500,-1,1);
+    p_tanAngleY[1] = new TH1F("p_tanAngleY_truth",";y direction tanAngle (rad);n_{events}",500,-1,1);
+
+    p_impactX_residual = new TH1F("p_impactX_residual",";residual x front face impact (mm);n_{events}",200,-10,10);
+    p_tanAngleX_residual = new TH1F("p_tanAngleX_residual",";residual x direction tanAngle (rad);n_{events}",200,-0.1,0.1);
+    p_impactY_residual = new TH1F("p_impactY_residual",";residual y front face impact (mm);n_{events}",200,-10,10);
+    p_tanAngleY_residual = new TH1F("p_tanAngleY_residual",";residual y direction tanAngle (rad);n_{events}",200,-0.1,0.1);
+
     
-    p_positionReso[0] = new TH1F("p_positionResoX",";#sigma_{x,y} (mm);n_{events}",500,0,20);
-    p_positionReso[1] = new TH1F("p_positionResoY",";#sigma_{x,y} (mm);n_{events}",500,0,20);
-    p_angularReso[0] = new TH1F("p_angularResoX",";#sigma_{#theta} (rad);n_{events}",500,0,1);
-    p_angularReso[1] = new TH1F("p_angularResoY",";#sigma_{#theta} (rad);n_{events}",500,0,1);
+    p_positionReso = new TH1F("p_positionReso",";#sigma_{x,y} (mm);n_{events}",500,0,50);
+    p_angularReso = new TH1F("p_angularReso",";#sigma_{#theta} (rad);n_{events}",500,0,1);
   }
 }
 
@@ -200,18 +206,19 @@ void PositionFit::getTruthPosition(std::vector<HGCSSGenParticle> *genvec,std::ve
       double x0 = (*genvec)[iP].x();
       double y0 = (*genvec)[iP].y();
       double z0 = (*genvec)[iP].z();
-      double p = sqrt(pow((*genvec)[iP].px(),2)+pow((*genvec)[iP].py(),2)+pow((*genvec)[iP].pz(),2));
+      //double p = sqrt(pow((*genvec)[iP].px(),2)+pow((*genvec)[iP].py(),2)+pow((*genvec)[iP].pz(),2));
       //std::cout << "init : " << x0 << " " << y0 << " " << z0 << std::endl;
       //fill layers by propagating with momentum
-      ROOT::Math::XYZVector unit((*genvec)[iP].px()/p,(*genvec)[iP].py()/p,(*genvec)[iP].pz()/p);
+      //ROOT::Math::XYZVector unit((*genvec)[iP].px()/p,(*genvec)[iP].py()/p,(*genvec)[iP].pz()/p);
       
       //std::cout << " Gen particle eta,phi = " << unit.eta() << " " << unit.phi() << std::endl;
       
       for (unsigned iL(0); iL<nLayers_; ++iL){
-	double xy = (avgZ_[iL]-z0)/sinh(unit.eta());
-	double x = xy*cos(unit.phi())+x0;
-	double y = xy*sin(unit.phi())+y0;
-	
+	//double xy = (avgZ_[iL]-z0)/sinh(unit.eta());
+	//double x = xy*cos(unit.phi())+x0;
+	//double y = xy*sin(unit.phi())+y0;
+	double x = x0+(avgZ_[iL]-z0)*(*genvec)[iP].px()/(*genvec)[iP].pz();
+	double y = y0+(avgZ_[iL]-z0)*(*genvec)[iP].py()/(*genvec)[iP].pz();
 	//std::cout << "Lay " << iL << ": " << x << " " << y << " " << avgZ_[iL] << std::endl;
 	p_genxy[iL]->Fill(x,y,1);
 	truthPos[iL] = ROOT::Math::XYPoint(x,y);
@@ -224,7 +231,7 @@ void PositionFit::getTruthPosition(std::vector<HGCSSGenParticle> *genvec,std::ve
 bool PositionFit::getZpositions(){
   std::ifstream fin;
   std::ostringstream finname;
-  finname << outFolder_ << "_zPositions.dat";
+  finname << outFolder_ << "/zPositions.dat";
   fin.open(finname.str());
   if (!fin.is_open()){
     std::cout << " Cannot open input file " << finname.str() << "! Refilling now..." << std::endl;
@@ -266,6 +273,15 @@ void PositionFit::getZpositions(TTree *aSimTree,
   std::vector<HGCSSSimHit> * simhitvec = 0;
   aSimTree->SetBranchAddress("HGCSSSimHitVec",&simhitvec);
 
+  std::ofstream fout;
+  std::ostringstream foutname;
+  foutname << outFolder_ << "/zPositions.dat";
+  fout.open(foutname.str());
+  if (!fout.is_open()){
+    std::cout << " Cannot open outfile " << foutname.str() << " for writing ! Exiting..." << std::endl;
+    exit(1);
+  }
+  
   std::cout << "--- Filling z positions:" << std::endl
 	    << "- Processing = " << nEvts  << " events out of " << aSimTree->GetEntries() << std::endl;
 
@@ -292,15 +308,6 @@ void PositionFit::getZpositions(TTree *aSimTree,
     }
   }
 
-  std::ofstream fout;
-  std::ostringstream foutname;
-  foutname << outFolder_ << "_zPositions.dat";
-  fout.open(foutname.str());
-  if (!fout.is_open()){
-    std::cout << " Cannot open outfile " << foutname.str() << " for writing ! Exiting..." << std::endl;
-    exit(1);
-  }
-  
   std::cout << " --- Z positions of layers: " << std::endl;
   for (unsigned iL(0); iL<nLayers_;++iL){
     std::cout << " Layer " << iL << ", z = " << avgZ_[iL] << std::endl;
@@ -349,7 +356,7 @@ void PositionFit::getInitialPositions(TTree *aSimTree,
 
     aRecTree->GetEntry(ievt);
 
-    std::cout << " nPuVtx = " << nPuVtx << std::endl;
+    if (debug_) std::cout << " nPuVtx = " << nPuVtx << std::endl;
 
     if (debug_){
       std::cout << "... Size of hit vectors: sim = " <<  (*simhitvec).size() << ", reco = " << (*rechitvec).size()<< std::endl;
@@ -386,7 +393,7 @@ void PositionFit::getInitialPositions(TTree *aSimTree,
 
     std::ofstream fout;
     std::ostringstream foutname;
-    foutname << outFolder_ << "_initialPos_evt" << ievt << ".dat";
+    foutname << outFolder_ << "/initialPos_evt" << ievt << ".dat";
     fout.open(foutname.str());
     if (!fout.is_open()){
       std::cout << " Cannot open outfile " << foutname.str() << " for writing ! Exiting..." << std::endl;
@@ -518,7 +525,7 @@ void PositionFit::finaliseErrorMatrix(){
 
   std::ofstream fmatrix;
   std::ostringstream fmatrixname;
-  fmatrixname << outFolder_ << "_errorMatrix.dat";
+  fmatrixname << outFolder_ << "/errorMatrix.dat";
   fmatrix.open(fmatrixname.str());
   if (!fmatrix.is_open()){
     std::cout << " Cannot open outfile " << fmatrixname.str() << " for writing ! Exiting..." << std::endl;
@@ -582,7 +589,7 @@ bool PositionFit::fillMatrixFromFile(){
 
   std::ifstream fmatrix;
   std::ostringstream fmatrixname;
-  fmatrixname << outFolder_ << "_errorMatrix.dat";
+  fmatrixname << outFolder_ << "/errorMatrix.dat";
   fmatrix.open(fmatrixname.str());
   if (!fmatrix.is_open()){
     std::cout << " -- Cannot open outfile " << fmatrixname.str() << "! Refilling the matrix..." << std::endl;
@@ -629,7 +636,7 @@ bool PositionFit::performLeastSquareFit(TTree *aRecTree,
   //open new file to save accurate positions
   std::ofstream fout;
   std::ostringstream foutname;
-  foutname << outFolder_ << "_accuratePos.dat";
+  foutname << outFolder_ << "/accuratePos.dat";
   fout.open(foutname.str());
   if (!fout.is_open()){
     std::cout << " Cannot open outfile " << foutname.str() << " for writing ! Exiting..." << std::endl;
@@ -699,6 +706,8 @@ bool PositionFit::fitEvent(const unsigned ievt, unsigned & nInvalidFits, std::of
     }
   }
 
+  p_nLayersFit->Fill(nL);
+
   //if less than 3 valid layers: no point doing a fit !!
   if (nL<3){
     nInvalidFits++;
@@ -726,7 +735,9 @@ bool PositionFit::fitEvent(const unsigned ievt, unsigned & nInvalidFits, std::of
   e.Invert();
   
   //do fit for reco and truth
-  
+  double positionFF[2][2];
+  double TanAngle[2][2];
+ 
   for (unsigned rt(0); rt<2;++rt){
     if (debug_) {
       std::cout << "... Processing ";
@@ -736,8 +747,6 @@ bool PositionFit::fitEvent(const unsigned ievt, unsigned & nInvalidFits, std::of
     }
     double chiSq(0.0);
     double position[2];
-    double positionFF[2];
-    double TanAngle[2];
     
     TMatrixD fitMatrix(4,4);
     
@@ -778,8 +787,8 @@ bool PositionFit::fitEvent(const unsigned ievt, unsigned & nInvalidFits, std::of
       }
       
       position[xy] = p(0);
-      positionFF[xy] = p(0)+p(1)*posz[0];
-      TanAngle[xy] = p(1);
+      positionFF[rt][xy] = p(0)+p(1)*posz[0];
+      TanAngle[rt][xy] = p(1);
       
       fitMatrix[2*xy][2*xy]=w(0,0);
       fitMatrix[2*xy][2*xy+1]=w(0,1);
@@ -803,44 +812,46 @@ bool PositionFit::fitEvent(const unsigned ievt, unsigned & nInvalidFits, std::of
       std::cout << "fitw(1,1) = " << fitMatrix[1][1] << std::endl;
       std::cout << "fitw(2,2) = " << fitMatrix[2][2] << std::endl;
       std::cout << "fitw(3,3) = " << fitMatrix[3][3] << std::endl;	
-      std::cout << "ecal frontface position = " << positionFF[0] << " " << positionFF[1] << std::endl;
-      std::cout << "ecal frontface angle = " << atan(TanAngle[0]) << " " << atan(TanAngle[1]) << std::endl;
+      std::cout << "ecal frontface position = " << positionFF[0][0] << " " << positionFF[0][1] << std::endl;
+      std::cout << "ecal frontface tanAngle = " << TanAngle[0][0] << " " << TanAngle[0][1] << std::endl;
       return false;
     }
 
     p_chi2[rt]->Fill(chiSq);
     p_chi2overNDF[rt]->Fill(chiSq/ndf);
-    p_impactX[rt]->Fill(positionFF[0]);
-    p_angleX[rt]->Fill(atan(TanAngle[0]));
-    p_impactY[rt]->Fill(positionFF[1]);
-    p_angleY[rt]->Fill(atan(TanAngle[1]));
-    
+    p_impactX[rt]->Fill(positionFF[rt][0]);
+    p_tanAngleX[rt]->Fill(TanAngle[rt][0]);
+    p_impactY[rt]->Fill(positionFF[rt][1]);
+    p_tanAngleY[rt]->Fill(TanAngle[rt][1]);
+
     if (rt==0) {
-      p_positionReso[0]->Fill(sqrt(fitMatrix[0][0]));
-      p_positionReso[1]->Fill(sqrt(fitMatrix[2][2]));
-      p_angularReso[0]->Fill(sqrt(fitMatrix[1][1]));
-      p_angularReso[1]->Fill(sqrt(fitMatrix[3][3]));
-      
+      p_positionReso->Fill(sqrt(fitMatrix[0][0]));
+      p_angularReso->Fill(sqrt(fitMatrix[1][1]));
       
       fout << ievt << " " 
 	   << position[0] << " " 
 	   << sqrt(fitMatrix[0][0]) << " " 
-	   << TanAngle[0] << " " 
+	   << TanAngle[0][0] << " " 
 	   << sqrt(fitMatrix[1][1]) << " "
 	   << position[1] << " " 
 	   << sqrt(fitMatrix[2][2]) << " "
-	   << TanAngle[1] << " "
+	   << TanAngle[0][1] << " "
 	   << sqrt(fitMatrix[3][3])
 	   << std::endl;
-    }
     
-    p_nLayersFit->Fill(nL);
-    for (unsigned iL(0); iL<nL;++iL){
-      p_fitXvsLayer->Fill(layerId[iL],position[0]+TanAngle[0]*posz[iL]);
-      p_fitYvsLayer->Fill(layerId[iL],position[1]+TanAngle[1]*posz[iL]);
+      for (unsigned iL(0); iL<nL;++iL){
+	p_fitXvsLayer->Fill(layerId[iL],position[0]+TanAngle[0][0]*posz[iL]);
+	p_fitYvsLayer->Fill(layerId[iL],position[1]+TanAngle[0][1]*posz[iL]);
+      }
     }
 
   }//reco or truth
+
+  p_impactX_residual->Fill(positionFF[0][0]-positionFF[1][0]);
+  p_tanAngleX_residual->Fill(TanAngle[0][0]-TanAngle[1][0]);
+  p_impactY_residual->Fill(positionFF[0][1]-positionFF[1][1]);
+  p_tanAngleY_residual->Fill(TanAngle[0][1]-TanAngle[1][1]);
+      
 
   return true;
 }
@@ -857,7 +868,7 @@ bool PositionFit::getPositionFromFile(const unsigned ievt,
 
   std::ifstream fin;
   std::ostringstream finname;
-  finname << outFolder_ << "_initialPos_evt" << ievt << ".dat";
+  finname << outFolder_ << "/initialPos_evt" << ievt << ".dat";
   fin.open(finname.str());
   if (!fin.is_open()){
       std::cout << " Cannot open input file " << finname.str() << "! Refilling..." << std::endl;

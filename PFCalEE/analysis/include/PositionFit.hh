@@ -141,11 +141,14 @@ private:
   TH1F *p_chi2overNDF[2];
   TH1F *p_impactX[2];
   TH1F *p_impactY[2];
-  TH1F *p_angleX[2];
-  TH1F *p_angleY[2];
-  TH1F *p_positionReso[2];
-  TH1F *p_angularReso[2];
-
+  TH1F *p_tanAngleX[2];
+  TH1F *p_tanAngleY[2];
+  TH1F *p_positionReso;
+  TH1F *p_angularReso;
+  TH1F *p_impactX_residual;
+  TH1F *p_impactY_residual;
+  TH1F *p_tanAngleX_residual;
+  TH1F *p_tanAngleY_residual;
 
 };//class
 

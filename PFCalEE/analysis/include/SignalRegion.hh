@@ -34,7 +34,8 @@ public:
 
     ~SignalRegion();
 
-    void initialise(TTree *aSimTree, TTree *aRecoTree, HGCSSCalibration *mycalib, TFile *outputFile);
+    void initialise(TTree *aSimTree, TTree *aRecoTree, 
+		    TFile *outputFile);
    
     void initialiseHistograms();
 
@@ -114,9 +115,9 @@ public:
         else{ return energySR4_[ievt][layer];}
     }
 
-    double absweight(unsigned ievt, unsigned layer){
+    double absweight(unsigned layer){
         if(layer >= nLayers_) return 0;
-        return absweight_[ievt][layer];
+        return absweight_[layer];
     }
 
 private:
@@ -128,11 +129,11 @@ private:
 
     HGCSSGeometryConversion geomConv_;
     HGCSSPUenergy puDensity_;
-    HGCSSCalibration *mycalib_;
+  //HGCSSCalibration *mycalib_;
 
     std::vector<double> zPos_;
     std::vector<std::vector<ROOT::Math::XYZVector> > accuratePos_;
-    std::vector<std::vector<double> > absweight_;
+    std::vector<double> absweight_;
 
     std::vector<std::vector<double> > energySR0_;
     std::vector<std::vector<double> > energySR1_;

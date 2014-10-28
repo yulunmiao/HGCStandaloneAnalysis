@@ -1,4 +1,9 @@
 #include "SignalRegion.hh"
+#include "HGCSSEvent.hh"
+#include "HGCSSSamplingSection.hh"
+#include "HGCSSSimHit.hh"
+#include "HGCSSRecoHit.hh"
+#include "HGCSSGenParticle.hh"
 
 SignalRegion:: SignalRegion(const std::string inputFolder,
                             unsigned nLayers,
@@ -16,10 +21,11 @@ SignalRegion:: SignalRegion(const std::string inputFolder,
 
     std::ifstream fzpos;
     std::ostringstream finname;
-    finname << inputFolder << "_zPositions.dat";
+    finname << inputFolder << "/zPositions.dat";
     fzpos.open(finname.str());
     if (!fzpos.is_open()){
-      std::cout << " Cannot open input file " << finname.str() << "! Refilling now..." << std::endl;
+      std::cout << " Cannot open input file " << finname.str() << "! Exiting..." << std::endl;
+      exit(1);
     }
     for(unsigned iL(0);iL<nLayers_;iL++){
         fzpos >> layerIndex >> zpos;
@@ -28,10 +34,11 @@ SignalRegion:: SignalRegion(const std::string inputFolder,
 
     std::ifstream fxypos;
     finname.str("");
-    finname << inputFolder << "_accuratePos.dat";
+    finname << inputFolder << "/accuratePos.dat";
     fxypos.open(finname.str());
     if (!fxypos.is_open()){
-      std::cout << " Cannot open input file " << finname.str() << "! Refilling now..." << std::endl;
+      std::cout << " Cannot open input file " << finname.str() << "! Exiting..." << std::endl;
+      exit(1);
     }
     for(unsigned ievt(0);ievt<nevt_;ievt++){ 
         std::string fitMatrix[4];
@@ -52,19 +59,29 @@ SignalRegion::~SignalRegion(){
 
 
 
-void SignalRegion::initialise(TTree *aSimTree, TTree *aRecTree, HGCSSCalibration *mycalib, TFile *outputFile){
+void SignalRegion::initialise(TTree *aSimTree, TTree *aRecTree, 
+			      TFile *outputFile){
 
-    mycalib_ = mycalib;
-    setOutputFile(outputFile); 
-    initialiseHistograms();
+  //mycalib_ = mycalib;
+  setOutputFile(outputFile); 
+  initialiseHistograms();
+  
+  HGCSSEvent * event = 0;
+  std::vector<HGCSSSamplingSection> * ssvec = 0;
+  std::vector<HGCSSSimHit> * simhitvec = 0;
+  std::vector<HGCSSRecoHit> * rechitvec = 0;
+  std::vector<HGCSSGenParticle> * genvec = 0;
+  unsigned nPuVtx = 0;
 
-    std::vector<HGCSSSamplingSection> * ssvec = 0;
-    std::vector<HGCSSRecoHit> * rechitvec = 0;
-    unsigned nPuVtx = 0;
+  aSimTree->SetBranchAddress("HGCSSEvent",&event);
+  aSimTree->SetBranchAddress("HGCSSSamplingSectionVec",&ssvec);
+  aSimTree->SetBranchAddress("HGCSSSimHitVec",&simhitvec);
+  aSimTree->SetBranchAddress("HGCSSGenParticleVec",&genvec);
+  
+  aRecTree->SetBranchAddress("HGCSSRecoHitVec",&rechitvec);
+  if (aRecTree->GetBranch("nPuVtx")) aRecTree->SetBranchAddress("nPuVtx",&nPuVtx);
 
-    aSimTree->SetBranchAddress("HGCSSSamplingSectionVec",&ssvec);
-    aRecTree->SetBranchAddress("HGCSSRecoHitVec",&rechitvec);
-    if (aRecTree->GetBranch("nPuVtx")) aRecTree->SetBranchAddress("nPuVtx",&nPuVtx);
+  std::cout << " -- Now filling signal region histograms..." << std::endl;
 
     for (unsigned ievt(0); ievt< nevt_; ++ievt){//loop on entries
         if (ievt%50 == 0) std::cout << "... Processing entry: " << ievt << std::endl;
@@ -72,11 +89,14 @@ void SignalRegion::initialise(TTree *aSimTree, TTree *aRecTree, HGCSSCalibration
         aSimTree->GetEntry(ievt);
         aRecTree->GetEntry(ievt);
  
-        std::vector<double> weight;
-        for(unsigned iL(0); iL<nLayers_; iL++){
-            weight.push_back((*ssvec)[iL].volX0trans()/(*ssvec)[1].volX0trans() );
-        }
-        absweight_.push_back(weight);
+	//fill weights for first event only: same in all events
+        if (ievt==0){
+	  absweight_.clear();
+	  absweight_.reserve(nLayers_);
+	  for(unsigned iL(0); iL<nLayers_; iL++){
+            absweight_.push_back((*ssvec)[iL].volX0trans()/(*ssvec)[1].volX0trans() );
+	  }
+	}
         std::vector<ROOT::Math::XYZVector> eventPos = accuratePos_[ievt];
         if(eventPos.size()!=nLayers_) continue; 
 	std::vector<double> accurateX;
@@ -110,8 +130,8 @@ void SignalRegion::initialise(TTree *aSimTree, TTree *aRecTree, HGCSSCalibration
 	    double posy = lHit.get_y();
 	    double energy = lHit.energy();
             double leta = lHit.eta();
-            double subtractedenergy = std::max(0.,energy - puDensity_.getDensity(leta,layer,geomConv_.cellSizeInCm(layer,leta),nPuVtx));
-            double halfCell = 0.5*geomConv_.cellSizeInCm(layer,leta);
+            double subtractedenergy = std::max(0.,energy - puDensity_.getDensity(leta,layer,geomConv_.cellSize(layer,leta),nPuVtx));
+            double halfCell = 0.5*geomConv_.cellSize(layer,leta);
 	    //SR0
 	    if(fabs(posx + halfCell-accurateX[layer])< halfCell && fabs(posy+ halfCell-accurateY[layer])< halfCell){
                 signalSR0[layer] += energy;
@@ -218,11 +238,11 @@ void SignalRegion::fillHistograms(){
 
         double wgtESR0(0), wgtESR1(0), wgtESR2(0), wgtESR3(0), wgtESR4(0);
         for(unsigned iL(0); iL < nLayers_;iL++){
-           wgtESR0 += getSR0(ievt, iL, subtractPU)*absweight(ievt, iL);
-           wgtESR1 += getSR1(ievt, iL, subtractPU)*absweight(ievt, iL);
-           wgtESR2 += getSR2(ievt, iL, subtractPU)*absweight(ievt, iL);
-           wgtESR3 += getSR3(ievt, iL, subtractPU)*absweight(ievt, iL);
-           wgtESR4 += getSR4(ievt, iL, subtractPU)*absweight(ievt, iL);
+           wgtESR0 += getSR0(ievt, iL, subtractPU)*absweight(iL);
+           wgtESR1 += getSR1(ievt, iL, subtractPU)*absweight(iL);
+           wgtESR2 += getSR2(ievt, iL, subtractPU)*absweight(iL);
+           wgtESR3 += getSR3(ievt, iL, subtractPU)*absweight(iL);
+           wgtESR4 += getSR4(ievt, iL, subtractPU)*absweight(iL);
         }
         p_wgtESR0->Fill(wgtESR0);
         p_wgtESR1->Fill(wgtESR1);
@@ -243,11 +263,11 @@ void SignalRegion::fillHistograms(){
 
         double wgtSubtractESR0(0), wgtSubtractESR1(0), wgtSubtractESR2(0), wgtSubtractESR3(0), wgtSubtractESR4(0);
         for(unsigned iL(0); iL < nLayers_;iL++){
-           wgtSubtractESR0 += getSR0(ievt, iL, subtractPU)*absweight(ievt, iL);
-           wgtSubtractESR1 += getSR1(ievt, iL, subtractPU)*absweight(ievt, iL);
-           wgtSubtractESR2 += getSR2(ievt, iL, subtractPU)*absweight(ievt, iL);
-           wgtSubtractESR3 += getSR3(ievt, iL, subtractPU)*absweight(ievt, iL);
-           wgtSubtractESR4 += getSR4(ievt, iL, subtractPU)*absweight(ievt, iL);
+           wgtSubtractESR0 += getSR0(ievt, iL, subtractPU)*absweight(iL);
+           wgtSubtractESR1 += getSR1(ievt, iL, subtractPU)*absweight(iL);
+           wgtSubtractESR2 += getSR2(ievt, iL, subtractPU)*absweight(iL);
+           wgtSubtractESR3 += getSR3(ievt, iL, subtractPU)*absweight(iL);
+           wgtSubtractESR4 += getSR4(ievt, iL, subtractPU)*absweight(iL);
         }
         p_wgtSubtractESR0->Fill(wgtSubtractESR0);
         p_wgtSubtractESR1->Fill(wgtSubtractESR1);
@@ -255,6 +275,9 @@ void SignalRegion::fillHistograms(){
         p_wgtSubtractESR3->Fill(wgtSubtractESR3);
         p_wgtSubtractESR4->Fill(wgtSubtractESR4);
     }
+
+    std::cout << " -- Histograms for signal regions have been filled !" << std::endl;
+
 }
 
 
