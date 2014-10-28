@@ -30,55 +30,56 @@ parser.add_option('-S', '--no-submit'   ,    action="store_true",  dest='nosubmi
 enlist=[0]
 if opt.dogun : enlist=[20,30,40,50,60,70,80,90,100,125,150,175,200]
 
-#alphaset=[0.361,0.297,0.244,0.200,0.164,0.134,0.110]
-alphaset=[0.361]
-nPuVtx=140
-#etaset=[17,19,21,23,25,27,29]
-etaset=[17]
+alphaset=[0.361,0.297,0.244,0.200,0.164,0.134,0.110]
+#alphaset=[0.361]
+nPuVtxset=[0,140]
+etaset=[17,19,21,23,25,27,29]
+#etaset=[17]
 
-counter=0
+for nPuVtx in nPuVtxset :
+    counter=0
 
-for alpha in alphaset :
-    eta=etaset[counter]
-    counter=counter+1
-    for et in enlist :
+    for alpha in alphaset :
+        eta=etaset[counter]
+        counter=counter+1
+        for et in enlist :
         
-        nevents=opt.nevts
-        myqueue=opt.lqueue
-        bval="BOFF"
-        if opt.Bfield>0 : bval="BON" 
-        
-        outDir='%s/%s/git%s/version%d/%s/200um/eta%s_et%s_pu%s'%(os.getcwd(),opt.out,opt.gittag,opt.version,opt.datatype,eta,et,nPuVtx)
-        eosDir='%s/git%s/%s'%(opt.eos,opt.gittag,opt.datatype)
-        
-        outlog='%s/egreso_eta%s_et%s_pu%s.log'%(os.getcwd(),eta,et,nPuVtx)
-        g4log='egresojob%s.log'%(nPuVtx)
-        os.system('mkdir -p %s'%outDir)
-   
-        #wrapper
-        scriptFile = open('%s/runEGResoJob.sh'%(outDir), 'w')
-        scriptFile.write('#!/bin/bash\n')
-        scriptFile.write('source %s/../g4env.sh\n'%(os.getcwd()))
-        #scriptFile.write('cd %s\n'%(outDir))
-        outTag='version%d_model%d_%s'%(opt.version,opt.model,bval)
-        if et>0 : outTag='%s_et%d'%(outTag,et)
-        if alpha>0 : outTag='%s_alpha%3.3f'%(outTag,alpha) 
-        if (opt.run>=0) : outTag='%s_run%d'%(outTag,opt.run)
-        scriptFile.write('localdir=`pwd`\n')
-        scriptFile.write('cp -r %s/data .\n'%os.getcwd())
-        if (nPuVtx==0) :
-            scriptFile.write('%s/bin/egammaResolution %s root://eoscms//eos/cms%s/ HGcal_%s.root Digi_%s.root %s.root 2 | tee %s\n'%(os.getcwd(),opt.nevts,eosDir,outTag,outTag,outDir,outlog))
-        else:
-           scriptFile.write('%s/bin/egammaResolution %s root://eoscms//eos/cms%s/ HGcal_%s.root PuMix%s_%s.root %s.root 2 | tee %s\n'%(os.getcwd(),opt.nevts,eosDir,outTag,nPuVtx,outTag,outDir,outlog)) 
-
-        scriptFile.write('echo "--Local directory is " $localdir >> %s\n'%(g4log))
-        scriptFile.write('ls * >> %s\n'%(g4log))
-        scriptFile.write('cp * %s/\n'%(outDir))
-        scriptFile.write('echo "All done"\n')
-        scriptFile.close()
-    
+            nevents=opt.nevts
+            myqueue=opt.lqueue
+            bval="BOFF"
+            if opt.Bfield>0 : bval="BON" 
+            
+            outDir='%s/%s/git%s/version%d/%s/200um/eta%s_et%s_pu%s'%(os.getcwd(),opt.out,opt.gittag,opt.version,opt.datatype,eta,et,nPuVtx)
+            eosDir='%s/git%s/%s'%(opt.eos,opt.gittag,opt.datatype)
+            
+            outlog='%s/egreso_eta%s_et%s_pu%s.log'%(os.getcwd(),eta,et,nPuVtx)
+            g4log='egresojob%s.log'%(nPuVtx)
+            os.system('mkdir -p %s'%outDir)
+            
+            #wrapper
+            scriptFile = open('%s/runEGResoJob.sh'%(outDir), 'w')
+            scriptFile.write('#!/bin/bash\n')
+            scriptFile.write('source %s/../g4env.sh\n'%(os.getcwd()))
+            #scriptFile.write('cd %s\n'%(outDir))
+            outTag='version%d_model%d_%s'%(opt.version,opt.model,bval)
+            if et>0 : outTag='%s_et%d'%(outTag,et)
+            if alpha>0 : outTag='%s_alpha%3.3f'%(outTag,alpha) 
+            if (opt.run>=0) : outTag='%s_run%d'%(outTag,opt.run)
+            scriptFile.write('localdir=`pwd`\n')
+            scriptFile.write('cp -r %s/data .\n'%os.getcwd())
+            if (nPuVtx==0) :
+                scriptFile.write('%s/bin/egammaResolution %s root://eoscms//eos/cms%s/ HGcal_%s.root Digi_%s.root %s.root 2 | tee %s\n'%(os.getcwd(),opt.nevts,eosDir,outTag,outTag,outDir,outlog))
+            else:
+                scriptFile.write('%s/bin/egammaResolution %s root://eoscms//eos/cms%s/ HGcal_%s.root PuMix%s_%s.root %s.root 2 | tee %s\n'%(os.getcwd(),opt.nevts,eosDir,outTag,nPuVtx,outTag,outDir,outlog)) 
+                
+            scriptFile.write('echo "--Local directory is " $localdir >> %s\n'%(g4log))
+            scriptFile.write('ls * >> %s\n'%(g4log))
+            scriptFile.write('cp * %s/\n'%(outDir))
+            scriptFile.write('echo "All done"\n')
+            scriptFile.close()
+            
         #submit
-        os.system('chmod u+rwx %s/runEGResoJob.sh'%(outDir))
-        if opt.nosubmit : os.system('echo bsub -q %s %s/runEGResoJob.sh'%(myqueue,outDir)) 
-        else: os.system("bsub -q %s \'%s/runEGResoJob.sh\'"%(myqueue,outDir))
+            os.system('chmod u+rwx %s/runEGResoJob.sh'%(outDir))
+            if opt.nosubmit : os.system('echo bsub -q %s %s/runEGResoJob.sh'%(myqueue,outDir)) 
+            else: os.system("bsub -q %s \'%s/runEGResoJob.sh\'"%(myqueue,outDir))
 
