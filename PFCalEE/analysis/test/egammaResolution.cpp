@@ -32,6 +32,7 @@
 #include "HGCSSPUenergy.hh"
 
 #include "PositionFit.hh"
+#include "SignalRegion.hh"
 
 #include "Math/Vector3D.h"
 #include "Math/Vector3Dfwd.h"
@@ -172,6 +173,8 @@ int main(int argc, char** argv){//main
 
   //initialise detector
   HGCSSDetector & myDetector = theDetector();
+ 
+  HGCSSCalibration *mycalib = new HGCSSCalibration(inFilePath); 
 
   unsigned indices[7] = {0,0,0,0,0,0,0};
   //fill layer indices
@@ -274,6 +277,12 @@ int main(int argc, char** argv){//main
     lChi2Fit.finaliseErrorMatrix();
     lChi2Fit.performLeastSquareFit(lRecTree,nEvts);
   }
+
+
+  SignalRegion SignalEnergy(outFolder, nLayers, nEvts, geomConv, puDensity);
+
+  SignalEnergy.initialise(lSimTree, lRecTree, mycalib, outputFile);
+  SignalEnergy.fillHistograms();
 
   outputFile->Write();
   //outputFile->Close();

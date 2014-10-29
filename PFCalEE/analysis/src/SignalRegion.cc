@@ -111,7 +111,7 @@ void SignalRegion::initialise(TTree *aSimTree, TTree *aRecTree, HGCSSCalibration
 	    double energy = lHit.energy();
             double leta = lHit.eta();
             double subtractedenergy = std::max(0.,energy - puDensity_.getDensity(leta,layer,geomConv_.cellSizeInCm(layer,leta),nPuVtx));
-            double halfCell = 0.5*geomConv_.cellSizeInCm(layer,leta);
+            double halfCell = 0.5*geomConv_.cellSizeInCm(layer,leta)*10;
 	    //SR0
 	    if(fabs(posx + halfCell-accurateX[layer])< halfCell && fabs(posy+ halfCell-accurateY[layer])< halfCell){
                 signalSR0[layer] += energy;
