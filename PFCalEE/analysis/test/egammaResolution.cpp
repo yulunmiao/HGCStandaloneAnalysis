@@ -174,8 +174,6 @@ int main(int argc, char** argv){//main
   //initialise detector
   HGCSSDetector & myDetector = theDetector();
  
-  HGCSSCalibration *mycalib = new HGCSSCalibration(inFilePath); 
-
   unsigned indices[7] = {0,0,0,0,0,0,0};
   //fill layer indices
   if (versionNumber==22) {
