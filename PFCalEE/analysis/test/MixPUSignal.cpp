@@ -28,7 +28,7 @@
 
 int main(int argc, char** argv){//main  
 
-  if (argc < 8) {
+  if (argc < 9) {
     std::cout << " Usage: "
               << argv[0] << " <nEvts to process (0=all)>"
               << " <path to MinBias file>"

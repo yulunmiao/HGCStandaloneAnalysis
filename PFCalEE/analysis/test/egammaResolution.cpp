@@ -278,15 +278,15 @@ int main(int argc, char** argv){//main
     lChi2Fit.performLeastSquareFit(lRecTree,nEvts);
   }
 
-
   SignalRegion SignalEnergy(outFolder, nLayers, nEvts, geomConv, puDensity);
-
-  SignalEnergy.initialise(lSimTree, lRecTree, mycalib, outputFile);
-  SignalEnergy.fillHistograms();
+  SignalEnergy.initialise(lSimTree, lRecTree, outputFile);
+  SignalEnergy.fillHistograms(); 
 
   outputFile->Write();
   //outputFile->Close();
   
+  std::cout << " - End of egammaResolution program." << std::endl;
+
   return 0;
   
 
