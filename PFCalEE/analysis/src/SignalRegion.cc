@@ -101,6 +101,9 @@ void SignalRegion::initialise(TTree *aSimTree, TTree *aRecTree,
         if(eventPos.size()!=nLayers_) continue; 
 	std::vector<double> accurateX;
 	std::vector<double> accurateY;
+
+        double totalE(0), wgttotalE(0);
+
 	std::vector<double> signalSR0, signalSR1, signalSR2, signalSR3, signalSR4;
 	std::vector<double> subtractSR0, subtractSR1, subtractSR2, subtractSR3, subtractSR4;
 	signalSR0.resize(eventPos.size(),0);
@@ -130,8 +133,13 @@ void SignalRegion::initialise(TTree *aSimTree, TTree *aRecTree,
 	    double posy = lHit.get_y();
 	    double energy = lHit.energy();
             double leta = lHit.eta();
-            double subtractedenergy = std::max(0.,energy - puDensity_.getDensity(leta,layer,geomConv_.cellSize(layer,leta),nPuVtx));
+
+            totalE += energy;
+            wgttotalE += energy*absweight_[layer];    
+
+            double subtractedenergy = std::max(0.,energy - puDensity_.getDensity(leta,layer,geomConv_.cellSizeInCm(layer,leta),nPuVtx));
             double halfCell = 0.5*geomConv_.cellSize(layer,leta);
+
 	    //SR0
 	    if(fabs(posx + halfCell-accurateX[layer])< halfCell && fabs(posy+ halfCell-accurateY[layer])< halfCell){
                 signalSR0[layer] += energy;
@@ -160,6 +168,8 @@ void SignalRegion::initialise(TTree *aSimTree, TTree *aRecTree,
 
 	 }
 
+         totalE_.push_back(totalE);
+         wgttotalE_.push_back(wgttotalE); 
 	 energySR0_.push_back(signalSR0); 
 	 energySR1_.push_back(signalSR1); 
 	 energySR2_.push_back(signalSR2); 
@@ -180,6 +190,9 @@ void SignalRegion::initialiseHistograms(){
     outputFile_->cd();
 
   //check if already defined
+    p_rawEtotal = new TH1F("p_rawEtotal", "Total E (MIP)", 5000,0,200000);
+    p_wgtEtotal = new TH1F("p_wgtEtotal", "Total weighted E (MIP)",5000, 0, 200000);
+
     p_rawESR0 = new TH1F("p_rawESR0"," E, SR0", 5000,0,200000);
     p_rawESR1 = new TH1F("p_rawESR1"," E, SR1", 5000,0,200000);
     p_rawESR2 = new TH1F("p_rawESR2"," E, SR2", 5000,0,200000);
@@ -226,10 +239,14 @@ void SignalRegion::initialiseHistograms(){
 }
 
 void SignalRegion::fillHistograms(){
-    
+        
     //Fill energy without PU subtraction
     bool subtractPU = false;
     for(unsigned ievt(0); ievt < nevt_; ievt++){
+
+        p_rawEtotal->Fill(totalE_[ievt]);
+        p_wgtEtotal->Fill(wgttotalE_[ievt]);
+
         p_rawESR0->Fill( getEtotalSR0(ievt, subtractPU));
         p_rawESR1->Fill( getEtotalSR1(ievt, subtractPU));
         p_rawESR2->Fill( getEtotalSR2(ievt, subtractPU));
