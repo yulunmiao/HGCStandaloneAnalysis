@@ -135,6 +135,9 @@ private:
     std::vector<std::vector<ROOT::Math::XYZVector> > accuratePos_;
     std::vector<double> absweight_;
 
+    std::vector<double> totalE_;
+    std::vector<double> wgttotalE_;
+
     std::vector<std::vector<double> > energySR0_;
     std::vector<std::vector<double> > energySR1_;
     std::vector<std::vector<double> > energySR2_;
@@ -146,6 +149,9 @@ private:
     std::vector<std::vector<double> > subtractedenergySR2_;
     std::vector<std::vector<double> > subtractedenergySR3_;
     std::vector<std::vector<double> > subtractedenergySR4_;
+
+    TH1F *p_rawEtotal;
+    TH1F *p_wgtEtotal;
 
     TH1F *p_rawESR0;
     TH1F *p_rawESR1;
