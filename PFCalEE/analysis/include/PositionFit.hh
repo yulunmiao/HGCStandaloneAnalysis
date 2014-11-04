@@ -124,6 +124,9 @@ private:
 
   std::vector<TH2F *> p_genxy;
   std::vector<TH2F *> p_recoxy;
+
+  TH2F *p_hitPuContrib;
+
   TH1F *p_residuals_x;
   TH1F *p_residuals_y;
   TH2F *p_etavsphi_max;

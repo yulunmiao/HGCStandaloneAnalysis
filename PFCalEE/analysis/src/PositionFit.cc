@@ -22,6 +22,8 @@ PositionFit::PositionFit(const unsigned nSR,
   nSiLayers_ = nSiLayers;
   debug_ = debug;
 
+  p_hitPuContrib = 0;
+
   p_residuals_x = 0;
   p_residuals_y = 0;
   p_errorMatrix = 0;
@@ -71,7 +73,7 @@ void PositionFit::initialise(TFile *outputFile,
     sigma_[0][iL].resize(nLayers_,0);
     sigma_[1][iL].resize(nLayers_,0);
   }
-  
+
 }
 
 void PositionFit::initialisePositionHistograms(){
@@ -101,6 +103,9 @@ void PositionFit::initialisePositionHistograms(){
    			    nX,minX,maxX,
    			    nY,minY,maxY);
   }
+
+  p_hitPuContrib = new TH2F("p_hitPuContrib",";layer;E_{PU} (MIPs);hits",nLayers_,0,nLayers_,1000,0,50);
+  p_hitPuContrib->StatOverflows();
 
   p_etavsphi_max = new TH2F("p_etavsphi_max",";#phi_{max};#eta_{max};n_{events}",100,-3.1416,3.1416,100,1.4,3.6);
 
@@ -472,8 +477,10 @@ void PositionFit::getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec
 	fabs(posy-ymax[layer]) < step){
       if (puSubtracted) {
 	double leta = lHit.eta();
-	if (debug_>1) std::cout << " -- Hit " << iH << ", energy before PU subtraction: " << energy << " after: " ;
-	energy = std::max(0.,energy - puDensity_.getDensity(leta,layer,geomConv_.cellSizeInCm(layer,leta),nPU));
+	if (debug_>1) std::cout << " -- Hit " << iH << ", eta=" << leta << ", energy before PU subtraction: " << energy << " after: " ;
+	double lCor = puDensity_.getDensity(leta,layer,geomConv_.cellSizeInCm(layer,leta),nPU);
+	p_hitPuContrib->Fill(layer,lCor);
+	energy = std::max(0.,energy - lCor);
 	if (debug_>1) std::cout << energy << std::endl;
       }
       recoPos[layer].SetX(recoPos[layer].X() + posx*energy);
