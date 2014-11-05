@@ -604,9 +604,10 @@ int plotEfromTree(){//main
 	if (iP<nEPts) fitref->SetParameters(0.518*0.518,0.04*0.04,0.18*0.18);
 	else fitref->SetParameters(0.436*0.436,0.0*0.0,0.18*0.18);
       }
-      fitref->SetLineColor(7);
+      fitref->SetLineColor(4);
+      fitref->SetLineStyle(2);
       fitref->Draw("same");
-      lat.SetTextColor(7);
+      lat.SetTextColor(4);
       //sprintf(buf,"CALICE");
       sprintf(buf,"CALICE s=%3.3f, c=%3.3f, n=%3.3f",sqrt(fitref->GetParameter(0)),sqrt(fitref->GetParameter(1)),sqrt(fitref->GetParameter(2)));
       if (iP==0) lat.DrawLatex(30,resoFit[iP]->GetYaxis()->GetXmax()*0.9,buf);
@@ -679,7 +680,7 @@ int plotEfromTree(){//main
 	sprintf(buf,"n=%3.2f",sigmaNoise);
 	lat.DrawLatex(Emin,resoFit[iP]->GetYaxis()->GetXmax()*0.64,buf);
       }
-      lat.SetTextColor(7);
+      lat.SetTextColor(4);
       //sprintf(buf,"CALICE s=%3.3f, c=%3.3f, n=%3.3f",sqrt(fitref->GetParameter(0)),sqrt(fitref->GetParameter(1)),sqrt(fitref->GetParameter(2)));
       sprintf(buf,"CALICE");
       lat.DrawLatex(70,resoFit[iP]->GetYaxis()->GetXmin()*1.35,buf);
