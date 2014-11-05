@@ -21,8 +21,13 @@ PositionFit::PositionFit(const unsigned nSR,
   nLayers_ = nLayers;
   nSiLayers_ = nSiLayers;
   debug_ = debug;
+  useMeanPU_ = false;
 
-  p_hitPuContrib = 0;
+  p_hitMeanPuContrib = 0;
+  p_hitEventPuContrib = 0;
+
+  p_etavsphi = 0;
+  p_etavsphi_max = 0;
 
   p_residuals_x = 0;
   p_residuals_y = 0;
@@ -50,10 +55,12 @@ PositionFit::PositionFit(const unsigned nSR,
 
 }
 
-void PositionFit::initialise(TFile *outputFile, 
-			     std::string outFolder, 
+void PositionFit::initialise(TFile *outputFile,
+			     const std::string outputDir,
+			     const std::string outFolder, 
 			     const HGCSSGeometryConversion & geomConv, 
 			     const HGCSSPUenergy & puDensity){
+  outputDir_ = outputDir;
   setOutputFile(outputFile);
 
   outFolder_ = outFolder;
@@ -87,7 +94,8 @@ void PositionFit::initialisePositionHistograms(){
   unsigned nX=(maxX-minX)/10,nY=(maxY-minY)/10;
   //unsigned nZ=maxZ-minZ;
 
-  outputFile_->cd();
+
+  outputFile_->cd(outputDir_.c_str());
   p_genxy.resize(nLayers_,0);
   p_recoxy.resize(nLayers_,0);
   std::ostringstream lName;
@@ -104,9 +112,13 @@ void PositionFit::initialisePositionHistograms(){
    			    nY,minY,maxY);
   }
 
-  p_hitPuContrib = new TH2F("p_hitPuContrib",";layer;E_{PU} (MIPs);hits",nLayers_,0,nLayers_,1000,0,50);
-  p_hitPuContrib->StatOverflows();
+  p_hitMeanPuContrib = new TH2F("p_hitMeanPuContrib",";layer;E_{PU} (MIPs) from mean;hits",nLayers_,0,nLayers_,1000,0,50);
+  p_hitMeanPuContrib->StatOverflows();
 
+  p_hitEventPuContrib = new TH2F("p_hitEventPuContrib",";layer;E_{PU} (MIPs) from RC;hits",nLayers_,0,nLayers_,1000,0,50);
+  p_hitEventPuContrib->StatOverflows();
+
+  p_etavsphi = new TH2F("p_etavsphi",";#phi_{hit};#eta_{hit};n_{events}",100,-3.1416,3.1416,100,1.4,3.6);
   p_etavsphi_max = new TH2F("p_etavsphi_max",";#phi_{max};#eta_{max};n_{events}",100,-3.1416,3.1416,100,1.4,3.6);
 
   p_residuals_x = new TH1F("p_residuals_x",";xreco-xtruth (mm)",1000,-50,50);
@@ -118,7 +130,7 @@ void PositionFit::initialisePositionHistograms(){
 
 void PositionFit::initialiseFitHistograms(){
 
-  outputFile_->cd();
+  outputFile_->cd(outputDir_.c_str());
 
   //check if already defined
   if (!p_chi2[0]){
@@ -163,7 +175,7 @@ void PositionFit::initialiseFitHistograms(){
 
 void PositionFit::getGlobalMaximum(std::vector<HGCSSRecoHit> *rechitvec,double & aPhimax,double & aEtamax){
 
-  TH2F *etavsphi = new TH2F("etavsphi",";#phi;#eta;hits",150,-3.1416,3.1416,160,1.4,3.0);
+  TH2F *letavsphi = new TH2F("letavsphi",";#phi;#eta;hits",150,-3.1416,3.1416,160,1.4,3.0);
   
 
   for (unsigned iH(0); iH<(*rechitvec).size(); ++iH){//loop on hits
@@ -184,7 +196,8 @@ void PositionFit::getGlobalMaximum(std::vector<HGCSSRecoHit> *rechitvec,double &
     }
     
     ROOT::Math::XYZVector pos(posx,posy,posz);
-    etavsphi->Fill(pos.phi(),pos.eta(),energy);
+    letavsphi->Fill(pos.phi(),pos.eta(),energy);
+    p_etavsphi->Fill(pos.phi(),pos.eta(),energy);
     
   }//loop on hits
 
@@ -192,15 +205,15 @@ void PositionFit::getGlobalMaximum(std::vector<HGCSSRecoHit> *rechitvec,double &
 
   
   //get position of maximum E tower
-  int maxbin = etavsphi->GetMaximumBin();
+  int maxbin = letavsphi->GetMaximumBin();
   int binx,biny,binz;
-  etavsphi->GetBinXYZ(maxbin,binx,biny,binz);
-  aPhimax =etavsphi->GetXaxis()->GetBinCenter(binx); 
-  aEtamax =etavsphi->GetYaxis()->GetBinCenter(biny); 
+  letavsphi->GetBinXYZ(maxbin,binx,biny,binz);
+  aPhimax =letavsphi->GetXaxis()->GetBinCenter(binx); 
+  aEtamax =letavsphi->GetYaxis()->GetBinCenter(biny); 
 
   if (debug_) std::cout << " MaxE cell eta,phi = " << aEtamax << " " << aPhimax << std::endl;
 
-  etavsphi->Delete();
+  letavsphi->Delete();
 }
 
 void PositionFit::getTruthPosition(std::vector<HGCSSGenParticle> *genvec,std::vector<ROOT::Math::XYPoint> & truthPos){
@@ -388,13 +401,50 @@ void PositionFit::getInitialPositions(TTree *aSimTree,
     ymax.resize(nLayers_,0);
     getMaximumCell(rechitvec,phimax,etamax,xmax,ymax);
 
+    //get PU contrib from elsewhere in the event
+    //loop over phi with same etamax
+    //take average per layer: not all 9 cells of 3*3 area have hits...
+    std::vector<double> puE;
+    puE.resize(nLayers_,0);
+    if (nPuVtx>0){
+      unsigned nRandomCones = 50;
+      double phistep = TMath::Pi()/nRandomCones;
+      if (debug_) std::cout << "--- etamax = " << etamax << " phimax=" << phimax << " phistep = " << phistep << std::endl;
+      for (unsigned ipm(0);ipm<nRandomCones;++ipm){
+	std::vector<double> xmaxrc;
+	xmaxrc.resize(nLayers_,0);
+	std::vector<double> ymaxrc;
+	ymaxrc.resize(nLayers_,0);
+	double phirc = phimax-TMath::Pi();
+	if (phirc < -1.*TMath::Pi()) phirc+=2.*TMath::Pi();
+	if (ipm%2==0) phirc += ipm/2*phistep+phistep/2.;
+	else  phirc = phirc - ipm/2*phistep-phistep/2.;
+	if (phirc < -1.*TMath::Pi()) phirc+=2.*TMath::Pi();
+	//take from geom to not be biased by hit having PU, because
+	//not from geom means find cell with a hit closest to maxpos...
+	getMaximumCellFromGeom(phirc,etamax,xmaxrc,ymaxrc);
+	if (debug_) std::cout << "rc #" << ipm << " phirc=" << phirc << " xmax[10]=" << xmaxrc[10] << " ymax[10]=" << ymaxrc[10] << " r=" << sqrt(pow(xmaxrc[10],2)+pow(ymaxrc[10],2)) << std::endl;
+	getPuContribution(rechitvec,xmaxrc,ymaxrc,puE);
+      }
+      
+      //normalise to one cell: must count cells with 0 hit !
+      //use cell size at etamax...
+      for (unsigned iL(0);iL<nLayers_;++iL){//loop on layers
+	if (debug_) std::cout << "layer " << iL ;
+	unsigned nCells = nRandomCones*nSR_*geomConv_.cellSize()/geomConv_.cellSize(iL,etamax);
+	puE[iL] = puE[iL]/nCells;
+	if (debug_) std::cout << " Epu=" << puE[iL] << std::endl;	
+      }
+
+    }//if PU
+
     std::vector<ROOT::Math::XYPoint> recoPos;
     recoPos.resize(nLayers_,ROOT::Math::XYPoint(0,0));
     std::vector<unsigned> nHits;
     nHits.resize(nLayers_,0);
 
     //get energy-weighted position around maximum
-    getEnergyWeightedPosition(rechitvec,nPuVtx,xmax,ymax,recoPos,nHits);
+    getEnergyWeightedPosition(rechitvec,nPuVtx,xmax,ymax,recoPos,nHits,puE);
 
     std::ofstream fout;
     std::ostringstream foutname;
@@ -418,6 +468,16 @@ void PositionFit::getInitialPositions(TTree *aSimTree,
     //firstEvent = false;
   }//loop on entries
 
+
+}
+void PositionFit::getMaximumCellFromGeom(const double & phimax,const double & etamax,std::vector<double> & xmax,std::vector<double> & ymax){
+
+  for (unsigned iL(0); iL<nLayers_;++iL){
+    double theta = 2*atan(exp(-etamax));
+    double rho = avgZ_[iL]/cos(theta);
+    xmax[iL] = rho*tan(theta)*cos(phimax);
+    ymax[iL] = rho*tan(theta)*sin(phimax);
+  }//loop on layers
 
 }
 
@@ -444,7 +504,8 @@ void PositionFit::getMaximumCell(std::vector<HGCSSRecoHit> *rechitvec,const doub
     double posz = lHit.get_z();
     ROOT::Math::XYZVector pos(posx,posy,posz);
     double deta = fabs(pos.eta()-etamax);
-    double dphi = fabs(pos.phi()-phimax);
+    double dphi = pos.phi()-phimax;
+    if (dphi<-1.*TMath::Pi()) dphi += 2*TMath::Pi();
     double dR = sqrt(pow(deta,2)+pow(dphi,2));
     if (dR<dRmin[layer]) {
       dRmin[layer] = dR;
@@ -459,7 +520,7 @@ void PositionFit::getMaximumCell(std::vector<HGCSSRecoHit> *rechitvec,const doub
     
 }
 
-void PositionFit::getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec,const unsigned nPU, const std::vector<double> & xmax,const std::vector<double> & ymax,std::vector<ROOT::Math::XYPoint> & recoPos,std::vector<unsigned> & nHits,const bool puSubtracted){
+void PositionFit::getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec,const unsigned nPU, const std::vector<double> & xmax,const std::vector<double> & ymax,std::vector<ROOT::Math::XYPoint> & recoPos,std::vector<unsigned> & nHits,std::vector<double> & puE,const bool puSubtracted){
   
   std::vector<double> eSum;
   eSum.resize(nLayers_,0);
@@ -473,13 +534,19 @@ void PositionFit::getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec
     double posx = lHit.get_x();
     double posy = lHit.get_y();
 
+
     if (fabs(posx-xmax[layer]) < step && 
 	fabs(posy-ymax[layer]) < step){
       if (puSubtracted) {
 	double leta = lHit.eta();
 	if (debug_>1) std::cout << " -- Hit " << iH << ", eta=" << leta << ", energy before PU subtraction: " << energy << " after: " ;
-	double lCor = puDensity_.getDensity(leta,layer,geomConv_.cellSizeInCm(layer,leta),nPU);
-	p_hitPuContrib->Fill(layer,lCor);
+	double lCorMean =  puDensity_.getDensity(leta,layer,geomConv_.cellSizeInCm(layer,leta),nPU);
+	p_hitMeanPuContrib->Fill(layer,lCorMean);
+	double lCorEvent = puE[layer];
+	p_hitEventPuContrib->Fill(layer,lCorEvent);
+	double lCor = 0;
+	if (useMeanPU_) lCor = lCorMean;
+	else lCor = lCorEvent;
 	energy = std::max(0.,energy - lCor);
 	if (debug_>1) std::cout << energy << std::endl;
       }
@@ -497,6 +564,35 @@ void PositionFit::getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec
     recoPos[iL].SetY(recoPos[iL].Y()/eSum[iL]);
   }
   
+}
+
+void PositionFit::getPuContribution(std::vector<HGCSSRecoHit> *rechitvec, const std::vector<double> & xmax,const std::vector<double> & ymax,std::vector<double> & puE){
+
+  double step = geomConv_.cellSize()*nSR_/2.+0.1;
+
+  for (unsigned iH(0); iH<(*rechitvec).size(); ++iH){//loop on rechits
+    const HGCSSRecoHit & lHit = (*rechitvec)[iH];
+    double energy = lHit.energy();//in MIP already...
+    unsigned layer = lHit.layer();
+    double posx = lHit.get_x();
+    double posy = lHit.get_y();
+
+    //std::cout << "- iH " << iH << " x=" << posx << " xmax=" << xmax[layer] << " y=" << posy << " ymax=" << ymax[layer] << " step " << step << std::endl;
+    if (fabs(posx-xmax[layer]) < step && 
+	fabs(posy-ymax[layer]) < step){
+      if (debug_>1) std::cout << "- iH " << iH 
+			     << " x=" << posx 
+			     << " xmax=" << xmax[layer] 
+			     << " y=" << posy 
+			     << " ymax=" << ymax[layer] 
+			     << " step " << step 
+			     << " --- Pass, layer" << layer 
+			     << " E="<< energy << std::endl;
+      puE[layer] += energy;
+    }
+
+  }//loop on rechits
+  //exit(1);
 }
 
 void PositionFit::fillErrorMatrix(const std::vector<ROOT::Math::XYPoint> & recoPos,const std::vector<ROOT::Math::XYPoint> & truthPos,const std::vector<unsigned> & nHits){
@@ -570,7 +666,7 @@ void PositionFit::finaliseErrorMatrix(){
 
 void PositionFit::fillCorrelationMatrix(){
   std::cout << " -- Filling correlation matrix" << std::endl;
-  outputFile_->cd();
+  outputFile_->cd(outputDir_.c_str());
 
   p_errorMatrix = new TH2D("p_errorMatrix",";i;j;M_{ij}",
 			   nLayers_,0,nLayers_,

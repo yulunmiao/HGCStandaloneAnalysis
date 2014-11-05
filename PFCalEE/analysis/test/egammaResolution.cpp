@@ -261,7 +261,7 @@ int main(int argc, char** argv){//main
   
 
   PositionFit lChi2Fit(nSR,residualMax,nLayers,nSiLayers,debug);
-  lChi2Fit.initialise(outputFile,outFolder,geomConv,puDensity);
+  lChi2Fit.initialise(outputFile,"",outFolder,geomConv,puDensity);
 
   //try getting z position from input file, if doesn't exit,
   //perform first loop over simhits to find z positions of layers

@@ -35,7 +35,8 @@ public:
   ~PositionFit(){};
 
 
-  void initialise(TFile *outputFile, 
+  void initialise(TFile *outputFile,
+		  const std::string outputDir, 
 		  const std::string outFolder, 
 		  const HGCSSGeometryConversion & geomConv, 
 		  const HGCSSPUenergy & puDensity);
@@ -55,9 +56,13 @@ public:
 
   void getTruthPosition(std::vector<HGCSSGenParticle> *genvec,std::vector<ROOT::Math::XYPoint> & truthPos);
 
+  void getMaximumCellFromGeom(const double & phimax,const double & etamax,std::vector<double> & xmax,std::vector<double> & ymax);
+
   void getMaximumCell(std::vector<HGCSSRecoHit> *rechitvec,const double & phimax,const double & etamax,std::vector<double> & xmax,std::vector<double> & ymax);
 
-  void getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec,const unsigned nPU, const std::vector<double> & xmax,const std::vector<double> & ymax,std::vector<ROOT::Math::XYPoint> & recoPos,std::vector<unsigned> & nHits,const bool puSubtracted=true);
+  void getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec,const unsigned nPU, const std::vector<double> & xmax,const std::vector<double> & ymax,std::vector<ROOT::Math::XYPoint> & recoPos,std::vector<unsigned> & nHits,std::vector<double> & puE, const bool puSubtracted=true);
+
+  void getPuContribution(std::vector<HGCSSRecoHit> *rechitvec, const std::vector<double> & xmax,const std::vector<double> & ymax,std::vector<double> & puE);
 
   void fillErrorMatrix(const std::vector<ROOT::Math::XYPoint> & recoPos,const std::vector<ROOT::Math::XYPoint> & truthPos, const std::vector<unsigned> & nHits);
 
@@ -83,6 +88,7 @@ public:
 
   inline void setOutputFile(TFile *outputFile){
     outputFile_ = outputFile;
+    outputFile_->mkdir(outputDir_.c_str());
   };
 
   inline unsigned nSR() const{
@@ -104,6 +110,7 @@ private:
   unsigned nSiLayers_;
   double cellSize_;
   unsigned debug_;
+  bool useMeanPU_;
 
   HGCSSGeometryConversion geomConv_;
   HGCSSPUenergy puDensity_;
@@ -120,15 +127,18 @@ private:
 
   //path for saving data files
   std::string outFolder_;
+  std::string outputDir_;
   TFile *outputFile_;
 
   std::vector<TH2F *> p_genxy;
   std::vector<TH2F *> p_recoxy;
 
-  TH2F *p_hitPuContrib;
+  TH2F *p_hitEventPuContrib;
+  TH2F *p_hitMeanPuContrib;
 
   TH1F *p_residuals_x;
   TH1F *p_residuals_y;
+  TH2F *p_etavsphi;
   TH2F *p_etavsphi_max;
   TH1F *p_nLayersFit;
   TH2F *p_recoXvsLayer;
