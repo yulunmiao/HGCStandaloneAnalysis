@@ -18,6 +18,153 @@
 #include "TString.h"
 #include "TLatex.h"
 #include "TGaxis.h"
+#include "TPaveText.h"
+#include "TROOT.h"
+
+void SetTdrStyle() {
+  gStyle->SetCanvasBorderMode(0);
+  gStyle->SetCanvasColor(kWhite);
+  gStyle->SetCanvasDefH(700); //Height of canvas
+  gStyle->SetCanvasDefW(700); //Width of canvas
+  
+  gStyle->SetCanvasDefX(0);   //POsition on screen
+    gStyle->SetCanvasDefY(0);
+
+    // For the Pad:
+    gStyle->SetPadBorderMode(0);
+    // gStyle->SetPadBorderSize(Width_t size = 1);
+    gStyle->SetPadColor(kWhite);
+    gStyle->SetPadGridX(false);
+    gStyle->SetPadGridY(false);
+    gStyle->SetGridColor(0);
+    gStyle->SetGridStyle(3);
+    gStyle->SetGridWidth(1);
+
+    // For the frame:
+    gStyle->SetFrameBorderMode(0);
+    gStyle->SetFrameBorderSize(10);
+    gStyle->SetFrameFillColor(0);
+    gStyle->SetFrameFillStyle(0);
+    gStyle->SetFrameLineColor(1);
+    gStyle->SetFrameLineStyle(0);
+    gStyle->SetFrameLineWidth(2);
+
+    // For the histo:
+    // gStyle->SetHistFillColor(1);
+    // gStyle->SetHistFillStyle(0);
+    gStyle->SetHistLineColor(1);
+    gStyle->SetHistLineStyle(0);
+    gStyle->SetHistLineWidth(short(0.1));
+    // gStyle->SetLegoInnerR(Float_t rad = 0.5);
+    // gStyle->SetNumberContours(Int_t number = 20);
+
+    gStyle->SetEndErrorSize(0);
+    //gStyle->SetErrorMarker(20);
+    gStyle->SetErrorX(0.5);
+
+    gStyle->SetMarkerStyle(20);
+
+    //For the fit/function:
+    gStyle->SetOptFit(1);
+    gStyle->SetFitFormat("5.4g");
+    gStyle->SetFuncColor(2);
+    gStyle->SetFuncStyle(1);
+    gStyle->SetFuncWidth(1);
+
+    //For the date:
+    gStyle->SetOptDate(0);
+    // gStyle->SetDateX(Float_t x = 0.01);
+    // gStyle->SetDateY(Float_t y = 0.01);
+
+    // For the statistics box:
+    //  gStyle->SetOptFile(0);
+    gStyle->SetOptStat(1);
+    gStyle->SetOptStat("MRn");
+    gStyle->SetStatColor(kWhite);
+    gStyle->SetStatFont(42);
+    gStyle->SetStatFontSize(0.04);///---> gStyle->SetStatFontSize(0.025);
+    gStyle->SetStatTextColor(1);
+    gStyle->SetStatFormat("6.4g");
+    gStyle->SetStatBorderSize(1);
+    gStyle->SetStatH(0.1);
+    gStyle->SetStatW(0.2);///---> gStyle->SetStatW(0.15);
+
+    // gStyle->SetStatStyle(Style_t style = 1001);
+    // gStyle->SetStatX(Float_t x = 0);
+    // gStyle->SetStatY(Float_t y = 0);
+
+    // Margins:
+    gStyle->SetPadTopMargin(0.05);
+    gStyle->SetPadBottomMargin(0.10);
+    gStyle->SetPadLeftMargin(0.16);
+    gStyle->SetPadRightMargin(0.05);
+
+    // For the Global title:
+
+    gStyle->SetOptTitle(0);
+    gStyle->SetTitleFont(42);
+    gStyle->SetTitleColor(1);
+    gStyle->SetTitleTextColor(1);
+    gStyle->SetTitleFillColor(10);
+    gStyle->SetTitleFontSize(0.05);
+    // gStyle->SetTitleH(0); // Set the height of the title box
+    // gStyle->SetTitleW(0); // Set the width of the title box
+    // gStyle->SetTitleX(0); // Set the position of the title box
+    // gStyle->SetTitleY(0.985); // Set the position of the title box
+    // gStyle->SetTitleStyle(Style_t style = 1001);
+    // gStyle->SetTitleBorderSize(2);
+
+    // For the axis titles:
+
+    gStyle->SetTitleColor(1, "XYZ");
+    gStyle->SetTitleFont(42, "XYZ");
+    gStyle->SetTitleSize(0.05, "XYZ");
+    // gStyle->SetTitleXSize(Float_t size = 0.02); // Another way to set the size?
+    // gStyle->SetTitleYSize(Float_t size = 0.02);
+    gStyle->SetTitleXOffset(0.9);
+    gStyle->SetTitleYOffset(1.55);
+    // gStyle->SetTitleOffset(1.1, "Y"); // Another way to set the Offset
+
+    // For the axis labels:
+
+    gStyle->SetLabelColor(1, "XYZ");
+    gStyle->SetLabelFont(42, "XYZ");
+    gStyle->SetLabelOffset(0.007, "XYZ");
+    gStyle->SetLabelSize(0.04, "XYZ");
+
+    // For the axis:
+
+    gStyle->SetAxisColor(1, "XYZ");
+    gStyle->SetStripDecimals(kTRUE);
+    gStyle->SetTickLength(0.02, "XYZ");
+    gStyle->SetNdivisions(510, "XYZ");
+    gStyle->SetPadTickX(1);  // To get tick marks on the opposite side of the frame
+    gStyle->SetPadTickY(1);
+
+    // Change for log plots:
+    gStyle->SetOptLogx(0);
+    gStyle->SetOptLogy(0);
+    gStyle->SetOptLogz(0);
+    gStyle->SetLineStyleString(11,"20 10");
+
+    // Postscript options:
+    //  gStyle->SetPaperSize(20.,20.);
+    // gStyle->SetLineScalePS(Float_t scale = 3);
+    // gStyle->SetLineStyleString(Int_t i, const char* text);
+    // gStyle->SetHeaderPS(const char* header);
+    // gStyle->SetTitlePS(const char* pstitle);
+
+    // gStyle->SetBarOffset(Float_t baroff = 0.5);
+    // gStyle->SetBarWidth(Float_t barwidth = 0.5);
+    // gStyle->SetPaintTextFormat(const char* format = "g");
+    // gStyle->SetPalette(Int_t ncolors = 0, Int_t* colors = 0);
+    // gStyle->SetTimeOffset(Double_t toffset);
+    // gStyle->SetHistMinimumZero(kTRUE);
+
+    //   gStyle->cd();
+
+    gROOT->ForceStyle();
+};
 
 TPad* plot_ratio(TCanvas *canv, bool up){
   canv->SetFillColor      (0);
@@ -74,6 +221,8 @@ int plotEcor(){//main
     "pi-/"
   };
 
+  bool doCalice = true;
+
   bool isCalib = true;//scenario[0].find("calib")!=scenario[0].npos;
 
   bool isEM = scenario[0].find("e-")!=scenario[0].npos;
@@ -90,8 +239,9 @@ int plotEcor(){//main
 
   const unsigned nV = 1;
   TString version[nV] = {"21"};//,"0"};
-  
-  const unsigned nLayers = 34;//34;//9;//33; //54;
+  if (doCalice) version[0] = "23";
+
+  const unsigned nLayers = doCalice?54:34;//34;//9;//33; //54;
 
   const bool doVsE = true;
 
@@ -128,7 +278,19 @@ int plotEcor(){//main
   bool isPU = false;
   
   
-  unsigned genEn[]={15,20,25,30,40,50,60,80,100,150,200,300,400,500};//150,200,300,500};
+  unsigned ElistHGCAL[]={15,20,25,30,40,50,60,80,100,150,200,300,400,500};//150,200,300,500};
+  unsigned ElistCalice[]={10,15,18,20,25,30,35,40,45,50,60,80};
+
+  unsigned genEn[doCalice?sizeof(ElistCalice)/sizeof(unsigned):sizeof(ElistHGCAL)/sizeof(unsigned)];
+  if (doCalice){
+    for (unsigned ie(0);ie<sizeof(ElistCalice)/sizeof(unsigned);++ie){
+      genEn[ie] = ElistCalice[ie];
+    }
+  } else {
+    for (unsigned ie(0);ie<sizeof(ElistHGCAL)/sizeof(unsigned);++ie){
+      genEn[ie] = ElistHGCAL[ie];
+    }
+  }
   //unsigned genEn[]={5,10,15,20,30,50,60,80,100,400};//150,200,300,500};
   //unsigned genEn[]={10,15,18,20,25,30,35,40,45,50,60,80};
   //60,80};//,100,200,300,
@@ -144,6 +306,8 @@ int plotEcor(){//main
 			10,10,100,100,100,
 			6,6,6,6,6};
   //unsigned rebin[6] = {12,10,6,6,6,6};
+
+  SetTdrStyle();
 
   //canvas so they are created only once
   TCanvas *mycL = 0;
@@ -223,7 +387,8 @@ int plotEcor(){//main
 
 	  TFile *inputFile = 0;
 	  std::ostringstream linputStr;
-	  if (doShower) linputStr << plotDir << "globalCompensation_e" << genEn[iE] << pSuffix << ".root";
+	  if (doShower && doCalice) linputStr << plotDir << "validateCalice_e" << genEn[iE] << pSuffix << ".root";
+	  else if (doShower) linputStr << plotDir << "globalCompensation_e" << genEn[iE] << pSuffix << ".root";
 	  else linputStr << plotDir << "validation_e" << genEn[iE] << pSuffix << ".root";
 	  inputFile = TFile::Open(linputStr.str().c_str());
 	  if (!inputFile) {
@@ -282,7 +447,8 @@ int plotEcor(){//main
 	  }//doFrac
 
 	  lName.str("");
-	  if (doShower) lName << "p_EshowerCor";
+	  if (doShower && doCalice) lName << "p_EcorTotal";
+	  else if (doShower) lName << "p_EshowerCor";
 	  //if (doShower) lName << "p_Eshower_" << genEn[iE] << "_" << 5;
 	  else lName << "p_Esim" << pDetector;
 	  p_Etotal[iE] = (TH1F*)gDirectory->Get(lName.str().c_str());
@@ -301,6 +467,7 @@ int plotEcor(){//main
 
 	  //p_Etotal[iE]->Rebin(rebin[iE]);
 	  p_Etotal[iE]->Rebin(genEn[iE]<25?rebinSim:genEn[iE]<80?2*rebinSim:genEn[iE]<250?4*rebinSim:8*rebinSim);
+	  if (doCalice) p_Etotal[iE]->Rebin(genEn[iE]<50?rebinSim:genEn[iE]<150?2*rebinSim:genEn[iE]<250?4*rebinSim:8*rebinSim);
 
 	  lName.str("");
 	  lName << "p_Ereco" << pDetector;
@@ -403,8 +570,8 @@ int plotEcor(){//main
 	TGraphErrors *resoFit = (TGraphErrors *) calib->Clone("resoFit");
 	TGraphErrors *calibReco = (TGraphErrors *) calib->Clone("calibReco");
 	calibReco->SetMarkerStyle(22);
-	calibReco->SetMarkerColor(6);
-	calibReco->SetLineColor(6);
+	calibReco->SetMarkerColor(2);
+	calibReco->SetLineColor(2);
 	TGraphErrors *resoReco = (TGraphErrors *) calibReco->Clone("resoReco");
 	TGraphErrors *calibRecoFit = (TGraphErrors *) calibReco->Clone("calibRecoFit");
 	TGraphErrors *deltaRecoFit = (TGraphErrors *) calibReco->Clone("deltaRecoFit");
@@ -435,20 +602,20 @@ int plotEcor(){//main
 	  TLatex lat;
 	  double latx = std::max(0.,p_Etotal[iE]->GetMean()-5*p_Etotal[iE]->GetRMS());
 	  double laty = p_Etotal[iE]->GetMaximum();
-	  sprintf(buf,"<E> = %3.3f %s",p_Etotal[iE]->GetMean(),doMIPconv?"MIP":unitStr);
+	  sprintf(buf,"<E> = %3.2f %s",p_Etotal[iE]->GetMean(),doMIPconv?"MIP":unitStr);
 	  lat.DrawLatex(latx,laty*0.9,buf);
-	  sprintf(buf,"RMS = %3.3f #pm %3.1f %s",p_Etotal[iE]->GetRMS(),p_Etotal[iE]->GetRMSError(),doMIPconv?"MIP":unitStr);
+	  sprintf(buf,"RMS = %3.2f #pm %3.1f %s",p_Etotal[iE]->GetRMS(),p_Etotal[iE]->GetRMSError(),doMIPconv?"MIP":unitStr);
 	  lat.DrawLatex(latx,laty*0.8,buf);
-	  sprintf(buf,"RMS/mean = %3.3f",p_Etotal[iE]->GetRMS()/p_Etotal[iE]->GetMean());
+	  sprintf(buf,"RMS/mean = %3.2f",p_Etotal[iE]->GetRMS()/p_Etotal[iE]->GetMean());
 	  lat.DrawLatex(latx,laty*0.7,buf);
-	  sprintf(buf,"<Efit> = %3.3f +/- %3.3f %s",fitResult->GetParameter(1),fitResult->GetParError(1),doMIPconv?"MIP":unitStr);
+	  sprintf(buf,"<Efit> = %3.2f +/- %3.2f %s",fitResult->GetParameter(1),fitResult->GetParError(1),doMIPconv?"MIP":unitStr);
 	  lat.DrawLatex(latx,laty*0.6,buf);
-	  sprintf(buf,"RMSfit = %3.3f +/- %3.3f %s",fitResult->GetParameter(2),fitResult->GetParError(2),doMIPconv?"MIP":unitStr);
+	  sprintf(buf,"RMSfit = %3.2f +/- %3.2f %s",fitResult->GetParameter(2),fitResult->GetParError(2),doMIPconv?"MIP":unitStr);
 	  lat.DrawLatex(latx,laty*0.5,buf);
-	  sprintf(buf,"RMS/meanfit = %3.3f",fitResult->GetParameter(2)/fitResult->GetParameter(1));
+	  sprintf(buf,"RMS/meanfit = %3.2f",fitResult->GetParameter(2)/fitResult->GetParameter(1));
 	  lat.DrawLatex(latx,laty*0.4,buf);
 
-	  sprintf(buf,"chi2/NDF = %3.3f/%d = %3.3f",fitResult->GetChisquare(),fitResult->GetNDF(),fitResult->GetChisquare()/fitResult->GetNDF());
+	  sprintf(buf,"#chi^{2}/N = %3.2f/%d",fitResult->GetChisquare(),fitResult->GetNDF());//,fitResult->GetChisquare()/fitResult->GetNDF());
           lat.DrawLatex(latx,laty*0.3,buf);
 
 
@@ -509,20 +676,20 @@ int plotEcor(){//main
 	    TLatex lat;
 	    double latx = std::max(0.,p_Ereco[iE]->GetMean()-5*p_Ereco[iE]->GetRMS());
 	    double laty = p_Ereco[iE]->GetMaximum();
-	    sprintf(buf,"<E> = %3.3f %s",p_Ereco[iE]->GetMean(),doMIPconv?"MIP":unitStr);
+	    sprintf(buf,"<E> = %3.2f %s",p_Ereco[iE]->GetMean(),doMIPconv?"MIP":unitStr);
 	    lat.DrawLatex(latx,laty*0.9,buf);
-	    sprintf(buf,"RMS = %3.3f #pm %3.1f %s",p_Ereco[iE]->GetRMS(),p_Ereco[iE]->GetRMSError(),doMIPconv?"MIP":unitStr);
+	    sprintf(buf,"RMS = %3.2f #pm %3.1f %s",p_Ereco[iE]->GetRMS(),p_Ereco[iE]->GetRMSError(),doMIPconv?"MIP":unitStr);
 	    lat.DrawLatex(latx,laty*0.8,buf);
-	    sprintf(buf,"RMS/mean = %3.3f",p_Ereco[iE]->GetRMS()/p_Ereco[iE]->GetMean());
+	    sprintf(buf,"RMS/mean = %3.2f",p_Ereco[iE]->GetRMS()/p_Ereco[iE]->GetMean());
 	    lat.DrawLatex(latx,laty*0.7,buf);
-	    sprintf(buf,"<Efit> = %3.3f +/- %3.3f %s",fitResult->GetParameter(1),fitResult->GetParError(1),doMIPconv?"MIP":unitStr);
+	    sprintf(buf,"<Efit> = %3.2f +/- %3.2f %s",fitResult->GetParameter(1),fitResult->GetParError(1),doMIPconv?"MIP":unitStr);
 	    lat.DrawLatex(latx,laty*0.6,buf);
-	    sprintf(buf,"RMSfit = %3.3f +/- %3.3f %s",fitResult->GetParameter(2),fitResult->GetParError(2),doMIPconv?"MIP":unitStr);
+	    sprintf(buf,"RMSfit = %3.2f +/- %3.2f %s",fitResult->GetParameter(2),fitResult->GetParError(2),doMIPconv?"MIP":unitStr);
 	    lat.DrawLatex(latx,laty*0.5,buf);
-	    sprintf(buf,"RMS/meanfit = %3.3f",fitResult->GetParameter(2)/fitResult->GetParameter(1));
+	    sprintf(buf,"RMS/meanfit = %3.2f",fitResult->GetParameter(2)/fitResult->GetParameter(1));
 	    lat.DrawLatex(latx,laty*0.4,buf);
 	    
-	    sprintf(buf,"chi2/NDF = %3.3f/%d = %3.3f",fitResult->GetChisquare(),fitResult->GetNDF(),fitResult->GetChisquare()/fitResult->GetNDF());
+	    sprintf(buf,"#chi^{2}/N = %3.2f/%d",fitResult->GetChisquare(),fitResult->GetNDF());//,fitResult->GetChisquare()/fitResult->GetNDF());
 	    lat.DrawLatex(latx,laty*0.3,buf);
       
 	    Int_t np=calibReco->GetN();
@@ -573,12 +740,12 @@ int plotEcor(){//main
 
 	    TGraphErrors * gr =( i==0 ? calib : i==1 ? calibFit : i==2 ? reso : resoFit);
 
-	    gr->GetXaxis()->SetLabelSize(0.06);
-	    gr->GetXaxis()->SetTitleSize(0.06);
-	    gr->GetYaxis()->SetLabelSize(0.06);
-	    gr->GetYaxis()->SetTitleSize(0.06);
-	    gr->GetXaxis()->SetTitleOffset(0.8);
-	    gr->GetYaxis()->SetTitleOffset(0.9);
+	    //gr->GetXaxis()->SetLabelSize(0.06);
+	    //gr->GetXaxis()->SetTitleSize(0.06);
+	    //gr->GetYaxis()->SetLabelSize(0.06);
+	    //gr->GetYaxis()->SetTitleSize(0.06);
+	    //gr->GetXaxis()->SetTitleOffset(0.8);
+	    //gr->GetYaxis()->SetTitleOffset(0.9);
 
 	    gPad->SetGridx(1);
 	    gPad->SetGridy(1);
@@ -587,6 +754,7 @@ int plotEcor(){//main
 	    if (i==3 && nSmear>1) gr->SetTitle(smearFact[iSm]);
 	    else gr->SetTitle("");
 	    if (i%4>1) gr->SetMaximum(std::max(resoFit->GetMaximum(),resoRecoFit->GetMaximum()));
+	    gr->SetMinimum(0);
 	    gr->Draw(i<4? "ap" : "p");
 	    //gr->GetYaxis()->SetRangeUser(0,i%4<2?100 : 0.2);
 	    
@@ -597,26 +765,26 @@ int plotEcor(){//main
 	      else gr->GetYaxis()->SetTitle("Average energy deposited ["+TString(unitStr)+"]"); 
 	    }
 	    else { 
-	      gr->GetXaxis()->SetTitle(doVsE?"Beam energy [GeV]" :"1/#sqrt{Beam energy} [1/#sqrt{GeV}]"); 
-	      gr->GetYaxis()->SetTitle("Relative energy resolution");     
+	      gr->GetXaxis()->SetTitle(doVsE?"E (GeV)" :"1/#sqrt{Beam energy} [1/#sqrt{GeV}]"); 
+	      gr->GetYaxis()->SetTitle("#sigma/E");     
 	    }
 	    char buf[500];
 	    if(i<2 || (!isG4File && (i==4 || i==5))) {
 	      //TF1 *fitFunc=new TF1("calib","[0]+[1]*x",gr->GetXaxis()->GetXmin(),gr->GetXaxis()->GetXmax());
 	      TF1 *fitFunc=new TF1("calib","[0]+[1]*x",10,50);
 	      if (i<4) fitFunc->SetLineColor(1);
-	      else fitFunc->SetLineColor(6);
+	      else fitFunc->SetLineColor(2);
 	      gr->Fit(fitFunc,"RME");
 	      TLatex lat;
-	      if (i>3) lat.SetTextColor(6);
+	      if (i>3) lat.SetTextColor(2);
 	      else lat.SetTextColor(1);
-	      sprintf(buf,"<E> #propto a + b #times E ");
+	      sprintf(buf,"<E> = a + b #times E ");
 	      if (i<2) lat.DrawLatex(genEn[0],gr->GetYaxis()->GetXmax()*0.9,buf);
-	      sprintf(buf,"a = %3.3f #pm %3.3f %s",fitFunc->GetParameter(0),fitFunc->GetParError(0),unitStr);
+	      sprintf(buf,"a = %3.2f #pm %3.2f %s",fitFunc->GetParameter(0),fitFunc->GetParError(0),unitStr);
 	      lat.DrawLatex(genEn[0]+i/4*50,gr->GetYaxis()->GetXmax()*(0.8-i/2*0.25),buf);
-	      sprintf(buf,"b = %3.3f #pm %3.3f %s/GeV",fitFunc->GetParameter(1),fitFunc->GetParError(1),unitStr);
+	      sprintf(buf,"b = %3.2f #pm %3.2f %s/GeV",fitFunc->GetParameter(1),fitFunc->GetParError(1),unitStr);
 	      lat.DrawLatex(genEn[0]+i/4*50,gr->GetYaxis()->GetXmax()*(0.7-i/2*0.25),buf);
-	      sprintf(buf,"chi2/NDF = %3.3f/%d = %3.3f",fitFunc->GetChisquare(),fitFunc->GetNDF(),fitFunc->GetChisquare()/fitFunc->GetNDF());
+	      sprintf(buf,"#chi^{2}/N = %3.2f/%d",fitFunc->GetChisquare(),fitFunc->GetNDF());//,fitFunc->GetChisquare()/fitFunc->GetNDF());
 	      lat.DrawLatex(genEn[0]+i/4*50,gr->GetYaxis()->GetXmax()*(0.6-i/2*0.25),buf);
 
 	      //draw deltaE/E vs E
@@ -659,7 +827,8 @@ int plotEcor(){//main
 		//else fitFunc2 =new TF1("reso","sqrt([0]*x*x+[1])",gr->GetXaxis()->GetXmin(),0.2);//gr->GetXaxis()->GetXmax());
 
 		TF1* fitref = (TF1*)fitFunc2->Clone();
-		fitref->SetLineColor(7);
+		fitref->SetLineColor(4);
+		fitref->SetLineStyle(2);
 		fitref->SetLineWidth(2);
 		if (!isEM){
 		  fitref->SetParameter(0,0.436*0.436);
@@ -676,12 +845,12 @@ int plotEcor(){//main
 		fitFunc2->SetParameter(1,0.01);
 		fitFunc2->SetParLimits(1,0,1);
 		if (addNoiseTerm) {
-		  if (!isEM) fitref->SetParameter(2,0.02*0.02);
+		  if (!isEM) fitref->SetParameter(2,0.18*0.18);
 		  else fitref->SetParameter(2,0.06*0.06);
-		  if (!isEM) fitFunc2->SetParameter(2,0.02*0.02);
+		  if (!isEM) fitFunc2->SetParameter(2,doCalice?0.18*0.18:0.02*0.02);
 		  else fitFunc2->SetParameter(2,0.06*0.06);
 		  fitFunc2->SetParLimits(2,0,2);
-		  if (!isEM) fitFunc2->FixParameter(2,0.02*0.02);
+		  if (!isEM) fitFunc2->FixParameter(2,doCalice?0.18*0.18:0.02*0.02);
 		  else fitFunc2->FixParameter(2,0.06*0.06);
 		}
 		if (i<4) {
@@ -693,7 +862,7 @@ int plotEcor(){//main
 		  //fitFunc2->SetLineColor(6);
 		  //fitFunc2->SetParameter(2,0.);
 		  //fitFunc2->SetParLimits(2,0,0);
-		  //fitref->Draw("same");
+		  if (doCalice) fitref->Draw("same");
 		}
 		gr->Fit(fitFunc2,"RME");
 		sigmaStoch[iSm][iS][i] = sqrt(fitFunc2->GetParameter(0));
@@ -704,33 +873,63 @@ int plotEcor(){//main
 		  sigmaNoise[iSm][iS][i] = sqrt(fitFunc2->GetParameter(2));
 		  sigmaNoiseErr[iSm][iS][i] = fitFunc2->GetParError(2)/(2*sigmaNoise[iSm][iS][i]);
 		}
-		TLatex lat;
-		if (i>3) lat.SetTextColor(6);
-		else lat.SetTextColor(1);
+		//TLatex lat;
+		double Emin = doVsE? (doCalice?55: 300) : 1/sqrt(genEn[nGenEn-1]);
+		TPaveText *pt = new TPaveText(Emin,gr->GetYaxis()->GetXmin()*1.8,genEn[nGenEn-1],gr->GetYaxis()->GetXmax()*0.75);
+		pt->SetFillColor(10);
+		pt->SetLineColor(1);
+		pt->SetShadowColor(0);
+		pt->SetTextFont(42);
+		pt->SetTextSize(0.04);
+		if (i>3) pt->SetTextColor(2);
+		else pt->SetTextColor(1);
 		//if (addNoiseTerm) sprintf(buf,"#oplus #frac{n}{E}");
-		//else sprintf(buf,"#frac{#sigma}{E} #propto #frac{s}{#sqrt{E}} #oplus c");
-		sprintf(buf,"#frac{#sigma}{E} #propto #frac{s}{#sqrt{E}} #oplus c #oplus #frac{n}{E}");
-		double Emin = doVsE?140 : 1/sqrt(genEn[nGenEn-1]);
-		if (i<4) lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax(),buf);
-		//else lat.DrawLatex(doVsE?Emin+20:Emin+0.1,gr->GetYaxis()->GetXmax()*0.95,buf);
+		//else sprintf(buf,"#frac{#sigma}{E} = #frac{s}{#sqrt{E}} #oplus c");
+		sprintf(buf,"#frac{#sigma}{E} = #frac{s}{#sqrt{E}} #oplus c #oplus #frac{n}{E}");
+		if (i<4) pt->AddText(buf);
+			   //(Emin,gr->GetYaxis()->GetXmax()*0.9,buf);
+		//else pt->AddText(doVsE?Emin+20:Emin+0.1,gr->GetYaxis()->GetXmax()*0.95,buf);
 		sprintf(buf,"s=%3.3f #pm %3.3f",sigmaStoch[iSm][iS][i],sigmaStochErr[iSm][iS][i]);
-		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.9-i/6*0.3),buf);
+		if (i<4) pt->AddText(buf);
+			   //(Emin,gr->GetYaxis()->GetXmax()*(0.8-i/6*0.3),buf);
 		sprintf(buf,"c=%3.3f #pm %3.3f",sigmaConst[iSm][iS][i],sigmaConstErr[iSm][iS][i]);
-		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.85-i/6*0.3),buf);
-		sprintf(buf,"chi2/NDF = %3.3f/%d = %3.3f",fitFunc2->GetChisquare(),fitFunc2->GetNDF(),fitFunc2->GetChisquare()/fitFunc2->GetNDF());
-		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.75-i/6*0.3),buf);
+		if (i<4) pt->AddText(buf);
+			   //(Emin,gr->GetYaxis()->GetXmax()*(0.75-i/6*0.3),buf);
 		//if (i>3){
 		if (addNoiseTerm) {
-		  sprintf(buf,"n=%3.3f #pm %3.3f",sigmaNoise[iSm][iS][i],sigmaNoiseErr[iSm][iS][i]);
-		  lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.8-i/6*0.3),buf);
+		  sprintf(buf,"n=%3.2f",sigmaNoise[iSm][iS][i]);//,sigmaNoiseErr[iSm][iS][i]);
+		  if (i<4) pt->AddText(buf);
+			   //(Emin,gr->GetYaxis()->GetXmax()*(0.7-i/6*0.3),buf);
 		}
-		lat.SetTextColor(7);
-		sprintf(buf,"CALICE s=%3.3f, c=%3.3f",sqrt(fitref->GetParameter(0)),sqrt(fitref->GetParameter(1)));
+		sprintf(buf,"#chi^{2}/N = %3.1f/%d",fitFunc2->GetChisquare(),fitFunc2->GetNDF());//,fitFunc2->GetChisquare()/fitFunc2->GetNDF());
+		if (i<4) pt->AddText(buf);
+			   //(Emin,gr->GetYaxis()->GetXmax()*(0.65-i/6*0.3),buf);
+
+		//lat.SetTextColor(4);
+		sprintf(buf,"CALICE s=%3.2f, c=%3.2f",sqrt(fitref->GetParameter(0)),sqrt(fitref->GetParameter(1)));
 		if (addNoiseTerm) {
-		  sprintf(buf,"CALICE s=%3.3f, c=%3.3f, n=%3.3f",sqrt(fitref->GetParameter(0)),sqrt(fitref->GetParameter(1)),sqrt(fitref->GetParameter(2)));
+		  sprintf(buf,"CALICE s=%3.2f, c=%3.2f, n=%3.2f",sqrt(fitref->GetParameter(0)),sqrt(fitref->GetParameter(1)),sqrt(fitref->GetParameter(2)));
 		}
-		//if (i>3) lat.DrawLatex(8,gr->GetYaxis()->GetXmin()*0.9,buf);
+		if (i<4) pt->Draw();
+		TLatex lat;
+		lat.SetTextColor(4);
+		lat.SetTextSize(0.045);
+		if (i>3 && doCalice) {
+		  lat.DrawLatex(8,gr->GetYaxis()->GetXmin()*0.9,buf);
+		}
 	      }
+
+	    myc[3]->cd();
+	    TLatex lat;
+	    lat.SetTextSize(0.03);
+	    lat.DrawLatexNDC(0.02,0.02,"HGCAL Geant4 standalone simulation");
+
+	    TLegend *leg = new TLegend(0.53,0.78,0.93,0.93);
+	    leg->SetFillColor(10);
+	    leg->AddEntry(resoRecoFit,"Uncorrected","L");
+	    leg->AddEntry(resoFit,"Global SW comp","L");
+	    leg->Draw("same");
+
 	    myc[i%4]->Update();
 	    if (doShower) {
 	      myc[i%4]->Print(plotDir+"/"+type[i]+"_Shower.pdf");
@@ -842,7 +1041,7 @@ int plotEcor(){//main
     lat.DrawLatex(3,0.037,buf);
     
     lat.SetTextColor(1);
-    sprintf(buf,"c #propto c_{0} #oplus #frac{x}{#sqrt{n}}, n=%3.0f #pm %3.0f",BE->GetParameter(1),BE->GetParError(1));
+    sprintf(buf,"c = c_{0} #oplus #frac{x}{#sqrt{n}}, n=%3.0f #pm %3.0f",BE->GetParameter(1),BE->GetParError(1));
     lat.DrawLatex(8,0.005,buf);
     
     //TLegend *leg = new TLegend(0.5,0.12,0.89,0.3);
