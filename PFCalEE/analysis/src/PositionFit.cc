@@ -14,20 +14,26 @@ PositionFit::PositionFit(const unsigned nSR,
 			 const double & residualMax, 
 			 const unsigned nLayers, 
 			 const unsigned nSiLayers,
-			 unsigned debug){
+			 const bool applyPuMixFix,
+			 const unsigned debug
+			 ){
   nSR_ = nSR;
   residualMax_ = residualMax;
   chi2ndfmax_ = 20;
   nLayers_ = nLayers;
   nSiLayers_ = nSiLayers;
   debug_ = debug;
-  useMeanPU_ = false;
+  useMeanPU_ = true;
+  fixForPuMixBug_ = applyPuMixFix;
 
   p_hitMeanPuContrib = 0;
   p_hitEventPuContrib = 0;
 
   p_etavsphi = 0;
   p_etavsphi_max = 0;
+  p_etavsphi_truth = 0;
+  p_yvsx_max = 0;
+  p_yvsx_truth = 0;
 
   p_residuals_x = 0;
   p_residuals_y = 0;
@@ -84,16 +90,12 @@ void PositionFit::initialise(TFile *outputFile,
 }
 
 void PositionFit::initialisePositionHistograms(){
-  //for xvsy plots
-  double minX=-1700,maxX=1700;
-  double minY=-1700,maxY=1700;
-  //double minZ=3170,maxZ=3370;
-  //double minX=-510,maxX=510;
-  //double minY=-510,maxY=510;
-  //double minZ=-1000,maxZ=1000;
-  unsigned nX=(maxX-minX)/10,nY=(maxY-minY)/10;
-  //unsigned nZ=maxZ-minZ;
-
+  //for yvsx plots
+  unsigned nX=2*1700/10-2;
+  double minX=-1*nX*5-5,maxX=nX*5+5;
+  double minY=minX,maxY=maxX;
+  nX += 1;
+  unsigned nY = nX;
 
   outputFile_->cd(outputDir_.c_str());
   p_genxy.resize(nLayers_,0);
@@ -120,6 +122,13 @@ void PositionFit::initialisePositionHistograms(){
 
   p_etavsphi = new TH2F("p_etavsphi",";#phi_{hit};#eta_{hit};n_{events}",100,-3.1416,3.1416,100,1.4,3.6);
   p_etavsphi_max = new TH2F("p_etavsphi_max",";#phi_{max};#eta_{max};n_{events}",100,-3.1416,3.1416,100,1.4,3.6);
+  p_etavsphi_truth = new TH2F("p_etavsphi_truth",";#phi_{gen};#eta_{gen};n_{events}",100,-3.1416,3.1416,100,1.4,3.6);
+
+  p_yvsx_max = new TH2F("p_yvsx_max",";x_{max};y_{max};n_{events}",
+			nX,minX,maxX,nY,minY,maxY);
+  p_yvsx_truth = new TH2F("p_yvsx_truth",";x_{gen};y_{gen};n_{events}",
+			  nX,minX,maxX,nY,minY,maxY);
+
 
   p_residuals_x = new TH1F("p_residuals_x",";xreco-xtruth (mm)",1000,-50,50);
   p_residuals_y = new TH1F("p_residuals_y",";yreco-ytruth (mm)",1000,-50,50);
@@ -182,7 +191,9 @@ void PositionFit::getGlobalMaximum(std::vector<HGCSSRecoHit> *rechitvec,double &
     const HGCSSRecoHit & lHit = (*rechitvec)[iH];
     
     double posx = lHit.get_x();
+    if (fixForPuMixBug_) posx-=1.25;
     double posy = lHit.get_y();
+    if (fixForPuMixBug_) posy-=1.25;
     double posz = lHit.get_z();
     //double radius = sqrt(posx*posx+posy*posy);
     double energy = lHit.energy();
@@ -239,6 +250,7 @@ void PositionFit::getTruthPosition(std::vector<HGCSSGenParticle> *genvec,std::ve
 	double y = y0+(avgZ_[iL]-z0)*(*genvec)[iP].py()/(*genvec)[iP].pz();
 	//std::cout << "Lay " << iL << ": " << x << " " << y << " " << avgZ_[iL] << std::endl;
 	p_genxy[iL]->Fill(x,y,1);
+	p_etavsphi_truth->Fill((*genvec)[iP].phi(),(*genvec)[iP].eta());
 	truthPos[iL] = ROOT::Math::XYPoint(x,y);
       }
       
@@ -394,12 +406,14 @@ void PositionFit::getInitialPositions(TTree *aSimTree,
     std::vector<ROOT::Math::XYPoint> truthPos;
     truthPos.resize(nLayers_,ROOT::Math::XYPoint());
     getTruthPosition(genvec,truthPos);
+    p_yvsx_truth->Fill(truthPos[10].X(),truthPos[10].Y());
 
     std::vector<double> xmax;
     xmax.resize(nLayers_,0);
     std::vector<double> ymax;
     ymax.resize(nLayers_,0);
     getMaximumCell(rechitvec,phimax,etamax,xmax,ymax);
+    p_yvsx_max->Fill(xmax[10],ymax[10]);
 
     //get PU contrib from elsewhere in the event
     //loop over phi with same etamax
@@ -488,11 +502,6 @@ void PositionFit::getMaximumCell(std::vector<HGCSSRecoHit> *rechitvec,const doub
   
   for (unsigned iH(0); iH<(*rechitvec).size(); ++iH){//loop on rechits
     const HGCSSRecoHit & lHit = (*rechitvec)[iH];
-    if (debug_>1) {
-      std::cout << " --  RecoHit " << iH << "/" << (*rechitvec).size() << " --" << std::endl
-		<< " --  position x,y " << lHit.get_x() << "," << lHit.get_y() << std::endl;
-      lHit.Print(std::cout);
-    }
     
     unsigned layer = lHit.layer();
     if (layer >= nLayers_) {
@@ -500,8 +509,17 @@ void PositionFit::getMaximumCell(std::vector<HGCSSRecoHit> *rechitvec,const doub
     }
     
     double posx = lHit.get_x();
+    if (fixForPuMixBug_) posx-=1.25;
     double posy = lHit.get_y();
+    if (fixForPuMixBug_) posy-=1.25;
     double posz = lHit.get_z();
+    if (debug_>1) {
+      std::cout << " --  RecoHit " << iH << "/" << (*rechitvec).size() << " --" << std::endl
+		<< " --  position x,y " << posx << "," << posy << std::endl;
+      lHit.Print(std::cout);
+    }
+
+
     ROOT::Math::XYZVector pos(posx,posy,posz);
     double deta = fabs(pos.eta()-etamax);
     double dphi = pos.phi()-phimax;
@@ -532,7 +550,9 @@ void PositionFit::getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec
     double energy = lHit.energy();//in MIP already...
     unsigned layer = lHit.layer();
     double posx = lHit.get_x();
+    if (fixForPuMixBug_) posx-=1.25;
     double posy = lHit.get_y();
+    if (fixForPuMixBug_) posy-=1.25;
 
 
     if (fabs(posx-xmax[layer]) < step && 
@@ -575,7 +595,9 @@ void PositionFit::getPuContribution(std::vector<HGCSSRecoHit> *rechitvec, const 
     double energy = lHit.energy();//in MIP already...
     unsigned layer = lHit.layer();
     double posx = lHit.get_x();
+    if (fixForPuMixBug_) posx-=1.25;
     double posy = lHit.get_y();
+    if (fixForPuMixBug_) posy-=1.25;
 
     //std::cout << "- iH " << iH << " x=" << posx << " xmax=" << xmax[layer] << " y=" << posy << " ymax=" << ymax[layer] << " step " << step << std::endl;
     if (fabs(posx-xmax[layer]) < step && 

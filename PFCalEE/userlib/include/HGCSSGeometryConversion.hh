@@ -42,7 +42,7 @@ public:
 
   inline double cellSizeInCm(const unsigned aLayer, const double aEta) const{
     return cellSize(aLayer, aEta)/10.;
-  }
+  };
 
   unsigned getNumberOfSiLayers(const DetectorEnum type,
 			       const double & eta=0) const;

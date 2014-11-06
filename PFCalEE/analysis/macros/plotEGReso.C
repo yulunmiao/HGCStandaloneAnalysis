@@ -19,6 +19,8 @@
 #include "TLatex.h"
 #include "TGaxis.h"
 
+#include "TDRStyle.h"
+
 TPad* plot_ratio(TCanvas *canv, bool up){
   canv->SetFillColor      (0);
   canv->SetBorderMode     (0);
@@ -61,8 +63,10 @@ TPad* plot_ratio(TCanvas *canv, bool up){
 
 int plotEGReso(){//main
 
-  const unsigned nPu = 2;
-  unsigned pu[nPu] = {0,140};//,140};
+  SetTdrStyle();
+
+  const unsigned nPu = 1;
+  unsigned pu[nPu] = {140};//,140};
 
   const unsigned nS = 1;
   std::string scenario[nS] = {
@@ -73,9 +77,9 @@ int plotEGReso(){//main
 
   const unsigned nEvtMin = 500;
 
-  TString pSuffix = "";
+  TString pSuffix = "_new";
 
-  unsigned rebinReco = 8;
+  unsigned rebinReco = 2;
 
   bool addNoiseTerm = false;
   
@@ -101,7 +105,7 @@ int plotEGReso(){//main
   Float_t sigmaNoiseErr[nPu][nSR][MAX];
   
   std::ostringstream saveName;
-  unsigned genEn[]={20,30,40,50,60,70,80,90,100,125,150,175,200};
+  unsigned genEn[]={30};//20,30,40,50,60,70,80,90,100,125,150,175,200};
   const unsigned nGenEn=sizeof(genEn)/sizeof(unsigned);
   unsigned rebin[20] = {4,4,4,6,6,
 			6,6,8,8,10,
@@ -168,7 +172,7 @@ int plotEGReso(){//main
 	  
 	  TFile *inputFile = 0;
 	  std::ostringstream linputStr;
-	  linputStr << plotDir << "eta" << eta << "_et" << genEn[iE] << "_pu" << pu[ipu] << ".root";
+	  linputStr << plotDir << "eta" << eta << "_et" << genEn[iE] << "_pu" << pu[ipu] << pSuffix << ".root";
 	  inputFile = TFile::Open(linputStr.str().c_str());
 	  if (!inputFile) {
 	    std::cout << " -- Error, input file " << linputStr.str() << " cannot be opened. Exiting..." << std::endl;
@@ -288,8 +292,8 @@ int plotEGReso(){//main
 	  saveName.str("");
 	  saveName << plotDir << "/Ereco_eta" << eta << "_pu" << puOption << "_SR" << iSR;
 	  mycE[iSR]->Update();
-	  mycE[iSR]->Print((saveName.str()+".png").c_str());
-	  mycE[iSR]->Print((saveName.str()+".pdf").c_str());
+	  mycE[iSR]->Print((saveName.str().c_str()+pSuffix)+".png");
+	  mycE[iSR]->Print((saveName.str().c_str()+pSuffix)+".pdf");
 	  /*
 	}//loop on signal regions
 
@@ -448,12 +452,12 @@ int plotEGReso(){//main
 	for(unsigned i=0; i<4 ; i++){
 	  myc[i]->Update();
 	  if (i>1 && doVsE){
-	    myc[i]->Print(plotDir+"/"+type[i]+"_vsET.pdf");
-	    myc[i]->Print(plotDir+"/"+type[i]+"_vsET.png");
+	    myc[i]->Print(plotDir+"/"+type[i]+"_vsET"+pSuffix+".pdf");
+	    myc[i]->Print(plotDir+"/"+type[i]+"_vsET"+pSuffix+".png");
 	  }
 	  else {
-	    myc[i]->Print(plotDir+"/"+type[i]+".pdf");
-	    myc[i]->Print(plotDir+"/"+type[i]+".png");
+	    myc[i]->Print(plotDir+"/"+type[i]+pSuffix+".pdf");
+	    myc[i]->Print(plotDir+"/"+type[i]+pSuffix+".png");
 	  }
 	}
       }//loop on pu options

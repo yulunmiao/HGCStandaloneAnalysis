@@ -27,10 +27,11 @@ class SignalRegion{
 
 public:
     SignalRegion(const std::string inputFolder, 
-                 unsigned nLayers, 
-                 unsigned nevt,
+                 const unsigned nLayers, 
+                 const unsigned nevt,
                  const HGCSSGeometryConversion & geomConv,
-                 const HGCSSPUenergy & puDensity);
+                 const HGCSSPUenergy & puDensity,
+		 const bool applyPuMixFix);
 
     ~SignalRegion();
 
@@ -130,6 +131,8 @@ private:
     HGCSSGeometryConversion geomConv_;
     HGCSSPUenergy puDensity_;
   //HGCSSCalibration *mycalib_;
+
+  bool fixForPuMixBug_;
 
     std::vector<double> zPos_;
     std::vector<std::vector<ROOT::Math::XYZVector> > accuratePos_;

@@ -139,6 +139,8 @@ int main(int argc, char** argv){//main
   }
   else std::cout << " -- input file " << recFile->GetName() << " successfully opened." << std::endl;
 
+  bool applyPuMixFix = false;
+
   TTree *lRecTree = (TTree*)recFile->Get("RecoTree");
   if (!lRecTree){
     std::cout << " -- Error, tree RecoTree cannot be opened. Trying PU tree..." << std::endl;
@@ -147,6 +149,7 @@ int main(int argc, char** argv){//main
       std::cout << " -- Error, PUTree  cannot be opened. Exiting..." << std::endl;
       return 1;
     }
+    applyPuMixFix = true;
   }
 
 
@@ -260,7 +263,7 @@ int main(int argc, char** argv){//main
   const unsigned nEvts = ((pNevts > lSimTree->GetEntries() || pNevts==0) ? static_cast<unsigned>(lSimTree->GetEntries()) : pNevts) ;
   
 
-  PositionFit lChi2Fit(nSR,residualMax,nLayers,nSiLayers,debug);
+  PositionFit lChi2Fit(nSR,residualMax,nLayers,nSiLayers,applyPuMixFix,debug);
   lChi2Fit.initialise(outputFile,"",outFolder,geomConv,puDensity);
 
   //try getting z position from input file, if doesn't exit,
@@ -276,7 +279,7 @@ int main(int argc, char** argv){//main
     lChi2Fit.performLeastSquareFit(lRecTree,nEvts);
   }
 
-  SignalRegion SignalEnergy(outFolder, nLayers, nEvts, geomConv, puDensity);
+  SignalRegion SignalEnergy(outFolder, nLayers, nEvts, geomConv, puDensity,applyPuMixFix);
   SignalEnergy.initialise(lSimTree, lRecTree, outputFile);
   SignalEnergy.fillHistograms(); 
 

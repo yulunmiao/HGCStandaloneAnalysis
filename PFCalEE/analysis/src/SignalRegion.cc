@@ -6,15 +6,17 @@
 #include "HGCSSGenParticle.hh"
 
 SignalRegion:: SignalRegion(const std::string inputFolder,
-                            unsigned nLayers,
-                            unsigned nevt,
+                            const unsigned nLayers,
+                            const unsigned nevt,
                             const HGCSSGeometryConversion & geomConv,
-                            const HGCSSPUenergy & puDensity){
+                            const HGCSSPUenergy & puDensity,
+			    const bool applyPuMixFix){
 
     nevt_ = nevt;
     nLayers_ = nLayers;
     geomConv_ = geomConv;
     puDensity_ = puDensity;
+    fixForPuMixBug_ = applyPuMixFix;
 
     double xpos(0),ypos(0),zpos(0),xangle(0),yangle(0);    
     int layerIndex(0),eventIndex(0);
@@ -130,7 +132,9 @@ void SignalRegion::initialise(TTree *aSimTree, TTree *aRecTree,
 		continue;
 	    }
 	    double posx = lHit.get_x();
+	    if (fixForPuMixBug_) posx-=1.25;
 	    double posy = lHit.get_y();
+	    if (fixForPuMixBug_) posy-=1.25;
 	    double energy = lHit.energy();
             double leta = lHit.eta();
 

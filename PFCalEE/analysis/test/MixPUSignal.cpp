@@ -218,7 +218,7 @@ int main(int argc, char** argv){//main
   //utility to add cells together to have only one recohit per cell
   HGCSSGeometryConversion geomConv(signalInput.str(),model,cellSize);
   std::vector<unsigned> granularity;
-  granularity.resize(nLayers,1);
+  granularity.resize(nLayers,4);
   geomConv.setGranularity(granularity);
   geomConv.initialiseHistos();
 

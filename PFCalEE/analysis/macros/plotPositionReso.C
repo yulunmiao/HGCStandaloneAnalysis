@@ -19,10 +19,13 @@
 #include "TLatex.h"
 #include "TGaxis.h"
 
+#include "TDRStyle.h"
+
+
 int plotPositionReso(){//main
 
   std::string plotDir = "../PLOTS/gitV00-02-09/version12/gamma/200um/";
-  plotDir += "eta17_et30_pu140";
+  plotDir += "eta17_et30_pu140_new";
 
   TFile *file = TFile::Open((plotDir+".root").c_str());
   
@@ -30,11 +33,42 @@ int plotPositionReso(){//main
   
   file->cd();
 
+  SetTdrStyle();
+  gStyle->SetOptStat("eMRuo");
+
+  //TCanvas *myc = new TCanvas("myc","myc",1);
+
+  TH2F *p_hitMeanPuContrib = (TH2F*)gDirectory->Get("p_hitMeanPuContrib");
+  TH2F *p_hitEventPuContrib = (TH2F*)gDirectory->Get("p_hitEventPuContrib");
+
+  if (p_hitMeanPuContrib && p_hitEventPuContrib){
+
+    TCanvas *mycE = new TCanvas("mycE","mycE",1500,750);//1500,1000);
+
+    mycE->Divide(2,1);
+    mycE->cd(1);
+    gPad->SetRightMargin(0.15);
+    gPad->SetLogz(1);
+    p_hitMeanPuContrib->SetStats(0);
+    p_hitMeanPuContrib->GetYaxis()->SetRangeUser(0,7);
+    p_hitMeanPuContrib->GetZaxis()->SetTitleOffset(0.5);
+    p_hitMeanPuContrib->Draw("colz");
+    mycE->cd(2);
+    gPad->SetRightMargin(0.15);
+    gPad->SetLogz(1);
+    p_hitEventPuContrib->SetStats(0);
+    p_hitEventPuContrib->GetYaxis()->SetRangeUser(0,7);
+    p_hitEventPuContrib->GetZaxis()->SetTitleOffset(0.5);
+    p_hitEventPuContrib->Draw("colz");
+    
+    mycE->Update();
+    mycE->Print((plotDir+"/AveragePuE"+suffix+".pdf").c_str());
+  }
+  //return 1;
+
   TCanvas *mycL = new TCanvas("mycL","mycL",1500,1000);
   TCanvas *mycD = new TCanvas("mycD","mycD",1500,1000);
   TCanvas *mycR = new TCanvas("mycR","mycR",1500,1000);
-
-  //TCanvas *myc = new TCanvas("myc","myc",1);
 
   TH2D *p_errorMatrix = (TH2D*)gDirectory->Get("p_errorMatrix");
   TH1F *p_chi2overNDF = (TH1F*)gDirectory->Get("p_chi2overNDF");
@@ -73,7 +107,6 @@ int plotPositionReso(){//main
 
   mycL->cd(4);
   gPad->SetLogy(1);
-  gStyle->SetOptStat("eMRuo");
   gStyle->SetStatW(0.4);
   //gStyle->SetStatH(0.3);
   p_chi2overNDF->GetXaxis()->SetRangeUser(0,20);
@@ -148,6 +181,7 @@ int plotPositionReso(){//main
   p_recoXvsLayer->GetYaxis()->SetRangeUser(p_recoXvsLayer->GetMean(2)-100,p_recoXvsLayer->GetMean(2)+100);
   p_recoXvsLayer->Draw("colz");
   p_recoXvsLayer->SetStats(0);
+  p_truthXvsLayer->SetMarkerStyle(1);
   p_truthXvsLayer->Draw("same");
   p_truthXvsLayer->SetStats(0);
   mycD->cd(5);
@@ -157,6 +191,7 @@ int plotPositionReso(){//main
   p_recoYvsLayer->GetYaxis()->SetRangeUser(p_recoYvsLayer->GetMean(2)-200,p_recoYvsLayer->GetMean(2)+200);
   p_recoYvsLayer->Draw("colz");
   p_recoYvsLayer->SetStats(0);
+  p_truthYvsLayer->SetMarkerStyle(1);
   p_truthYvsLayer->Draw("same");
   p_truthYvsLayer->SetStats(0);
   mycD->cd(3);
@@ -181,8 +216,9 @@ int plotPositionReso(){//main
 					    p_positionReso->GetMean()+5*p_positionReso->GetRMS());
   p_positionReso->Draw();
   mycR->cd(4);
-  p_angularReso->GetXaxis()->SetRangeUser(p_angularReso->GetMean()-5*p_angularReso->GetRMS(),
-					    p_angularReso->GetMean()+5*p_angularReso->GetRMS());
+  p_angularReso->GetXaxis()->SetRangeUser(0,0.1);
+  //p_angularReso->GetMean()-5*p_angularReso->GetRMS(),
+  //p_angularReso->GetMean()+5*p_angularReso->GetRMS());
   p_angularReso->Draw();
   mycR->cd(2);
   p_impactX_residual->GetXaxis()->SetRangeUser(p_impactX_residual->GetMean()-5*p_impactX_residual->GetRMS(),
@@ -198,7 +234,7 @@ int plotPositionReso(){//main
   p_tanAngleX_residual->Draw();
   mycR->cd(6);
   p_tanAngleY_residual->GetXaxis()->SetRangeUser(p_tanAngleY_residual->GetMean()-5*p_tanAngleY_residual->GetRMS(),
-						 p_tanAngleY_residual->GetMean()+5*p_tanAngleY_residual->GetRMS());
+  						 p_tanAngleY_residual->GetMean()+5*p_tanAngleY_residual->GetRMS());
   p_tanAngleY_residual->Draw();
 
 

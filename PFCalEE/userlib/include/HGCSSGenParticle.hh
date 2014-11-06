@@ -6,6 +6,8 @@
 #include "Rtypes.h"
 #include <sstream>
 #include <map>
+#include <cmath>
+#include "TMath.h"
 
 class HGCSSGenParticle{
 
@@ -60,6 +62,27 @@ public:
   };
   inline int trackID() const {
     return trackID_;
+  };
+
+
+  inline double eta() const {
+    double theta = acos(fabs(zpos_)/sqrt(zpos_*zpos_+xpos_*xpos_+ypos_*ypos_));
+    double leta = -1.*log(tan(theta/2.));
+    if (zpos_>0) return leta;
+    else return -1.*leta;
+  };
+
+  inline double theta() const {
+    return 2*atan(exp(-1.*eta()));
+  };
+
+  inline double phi() const {
+    double x = xpos_;
+    double y = ypos_;
+    if (x==0) return 0;
+    if (x>0) return atan(y/x);
+    else if (y>0) return TMath::Pi()+atan(y/x);
+    else return -1.*TMath::Pi()+atan(y/x);
   };
 
   inline void setPosition(const double & x, const double & y, const double & z) {

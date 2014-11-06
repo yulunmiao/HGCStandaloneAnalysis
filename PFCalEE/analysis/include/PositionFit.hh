@@ -31,7 +31,7 @@ class PositionFit{
 
 public:
 
-  PositionFit(const unsigned nSR,const double & residualMax, const unsigned nLayers, const unsigned nSiLayers, const unsigned debug=0);
+  PositionFit(const unsigned nSR,const double & residualMax, const unsigned nLayers, const unsigned nSiLayers,const bool applyPuMixFix,const unsigned debug=0);
   ~PositionFit(){};
 
 
@@ -111,6 +111,7 @@ private:
   double cellSize_;
   unsigned debug_;
   bool useMeanPU_;
+  bool fixForPuMixBug_;
 
   HGCSSGeometryConversion geomConv_;
   HGCSSPUenergy puDensity_;
@@ -140,6 +141,11 @@ private:
   TH1F *p_residuals_y;
   TH2F *p_etavsphi;
   TH2F *p_etavsphi_max;
+  TH2F *p_etavsphi_truth;
+
+  TH2F *p_yvsx_max;
+  TH2F *p_yvsx_truth;
+
   TH1F *p_nLayersFit;
   TH2F *p_recoXvsLayer;
   TH2F *p_recoYvsLayer;
