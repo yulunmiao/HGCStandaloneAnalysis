@@ -30,7 +30,8 @@ parser.add_option('-S', '--no-submit'   ,    action="store_true",  dest='nosubmi
 enlist=[0]
 if opt.dogun : enlist=[20,30,40,50,60,70,80,90,100,125,150,175,200]
 
-alphaset=[0.361,0.297,0.244,0.200,0.164,0.134,0.110]
+#alphaset=[0.361,0.297,0.244,0.200,0.164,0.134,0.110]
+alphaset=[0.297,0.244,0.200,0.164,0.134,0.110]
 #alphaset=[0.361]
 nPuVtxset=[0,140]
 etaset=[17,19,21,23,25,27,29]
@@ -68,9 +69,9 @@ for nPuVtx in nPuVtxset :
             scriptFile.write('localdir=`pwd`\n')
             scriptFile.write('cp -r %s/data .\n'%os.getcwd())
             if (nPuVtx==0) :
-                scriptFile.write('%s/bin/egammaResolution %s root://eoscms//eos/cms%s/ HGcal_%s.root Digi_%s.root %s.root 2 | tee %s\n'%(os.getcwd(),opt.nevts,eosDir,outTag,outTag,outDir,outlog))
+                scriptFile.write('%s/bin/egammaResolution %s root://eoscms//eos/cms%s/ HGcal_%s.root Digi_%s.root %s.root 2 1 | tee %s\n'%(os.getcwd(),opt.nevts,eosDir,outTag,outTag,outDir,outlog))
             else:
-                scriptFile.write('%s/bin/egammaResolution %s root://eoscms//eos/cms%s/ HGcal_%s.root PuMix%s_%s.root %s.root 2 | tee %s\n'%(os.getcwd(),opt.nevts,eosDir,outTag,nPuVtx,outTag,outDir,outlog)) 
+                scriptFile.write('%s/bin/egammaResolution %s root://eoscms//eos/cms%s/ HGcal_%s.root PuMix%s_%s.root %s.root 2 1 | tee %s\n'%(os.getcwd(),opt.nevts,eosDir,outTag,nPuVtx,outTag,outDir,outlog)) 
                 
             scriptFile.write('echo "--Local directory is " $localdir >> %s\n'%(g4log))
             scriptFile.write('ls * >> %s\n'%(g4log))

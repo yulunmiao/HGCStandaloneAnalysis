@@ -76,7 +76,7 @@ void SetTdrStyle() {
     // Margins:
     gStyle->SetPadTopMargin(0.05);
     gStyle->SetPadBottomMargin(0.10);
-    gStyle->SetPadLeftMargin(0.16);
+    gStyle->SetPadLeftMargin(0.11);
     gStyle->SetPadRightMargin(0.05);
 
     // For the Global title:
@@ -102,7 +102,7 @@ void SetTdrStyle() {
     // gStyle->SetTitleXSize(Float_t size = 0.02); // Another way to set the size?
     // gStyle->SetTitleYSize(Float_t size = 0.02);
     gStyle->SetTitleXOffset(0.9);
-    gStyle->SetTitleYOffset(1.55);
+    gStyle->SetTitleYOffset(1.2);
     // gStyle->SetTitleOffset(1.1, "Y"); // Another way to set the Offset
 
     // For the axis labels:

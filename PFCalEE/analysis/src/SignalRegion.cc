@@ -12,6 +12,7 @@ SignalRegion:: SignalRegion(const std::string inputFolder,
                             const HGCSSPUenergy & puDensity,
 			    const bool applyPuMixFix){
 
+  nSR_ = 5;
     nevt_ = nevt;
     nLayers_ = nLayers;
     geomConv_ = geomConv;
@@ -100,29 +101,56 @@ void SignalRegion::initialise(TTree *aSimTree, TTree *aRecTree,
 	  }
 	}
         std::vector<ROOT::Math::XYZVector> eventPos = accuratePos_[ievt];
+
         if(eventPos.size()!=nLayers_) continue; 
-	std::vector<double> accurateX;
-	std::vector<double> accurateY;
 
-        double totalE(0), wgttotalE(0);
+	//initialise values for current event
+        totalE_ = 0;
+	wgttotalE_ = 0;
+	energySR_.clear();
+	subtractedenergySR_.clear();
 
-	std::vector<double> signalSR0, signalSR1, signalSR2, signalSR3, signalSR4;
-	std::vector<double> subtractSR0, subtractSR1, subtractSR2, subtractSR3, subtractSR4;
-	signalSR0.resize(eventPos.size(),0);
-	signalSR1.resize(eventPos.size(),0);
-	signalSR2.resize(eventPos.size(),0);
-	signalSR3.resize(eventPos.size(),0);
-	signalSR4.resize(eventPos.size(),0);
-	subtractSR0.resize(eventPos.size(),0);
-	subtractSR1.resize(eventPos.size(),0);
-	subtractSR2.resize(eventPos.size(),0);
-	subtractSR3.resize(eventPos.size(),0);
-	subtractSR4.resize(eventPos.size(),0);
-	// set the accurate coordinate for each layer
-	for(unsigned iL(0); iL< eventPos.size(); iL++){
-	    accurateX.push_back(eventPos[iL].x());
-	    accurateY.push_back(eventPos[iL].y());
-	}
+	std::vector<double> emptyvec;
+	emptyvec.resize(nLayers_,0);
+	energySR_.resize(nSR_,emptyvec);
+	subtractedenergySR_.resize(nSR_,emptyvec);
+
+	//get event-by-event PU
+	//get PU contrib from elsewhere in the event
+	//loop over phi with same etamax
+	//take average per layer: not all 9 cells of 3*3 area have hits...
+	/*	std::vector<double> puE;
+	puE.resize(nLayers_,0);
+	if (nPuVtx>0){
+	  unsigned nRandomCones = 50;
+	  double phistep = TMath::Pi()/nRandomCones;
+	  for (unsigned ipm(0);ipm<nRandomCones;++ipm){
+	    std::vector<double> xmaxrc;
+	    xmaxrc.resize(nLayers_,0);
+	    std::vector<double> ymaxrc;
+	    ymaxrc.resize(nLayers_,0);
+	    double phirc = phimax-TMath::Pi();
+	    if (phirc < -1.*TMath::Pi()) phirc+=2.*TMath::Pi();
+	    if (ipm%2==0) phirc += ipm/2*phistep+phistep/2.;
+	    else  phirc = phirc - ipm/2*phistep-phistep/2.;
+	    if (phirc < -1.*TMath::Pi()) phirc+=2.*TMath::Pi();
+	    //take from geom to not be biased by hit having PU, because
+	    //not from geom means find cell with a hit closest to maxpos...
+	    getMaximumCellFromGeom(phirc,etamax,xmaxrc,ymaxrc);
+	    getPuContribution(rechitvec,xmaxrc,ymaxrc,puE);
+	  }
+      
+	  //normalise to one cell: must count cells with 0 hit !
+	  //use cell size at etamax...
+	  for (unsigned iL(0);iL<nLayers_;++iL){//loop on layers
+	    unsigned nCells = nRandomCones*nSR_*geomConv_.cellSize()/geomConv_.cellSize(iL,etamax);
+	    puE[iL] = puE[iL]/nCells;
+	  }
+
+	}//if PU
+	*/
+
+
 	// Define different signal region and sum over energy
 	for (unsigned iH(0); iH<(*rechitvec).size(); ++iH){//loop on hits
 	    const HGCSSRecoHit & lHit = (*rechitvec)[iH];
@@ -138,54 +166,30 @@ void SignalRegion::initialise(TTree *aSimTree, TTree *aRecTree,
 	    double energy = lHit.energy();
             double leta = lHit.eta();
 
-            totalE += energy;
-            wgttotalE += energy*absweight_[layer];    
+            totalE_ += energy;
+            wgttotalE_ += energy*absweight_[layer];    
 
             double subtractedenergy = std::max(0.,energy - puDensity_.getDensity(leta,layer,geomConv_.cellSizeInCm(layer,leta),nPuVtx));
             double halfCell = 0.5*geomConv_.cellSize(layer,leta);
 
-	    //SR0
-	    if(fabs(posx + halfCell-accurateX[layer])< halfCell && fabs(posy+ halfCell-accurateY[layer])< halfCell){
-                signalSR0[layer] += energy;
-	        subtractSR0[layer] += subtractedenergy;
-            }
-            //SR1
-	    if(fabs(posx + halfCell-accurateX[layer]) < 2*halfCell && fabs(posy+ halfCell-accurateY[layer]) < 2*halfCell){
-	        signalSR1[layer] += energy; 
-	        subtractSR1[layer] += subtractedenergy;
-            }
-	    //SR2
-	    if(fabs(posx + halfCell-accurateX[layer]) < 3*halfCell && fabs(posy+ halfCell-accurateY[layer]) < 3*halfCell){
-		signalSR2[layer] += energy;
-	        subtractSR2[layer] += subtractedenergy;
-            }
-	    //SR3
-	    if(fabs(posx + halfCell-accurateX[layer]) < 4*halfCell && fabs(posy+ halfCell-accurateY[layer]) < 4*halfCell){
-		signalSR3[layer] += energy;
-	        subtractSR3[layer] += subtractedenergy;
-            }
-	    //SR4
-	    if(fabs(posx + halfCell-accurateX[layer]) < 5*halfCell && fabs(posy+ halfCell-accurateY[layer]) < 5*halfCell){
-		signalSR4[layer] += energy;
-	        subtractSR4[layer] += subtractedenergy;
-            }
+	    double dx = eventPos[layer].x()-posx;
+	    double dy = eventPos[layer].y()-posy;
+	    
+	    //SR0-4
+	    for (unsigned isr(0); isr<nSR_;++isr){
+	      if ( (fabs(dx) <= ((isr+1)*halfCell)) && (fabs(dy) <= ((isr+1)*halfCell))){
+		energySR_[isr][layer] += energy;
+		subtractedenergySR_[isr][layer] += subtractedenergy;
+	      }
+	    }
+	}//loop on hits
+	
+	fillHistograms();
 
-	 }
+    }//loop on events
 
-         totalE_.push_back(totalE);
-         wgttotalE_.push_back(wgttotalE); 
-	 energySR0_.push_back(signalSR0); 
-	 energySR1_.push_back(signalSR1); 
-	 energySR2_.push_back(signalSR2); 
-	 energySR3_.push_back(signalSR3); 
-	 energySR4_.push_back(signalSR4); 
-	 subtractedenergySR0_.push_back(subtractSR0); 
-	 subtractedenergySR1_.push_back(subtractSR1); 
-	 subtractedenergySR2_.push_back(subtractSR2); 
-	 subtractedenergySR3_.push_back(subtractSR3); 
-	 subtractedenergySR4_.push_back(subtractSR4); 
-
-     }
+    std::cout << " -- Histograms for signal regions have been filled !" << std::endl;
+ 
 }
 
 
@@ -197,108 +201,61 @@ void SignalRegion::initialiseHistograms(){
     p_rawEtotal = new TH1F("p_rawEtotal", "Total E (MIP)", 5000,0,200000);
     p_wgtEtotal = new TH1F("p_wgtEtotal", "Total weighted E (MIP)",5000, 0, 200000);
 
-    p_rawESR0 = new TH1F("p_rawESR0"," E, SR0", 5000,0,200000);
-    p_rawESR1 = new TH1F("p_rawESR1"," E, SR1", 5000,0,200000);
-    p_rawESR2 = new TH1F("p_rawESR2"," E, SR2", 5000,0,200000);
-    p_rawESR3 = new TH1F("p_rawESR3"," E, SR3", 5000,0,200000);
-    p_rawESR4 = new TH1F("p_rawESR4"," E, SR4", 5000,0,200000);
-    p_rawESR0->StatOverflows();
-    p_rawESR1->StatOverflows();
-    p_rawESR2->StatOverflows();
-    p_rawESR3->StatOverflows();
-    p_rawESR4->StatOverflows();
-    
-    p_wgtESR0 = new TH1F("p_wgtESR0"," E, SR0", 5000,0,200000);
-    p_wgtESR1 = new TH1F("p_wgtESR1"," E, SR1", 5000,0,200000);
-    p_wgtESR2 = new TH1F("p_wgtESR2"," E, SR2", 5000,0,200000);
-    p_wgtESR3 = new TH1F("p_wgtESR3"," E, SR3", 5000,0,200000);
-    p_wgtESR4 = new TH1F("p_wgtESR4"," E, SR4", 5000,0,200000);
-    p_wgtESR0->StatOverflows();
-    p_wgtESR1->StatOverflows();
-    p_wgtESR2->StatOverflows();
-    p_wgtESR3->StatOverflows();
-    p_wgtESR4->StatOverflows();
-   
-    p_rawSubtractESR0 = new TH1F("p_rawSubtractESR0"," E (with PU subtraction), SR0", 5000,0,200000);
-    p_rawSubtractESR1 = new TH1F("p_rawSubtractESR1"," E (with PU subtraction), SR1", 5000,0,200000);
-    p_rawSubtractESR2 = new TH1F("p_rawSubtractESR2"," E (with PU subtraction), SR2", 5000,0,200000);
-    p_rawSubtractESR3 = new TH1F("p_rawSubtractESR3"," E (with PU subtraction), SR3", 5000,0,200000);
-    p_rawSubtractESR4 = new TH1F("p_rawSubtractESR4"," E (with PU subtraction), SR4", 5000,0,200000);
-    p_rawSubtractESR0->StatOverflows();
-    p_rawSubtractESR1->StatOverflows();
-    p_rawSubtractESR2->StatOverflows();
-    p_rawSubtractESR3->StatOverflows();
-    p_rawSubtractESR4->StatOverflows();
+    p_rawESR.resize(nSR_,0);
+    p_wgtESR.resize(nSR_,0);
+    p_rawSubtractESR.resize(nSR_,0);
+    p_wgtSubtractESR.resize(nSR_,0);
 
-    p_wgtSubtractESR0 = new TH1F("p_wgtSubtractESR0"," E (with PU subtraction), SR0", 5000,0,200000);
-    p_wgtSubtractESR1 = new TH1F("p_wgtSubtractESR1"," E (with PU subtraction), SR1", 5000,0,200000);
-    p_wgtSubtractESR2 = new TH1F("p_wgtSubtractESR2"," E (with PU subtraction), SR2", 5000,0,200000);
-    p_wgtSubtractESR3 = new TH1F("p_wgtSubtractESR3"," E (with PU subtraction), SR3", 5000,0,200000);
-    p_wgtSubtractESR4 = new TH1F("p_wgtSubtractESR4"," E (with PU subtraction), SR4", 5000,0,200000);
-    p_wgtSubtractESR0->StatOverflows();
-    p_wgtSubtractESR1->StatOverflows();
-    p_wgtSubtractESR2->StatOverflows();
-    p_wgtSubtractESR3->StatOverflows();
-    p_wgtSubtractESR4->StatOverflows();
+    std::ostringstream label;
+    for (unsigned iSR(0);iSR<nSR_;++iSR){
+      label.str("");
+      label << "p_rawESR" << iSR;
+      p_rawESR[iSR] = new TH1F(label.str().c_str(),";E_{SR} (MIPs);events", 5000,0,200000);
+      p_rawESR[iSR]->StatOverflows();
+      label.str("");
+      label << "p_wgtESR" << iSR;
+      p_wgtESR[iSR] = new TH1F(label.str().c_str(),";E_{SR} (MIPs);events", 5000,0,200000);
+      p_wgtESR[iSR]->StatOverflows();
+      
+      label.str("");
+      label << "p_rawSubtractESR" << iSR;
+      p_rawSubtractESR[iSR] = new TH1F(label.str().c_str(),";E_{SR}^{PUsubtr} (MIPs);events", 5000,0,200000);
+      p_rawSubtractESR[iSR]->StatOverflows();
+      label.str("");
+      label << "p_wgtSubtractESR" << iSR;
+      p_wgtSubtractESR[iSR] = new TH1F(label.str().c_str(),";E_{SR}^{PUsubtr} (MIPs);events", 5000,0,200000);
+      p_wgtSubtractESR[iSR]->StatOverflows();
+    }//loop on sr
+
 }
 
 void SignalRegion::fillHistograms(){
         
+  p_rawEtotal->Fill(totalE_);
+  p_wgtEtotal->Fill(wgttotalE_);
+
+  for (unsigned iSR(0);iSR<nSR_;++iSR){
     //Fill energy without PU subtraction
     bool subtractPU = false;
-    for(unsigned ievt(0); ievt < nevt_; ievt++){
-
-        p_rawEtotal->Fill(totalE_[ievt]);
-        p_wgtEtotal->Fill(wgttotalE_[ievt]);
-
-        p_rawESR0->Fill( getEtotalSR0(ievt, subtractPU));
-        p_rawESR1->Fill( getEtotalSR1(ievt, subtractPU));
-        p_rawESR2->Fill( getEtotalSR2(ievt, subtractPU));
-        p_rawESR3->Fill( getEtotalSR3(ievt, subtractPU));
-        p_rawESR4->Fill( getEtotalSR4(ievt, subtractPU));
-
-        double wgtESR0(0), wgtESR1(0), wgtESR2(0), wgtESR3(0), wgtESR4(0);
-        for(unsigned iL(0); iL < nLayers_;iL++){
-           wgtESR0 += getSR0(ievt, iL, subtractPU)*absweight(iL);
-           wgtESR1 += getSR1(ievt, iL, subtractPU)*absweight(iL);
-           wgtESR2 += getSR2(ievt, iL, subtractPU)*absweight(iL);
-           wgtESR3 += getSR3(ievt, iL, subtractPU)*absweight(iL);
-           wgtESR4 += getSR4(ievt, iL, subtractPU)*absweight(iL);
-        }
-        p_wgtESR0->Fill(wgtESR0);
-        p_wgtESR1->Fill(wgtESR1);
-        p_wgtESR2->Fill(wgtESR2);
-        p_wgtESR3->Fill(wgtESR3);
-        p_wgtESR4->Fill(wgtESR4);
+    p_rawESR[iSR]->Fill( getEtotalSR(iSR, subtractPU));
+    
+    double wgtESR = 0;
+    for(unsigned iL(0); iL < nLayers_;iL++){
+      wgtESR += getSR(iSR, iL, subtractPU)*absweight(iL);
     }
- 
-
-   //Fill energy after PU subtraction
+    p_wgtESR[iSR]->Fill(wgtESR);
+    
+    //Fill energy after PU subtraction
     subtractPU = true;
-    for(unsigned ievt(0); ievt < nevt_; ievt++){
-        p_rawSubtractESR0->Fill( getEtotalSR0(ievt, subtractPU));
-        p_rawSubtractESR1->Fill( getEtotalSR1(ievt, subtractPU));
-        p_rawSubtractESR2->Fill( getEtotalSR2(ievt, subtractPU));
-        p_rawSubtractESR3->Fill( getEtotalSR3(ievt, subtractPU));
-        p_rawSubtractESR4->Fill( getEtotalSR4(ievt, subtractPU));
-
-        double wgtSubtractESR0(0), wgtSubtractESR1(0), wgtSubtractESR2(0), wgtSubtractESR3(0), wgtSubtractESR4(0);
-        for(unsigned iL(0); iL < nLayers_;iL++){
-           wgtSubtractESR0 += getSR0(ievt, iL, subtractPU)*absweight(iL);
-           wgtSubtractESR1 += getSR1(ievt, iL, subtractPU)*absweight(iL);
-           wgtSubtractESR2 += getSR2(ievt, iL, subtractPU)*absweight(iL);
-           wgtSubtractESR3 += getSR3(ievt, iL, subtractPU)*absweight(iL);
-           wgtSubtractESR4 += getSR4(ievt, iL, subtractPU)*absweight(iL);
-        }
-        p_wgtSubtractESR0->Fill(wgtSubtractESR0);
-        p_wgtSubtractESR1->Fill(wgtSubtractESR1);
-        p_wgtSubtractESR2->Fill(wgtSubtractESR2);
-        p_wgtSubtractESR3->Fill(wgtSubtractESR3);
-        p_wgtSubtractESR4->Fill(wgtSubtractESR4);
+    p_rawSubtractESR[iSR]->Fill( getEtotalSR(iSR, subtractPU));
+    double wgtSubtractESR = 0;
+    for(unsigned iL(0); iL < nLayers_;iL++){
+      wgtSubtractESR += getSR(iSR, iL, subtractPU)*absweight(iL);
     }
-
-    std::cout << " -- Histograms for signal regions have been filled !" << std::endl;
-
+    p_wgtSubtractESR[iSR]->Fill(wgtSubtractESR);
+    
+  }//loop on SR
+   
 }
 
 

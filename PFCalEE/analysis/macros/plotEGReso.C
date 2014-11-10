@@ -65,30 +65,34 @@ int plotEGReso(){//main
 
   SetTdrStyle();
 
-  const unsigned nPu = 1;
-  unsigned pu[nPu] = {140};//,140};
+  const unsigned nPu = 2;
+  unsigned pu[nPu] = {0,140};
 
   const unsigned nS = 1;
   std::string scenario[nS] = {
     "gamma/200um/"
   };
 
-  const unsigned eta = 17;
+  const unsigned neta = 2;//7;
+  unsigned eta[neta]={17,19};//,21,23,25,27,29};
+
+  double etaval[neta];
+  double etaerr[neta];
 
   const unsigned nEvtMin = 500;
 
-  TString pSuffix = "_new";
+  TString pSuffix = "";
 
   unsigned rebinReco = 2;
 
-  bool addNoiseTerm = false;
+  bool addNoiseTerm = true;
   
   const unsigned nV = 1;
   TString version[nV] = {"12"};//,"0"};
   
   const unsigned nLayers = 30;
 
-  const unsigned nSR = 4;//reject SR0
+  const unsigned nSR = 5;//reject SR0
 
   const bool doVsE = true;
 
@@ -97,43 +101,28 @@ int plotEGReso(){//main
 
   const unsigned MAX = 4;
   TString type[MAX];
-  Float_t sigmaStoch[nPu][nSR][MAX];
-  Float_t sigmaStochErr[nPu][nSR][MAX];
-  Float_t sigmaConst[nPu][nSR][MAX];
-  Float_t sigmaConstErr[nPu][nSR][MAX];
-  Float_t sigmaNoise[nPu][nSR][MAX];
-  Float_t sigmaNoiseErr[nPu][nSR][MAX];
+  double sigmaStoch[nPu][nSR][MAX][neta];
+  double sigmaStochErr[nPu][nSR][MAX][neta];
+  double sigmaConst[nPu][nSR][MAX][neta];
+  double sigmaConstErr[nPu][nSR][MAX][neta];
+  double sigmaNoise[nPu][nSR][MAX][neta];
+  double sigmaNoiseErr[nPu][nSR][MAX][neta];
   
   std::ostringstream saveName;
-  unsigned genEn[]={30};//20,30,40,50,60,70,80,90,100,125,150,175,200};
-  const unsigned nGenEn=sizeof(genEn)/sizeof(unsigned);
+  unsigned genEnAll[]={20,30,40,50,60,70,80,90,100,125,150,175,200};
+  const unsigned nGenEnAll=sizeof(genEnAll)/sizeof(unsigned);
   unsigned rebin[20] = {4,4,4,6,6,
 			6,6,8,8,10,
 			10,10,100,100,100,
 			6,6,6,6,6};
 
 
-  unsigned nx=0,ny=0;
-
-  if (nGenEn>12) {nx=5;ny=3;}
-  else if (nGenEn > 10)
-    {nx=4;ny=3;}
-  else if (nGenEn > 6)
-    {nx=5;ny=2;}
-  else if (nGenEn > 4)
-    {nx=3;ny=2;}
-  else if (nGenEn > 2)
-    {nx=2;ny=2;}
-  else 
-    {nx=nGenEn;ny=1;}
-  
   //canvas so they are created only once
   TCanvas *mycE[nSR];
   for (unsigned iSR(0); iSR<nSR;++iSR){//loop on signal region
     std::ostringstream lName;
     lName << "mycE" << iSR;
     mycE[iSR] = new TCanvas(lName.str().c_str(),lName.str().c_str(),1500,1000);
-    mycE[iSR]->Divide(nx,ny);
   }
 
   const unsigned nCanvas = 4;  
@@ -142,7 +131,7 @@ int plotEGReso(){//main
     std::ostringstream lName;
     lName << "myc" << iC;
     myc[iC] = new TCanvas(lName.str().c_str(),lName.str().c_str(),1);
-    myc[iC]->Divide(2,2);
+    myc[iC]->Divide(2,3);
   }
 
   TH1F *p_chi2overNDF = new TH1F("p_chi2overNDF",";#chi^{2}/NDF",500,0,500);
@@ -159,63 +148,113 @@ int plotEGReso(){//main
       
       TString plotDir = "../PLOTS/gitV00-02-09/version"+version[iV]+"/"+scenario[iS]+"/";
       
-      for (unsigned ipu(0); ipu<nPu; ++ipu){//loop on pu
-	unsigned puOption = pu[ipu];
+      for (unsigned ieta(0);ieta<neta;++ieta){
 	
-       
-	TH1F *p_Ereco[nGenEn][nSR];
-
-	for (unsigned iE(0); iE<nGenEn; ++iE){
+	etaval[ieta] = eta[ieta]/10.;
+	etaerr[ieta] = 0;
+	
+	for (unsigned ipu(0); ipu<nPu; ++ipu){//loop on pu
+	  unsigned puOption = pu[ipu];
 	  
-	  std::cout << "- Processing energy : " << genEn[iE] 
-		    << std::endl;
 	  
-	  TFile *inputFile = 0;
-	  std::ostringstream linputStr;
-	  linputStr << plotDir << "eta" << eta << "_et" << genEn[iE] << "_pu" << pu[ipu] << pSuffix << ".root";
-	  inputFile = TFile::Open(linputStr.str().c_str());
-	  if (!inputFile) {
-	    std::cout << " -- Error, input file " << linputStr.str() << " cannot be opened. Exiting..." << std::endl;
-	    return 1;
+	  //identify valid energy values
+	  bool skip[nGenEnAll];
+	  unsigned nValid = 0;
+	  for (unsigned iE(0); iE<nGenEnAll; ++iE){	  
+	    skip[iE] = false;
+	    TFile *inputFile = 0;
+	    std::ostringstream linputStr;
+	    linputStr << plotDir << "eta" << eta[ieta] << "_et" << genEnAll[iE] << "_pu" << pu[ipu] << pSuffix << ".root";
+	    inputFile = TFile::Open(linputStr.str().c_str());
+	    if (!inputFile) {
+	      std::cout << " -- Error, input file " << linputStr.str() << " cannot be opened. Skipping..." << std::endl;
+	      //	    return 1;
+	      skip[iE] = true;
+	    }
+	    else {
+	      std::cout << " -- File " << inputFile->GetName() << " sucessfully opened." << std::endl;
+	      nValid++;
+	    }
 	  }
-	  else std::cout << " -- File " << inputFile->GetName() << " sucessfully opened." << std::endl;
+	  
+	  unsigned newidx = 0;
+	  const unsigned nGenEn = nValid;
+	  unsigned genEn[nGenEn];
+	  for (unsigned iE(0); iE<nGenEnAll; ++iE){	  
+	    if (!skip[iE]) {
+	      genEn[newidx]=genEnAll[iE];
+	      newidx++;
+	    }
+	  }
+	  
+	  unsigned nx=0,ny=0;
+	  
+	  if (nGenEn>12) {nx=5;ny=3;}
+	  else if (nGenEn > 10)
+	    {nx=4;ny=3;}
+	  else if (nGenEn > 6)
+	    {nx=5;ny=2;}
+	  else if (nGenEn > 4)
+	    {nx=3;ny=2;}
+	  else if (nGenEn > 2)
+	    {nx=2;ny=2;}
+	  else 
+	    {nx=nGenEn;ny=1;}
+	  for (unsigned iSR(0); iSR<nSR;++iSR){//loop on signal region
+	    mycE[iSR]->Clear();
+	    mycE[iSR]->Divide(nx,ny);
+	  }
+	  
+	  TH1F *p_Ereco[nGenEn][nSR];
+	  
+	  for (unsigned iE(0); iE<nGenEn; ++iE){
+	    
+	    std::cout << "- Processing energy : " << genEn[iE] 
+		      << std::endl;
+	    
+	    TFile *inputFile = 0;
+	    std::ostringstream linputStr;
+	    linputStr << plotDir << "eta" << eta[ieta] << "_et" << genEn[iE] << "_pu" << pu[ipu] << pSuffix << ".root";
+	    inputFile = TFile::Open(linputStr.str().c_str());
+	    inputFile->cd();
+
+	    for (unsigned iSR(0); iSR<nSR;++iSR){//loop on signal region
+	      std::cout << " --Processing signal region: " << iSR << std::endl;
+	      std::ostringstream lName;
+	      lName.str("");
+	      lName << "p_wgtSubtractESR" << iSR ;
+	      p_Ereco[iE][iSR] = (TH1F*)gDirectory->Get(lName.str().c_str());
+	      if (!p_Ereco[iE][iSR]){
+		std::cout << " -- ERROR, pointer for histogram " << lName.str() << " is null." << std::endl;
+		return 1;
+	      }
+	      std::cout << " --- Reco E = entries " << p_Ereco[iE][iSR]->GetEntries() 
+			<< " mean " << p_Ereco[iE][iSR]->GetMean() 
+			<< " rms " << p_Ereco[iE][iSR]->GetRMS() 
+			<< " overflows " << p_Ereco[iE][iSR]->GetBinContent(p_Ereco[iE][iSR]->GetNbinsX()+1)
+			<< std::endl;
+	      
+	      //p_Ereco[iE]->Rebin(rebin[iE]);
+	      if (iSR<3) p_Ereco[iE][iSR]->Rebin(genEn[iE]<50?2*rebinReco:genEn[iE]<100?4*rebinReco:genEn[iE]<150?8*rebinReco:16*rebinReco);
+	      else p_Ereco[iE][iSR]->Rebin(genEn[iE]<50?rebinReco:genEn[iE]<100?2*rebinReco:4*rebinReco);
+	    }//loop on SR
+	  }//loop on energies
+	  
+	  
+	  gStyle->SetOptStat(0);
+	  
+	  TGraphErrors *calibReco[nSR];
+	  TGraphErrors *resoReco[nSR];
+	  TGraphErrors *calibRecoFit[nSR];
+	  TGraphErrors *deltaRecoFit[nSR];
+	  TGraphErrors *resoRecoFit[nSR];
 	  
 	  for (unsigned iSR(0); iSR<nSR;++iSR){//loop on signal region
 	    std::cout << " --Processing signal region: " << iSR << std::endl;
-	    std::ostringstream lName;
-	    lName.str("");
-	    lName << "p_wgtSubtractESR" << iSR+1 ;
-	    p_Ereco[iE][iSR] = (TH1F*)gDirectory->Get(lName.str().c_str());
-	    if (!p_Ereco[iE][iSR]){
-	      std::cout << " -- ERROR, pointer for histogram " << lName.str() << " is null." << std::endl;
-	      return 1;
-	    }
-	    std::cout << " --- Reco E = entries " << p_Ereco[iE][iSR]->GetEntries() 
-		      << " mean " << p_Ereco[iE][iSR]->GetMean() 
-		      << " rms " << p_Ereco[iE][iSR]->GetRMS() 
-		      << " overflows " << p_Ereco[iE][iSR]->GetBinContent(p_Ereco[iE][iSR]->GetNbinsX()+1)
-		      << std::endl;
-	      
-	    //p_Ereco[iE]->Rebin(rebin[iE]);
-	    p_Ereco[iE][iSR]->Rebin(genEn[iE]<50?rebinReco:genEn[iE]<100?2*rebinReco:4*rebinReco);
-	  }//loop on SR
-	}//loop on energies
-
-      
-	gStyle->SetOptStat(0);
-
-	TGraphErrors *calibReco[nSR];
-	TGraphErrors *resoReco[nSR];
-	TGraphErrors *calibRecoFit[nSR];
-	TGraphErrors *deltaRecoFit[nSR];
-	TGraphErrors *resoRecoFit[nSR];
-
-	for (unsigned iSR(0); iSR<nSR;++iSR){//loop on signal region
-	  std::cout << " --Processing signal region: " << iSR << std::endl;
-	  TString srStr = "";
-	  srStr += iSR;
-	  //draw calibration curves
-	  calibReco[iSR] = new TGraphErrors();
+	    TString srStr = "";
+	    srStr += iSR;
+	    //draw calibration curves
+	    calibReco[iSR] = new TGraphErrors();
 	  calibReco[iSR]->SetName("calibReco"+srStr);
 	  calibReco[iSR]->SetTitle("");
 	  calibReco[iSR]->SetMarkerStyle(20+iSR);
@@ -241,18 +280,18 @@ int plotEGReso(){//main
 	    char buf[500];
 	    sprintf(buf,"Photons, E_{T}=%d GeV",genEn[iE]);
 	    p_Ereco[iE][iSR]->SetTitle(buf);
-	    double nRMS = iSR<2? 3 : 2;
-	    p_Ereco[iE][iSR]->Fit("gaus","LR0","",
+	    double nRMS = iSR==0? 5: iSR<2? 3 : 2;
+	    p_Ereco[iE][iSR]->Fit("gaus","LR0+","",
 				  p_Ereco[iE][iSR]->GetMean()-nRMS*p_Ereco[iE][iSR]->GetRMS(),
 				  p_Ereco[iE][iSR]->GetMean()+nRMS*p_Ereco[iE][iSR]->GetRMS());
 	    
 	    TF1 *fitResult = p_Ereco[iE][iSR]->GetFunction("gaus");
-	    nRMS = iSR<2? 1 : 2;
-	    p_Ereco[iE][iSR]->Fit("gaus","LR+","same",
-				  fitResult->GetParameter(1)-nRMS*fitResult->GetParameter(2),
+	    //nRMS = iSR<3? 1 : 2;
+	    p_Ereco[iE][iSR]->Fit("gaus","LR+","same",fitResult->GetParameter(1)-nRMS*fitResult->GetParameter(2),
 				  fitResult->GetParameter(1)+2*fitResult->GetParameter(2));
 	    fitResult = p_Ereco[iE][iSR]->GetFunction("gaus");
-
+	    fitResult->SetLineColor(2);
+	    fitResult->Draw("same");
 	    p_chi2overNDF->Fill(fitResult->GetChisquare()/fitResult->GetNDF());
 
 	    TLatex lat;
@@ -290,7 +329,7 @@ int plotEGReso(){//main
 	  }//loop on energies
 
 	  saveName.str("");
-	  saveName << plotDir << "/Ereco_eta" << eta << "_pu" << puOption << "_SR" << iSR;
+	  saveName << plotDir << "/Ereco_eta" << eta[ieta] << "_pu" << puOption << "_SR" << iSR;
 	  mycE[iSR]->Update();
 	  mycE[iSR]->Print((saveName.str().c_str()+pSuffix)+".png");
 	  mycE[iSR]->Print((saveName.str().c_str()+pSuffix)+".pdf");
@@ -413,19 +452,19 @@ int plotEGReso(){//main
 		fitFunc2->SetParameter(1,0.01);
 		fitFunc2->SetParLimits(1,0,1);
 		if (addNoiseTerm) {
-		  fitFunc2->SetParLimits(2,0,2);
-		  fitFunc2->FixParameter(2,0.06);
+		  //fitFunc2->SetParLimits(2,0,2);
+		  //fitFunc2->FixParameter(2,0.06);
 		}
 		fitFunc2->SetLineColor(iSR!=4? iSR+1 : iSR+2);
 
 		gr->Fit(fitFunc2,"RME");
-		sigmaStoch[ipu][iSR][i] = (fitFunc2->GetParameter(0));
-		sigmaStochErr[ipu][iSR][i] = fitFunc2->GetParError(0)/(2*sigmaStoch[ipu][iSR][i]);
-		sigmaConst[ipu][iSR][i] = (fitFunc2->GetParameter(1));
-		sigmaConstErr[ipu][iSR][i] = fitFunc2->GetParError(1)/(2*sigmaConst[ipu][iSR][i]);
+		sigmaStoch[ipu][iSR][i][ieta] = (fitFunc2->GetParameter(0));
+		sigmaStochErr[ipu][iSR][i][ieta] = fitFunc2->GetParError(0)/(2*sigmaStoch[ipu][iSR][i][ieta]);
+		sigmaConst[ipu][iSR][i][ieta] = (fitFunc2->GetParameter(1));
+		sigmaConstErr[ipu][iSR][i][ieta] = fitFunc2->GetParError(1)/(2*sigmaConst[ipu][iSR][i][ieta]);
 		if (addNoiseTerm) {
-		  sigmaNoise[ipu][iSR][i] = (fitFunc2->GetParameter(2));
-		  sigmaNoiseErr[ipu][iSR][i] = fitFunc2->GetParError(2)/(2*sigmaNoise[ipu][iSR][i]);
+		  sigmaNoise[ipu][iSR][i][ieta] = (fitFunc2->GetParameter(2));
+		  sigmaNoiseErr[ipu][iSR][i][ieta] = fitFunc2->GetParError(2)/(2*sigmaNoise[ipu][iSR][i][ieta]);
 		}
 		TLatex lat;
 		lat.SetTextColor(iSR!=4? iSR+1 : iSR+2);
@@ -433,15 +472,15 @@ int plotEGReso(){//main
 		else sprintf(buf,"#frac{#sigma}{E} #propto #frac{s}{#sqrt{E_{T}}} #oplus c");
 		double Emin = doVsE?40 : 1/sqrt(genEn[nGenEn-1]);
 		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax(),buf);
-		sprintf(buf,"s=%3.3f #pm %3.3f",sigmaStoch[ipu][iSR][i],sigmaStochErr[ipu][iSR][i]);
+		sprintf(buf,"s=%3.3f #pm %3.3f",sigmaStoch[ipu][iSR][i][ieta],sigmaStochErr[ipu][iSR][i][ieta]);
 		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.9-i/6*0.25),buf);
-		sprintf(buf,"c=%3.3f #pm %3.3f",sigmaConst[ipu][iSR][i],sigmaConstErr[ipu][iSR][i]);
+		sprintf(buf,"c=%3.3f #pm %3.3f",sigmaConst[ipu][iSR][i][ieta],sigmaConstErr[ipu][iSR][i][ieta]);
 		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.82-i/6*0.25),buf);
 		sprintf(buf,"chi2/NDF = %3.3f/%d = %3.3f",fitFunc2->GetChisquare(),fitFunc2->GetNDF(),fitFunc2->GetChisquare()/fitFunc2->GetNDF());
 		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.66-i/6*0.25),buf);
 		//if (i>3){
 		if (addNoiseTerm) {
-		  sprintf(buf,"n=%3.3f #pm %3.3f",sigmaNoise[ipu][iSR][i],sigmaNoiseErr[ipu][iSR][i]);
+		  sprintf(buf,"n=%3.3f #pm %3.3f",sigmaNoise[ipu][iSR][i][ieta],sigmaNoiseErr[ipu][iSR][i][ieta]);
 		  lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.74-i/6*0.25),buf);
 		}
 	      }
@@ -452,39 +491,87 @@ int plotEGReso(){//main
 	for(unsigned i=0; i<4 ; i++){
 	  myc[i]->Update();
 	  if (i>1 && doVsE){
-	    myc[i]->Print(plotDir+"/"+type[i]+"_vsET"+pSuffix+".pdf");
-	    myc[i]->Print(plotDir+"/"+type[i]+"_vsET"+pSuffix+".png");
+	    std::ostringstream lsave;
+	    lsave << plotDir << "/" << type[i] << "_vsET_eta" << eta[ieta] << pSuffix;
+	    myc[i]->Print((lsave.str()+".pdf").c_str());
+	    myc[i]->Print((lsave.str()+".png").c_str());
 	  }
 	  else {
-	    myc[i]->Print(plotDir+"/"+type[i]+pSuffix+".pdf");
-	    myc[i]->Print(plotDir+"/"+type[i]+pSuffix+".png");
+	    std::ostringstream lsave;
+	    lsave << plotDir << "/" << type[i] << "_eta" << eta[ieta] << pSuffix;
+	    myc[i]->Print((lsave.str()+".pdf").c_str());
+	    myc[i]->Print((lsave.str()+".pdf").c_str());
 	  }
 	}
       }//loop on pu options
+      
+	std::cout << "scenario & type & sigmaStoch & sigmaConst";
+	if (addNoiseTerm) std::cout << " & sigmaNoise";
+	std::cout << " \\\\ \n" 
+		  << "\\hline\n";
+	for (unsigned iSR(0); iSR<nSR;++iSR){
+	  for (unsigned ipu(0); ipu<nPu; ++ipu){//loop on pu
+	    std::cout << "pu " << pu[ipu] << std::endl;
+	    for (unsigned i(2); i<MAX;++i){
+	      std::cout << "SR" << iSR << " & " << type[i] << " & " <<  std::setprecision(3)
+			<< "$" << sigmaStoch[ipu][iSR][i][ieta] << "\\pm" << sigmaStochErr[ipu][iSR][i][ieta] << "$ & "
+			<< "$" << sigmaConst[ipu][iSR][i][ieta] << "\\pm" << sigmaConstErr[ipu][iSR][i][ieta] << "$";
+	      if (addNoiseTerm) std::cout << " & $" << sigmaNoise[ipu][iSR][i][ieta] << "\\pm" << sigmaNoiseErr[ipu][iSR][i][ieta] << "$";
+	      std::cout << "\n";
+	    }
+	    std::cout <<"\\hline\n";
+	  }
+	}
+      }//loop on eta
+  
+      
+      TCanvas *mycR = new TCanvas("mycR","",1);
+      mycR->Divide(1,2);
+      TCanvas *mycC = new TCanvas("mycC","",1);
+      TLegend *leg = new TLegend(0.84,0.6,0.94,0.94);
+      leg->SetFillColor(10);
+      
+      TGraphErrors *grStoch[nPu][nSR];
+      TGraphErrors *grConst[nPu][nSR];
+      for (unsigned iSR(0); iSR<nSR;++iSR){
+	for (unsigned ipu(0); ipu<nPu; ++ipu){//loop on pu
+	  
+	  grStoch[ipu][iSR] = new TGraphErrors(neta,etaval,sigmaStoch[ipu][iSR][3],etaerr,sigmaStochErr[ipu][iSR][3]);
+	  grConst[ipu][iSR] = new TGraphErrors(neta,etaval,sigmaConst[ipu][iSR][3],etaerr,sigmaConstErr[ipu][iSR][3]);
+	  mycR->cd(ipu+1);
+	  grStoch[ipu][iSR]->SetLineColor(iSR+1);
+	  grStoch[ipu][iSR]->SetMarkerColor(iSR+1);
+	  grStoch[ipu][iSR]->SetMarkerStyle(ipu+21);
+	  grStoch[ipu][iSR]->SetMinimum(0);
+	  grStoch[ipu][iSR]->SetMaximum(0.4);
+	  grStoch[ipu][iSR]->SetTitle(";#eta;sampling term (#sqrt{GeV})");
+	  grStoch[ipu][iSR]->Draw( (iSR==0) ? "APE" : "PE");
+	  std::ostringstream label;
+	  if (ipu==0){
+	    label.str("");
+	    label << "SR " << iSR;
+	    leg->AddEntry(grStoch[ipu][iSR],label.str().c_str(),"P");
+	  }
+	}
+      }
+      mycR->cd(1);
+      TLatex lat;
+      lat.DrawLatexNDC(0.2,0.9,"no PU");
+      leg->Draw("same");
+      mycR->cd(2);
+      lat.DrawLatexNDC(0.2,0.9,"PU 140");
+      leg->Draw("same");
+      mycR->Update();
+
+      std::ostringstream lsave;
+      lsave << plotDir << "/SamplingTerm_vseta" << pSuffix;
+      mycR->Print((lsave.str()+".pdf").c_str());
+      mycR->Print((lsave.str()+".png").c_str());
       
       
     }//loop on scenarios
     
   }//loop on versions
-  
-  std::cout << "scenario & type & sigmaStoch & sigmaConst";
-  if (addNoiseTerm) std::cout << " & sigmaNoise";
-  std::cout << " \\\\ \n" 
-	    << "\\hline\n";
-  for (unsigned iS(0); iS<nSR;++iS){
-    for (unsigned ipu(0); ipu<nPu; ++ipu){//loop on pu
-      std::cout << "pu " << pu[ipu] << std::endl;
-      for (unsigned i(2); i<MAX;++i){
-	std::cout << "SR" << iS << " & " << type[i] << " & " <<  std::setprecision(3)
-		  << "$" << sigmaStoch[ipu][iS][i] << "\\pm" << sigmaStochErr[ipu][iS][i] << "$ & "
-		  << "$" << sigmaConst[ipu][iS][i] << "\\pm" << sigmaConstErr[ipu][iS][i] << "$";
-	if (addNoiseTerm) std::cout << " & $" << sigmaNoise[ipu][iS][i] << "\\pm" << sigmaNoiseErr[ipu][iS][i] << "$";
-	std::cout << "\n";
-      }
-      std::cout <<"\\hline\n";
-    }
-  }
-
 
   return 0;
   
