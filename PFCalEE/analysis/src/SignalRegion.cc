@@ -64,6 +64,7 @@ SignalRegion:: SignalRegion(const std::string inputFolder,
       }
       accuratePos_[eventIndex] = tmpXYZ;
     }
+    else break;
   }
   
 }

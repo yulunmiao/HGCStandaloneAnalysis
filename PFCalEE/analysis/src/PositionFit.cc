@@ -896,7 +896,12 @@ bool PositionFit::fitEvent(const unsigned ievt, unsigned & nInvalidFits, std::of
     double position[2];
     
     TMatrixD fitMatrix(4,4);
-    
+    for (unsigned ii(0);ii<4;++ii){
+      for (unsigned ij(0);ij<4;++ij){
+	fitMatrix[ii][ij]=0;
+      }
+    }
+
     //resolve equation for x and y separately
     for(unsigned xy(0);xy<2;xy++) {//loop on x or y
       if (debug_) {
@@ -936,11 +941,12 @@ bool PositionFit::fitEvent(const unsigned ievt, unsigned & nInvalidFits, std::of
       position[xy] = p(0);
       positionFF[rt][xy] = p(0)+p(1)*posz[0];
       TanAngle[rt][xy] = p(1);
-      
-      fitMatrix[2*xy][2*xy]=w(0,0);
-      fitMatrix[2*xy][2*xy+1]=w(0,1);
-      fitMatrix[2*xy+1][2*xy]=w(1,0);
-      fitMatrix[2*xy+1][2*xy+1]=w(1,1);
+
+      //sanity check for nan values
+      if (w(0,0)==w(0,0)) fitMatrix[2*xy][2*xy]=w(0,0);
+      if (w(0,1)==w(0,1)) fitMatrix[2*xy][2*xy+1]=w(0,1);
+      if (w(1,0)==w(1,0)) fitMatrix[2*xy+1][2*xy]=w(1,0);
+      if (w(1,1)==w(1,1)) fitMatrix[2*xy+1][2*xy+1]=w(1,1);
       
       
       TVectorD dp(nL);

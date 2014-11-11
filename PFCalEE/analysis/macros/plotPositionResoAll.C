@@ -532,6 +532,7 @@ int plotPositionResoAll(){//main
       grFit[ieta][ipu]->Draw(ipu==0?"APE":"PE");
       
       mypad[2][ieta]->cd();
+      gPad->SetGridy(1);
       grResidualX[ieta][ipu]->SetTitle(";E_{T} (GeV);x_{reco}-x_{truth} (mm)");
       grResidualX[ieta][ipu]->SetLineColor(ipu+1);
       grResidualX[ieta][ipu]->SetMarkerColor(ipu+1);
@@ -546,6 +547,7 @@ int plotPositionResoAll(){//main
       grResidualY[ieta][ipu]->Draw("PE");
       
       mypad[3][ieta]->cd();
+      gPad->SetGridy(1);
       grResidualTanX[ieta][ipu]->SetTitle(";E_{T} (GeV);tanA_{reco}-tanA_{truth} (mrad)");
       grResidualTanX[ieta][ipu]->SetLineColor(ipu+1);
       grResidualTanX[ieta][ipu]->SetMarkerColor(ipu+1);
