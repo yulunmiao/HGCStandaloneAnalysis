@@ -28,7 +28,9 @@ parser.add_option('-S', '--no-submit'   ,    action="store_true",  dest='nosubmi
 (opt, args) = parser.parse_args()
 
 enlist=[0]
-if opt.dogun : enlist=[20,30,40,50,60,70,80,90,100,125,150,175,200]
+if opt.dogun : 
+    #enlist=[20,30,40,50,60,70,80,90,100,125,150,175,200]
+    enlist=[60,70,175,200]
 
 #for alpha in 0.361 #0.297 0.244 0.200 0.164 0.134 0.110
 INPATHPU="root://eoscms//eos/cms/store/user/msun/V12/MinBias/"

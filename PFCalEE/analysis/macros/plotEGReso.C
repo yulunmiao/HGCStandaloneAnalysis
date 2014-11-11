@@ -21,7 +21,16 @@
 
 #include "TDRStyle.h"
 
-TPad* plot_ratio(TCanvas *canv, bool up){
+struct FitResult{
+  double chi2;
+  unsigned ndf;
+  double mean;
+  double sigma;
+  double meanerr;
+  double sigmaerr;
+};
+
+TPad* plot_ratio(TPad *canv, bool up){
   canv->SetFillColor      (0);
   canv->SetBorderMode     (0);
   canv->SetBorderSize     (10);
@@ -61,102 +70,338 @@ TPad* plot_ratio(TCanvas *canv, bool up){
 
 };
 
+
+unsigned fitEnergy(TH1F *hist,
+		   TPad *pad,
+		   std::string unitStr,
+		   FitResult & lres,
+		   unsigned isr){
+  
+  pad->cd();
+  //double eMin = hist->GetMean()-5*hist->GetRMS();
+  //double eMax = hist->GetMean()+5*hist->GetRMS();
+  //hist->GetXaxis()->SetRangeUser(eMin,eMax);
+  hist->Draw("PE");
+
+
+  double nRMSm = isr<5? 0.5 : 2;
+  double nRMSp = 2;
+  
+  TF1 *fitResult = new TF1("fitResult","[0]*TMath::Gaus(x,[1],[2],0)",hist->GetXaxis()->GetXmin(),hist->GetXaxis()->GetXmax());
+  fitResult->SetParameters(hist->GetBinContent(hist->GetMaximumBin()),
+			   hist->GetXaxis()->GetBinCenter(hist->GetMaximumBin()),
+			   hist->GetRMS());
+
+  std::cout << " Initial params: "  << fitResult->GetParameter(0) << " "<< fitResult->GetParameter(1) << " " << fitResult->GetParameter(2)
+	    << std::endl;
+
+
+  int status = hist->Fit("fitResult","LR0+","",
+			 fitResult->GetParameter(1)-nRMSm*fitResult->GetParameter(2),
+			 fitResult->GetParameter(1)+nRMSp*fitResult->GetParameter(2));
+  
+  
+  std::cout << " First fit: " << status << " " << fitResult->GetParameter(1) << " " << fitResult->GetParameter(2)
+	    << std::endl;
+
+  if (status != 0 || fitResult->GetChisquare()/fitResult->GetNDF()>5){
+    std::cout << " -- Bad fit ! Try again..." << std::endl;
+    status = hist->Fit("fitResult","LR0+","",
+		       fitResult->GetParameter(1)-nRMSm*fitResult->GetParameter(2),
+		       fitResult->GetParameter(1)+nRMSp*fitResult->GetParameter(2));
+    
+    std::cout << " Second fit: " << status << " " << fitResult->GetParameter(1) << " " << fitResult->GetParameter(2)
+	      << std::endl;
+  }
+  
+  std::cout << " Final fit: " << fitResult->GetParameter(1) << " " << fitResult->GetParameter(2)
+	    << std::endl;
+  
+  fitResult->SetLineColor(2);
+  fitResult->Draw("same");
+  
+  if (status != 0) {
+    std::cout << " ERROR! Fit failed ! Please have a look. I stop here..." << std::endl;
+    //totalE for pu140 is expected to be pathological :/
+    if (isr!=7) return 1;
+  }
+
+  char buf[500];
+  TLatex lat;
+  double latx = hist->GetXaxis()->GetXmin()+(hist->GetXaxis()->GetXmax()-hist->GetXaxis()->GetXmin())/20.;
+  double laty = hist->GetMaximum();
+  sprintf(buf,"<E_{T}fit> = %3.3f +/- %3.3f %s",fitResult->GetParameter(1),fitResult->GetParError(1),unitStr.c_str());
+  lat.DrawLatex(latx,laty*0.9,buf);
+  sprintf(buf,"RMSfit = %3.3f +/- %3.3f %s",fitResult->GetParameter(2),fitResult->GetParError(2),unitStr.c_str());
+  lat.DrawLatex(latx,laty*0.8,buf);
+  sprintf(buf,"RMS/meanfit = %3.3f",fitResult->GetParameter(2)/fitResult->GetParameter(1));
+  lat.DrawLatex(latx,laty*0.7,buf);
+  
+  sprintf(buf,"#chi^{2}/N = %3.3f/%d = %3.3f",fitResult->GetChisquare(),fitResult->GetNDF(),fitResult->GetChisquare()/fitResult->GetNDF());
+  lat.DrawLatex(latx,laty*0.6,buf);
+  
+  lres.chi2 = fitResult->GetChisquare();
+  lres.ndf = fitResult->GetNDF();
+  lres.mean = fitResult->GetParameter(1);
+  lres.meanerr = fitResult->GetParError(1);
+  lres.sigma = fitResult->GetParameter(2);
+  lres.sigmaerr = fitResult->GetParError(2);
+
+  return 0;
+};
+
+TPad* plotCalibration(TGraphErrors *gr,TPad *pad,bool doRatio, TGraphErrors *grDelta,std::string unit, double & calib,double & calibErr, double & offset, double & offsetErr){
+
+  TPad *upper = 0;
+  TPad *lower = 0;
+
+  if (!doRatio) pad->cd();
+  else {
+    pad->Clear();
+    upper = plot_ratio(pad, true);
+    lower = plot_ratio(pad, false);
+    upper->cd();
+  }
+  gr->GetXaxis()->SetLabelSize(0.06);
+  gr->GetXaxis()->SetTitleSize(0.06);
+  gr->GetYaxis()->SetLabelSize(0.06);
+  gr->GetYaxis()->SetTitleSize(0.06);
+  gr->GetXaxis()->SetTitleOffset(0.7);
+  gr->GetYaxis()->SetTitleOffset(0.8);
+  
+  gr->Draw("ap");
+
+  if (!doRatio) gr->GetXaxis()->SetTitle("E_{T} (GeV)");
+  else gr->GetXaxis()->SetTitle("");
+  
+  gr->GetYaxis()->SetTitle(("Average energy deposited ("+unit+")").c_str()); 
+  char buf[500];
+  TF1 *fitFunc=new TF1("calib","[0]+[1]*x",gr->GetXaxis()->GetXmin(),gr->GetXaxis()->GetXmax());
+  fitFunc->SetLineColor(6);
+  gr->Fit(fitFunc,"RME");
+  TLatex lat;
+  lat.SetTextColor(6);
+  sprintf(buf,"<E> #propto a + b #times E_{T} ");
+  lat.DrawLatex(30,gr->GetYaxis()->GetXmax()*0.9,buf);
+  sprintf(buf,"a = %3.3f #pm %3.3f %s",fitFunc->GetParameter(0),fitFunc->GetParError(0),unit.c_str());
+  lat.DrawLatex(30,gr->GetYaxis()->GetXmax()*0.8,buf);
+  sprintf(buf,"b = %3.3f #pm %3.3f %s/GeV",fitFunc->GetParameter(1),fitFunc->GetParError(1),unit.c_str());
+  lat.DrawLatex(30,gr->GetYaxis()->GetXmax()*0.7,buf);
+  sprintf(buf,"#chi^{2}/N = %3.3f/%d = %3.3f",fitFunc->GetChisquare(),fitFunc->GetNDF(),fitFunc->GetChisquare()/fitFunc->GetNDF());
+  lat.DrawLatex(30,gr->GetYaxis()->GetXmax()*0.6,buf);
+
+  calib = fitFunc->GetParameter(1);
+  offset = fitFunc->GetParameter(0);
+  calibErr = fitFunc->GetParError(1);
+  offsetErr = fitFunc->GetParError(0);
+
+  if (doRatio){
+    //draw deltaE/E vs E
+    lower->cd();
+    gPad->SetLogx(0);
+    gPad->SetGridx(1);
+    gPad->SetGridy(1);
+
+    double loffset = fitFunc->GetParameter(0);
+    double lslope = fitFunc->GetParameter(1);
+    double range = 1;
+    if (unit=="GeV") {
+      loffset=0;
+      lslope=1;
+      range = 10;
+    }
+
+    //fill delta
+    for (int ip(0);ip<gr->GetN();++ip){
+      double x=0;
+      double y=0;
+      gr->GetPoint(ip,x,y);
+      grDelta->SetPoint(ip,x,(y-loffset)/lslope-x);
+      double err = gr->GetErrorY(ip)/lslope;
+      grDelta->SetPointError(ip,0,err);
+      std::cout << ip << " " << x << " " << y << " " << (y-loffset)/lslope-x << std::endl;
+    }
+    grDelta->SetTitle("");
+    grDelta->SetMinimum(-1.*range);
+    grDelta->SetMaximum(range);
+    grDelta->GetXaxis()->SetLabelSize(0.15);
+    grDelta->GetXaxis()->SetTitleSize(0.15);
+    grDelta->GetYaxis()->SetLabelSize(0.12);
+    grDelta->GetYaxis()->SetTitleSize(0.15);
+    grDelta->GetXaxis()->SetTitleOffset(0.5);
+    grDelta->GetYaxis()->SetTitleOffset(0.3);
+    
+    grDelta->Draw("ap");
+    //grDelta->GetYaxis()->SetRangeUser(0,grDelta->GetYaxis()->GetXmax());
+    grDelta->GetXaxis()->SetTitle("E_{T} (GeV)");
+    grDelta->GetYaxis()->SetTitle("(#Delta E)/E");
+
+    TLine *line = new TLine(grDelta->GetXaxis()->GetXmin(),0,grDelta->GetXaxis()->GetXmax(),0);
+    line->SetLineColor(2);//kYellow+4);
+    line->Draw();
+    
+
+    lower->Update();
+
+  }
+
+  return upper;
+};
+
+void plotResolution(TGraphErrors *gr,TPad *pad,
+		    const unsigned ipu,
+		    const double & stoch0,
+		    const double & const0,
+		    const double & noise0,
+		    double & stoch,double & stochErr, 
+		    double & constant, double & constErr,
+		    double & noise,double & noiseErr){
+
+  pad->cd();
+  gr->GetXaxis()->SetLabelSize(0.06);
+  gr->GetXaxis()->SetTitleSize(0.06);
+  gr->GetYaxis()->SetLabelSize(0.06);
+  gr->GetYaxis()->SetTitleSize(0.06);
+  gr->GetXaxis()->SetTitleOffset(0.7);
+  gr->GetYaxis()->SetTitleOffset(0.8);
+  
+  gr->Draw("ap");
+  gr->GetXaxis()->SetTitle("E_{T} (GeV)");
+  gr->GetYaxis()->SetTitle("#sigma/E");
+
+  TF1 *fitFunc =new TF1("reso","sqrt([0]*[0]/x+[1]*[1]+[2]*[2]/(x*x))",gr->GetXaxis()->GetXmin(),gr->GetXaxis()->GetXmax());
+
+  fitFunc->SetParameter(0,stoch0);
+  fitFunc->SetParLimits(0,0,1);
+  fitFunc->SetParameter(1,const0);
+  fitFunc->SetParLimits(1,0,1);
+  fitFunc->SetParameter(2,noise0);
+  
+  if (ipu<2) fitFunc->FixParameter(2,0.0);
+  if (ipu==2) fitFunc->FixParameter(1,const0);
+
+  int status = gr->Fit(fitFunc,"RME0");
+
+  if (fitFunc->GetChisquare()/fitFunc->GetNDF()>2){
+    status = gr->Fit(fitFunc,"RME0","",20,100);
+  }
+
+  fitFunc->SetLineColor(6);
+  fitFunc->Draw("same");
+
+  stoch = fitFunc->GetParameter(0);
+  stochErr = fitFunc->GetParError(0);
+  constant = fitFunc->GetParameter(1);
+  constErr = fitFunc->GetParError(1);
+  noise = fitFunc->GetParameter(2);
+  noiseErr = fitFunc->GetParError(2);
+
+  char buf[500];
+  TLatex lat;
+  lat.SetTextColor(6);
+  sprintf(buf,"#frac{#sigma}{E} #propto #frac{s}{#sqrt{E_{T}}} #oplus c #oplus #frac{n}{E_{T}}");
+
+  double Emin = 30;
+  lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*0.9,buf);
+  sprintf(buf,"s=%3.2f #pm %3.2f",stoch,stochErr);
+  lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*0.8,buf);
+  sprintf(buf,"c=%3.2f #pm %3.2f",constant,constErr);
+  lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*0.7,buf);
+  sprintf(buf,"n=%3.2f #pm %3.2f",noise,noiseErr);
+  lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*0.6,buf);
+  sprintf(buf,"status = %d, #chi^{2}/N = %3.1f/%d = %3.1f",status,fitFunc->GetChisquare(),fitFunc->GetNDF(),fitFunc->GetChisquare()/fitFunc->GetNDF());
+  lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*0.5,buf);
+  
+};
+
 int plotEGReso(){//main
 
   SetTdrStyle();
 
-  const unsigned nPu = 2;
-  unsigned pu[nPu] = {0,140};
+  const unsigned nPu = 3;
+  unsigned pu[nPu] = {0,0,140};
 
   const unsigned nS = 1;
   std::string scenario[nS] = {
     "gamma/200um/"
   };
 
-  const unsigned neta = 2;//7;
-  unsigned eta[neta]={17,19};//,21,23,25,27,29};
+  const unsigned neta = 7;
+  unsigned eta[neta]={17,19,21,23,25,27,29};
 
   double etaval[neta];
   double etaerr[neta];
 
-  const unsigned nEvtMin = 500;
+  const unsigned nEvtMin = 150;
 
   TString pSuffix = "";
 
-  unsigned rebinReco = 2;
-
-  bool addNoiseTerm = true;
   
   const unsigned nV = 1;
   TString version[nV] = {"12"};//,"0"};
   
   const unsigned nLayers = 30;
 
-  const unsigned nSR = 5;//reject SR0
-
-  const bool doVsE = true;
-
-  std::string unit = "MIPs";
-  const char* unitStr = unit.c_str();
-
-  const unsigned MAX = 4;
-  TString type[MAX];
-  double sigmaStoch[nPu][nSR][MAX][neta];
-  double sigmaStochErr[nPu][nSR][MAX][neta];
-  double sigmaConst[nPu][nSR][MAX][neta];
-  double sigmaConstErr[nPu][nSR][MAX][neta];
-  double sigmaNoise[nPu][nSR][MAX][neta];
-  double sigmaNoiseErr[nPu][nSR][MAX][neta];
-  
-  std::ostringstream saveName;
-  unsigned genEnAll[]={20,30,40,50,60,70,80,90,100,125,150,175,200};
-  const unsigned nGenEnAll=sizeof(genEnAll)/sizeof(unsigned);
-  unsigned rebin[20] = {4,4,4,6,6,
-			6,6,8,8,10,
-			10,10,100,100,100,
-			6,6,6,6,6};
-
-
-  //canvas so they are created only once
-  TCanvas *mycE[nSR];
-  for (unsigned iSR(0); iSR<nSR;++iSR){//loop on signal region
-    std::ostringstream lName;
-    lName << "mycE" << iSR;
-    mycE[iSR] = new TCanvas(lName.str().c_str(),lName.str().c_str(),1500,1000);
+  const unsigned nSR = 8;
+  double srval[nSR];
+  double srerr[nSR];
+  for (unsigned iSR(0); iSR<nSR;++iSR){
+    srval[iSR] = iSR*1.;
+    srerr[iSR] = 0.;
   }
 
-  const unsigned nCanvas = 4;  
+  double calib[nPu][nSR][neta];
+  double calibErr[nPu][nSR][neta];
+  double offset[nPu][nSR][neta];
+  double offsetErr[nPu][nSR][neta];
+
+  double sigmaStoch[nPu][neta][nSR];
+  double sigmaStochErr[nPu][neta][nSR];
+  double sigmaConst[nPu][neta][nSR];
+  double sigmaConstErr[nPu][neta][nSR];
+  double sigmaNoise[nPu][neta][nSR];
+  double sigmaNoiseErr[nPu][neta][nSR];
+  
+  std::ostringstream saveName;
+
+  unsigned genEnAll[]={20,30,40,50,60,70,80,90,100,125,150,175,200};
+  const unsigned nGenEnAll=sizeof(genEnAll)/sizeof(unsigned);
+
+  //canvas so they are created only once
+  TCanvas *mycE[nGenEnAll];
+  for (unsigned iE(0); iE<nGenEnAll;++iE){
+    std::ostringstream lName;
+    lName << "mycE" << genEnAll[iE];
+    mycE[iE] = new TCanvas(lName.str().c_str(),lName.str().c_str(),1500,1000);
+    mycE[iE]->Divide(4,2);
+  }
+
+  const unsigned nCanvas = 2;  
   TCanvas *myc[nCanvas];
   for (unsigned iC(0);iC<nCanvas;++iC){
     std::ostringstream lName;
     lName << "myc" << iC;
-    myc[iC] = new TCanvas(lName.str().c_str(),lName.str().c_str(),1);
-    myc[iC]->Divide(2,3);
+    myc[iC] = new TCanvas(lName.str().c_str(),lName.str().c_str(),1500,1000);
+    myc[iC]->Divide(4,2);
   }
-
-  TH1F *p_chi2overNDF = new TH1F("p_chi2overNDF",";#chi^{2}/NDF",500,0,500);
-  
-  //TPad *upper = plot_ratio(myc[1], true);
-  //TPad *lower = plot_ratio(myc[1], false);
-  //if (!upper || !lower){
-  //std::cout << " Pb..." << upper << " " << lower << std::endl;
-  //return 1;
-  //}
 
   for (unsigned iV(0); iV<nV;++iV){//loop on versions
     for (unsigned iS(0); iS<nS;++iS){//loop on scenarios
       
       TString plotDir = "../PLOTS/gitV00-02-09/version"+version[iV]+"/"+scenario[iS]+"/";
       
-      for (unsigned ieta(0);ieta<neta;++ieta){
+      for (unsigned ieta(0);ieta<neta;++ieta){//loop on eta
 	
 	etaval[ieta] = eta[ieta]/10.;
 	etaerr[ieta] = 0;
 	
+
 	for (unsigned ipu(0); ipu<nPu; ++ipu){//loop on pu
 	  unsigned puOption = pu[ipu];
-	  
-	  
+
+	  std::string unit = "MIPS";
+	  if (ipu>0) unit = "GeV";
+
 	  //identify valid energy values
 	  bool skip[nGenEnAll];
 	  unsigned nValid = 0;
@@ -172,8 +417,16 @@ int plotEGReso(){//main
 	      skip[iE] = true;
 	    }
 	    else {
-	      std::cout << " -- File " << inputFile->GetName() << " sucessfully opened." << std::endl;
+	      inputFile->cd();
+	      TTree *ltree = (TTree*)gDirectory->Get("Ereso");
+	      
+	      if (!ltree){
+		std::cout << " -- File " << inputFile->GetName() << " sucessfully opened but tree Ereso not found! Skipping." << std::endl;
+		skip[iE] = true;
+	      } else { 
+	      std::cout << " -- File " << inputFile->GetName() << " sucessfully opened and tree found." << std::endl;
 	      nValid++;
+	      }
 	    }
 	  }
 	  
@@ -187,26 +440,29 @@ int plotEGReso(){//main
 	    }
 	  }
 	  
-	  unsigned nx=0,ny=0;
-	  
-	  if (nGenEn>12) {nx=5;ny=3;}
-	  else if (nGenEn > 10)
-	    {nx=4;ny=3;}
-	  else if (nGenEn > 6)
-	    {nx=5;ny=2;}
-	  else if (nGenEn > 4)
-	    {nx=3;ny=2;}
-	  else if (nGenEn > 2)
-	    {nx=2;ny=2;}
-	  else 
-	    {nx=nGenEn;ny=1;}
-	  for (unsigned iSR(0); iSR<nSR;++iSR){//loop on signal region
-	    mycE[iSR]->Clear();
-	    mycE[iSR]->Divide(nx,ny);
-	  }
-	  
 	  TH1F *p_Ereco[nGenEn][nSR];
-	  
+	  TGraphErrors *calibRecoFit[nSR];
+	  TGraphErrors *calibRecoDelta[nSR];
+	  TGraphErrors *resoRecoFit[nSR];
+
+	  //draw calibration curves
+	  for (unsigned iSR(0); iSR<nSR;++iSR){//loop on signal region
+	    TString srStr = "";
+	    srStr += iSR;
+	    calibRecoFit[iSR] = new TGraphErrors();
+	    calibRecoFit[iSR]->SetName("calibRecoFit"+srStr);
+	    calibRecoFit[iSR]->SetTitle("");
+	    calibRecoFit[iSR]->SetMarkerStyle(20);
+	    calibRecoFit[iSR]->SetMarkerColor(1);
+	    calibRecoFit[iSR]->SetLineColor(1);
+	    calibRecoDelta[iSR] = (TGraphErrors *) calibRecoFit[iSR]->Clone("calibRecoDelta"+srStr);
+	    resoRecoFit[iSR] = (TGraphErrors *) calibRecoFit[iSR]->Clone("resoRecoFit"+srStr);
+	  }
+
+	  //get calib and offset from 0 pu file for each SR.
+	  gStyle->SetOptStat(0);
+	  gStyle->SetOptFit(0);
+
 	  for (unsigned iE(0); iE<nGenEn; ++iE){
 	    
 	    std::cout << "- Processing energy : " << genEn[iE] 
@@ -217,13 +473,46 @@ int plotEGReso(){//main
 	    linputStr << plotDir << "eta" << eta[ieta] << "_et" << genEn[iE] << "_pu" << pu[ipu] << pSuffix << ".root";
 	    inputFile = TFile::Open(linputStr.str().c_str());
 	    inputFile->cd();
+	    TTree *ltree = (TTree*)gDirectory->Get("Ereso");
 
 	    for (unsigned iSR(0); iSR<nSR;++iSR){//loop on signal region
 	      std::cout << " --Processing signal region: " << iSR << std::endl;
+
+	      mycE[iE]->cd(iSR+1);
+
 	      std::ostringstream lName;
 	      lName.str("");
-	      lName << "p_wgtSubtractESR" << iSR ;
-	      p_Ereco[iE][iSR] = (TH1F*)gDirectory->Get(lName.str().c_str());
+	      if (ipu>0) lName << "(";
+	      if (iSR<5){
+		for (unsigned iL(0);iL<nLayers;++iL){	      
+		  if (iL==0) lName << "subtractedenergy_" << iL << "_SR" << iSR ;
+		  else lName << "+subtractedenergy_" << iL << "_SR" << iSR ;
+		}
+	      }
+	      else if (iSR==5) {
+		for (unsigned iL(0);iL<nLayers;++iL){	      
+		  if (iL==0) lName << "subtractedenergy_" << iL << "_SR0" ;
+		  else if (iL<5) lName << "+subtractedenergy_" << iL << "_SR0";
+		  else if (iL<10) lName << "+subtractedenergy_" << iL << "_SR1";
+		  else if (iL<15) lName << "+subtractedenergy_" << iL << "_SR2";
+		  else if (iL<20) lName << "+subtractedenergy_" << iL << "_SR3";
+		  else lName << "+subtractedenergy_" << iL << "_SR4";
+		}
+	      }
+	      else if (iSR==6) {
+		for (unsigned iL(0);iL<nLayers;++iL){	      
+		  if (iL==0) lName << "subtractedenergy_" << iL << "_SR0" ;
+		  else if (iL<5) lName << "+subtractedenergy_" << iL << "_SR1";
+		  else if (iL<12) lName << "+subtractedenergy_" << iL << "_SR2";
+		  else lName << "+subtractedenergy_" << iL << "_SR4";
+		}
+	      }
+	      else lName << "wgtEtotal";
+	      if (ipu>0) lName << " - " << offset[0][iSR][ieta] << ")/" << calib[0][iSR][ieta];
+	      ltree->Draw(lName.str().c_str(),"","");
+	      lName.str("");
+	      lName << "energy" << genEn[iE] << "_SR" << iSR ;
+	      p_Ereco[iE][iSR] = (TH1F*)(gPad->GetPrimitive("htemp"))->Clone(lName.str().c_str()); // 1D
 	      if (!p_Ereco[iE][iSR]){
 		std::cout << " -- ERROR, pointer for histogram " << lName.str() << " is null." << std::endl;
 		return 1;
@@ -234,339 +523,211 @@ int plotEGReso(){//main
 			<< " overflows " << p_Ereco[iE][iSR]->GetBinContent(p_Ereco[iE][iSR]->GetNbinsX()+1)
 			<< std::endl;
 	      
-	      //p_Ereco[iE]->Rebin(rebin[iE]);
-	      if (iSR<3) p_Ereco[iE][iSR]->Rebin(genEn[iE]<50?2*rebinReco:genEn[iE]<100?4*rebinReco:genEn[iE]<150?8*rebinReco:16*rebinReco);
-	      else p_Ereco[iE][iSR]->Rebin(genEn[iE]<50?rebinReco:genEn[iE]<100?2*rebinReco:4*rebinReco);
-	    }//loop on SR
-	  }//loop on energies
-	  
-	  
-	  gStyle->SetOptStat(0);
-	  
-	  TGraphErrors *calibReco[nSR];
-	  TGraphErrors *resoReco[nSR];
-	  TGraphErrors *calibRecoFit[nSR];
-	  TGraphErrors *deltaRecoFit[nSR];
-	  TGraphErrors *resoRecoFit[nSR];
-	  
-	  for (unsigned iSR(0); iSR<nSR;++iSR){//loop on signal region
-	    std::cout << " --Processing signal region: " << iSR << std::endl;
-	    TString srStr = "";
-	    srStr += iSR;
-	    //draw calibration curves
-	    calibReco[iSR] = new TGraphErrors();
-	  calibReco[iSR]->SetName("calibReco"+srStr);
-	  calibReco[iSR]->SetTitle("");
-	  calibReco[iSR]->SetMarkerStyle(20+iSR);
-	  calibReco[iSR]->SetMarkerColor(iSR!=4? iSR+1 : iSR+2);
-	  calibReco[iSR]->SetLineColor(iSR!=4? iSR+1 : iSR+2);
-	  resoReco[iSR] = (TGraphErrors *) calibReco[iSR]->Clone("resoReco"+srStr);
-	  calibRecoFit[iSR] = (TGraphErrors *) calibReco[iSR]->Clone("calibRecoFit"+srStr);
-	  deltaRecoFit[iSR] = (TGraphErrors *) calibReco[iSR]->Clone("deltaRecoFit"+srStr);
-	  resoRecoFit[iSR] = (TGraphErrors *) calibReco[iSR]->Clone("resoRecoFit"+srStr);
-	  
-	  //simhits
-	  for (unsigned iE(0); iE<nGenEn; ++iE){
+	      
+	      p_Ereco[iE][iSR]->SetTitle((";E ("+unit+");events").c_str());
 
-	    //skip data with too little stat
-	    if (p_Ereco[iE][iSR]->GetEntries()<nEvtMin) continue;
+	      //take min 20 bins
+	      if(p_Ereco[iE][iSR]->GetNbinsX()>40) p_Ereco[iE][iSR]->Rebin(2);
 
-	    std::cout << "- Processing energy : " << genEn[iE] << std::endl;
-	    mycE[iSR]->cd(iE+1);
-	    double eMin = p_Ereco[iE][iSR]->GetMean()-10*p_Ereco[iE][iSR]->GetRMS();
-	    double eMax = p_Ereco[iE][iSR]->GetMean()+10*p_Ereco[iE][iSR]->GetRMS();
-	    p_Ereco[iE][iSR]->GetXaxis()->SetRangeUser(eMin,eMax);
-	    p_Ereco[iE][iSR]->Draw("PE");
-	    char buf[500];
-	    sprintf(buf,"Photons, E_{T}=%d GeV",genEn[iE]);
-	    p_Ereco[iE][iSR]->SetTitle(buf);
-	    double nRMS = iSR==0? 5: iSR<2? 3 : 2;
-	    p_Ereco[iE][iSR]->Fit("gaus","LR0+","",
-				  p_Ereco[iE][iSR]->GetMean()-nRMS*p_Ereco[iE][iSR]->GetRMS(),
-				  p_Ereco[iE][iSR]->GetMean()+nRMS*p_Ereco[iE][iSR]->GetRMS());
-	    
-	    TF1 *fitResult = p_Ereco[iE][iSR]->GetFunction("gaus");
-	    //nRMS = iSR<3? 1 : 2;
-	    p_Ereco[iE][iSR]->Fit("gaus","LR+","same",fitResult->GetParameter(1)-nRMS*fitResult->GetParameter(2),
-				  fitResult->GetParameter(1)+2*fitResult->GetParameter(2));
-	    fitResult = p_Ereco[iE][iSR]->GetFunction("gaus");
-	    fitResult->SetLineColor(2);
-	    fitResult->Draw("same");
-	    p_chi2overNDF->Fill(fitResult->GetChisquare()/fitResult->GetNDF());
-
-	    TLatex lat;
-	    double latx = std::max(0.,p_Ereco[iE][iSR]->GetMean()-5*p_Ereco[iE][iSR]->GetRMS());
-	    double laty = p_Ereco[iE][iSR]->GetMaximum();
-	    sprintf(buf,"<E_{T}> = %3.3f %s",p_Ereco[iE][iSR]->GetMean(),unitStr);
-	    lat.DrawLatex(latx,laty*0.9,buf);
-	    sprintf(buf,"RMS = %3.3f #pm %3.1f %s",p_Ereco[iE][iSR]->GetRMS(),p_Ereco[iE][iSR]->GetRMSError(),unitStr);
-	    lat.DrawLatex(latx,laty*0.8,buf);
-	    sprintf(buf,"RMS/mean = %3.3f",p_Ereco[iE][iSR]->GetRMS()/p_Ereco[iE][iSR]->GetMean());
-	    lat.DrawLatex(latx,laty*0.7,buf);
-	    sprintf(buf,"<E_{T}fit> = %3.3f +/- %3.3f %s",fitResult->GetParameter(1),fitResult->GetParError(1),unitStr);
-	    lat.DrawLatex(latx,laty*0.6,buf);
-	    sprintf(buf,"RMSfit = %3.3f +/- %3.3f %s",fitResult->GetParameter(2),fitResult->GetParError(2),unitStr);
-	    lat.DrawLatex(latx,laty*0.5,buf);
-	    sprintf(buf,"RMS/meanfit = %3.3f",fitResult->GetParameter(2)/fitResult->GetParameter(1));
-	    lat.DrawLatex(latx,laty*0.4,buf);
-	    
-	    sprintf(buf,"chi2/NDF = %3.3f/%d = %3.3f",fitResult->GetChisquare(),fitResult->GetNDF(),fitResult->GetChisquare()/fitResult->GetNDF());
-	    lat.DrawLatex(latx,laty*0.3,buf);
-      
-	    Int_t np=calibReco[iSR]->GetN();
-	    calibReco[iSR]->SetPoint(np,genEn[iE],p_Ereco[iE][iSR]->GetMean());
-	    calibReco[iSR]->SetPointError(np,0.0,p_Ereco[iE][iSR]->GetMeanError());
-	    resoReco[iSR]->SetPoint(np,doVsE?genEn[iE] :1/sqrt(genEn[iE]),p_Ereco[iE][iSR]->GetRMS()/p_Ereco[iE][iSR]->GetMean());
-	    resoReco[iSR]->SetPointError(np,0,p_Ereco[iE][iSR]->GetRMSError()/p_Ereco[iE][iSR]->GetMean());
-	    calibRecoFit[iSR]->SetPoint(np,genEn[iE],fitResult->GetParameter(1));
-	    calibRecoFit[iSR]->SetPointError(np,0.0,fitResult->GetParError(1));
-	    deltaRecoFit[iSR]->SetPoint(np,genEn[iE],( ((fitResult->GetParameter(1)-0)/200)-genEn[iE])/genEn[iE]);
-	    deltaRecoFit[iSR]->SetPointError(np,0.0,fitResult->GetParError(1)/200*1./genEn[iE]);
-	    resoRecoFit[iSR]->SetPoint(np,doVsE?genEn[iE] :1/sqrt(genEn[iE]),fitResult->GetParameter(2)/fitResult->GetParameter(1));
-	    double errFit = fitResult->GetParameter(2)/fitResult->GetParameter(1)*sqrt(pow(fitResult->GetParError(2)/fitResult->GetParameter(2),2)+pow(fitResult->GetParError(1)/fitResult->GetParameter(1),2));
-	    resoRecoFit[iSR]->SetPointError(np,0,errFit);
-      
-	  }//loop on energies
-
-	  saveName.str("");
-	  saveName << plotDir << "/Ereco_eta" << eta[ieta] << "_pu" << puOption << "_SR" << iSR;
-	  mycE[iSR]->Update();
-	  mycE[iSR]->Print((saveName.str().c_str()+pSuffix)+".png");
-	  mycE[iSR]->Print((saveName.str().c_str()+pSuffix)+".pdf");
-	  /*
-	}//loop on signal regions
-
-	myc[4]->cd();
-	p_chi2overNDF->Draw();
-	
-	myc[4]->Update();
-	return 1;
-
-      }//loop on pu options
-
-      
-    }//loop on scenarios
-    
-  }//loop on versions
-	  */
-	
-	  //return 1;
-
-	//draw calib
-
-	const unsigned imax = 4;
-
-	for(unsigned i=0; i<imax ; i++)
-	  {
-	    //if (i==1) upper->cd();
-	    //else 
-	    myc[i]->cd(iSR+1);
-	    type[i] = i==0 ? "calibReco" : i==1 ? "calibRecoFit" : i==2 ? "resoReco" : "resoRecoFit";
-	    
-	    if (nPu > 1){
-	      type[i] += "_pu";
-	      type[i] += puOption;
-	    }
-
-	    std::cout << "- Processing type : " << type[i] << std::endl;
-
-	    TGraphErrors * gr =( i==0 ? calibReco[iSR] : i==1 ? calibRecoFit[iSR] : i==2 ? resoReco [iSR]: resoRecoFit[iSR]);
-
-	    gr->GetXaxis()->SetLabelSize(0.06);
-	    gr->GetXaxis()->SetTitleSize(0.06);
-	    gr->GetYaxis()->SetLabelSize(0.06);
-	    gr->GetYaxis()->SetTitleSize(0.06);
-	    gr->GetXaxis()->SetTitleOffset(0.7);
-	    gr->GetYaxis()->SetTitleOffset(0.8);
-
-	    gr->Draw("ap");
-	    //gr->GetYaxis()->SetRangeUser(0,i%4<2?100 : 0.2);
-	    
-
-	    if(i<2){
-	      if (i!=1) gr->GetXaxis()->SetTitle("Beam E_{T} [GeV]");
-	      else gr->GetXaxis()->SetTitle("");
-	      gr->GetYaxis()->SetTitle("Average energy deposited ["+TString(unitStr)+"]"); 
-	    }
-	    else { 
-	      gr->GetXaxis()->SetTitle(doVsE?"Beam E_{T} [GeV]" :"1/#sqrt{Beam E_{T}} [1/#sqrt{GeV}]"); 
-	      gr->GetYaxis()->SetTitle("Relative energy resolution");     
-	    }
-	    char buf[500];
-	    if(i<2){
-	      TF1 *fitFunc=new TF1("calib","[0]+[1]*x",gr->GetXaxis()->GetXmin(),gr->GetXaxis()->GetXmax());
-	      //TF1 *fitFunc=new TF1("calib","[0]+[1]*x",20,100);
-	      fitFunc->SetLineColor(iSR!=4? iSR+1 : iSR+2);
-	      gr->Fit(fitFunc,"RME");
-	      TLatex lat;
-	      lat.SetTextColor(iSR!=4? iSR+1 : iSR+2);
-	      sprintf(buf,"<E> #propto a + b #times E_{T} ");
-	      if (i<2) lat.DrawLatex(genEn[0],gr->GetYaxis()->GetXmax()*0.9,buf);
-	      sprintf(buf,"a = %3.3f #pm %3.3f %s",fitFunc->GetParameter(0),fitFunc->GetParError(0),unitStr);
-	      lat.DrawLatex(genEn[0]+i/4*50,gr->GetYaxis()->GetXmax()*(0.8-i/2*0.25),buf);
-	      sprintf(buf,"b = %3.3f #pm %3.3f %s/GeV",fitFunc->GetParameter(1),fitFunc->GetParError(1),unitStr);
-	      lat.DrawLatex(genEn[0]+i/4*50,gr->GetYaxis()->GetXmax()*(0.7-i/2*0.25),buf);
-	      sprintf(buf,"chi2/NDF = %3.3f/%d = %3.3f",fitFunc->GetChisquare(),fitFunc->GetNDF(),fitFunc->GetChisquare()/fitFunc->GetNDF());
-	      lat.DrawLatex(genEn[0]+i/4*50,gr->GetYaxis()->GetXmax()*(0.6-i/2*0.25),buf);
-	      //draw deltaE/E vs E
-	      /*if (i==1){
-		lower->cd();
-		gPad->SetLogx(0);
-		gPad->SetGridx(1);
-		gPad->SetGridy(1);
-		TGraphErrors * grDelta = deltaRecoFit[iSR];
-		grDelta->SetTitle("");
-		grDelta->SetMinimum(-0.1);
-		grDelta->SetMaximum(0.1);
-		grDelta->GetXaxis()->SetLabelSize(0.15);
-		grDelta->GetXaxis()->SetTitleSize(0.15);
-		grDelta->GetYaxis()->SetLabelSize(0.12);
-		grDelta->GetYaxis()->SetTitleSize(0.15);
-		grDelta->GetXaxis()->SetTitleOffset(0.5);
-		grDelta->GetYaxis()->SetTitleOffset(0.3);
-
-		grDelta->Draw(i==1? "ap" : "p");
-		//grDelta->GetYaxis()->SetRangeUser(0,grDelta->GetYaxis()->GetXmax());
-		grDelta->GetXaxis()->SetTitle("Beam energy [GeV]");
-		grDelta->GetYaxis()->SetTitle("(#Delta E)/E");
-		}*/
-
-	    }
-	    else
-	      {
-		//TF1 *fitFunc2 =new TF1("reso","sqrt([0]*x*x+[1]+[2]*x*x*x*x)",gr->GetXaxis()->GetXmin(),gr->GetXaxis()->GetXmax());
-		TF1 *fitFunc2;
-		if (doVsE){
-		  fitFunc2 =new TF1("reso","sqrt([0]*[0]/x+[1]*[1])",gr->GetXaxis()->GetXmin(),gr->GetXaxis()->GetXmax());
-		  if (addNoiseTerm) fitFunc2 =new TF1("reso","sqrt([0]*[0]/x+[1]*[1]+[2]*[2]/(x*x))",gr->GetXaxis()->GetXmin(),gr->GetXaxis()->GetXmax());
-		}
-		else {
-		  fitFunc2 =new TF1("reso","sqrt([0]*[0]*x*x+[1]*[1])",gr->GetXaxis()->GetXmin(),gr->GetXaxis()->GetXmax());
-		  if (addNoiseTerm) fitFunc2 =new TF1("reso","sqrt([0]*[0]*x*x+[1]*[1]+[2]*[2]*x*x*x*x)",gr->GetXaxis()->GetXmin(),gr->GetXaxis()->GetXmax());
-		}
-		//if (i<4) fitFunc2 =new TF1("reso","sqrt([0]*x*x+[1])",gr->GetXaxis()->GetXmin(),gr->GetXaxis()->GetXmax());
-		//else fitFunc2 =new TF1("reso","sqrt([0]*x*x+[1])",gr->GetXaxis()->GetXmin(),0.2);//gr->GetXaxis()->GetXmax());
-		
-		fitFunc2->SetParameter(0,0.215);
-		fitFunc2->SetParLimits(0,0,1);
-		fitFunc2->SetParameter(1,0.01);
-		fitFunc2->SetParLimits(1,0,1);
-		if (addNoiseTerm) {
-		  //fitFunc2->SetParLimits(2,0,2);
-		  //fitFunc2->FixParameter(2,0.06);
-		}
-		fitFunc2->SetLineColor(iSR!=4? iSR+1 : iSR+2);
-
-		gr->Fit(fitFunc2,"RME");
-		sigmaStoch[ipu][iSR][i][ieta] = (fitFunc2->GetParameter(0));
-		sigmaStochErr[ipu][iSR][i][ieta] = fitFunc2->GetParError(0)/(2*sigmaStoch[ipu][iSR][i][ieta]);
-		sigmaConst[ipu][iSR][i][ieta] = (fitFunc2->GetParameter(1));
-		sigmaConstErr[ipu][iSR][i][ieta] = fitFunc2->GetParError(1)/(2*sigmaConst[ipu][iSR][i][ieta]);
-		if (addNoiseTerm) {
-		  sigmaNoise[ipu][iSR][i][ieta] = (fitFunc2->GetParameter(2));
-		  sigmaNoiseErr[ipu][iSR][i][ieta] = fitFunc2->GetParError(2)/(2*sigmaNoise[ipu][iSR][i][ieta]);
-		}
-		TLatex lat;
-		lat.SetTextColor(iSR!=4? iSR+1 : iSR+2);
-		if (addNoiseTerm) sprintf(buf,"#frac{#sigma}{E} #propto #frac{s}{#sqrt{E_{T}}} #oplus c #oplus #frac{n}{E_{T}}");
-		else sprintf(buf,"#frac{#sigma}{E} #propto #frac{s}{#sqrt{E_{T}}} #oplus c");
-		double Emin = doVsE?40 : 1/sqrt(genEn[nGenEn-1]);
-		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax(),buf);
-		sprintf(buf,"s=%3.3f #pm %3.3f",sigmaStoch[ipu][iSR][i][ieta],sigmaStochErr[ipu][iSR][i][ieta]);
-		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.9-i/6*0.25),buf);
-		sprintf(buf,"c=%3.3f #pm %3.3f",sigmaConst[ipu][iSR][i][ieta],sigmaConstErr[ipu][iSR][i][ieta]);
-		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.82-i/6*0.25),buf);
-		sprintf(buf,"chi2/NDF = %3.3f/%d = %3.3f",fitFunc2->GetChisquare(),fitFunc2->GetNDF(),fitFunc2->GetChisquare()/fitFunc2->GetNDF());
-		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.66-i/6*0.25),buf);
-		//if (i>3){
-		if (addNoiseTerm) {
-		  sprintf(buf,"n=%3.3f #pm %3.3f",sigmaNoise[ipu][iSR][i][ieta],sigmaNoiseErr[ipu][iSR][i][ieta]);
-		  lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.74-i/6*0.25),buf);
-		}
+	      //skip data with too little stat
+	      if (p_Ereco[iE][iSR]->GetEntries()<nEvtMin) {
+		gPad->Clear();
+		continue;
 	      }
 
-	  }
-	}//loop on SR
+	      TPad *lpad = (TPad*)(mycE[iE]->cd(iSR+1));
+	      FitResult lres;
+	      if (fitEnergy(p_Ereco[iE][iSR],lpad,unit,lres,iSR)!=0) return 1;
+	      lpad->cd();
+	      char buf[500];
+	      sprintf(buf,"#gamma #eta=%3.1f E_{T}=%d GeV + PU %d, SR %d",etaval[ieta],genEn[iE],pu[ipu],iSR);
+	      TLatex lat;
+	      lat.SetTextSize(0.06);
+	      lat.DrawLatexNDC(0.15,0.87,buf);
+	      if (iSR==nSR-2) lat.DrawLatexNDC(0.01,0.01,"HGCAL G4 standalone");
 
-	for(unsigned i=0; i<4 ; i++){
-	  myc[i]->Update();
-	  if (i>1 && doVsE){
-	    std::ostringstream lsave;
-	    lsave << plotDir << "/" << type[i] << "_vsET_eta" << eta[ieta] << pSuffix;
-	    myc[i]->Print((lsave.str()+".pdf").c_str());
-	    myc[i]->Print((lsave.str()+".png").c_str());
+	      Int_t np=calibRecoFit[iSR]->GetN();
+	      calibRecoFit[iSR]->SetPoint(np,genEn[iE],lres.mean);
+	      calibRecoFit[iSR]->SetPointError(np,0.0,lres.meanerr);
+
+	      double reso = fabs(lres.sigma/lres.mean);
+	      resoRecoFit[iSR]->SetPoint(np,genEn[iE],reso);
+	      double errFit = reso*sqrt(pow(lres.sigmaerr/lres.sigma,2)+pow(lres.meanerr/lres.mean,2));
+	      resoRecoFit[iSR]->SetPointError(np,0,errFit);
+
+
+	    }//loop on SR
+
+	    saveName.str("");
+	    saveName << plotDir << "/Ereco_eta" << eta[ieta] << "_pu" << puOption;
+	    if (ipu==0) saveName << "raw";
+	    saveName << "_E" << genEn[iE] << pSuffix;
+	    mycE[iE]->Update();
+	    mycE[iE]->Print((saveName.str().c_str()+pSuffix)+".pdf");
+	    
+	  }//loop on energies
+
+
+	  //plot and fit calib
+	  for (unsigned iSR(0); iSR<nSR;++iSR){//loop on signal region
+	    TPad *lpad = (TPad*)(myc[0]->cd(iSR+1));
+	    TPad *upper = plotCalibration(calibRecoFit[iSR],lpad,
+					  true,calibRecoDelta[iSR],
+					  unit,
+					  calib[ipu][iSR][ieta],
+					  calibErr[ipu][iSR][ieta],
+					  offset[ipu][iSR][ieta],
+					  offsetErr[ipu][iSR][ieta]);
+	    upper->cd();
+	    char buf[500];
+	    sprintf(buf,"#gamma #eta=%3.1f + PU %d, SR %d",etaval[ieta],pu[ipu],iSR);
+	    TLatex lat;
+	    lat.SetTextSize(0.07);
+	    lat.DrawLatexNDC(0.6,0.15,buf);
+	    if (iSR==0) lat.DrawLatexNDC(0.01,0.95,"HGCAL G4 standalone");
+	    
 	  }
-	  else {
-	    std::ostringstream lsave;
-	    lsave << plotDir << "/" << type[i] << "_eta" << eta[ieta] << pSuffix;
-	    myc[i]->Print((lsave.str()+".pdf").c_str());
-	    myc[i]->Print((lsave.str()+".pdf").c_str());
+
+	  myc[0]->Update();
+	  std::ostringstream lsave;
+	  lsave << plotDir << "/";
+	  if (ipu==0) lsave << "CalibMipToGeV";
+	  else lsave << "Calib";
+	  lsave << "_eta" << eta[ieta] << "_pu" << puOption << pSuffix;
+	  myc[0]->Print((lsave.str()+".pdf").c_str());
+
+
+	  //plot reso
+	  for (unsigned iSR(0); iSR<nSR;++iSR){//loop on signal region
+	    TPad *lpad = (TPad*)(myc[1]->cd(iSR+1));
+
+	    double stoch0 = pu[ipu]==0? 0.14 : sigmaStoch[1][ieta][iSR];
+	    double const0 = pu[ipu]==0? 0.01 : sigmaConst[1][ieta][iSR];
+	    double noise0 = pu[ipu]==0? 0 : 0.5;
+
+	    plotResolution(resoRecoFit[iSR],lpad,
+			   ipu,
+			   stoch0,const0,noise0,
+			   sigmaStoch[ipu][ieta][iSR],
+			   sigmaStochErr[ipu][ieta][iSR],
+			   sigmaConst[ipu][ieta][iSR],
+			   sigmaConstErr[ipu][ieta][iSR],
+			   sigmaNoise[ipu][ieta][iSR],
+			   sigmaNoiseErr[ipu][ieta][iSR]);
+	    lpad->cd();
+	    char buf[500];
+	    sprintf(buf,"#gamma #eta=%3.1f + PU %d, SR %d",etaval[ieta],pu[ipu],iSR);
+	    TLatex lat;
+	    lat.SetTextSize(0.07);
+	    lat.DrawLatexNDC(0.6,0.87,buf);
+	    if (iSR==nSR-2) lat.DrawLatexNDC(0.01,0.01,"HGCAL G4 standalone");
+	    
 	  }
-	}
-      }//loop on pu options
-      
-	std::cout << "scenario & type & sigmaStoch & sigmaConst";
-	if (addNoiseTerm) std::cout << " & sigmaNoise";
-	std::cout << " \\\\ \n" 
-		  << "\\hline\n";
-	for (unsigned iSR(0); iSR<nSR;++iSR){
-	  for (unsigned ipu(0); ipu<nPu; ++ipu){//loop on pu
-	    std::cout << "pu " << pu[ipu] << std::endl;
-	    for (unsigned i(2); i<MAX;++i){
-	      std::cout << "SR" << iSR << " & " << type[i] << " & " <<  std::setprecision(3)
-			<< "$" << sigmaStoch[ipu][iSR][i][ieta] << "\\pm" << sigmaStochErr[ipu][iSR][i][ieta] << "$ & "
-			<< "$" << sigmaConst[ipu][iSR][i][ieta] << "\\pm" << sigmaConstErr[ipu][iSR][i][ieta] << "$";
-	      if (addNoiseTerm) std::cout << " & $" << sigmaNoise[ipu][iSR][i][ieta] << "\\pm" << sigmaNoiseErr[ipu][iSR][i][ieta] << "$";
-	      std::cout << "\n";
-	    }
-	    std::cout <<"\\hline\n";
-	  }
-	}
+
+	  myc[1]->Update();
+	  lsave.str("");
+	  lsave << plotDir << "/";
+	  if (ipu==0) lsave << "ResoRaw";
+	  else lsave << "Reso";
+	  lsave << "_eta" << eta[ieta] << "_pu" << puOption << pSuffix;
+	  myc[1]->Print((lsave.str()+".pdf").c_str());
+
+
+
+	}//loop on pu
       }//loop on eta
-  
-      
-      TCanvas *mycR = new TCanvas("mycR","",1);
-      mycR->Divide(1,2);
-      TCanvas *mycC = new TCanvas("mycC","",1);
-      TLegend *leg = new TLegend(0.84,0.6,0.94,0.94);
+
+      TCanvas *mycR = new TCanvas("mycR","Sampling",1500,1000);
+      TCanvas *mycC = new TCanvas("mycC","Constant",1500,1000);
+      TCanvas *mycN = new TCanvas("mycN","Noise",1500,1000);
+      TLegend *leg = new TLegend(0.75,0.8,0.94,0.94);
       leg->SetFillColor(10);
-      
-      TGraphErrors *grStoch[nPu][nSR];
-      TGraphErrors *grConst[nPu][nSR];
-      for (unsigned iSR(0); iSR<nSR;++iSR){
-	for (unsigned ipu(0); ipu<nPu; ++ipu){//loop on pu
+
+      mycR->Divide(2,1);
+      mycC->Divide(2,1);
+      mycN->Divide(2,1);
+      TPad *mypad[3][neta];
+      TPad *left[3];
+      TPad *right[3];
+      left[0] = (TPad*)mycR->cd(1);
+      right[0] = (TPad*)mycR->cd(2);
+      left[1] = (TPad*)mycC->cd(1);
+      right[1] = (TPad*)mycC->cd(2);
+      left[2] = (TPad*)mycN->cd(1);
+      right[2] = (TPad*)mycN->cd(2);
+      for (unsigned iC(0);iC<3;++iC){
+	left[iC]->Divide(1,4);
+	right[iC]->Divide(1,3);
+	for (unsigned ieta=0; ieta<neta;++ieta){//loop on pt values
+	  if (ieta<4) mypad[iC][ieta] = (TPad*)left[iC]->GetPad(ieta+1);
+	  else mypad[iC][ieta] = (TPad*)right[iC]->GetPad((ieta-4)+1);
+	}
+      }
+
+      TGraphErrors *grStoch[nPu-1][neta];
+      TGraphErrors *grConst[nPu-1][neta];
+      TGraphErrors *grNoise[nPu-1][neta];
+      for (unsigned ieta(0); ieta<neta;++ieta){
+	
+	for (unsigned ipu(0); ipu<nPu-1; ++ipu){//loop on pu
 	  
-	  grStoch[ipu][iSR] = new TGraphErrors(neta,etaval,sigmaStoch[ipu][iSR][3],etaerr,sigmaStochErr[ipu][iSR][3]);
-	  grConst[ipu][iSR] = new TGraphErrors(neta,etaval,sigmaConst[ipu][iSR][3],etaerr,sigmaConstErr[ipu][iSR][3]);
-	  mycR->cd(ipu+1);
-	  grStoch[ipu][iSR]->SetLineColor(iSR+1);
-	  grStoch[ipu][iSR]->SetMarkerColor(iSR+1);
-	  grStoch[ipu][iSR]->SetMarkerStyle(ipu+21);
-	  grStoch[ipu][iSR]->SetMinimum(0);
-	  grStoch[ipu][iSR]->SetMaximum(0.4);
-	  grStoch[ipu][iSR]->SetTitle(";#eta;sampling term (#sqrt{GeV})");
-	  grStoch[ipu][iSR]->Draw( (iSR==0) ? "APE" : "PE");
-	  std::ostringstream label;
-	  if (ipu==0){
-	    label.str("");
-	    label << "SR " << iSR;
-	    leg->AddEntry(grStoch[ipu][iSR],label.str().c_str(),"P");
+	  grStoch[ipu][ieta] = new TGraphErrors(nSR,srval,sigmaStoch[ipu+1][ieta],srerr,sigmaStochErr[ipu+1][ieta]);
+	  grConst[ipu][ieta] = new TGraphErrors(nSR,srval,sigmaConst[ipu+1][ieta],srerr,sigmaConstErr[ipu+1][ieta]);
+	  grNoise[ipu][ieta] = new TGraphErrors(nSR,srval,sigmaNoise[ipu+1][ieta],srerr,sigmaNoiseErr[ipu+1][ieta]);
+
+	  TGraphErrors *gr=0;
+	  for (unsigned iP(0);iP<3;++iP){
+	    gr = (iP==0) ? grStoch[ipu][ieta] : (iP==1) ? grConst[ipu][ieta] : grNoise[ipu][ieta];
+	    if (!gr) continue;
+	    if (iP==0) mypad[0][ieta]->cd();
+	    else if (iP==1) mypad[1][ieta]->cd();
+	    else mypad[2][ieta]->cd();
+	    gPad->SetGridy(1);
+	    gr->SetLineColor(ipu+1);
+	    gr->SetMarkerColor(ipu+1);
+	    gr->SetMarkerStyle(ipu+21);
+	    gr->SetMinimum(0);
+	    if (iP<2) gr->SetMaximum(iP==0?0.3:0.1);
+	    if (iP==0) gr->SetTitle(";SR;sampling term (GeV^{#frac{1}{2}})");
+	    else if (iP==1) gr->SetTitle(";SR;constant term");
+	    else gr->SetTitle(";SR;noise term (GeV)");
+	    gr->Draw( (ipu==0) ? "APEL" : "PEL");
+	    std::ostringstream label;
+	    if (ieta==0 && iP==0){
+	      label.str("");
+	      label << "PU " << pu[ipu+1];
+	      leg->AddEntry(gr,label.str().c_str(),"P");
+	    }
+	    TLatex lat;
+	    if (ipu==nPu-2){
+	      label.str("");
+	      label << "#eta=" << etaval[ieta];
+	      lat.SetTextSize(0.06);
+	      lat.DrawLatexNDC(0.2,0.85,label.str().c_str());
+	      leg->Draw("same");
+	    }
+	    if (ieta==3 && ipu==0) lat.DrawLatexNDC(0.01,0.01,"HGCAL G4 standalone");
 	  }
 	}
       }
-      mycR->cd(1);
-      TLatex lat;
-      lat.DrawLatexNDC(0.2,0.9,"no PU");
-      leg->Draw("same");
-      mycR->cd(2);
-      lat.DrawLatexNDC(0.2,0.9,"PU 140");
-      leg->Draw("same");
+      
       mycR->Update();
-
       std::ostringstream lsave;
-      lsave << plotDir << "/SamplingTerm_vseta" << pSuffix;
+      lsave << plotDir << "/SamplingTerm_vsSR" << pSuffix;
       mycR->Print((lsave.str()+".pdf").c_str());
       mycR->Print((lsave.str()+".png").c_str());
+
+      mycC->Update();
+      lsave.str("");
+      lsave << plotDir << "/ConstantTerm_vsSR" << pSuffix;
+      mycC->Print((lsave.str()+".pdf").c_str());
+      mycC->Print((lsave.str()+".png").c_str());
+      
+      mycN->Update();
+      lsave.str("");
+      lsave << plotDir << "/NoiseTerm_vsSR" << pSuffix;
+      mycN->Print((lsave.str()+".pdf").c_str());
+      mycN->Print((lsave.str()+".png").c_str());
       
       
     }//loop on scenarios

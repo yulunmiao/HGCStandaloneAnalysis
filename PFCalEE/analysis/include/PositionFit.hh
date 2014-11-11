@@ -136,6 +136,7 @@ private:
 
   TH2F *p_hitEventPuContrib;
   TH2F *p_hitMeanPuContrib;
+  TH1F *p_diffPuContrib;
 
   TH1F *p_residuals_x;
   TH1F *p_residuals_y;

@@ -28,6 +28,7 @@ PositionFit::PositionFit(const unsigned nSR,
 
   p_hitMeanPuContrib = 0;
   p_hitEventPuContrib = 0;
+  p_diffPuContrib = 0;
 
   p_etavsphi = 0;
   p_etavsphi_max = 0;
@@ -120,6 +121,9 @@ void PositionFit::initialisePositionHistograms(){
   p_hitEventPuContrib = new TH2F("p_hitEventPuContrib",";layer;E_{PU} (MIPs) from RC;hits",nLayers_,0,nLayers_,1000,0,50);
   p_hitEventPuContrib->StatOverflows();
 
+  p_diffPuContrib = new TH1F("p_diffPuContrib",";E_{PU}^{RC}-E_{PU}^{avg} (MIPs) in SR2;events",500,0,10);
+  p_diffPuContrib->StatOverflows();
+
   p_etavsphi = new TH2F("p_etavsphi",";#phi_{hit};#eta_{hit};n_{events}",100,-3.1416,3.1416,100,1.4,3.6);
   p_etavsphi_max = new TH2F("p_etavsphi_max",";#phi_{max};#eta_{max};n_{events}",100,-3.1416,3.1416,100,1.4,3.6);
   p_etavsphi_truth = new TH2F("p_etavsphi_truth",";#phi_{gen};#eta_{gen};n_{events}",100,-3.1416,3.1416,100,1.4,3.6);
@@ -186,6 +190,9 @@ void PositionFit::getGlobalMaximum(std::vector<HGCSSRecoHit> *rechitvec,double &
 
   TH2F *letavsphi = new TH2F("letavsphi",";#phi;#eta;hits",150,-3.1416,3.1416,160,1.4,3.0);
   
+  //cross check using only back layers with less PU
+  TH2F *letavsphi_back = new TH2F("letavsphi_back",";#phi;#eta;hits (layers 15-29)",150,-3.1416,3.1416,160,1.4,3.0);
+ 
 
   for (unsigned iH(0); iH<(*rechitvec).size(); ++iH){//loop on hits
     const HGCSSRecoHit & lHit = (*rechitvec)[iH];
@@ -208,8 +215,8 @@ void PositionFit::getGlobalMaximum(std::vector<HGCSSRecoHit> *rechitvec,double &
     
     ROOT::Math::XYZVector pos(posx,posy,posz);
     letavsphi->Fill(pos.phi(),pos.eta(),energy);
+    if (lHit.layer()>14) letavsphi_back->Fill(pos.phi(),pos.eta(),energy);
     p_etavsphi->Fill(pos.phi(),pos.eta(),energy);
-    
   }//loop on hits
 
   if (debug_)  std::cout << std::endl;
@@ -217,6 +224,13 @@ void PositionFit::getGlobalMaximum(std::vector<HGCSSRecoHit> *rechitvec,double &
   
   //get position of maximum E tower
   int maxbin = letavsphi->GetMaximumBin();
+  int maxbin_crosscheck = letavsphi_back->GetMaximumBin();
+
+  if (maxbin != maxbin_crosscheck) {
+    std::cout << " -- Warning ! Event with another max probably from PU. Taking max in back 15 layers." << std::endl;
+    maxbin = maxbin_crosscheck;
+  }
+
   int binx,biny,binz;
   letavsphi->GetBinXYZ(maxbin,binx,biny,binz);
   aPhimax =letavsphi->GetXaxis()->GetBinCenter(binx); 
@@ -225,6 +239,7 @@ void PositionFit::getGlobalMaximum(std::vector<HGCSSRecoHit> *rechitvec,double &
   if (debug_) std::cout << " MaxE cell eta,phi = " << aEtamax << " " << aPhimax << std::endl;
 
   letavsphi->Delete();
+  letavsphi_back->Delete();
 }
 
 void PositionFit::getTruthPosition(std::vector<HGCSSGenParticle> *genvec,std::vector<ROOT::Math::XYPoint> & truthPos){
@@ -541,6 +556,9 @@ void PositionFit::getMaximumCell(std::vector<HGCSSRecoHit> *rechitvec,const doub
 void PositionFit::getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec,const unsigned nPU, const std::vector<double> & xmax,const std::vector<double> & ymax,std::vector<ROOT::Math::XYPoint> & recoPos,std::vector<unsigned> & nHits,std::vector<double> & puE,const bool puSubtracted){
   
   std::vector<double> eSum;
+  double eSum_puMean = 0;
+  double eSum_puEvt = 0;
+
   eSum.resize(nLayers_,0);
   double step = geomConv_.cellSize()*nSR_/2.+0.1;//+0.1 to accomodate double precision
   if (debug_) std::cout << "step = " << step << std::endl;
@@ -561,8 +579,10 @@ void PositionFit::getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec
 	double leta = lHit.eta();
 	if (debug_>1) std::cout << " -- Hit " << iH << ", eta=" << leta << ", energy before PU subtraction: " << energy << " after: " ;
 	double lCorMean =  puDensity_.getDensity(leta,layer,geomConv_.cellSizeInCm(layer,leta),nPU);
+	eSum_puMean += lCorMean;
 	p_hitMeanPuContrib->Fill(layer,lCorMean);
 	double lCorEvent = puE[layer];
+	eSum_puEvt += lCorEvent;
 	p_hitEventPuContrib->Fill(layer,lCorEvent);
 	double lCor = 0;
 	if (useMeanPU_) lCor = lCorMean;
@@ -577,7 +597,9 @@ void PositionFit::getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec
     }
     
   }//loop on rechits
-  
+
+  p_diffPuContrib->Fill(eSum_puEvt-eSum_puMean);
+
   for (unsigned iL(0);iL<nLayers_;++iL){//loop on layers
     if (nHits[iL]==0) continue;
     recoPos[iL].SetX(recoPos[iL].X()/eSum[iL]);

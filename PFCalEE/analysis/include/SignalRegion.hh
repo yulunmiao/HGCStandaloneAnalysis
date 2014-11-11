@@ -68,36 +68,33 @@ public:
 private:
   
   unsigned nSR_;
-    unsigned nevt_;
-    unsigned nLayers_;    
-
-    TFile *outputFile_;
-
-    HGCSSGeometryConversion geomConv_;
-    HGCSSPUenergy puDensity_;
-  //HGCSSCalibration *mycalib_;
-
-  bool fixForPuMixBug_;
-
-    std::vector<double> zPos_;
-    std::vector<std::vector<ROOT::Math::XYZVector> > accuratePos_;
-    std::vector<double> absweight_;
-
-    double totalE_;
-    double wgttotalE_;
-
-    std::vector<std::vector<double> > energySR_;
-    std::vector<std::vector<double> > subtractedenergySR_;
-
-    TH1F *p_rawEtotal;
-    TH1F *p_wgtEtotal;
-
-  std::vector<TH1F*> p_rawESR;
+  unsigned nevt_;
+  unsigned nLayers_;    
   
+  TFile *outputFile_;
+  TTree *outtree_;
+  
+  HGCSSGeometryConversion geomConv_;
+  HGCSSPUenergy puDensity_;
+  //HGCSSCalibration *mycalib_;
+  
+  bool fixForPuMixBug_;
+  
+  std::vector<double> zPos_;
+  std::vector<std::vector<ROOT::Math::XYZVector> > accuratePos_;
+  std::vector<double> absweight_;
+  
+  //for tree
+  double totalE_;
+  double wgttotalE_;
+  std::vector<std::vector<double> > energySR_;
+  std::vector<std::vector<double> > subtractedenergySR_;
+  
+  TH1F *p_rawEtotal;
+  TH1F *p_wgtEtotal;
+  std::vector<TH1F*> p_rawESR;
   std::vector<TH1F*> p_wgtESR;
-
   std::vector<TH1F*> p_rawSubtractESR;
-
   std::vector<TH1F*> p_wgtSubtractESR;
 
 };

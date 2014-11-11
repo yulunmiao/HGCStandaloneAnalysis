@@ -13,60 +13,71 @@ SignalRegion:: SignalRegion(const std::string inputFolder,
 			    const bool applyPuMixFix){
 
   nSR_ = 5;
-    nevt_ = nevt;
-    nLayers_ = nLayers;
-    geomConv_ = geomConv;
-    puDensity_ = puDensity;
-    fixForPuMixBug_ = applyPuMixFix;
+  nevt_ = nevt;
+  nLayers_ = nLayers;
+  geomConv_ = geomConv;
+  puDensity_ = puDensity;
+  fixForPuMixBug_ = applyPuMixFix;
+  
+  double zpos(0);    
+  int layerIndex(0);
+  
+  std::ifstream fzpos;
+  std::ostringstream finname;
+  finname << inputFolder << "/zPositions.dat";
+  fzpos.open(finname.str());
+  if (!fzpos.is_open()){
+    std::cout << " Cannot open input file " << finname.str() << "! Exiting..." << std::endl;
+    exit(1);
+  }
+  for(unsigned iL(0);iL<nLayers_;iL++){
+    fzpos >> layerIndex >> zpos;
+    zPos_.push_back(zpos);
+  }
+  
+  std::ifstream fxypos;
+  finname.str("");
+  finname << inputFolder << "/accuratePos.dat";
+  fxypos.open(finname.str());
+  if (!fxypos.is_open()){
+    std::cout << " Cannot open input file " << finname.str() << "! Exiting..." << std::endl;
+    exit(1);
+  }
 
-    double xpos(0),ypos(0),zpos(0),xangle(0),yangle(0);    
-    int layerIndex(0),eventIndex(0);
+  //all events did not pass the chi2 fit: fill only those found.
+  //keep failed ones to emptyvec so they are ignored afterwards
+  accuratePos_.clear();
+  std::vector<ROOT::Math::XYZVector> emptyvec;
+  accuratePos_.resize(nevt_,emptyvec);
 
-    std::ifstream fzpos;
-    std::ostringstream finname;
-    finname << inputFolder << "/zPositions.dat";
-    fzpos.open(finname.str());
-    if (!fzpos.is_open()){
-      std::cout << " Cannot open input file " << finname.str() << "! Exiting..." << std::endl;
-      exit(1);
+  while (!fxypos.eof()){
+    unsigned eventIndex = nevt_;
+    double xpos(0),ypos(0),xangle(0),yangle(0);
+    double fitMatrix[4] = {0,0,0,0};
+    fxypos >> eventIndex >> xpos >> fitMatrix[0] >> xangle >> fitMatrix[1] >> ypos >> fitMatrix[2] >> yangle >> fitMatrix[3];
+    if (eventIndex<nevt_) {
+      std::vector<ROOT::Math::XYZVector> tmpXYZ;
+      tmpXYZ.reserve(nLayers_);
+      for(unsigned iL(0);iL<nLayers_;iL++){
+	ROOT::Math::XYZVector position( xpos + xangle*zPos_[iL], ypos + yangle*zPos_[iL], zPos_[iL]);
+	tmpXYZ.push_back(position);
+      }
+      accuratePos_[eventIndex] = tmpXYZ;
     }
-    for(unsigned iL(0);iL<nLayers_;iL++){
-        fzpos >> layerIndex >> zpos;
-        zPos_.push_back(zpos);
-    }
-
-    std::ifstream fxypos;
-    finname.str("");
-    finname << inputFolder << "/accuratePos.dat";
-    fxypos.open(finname.str());
-    if (!fxypos.is_open()){
-      std::cout << " Cannot open input file " << finname.str() << "! Exiting..." << std::endl;
-      exit(1);
-    }
-    for(unsigned ievt(0);ievt<nevt_;ievt++){ 
-        std::string fitMatrix[4];
-        fxypos >> eventIndex >> xpos >> fitMatrix[0] >> xangle >> fitMatrix[1] >> ypos >> fitMatrix[2] >> yangle >> fitMatrix[3];
-        std::vector<ROOT::Math::XYZVector> tmpXYZ;
-        for(unsigned iL(0);iL<nLayers_;iL++){
-           ROOT::Math::XYZVector position( xpos + xangle*zPos_[iL], ypos + yangle*zPos_[iL], zPos_[iL]);
-           tmpXYZ.push_back(position);
-        }
-        accuratePos_.push_back(tmpXYZ);
-    }
-
+  }
+  
 }
 
 
 SignalRegion::~SignalRegion(){
-};
-
-
+}
 
 void SignalRegion::initialise(TTree *aSimTree, TTree *aRecTree, 
 			      TFile *outputFile){
 
   //mycalib_ = mycalib;
-  setOutputFile(outputFile); 
+  setOutputFile(outputFile);
+
   initialiseHistograms();
   
   HGCSSEvent * event = 0;
@@ -107,13 +118,14 @@ void SignalRegion::initialise(TTree *aSimTree, TTree *aRecTree,
 	//initialise values for current event
         totalE_ = 0;
 	wgttotalE_ = 0;
-	energySR_.clear();
-	subtractedenergySR_.clear();
 
-	std::vector<double> emptyvec;
-	emptyvec.resize(nLayers_,0);
-	energySR_.resize(nSR_,emptyvec);
-	subtractedenergySR_.resize(nSR_,emptyvec);
+	for (unsigned iL(0); iL<nLayers_;++iL){
+	  for (unsigned iSR(0);iSR<nSR_;++iSR){
+	    energySR_[iL][iSR] = 0;
+	    subtractedenergySR_[iL][iSR] = 0;
+	  }
+	}
+
 
 	//get event-by-event PU
 	//get PU contrib from elsewhere in the event
@@ -178,13 +190,14 @@ void SignalRegion::initialise(TTree *aSimTree, TTree *aRecTree,
 	    //SR0-4
 	    for (unsigned isr(0); isr<nSR_;++isr){
 	      if ( (fabs(dx) <= ((isr+1)*halfCell)) && (fabs(dy) <= ((isr+1)*halfCell))){
-		energySR_[isr][layer] += energy;
-		subtractedenergySR_[isr][layer] += subtractedenergy;
+		energySR_[layer][isr] += energy;
+		subtractedenergySR_[layer][isr] += subtractedenergy;
 	      }
 	    }
 	}//loop on hits
 	
 	fillHistograms();
+	outtree_->Fill();
 
     }//loop on events
 
@@ -197,7 +210,28 @@ void SignalRegion::initialiseHistograms(){
 
     outputFile_->cd();
 
-  //check if already defined
+    outtree_ = new TTree("Ereso","Tree to save energies in signal regions");
+
+    outtree_->Branch("rawEtotal",&totalE_);
+    outtree_->Branch("wgtEtotal",&wgttotalE_);
+
+    std::vector<double> emptyvec;
+    emptyvec.resize(nSR_,0);
+    energySR_.resize(nLayers_,emptyvec);
+    subtractedenergySR_.resize(nLayers_,emptyvec);
+
+    std::ostringstream label;
+    for (unsigned iL(0); iL<nLayers_;++iL){
+      for (unsigned iSR(0);iSR<nSR_;++iSR){
+	label.str("");
+	label << "energy_" << iL << "_SR" << iSR;
+	outtree_->Branch(label.str().c_str(),&energySR_[iL][iSR]);
+	label.str("");
+	label << "subtractedenergy_" << iL << "_SR" << iSR;
+	outtree_->Branch(label.str().c_str(),&subtractedenergySR_[iL][iSR]);
+      }
+    }
+
     p_rawEtotal = new TH1F("p_rawEtotal", "Total E (MIP)", 5000,0,200000);
     p_wgtEtotal = new TH1F("p_wgtEtotal", "Total weighted E (MIP)",5000, 0, 200000);
 
@@ -206,24 +240,24 @@ void SignalRegion::initialiseHistograms(){
     p_rawSubtractESR.resize(nSR_,0);
     p_wgtSubtractESR.resize(nSR_,0);
 
-    std::ostringstream label;
     for (unsigned iSR(0);iSR<nSR_;++iSR){
       label.str("");
-      label << "p_rawESR" << iSR;
-      p_rawESR[iSR] = new TH1F(label.str().c_str(),";E_{SR} (MIPs);events", 5000,0,200000);
+      label << "rawESR" << iSR;
+      p_rawESR[iSR] = new TH1F(("p_"+label.str()).c_str(),";E_{SR} (MIPs);events", 5000,0,200000);
       p_rawESR[iSR]->StatOverflows();
+
       label.str("");
-      label << "p_wgtESR" << iSR;
-      p_wgtESR[iSR] = new TH1F(label.str().c_str(),";E_{SR} (MIPs);events", 5000,0,200000);
+      label << "wgtESR" << iSR;
+      p_wgtESR[iSR] = new TH1F(("p_"+label.str()).c_str(),";E_{SR} (MIPs);events", 5000,0,200000);
       p_wgtESR[iSR]->StatOverflows();
       
       label.str("");
-      label << "p_rawSubtractESR" << iSR;
-      p_rawSubtractESR[iSR] = new TH1F(label.str().c_str(),";E_{SR}^{PUsubtr} (MIPs);events", 5000,0,200000);
+      label << "rawSubtractESR" << iSR;
+      p_rawSubtractESR[iSR] = new TH1F(("p_"+label.str()).c_str(),";E_{SR}^{PUsubtr} (MIPs);events", 5000,0,200000);
       p_rawSubtractESR[iSR]->StatOverflows();
       label.str("");
-      label << "p_wgtSubtractESR" << iSR;
-      p_wgtSubtractESR[iSR] = new TH1F(label.str().c_str(),";E_{SR}^{PUsubtr} (MIPs);events", 5000,0,200000);
+      label << "wgtSubtractESR" << iSR;
+      p_wgtSubtractESR[iSR] = new TH1F(("p_"+label.str()).c_str(),";E_{SR}^{PUsubtr} (MIPs);events", 5000,0,200000);
       p_wgtSubtractESR[iSR]->StatOverflows();
     }//loop on sr
 
@@ -238,13 +272,14 @@ void SignalRegion::fillHistograms(){
     //Fill energy without PU subtraction
     bool subtractPU = false;
     p_rawESR[iSR]->Fill( getEtotalSR(iSR, subtractPU));
-    
+
     double wgtESR = 0;
     for(unsigned iL(0); iL < nLayers_;iL++){
       wgtESR += getSR(iSR, iL, subtractPU)*absweight(iL);
+
     }
     p_wgtESR[iSR]->Fill(wgtESR);
-    
+
     //Fill energy after PU subtraction
     subtractPU = true;
     p_rawSubtractESR[iSR]->Fill( getEtotalSR(iSR, subtractPU));
@@ -253,9 +288,9 @@ void SignalRegion::fillHistograms(){
       wgtSubtractESR += getSR(iSR, iL, subtractPU)*absweight(iL);
     }
     p_wgtSubtractESR[iSR]->Fill(wgtSubtractESR);
-    
+
   }//loop on SR
-   
+
 }
 
 
