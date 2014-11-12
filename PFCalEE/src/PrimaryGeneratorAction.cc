@@ -50,8 +50,9 @@
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-PrimaryGeneratorAction::PrimaryGeneratorAction()
+PrimaryGeneratorAction::PrimaryGeneratorAction(G4int mod)
 {
+  model_ = mod;
   G4int n_particle = 1;
 
   // default generator is particle gun.
@@ -108,6 +109,7 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
   //this function is called at the begining of event
   // 
   G4double z0 = -0.5*(Detector->GetWorldSizeZ());
+  if (model_ == 2) z0 = 0;
   G4double x0 = 0.*cm, y0 = 0.*cm;
   //smear within 1cm...
   x0 = (G4RandFlat::shoot(0.,10.)-5)*mm;

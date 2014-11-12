@@ -52,7 +52,7 @@ int main(int argc,char** argv)
   runManager->SetUserInitialization(new PhysicsList);
 
   // Set user action classes
-  runManager->SetUserAction(new PrimaryGeneratorAction);
+  runManager->SetUserAction(new PrimaryGeneratorAction(model));
   runManager->SetUserAction(new RunAction);
   runManager->SetUserAction(new EventAction);
   runManager->SetUserAction(new SteppingAction);

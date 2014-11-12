@@ -121,7 +121,7 @@ void PositionFit::initialisePositionHistograms(){
   p_hitEventPuContrib = new TH2F("p_hitEventPuContrib",";layer;E_{PU} (MIPs) from RC;hits",nLayers_,0,nLayers_,1000,0,50);
   p_hitEventPuContrib->StatOverflows();
 
-  p_diffPuContrib = new TH1F("p_diffPuContrib",";E_{PU}^{RC}-E_{PU}^{avg} (MIPs) in SR2;events",500,0,10);
+  p_diffPuContrib = new TH1F("p_diffPuContrib",";E_{PU}^{RC}-E_{PU}^{avg} (MIPs) in SR2;events",1000,-2000,2000);
   p_diffPuContrib->StatOverflows();
 
   p_etavsphi = new TH2F("p_etavsphi",";#phi_{hit};#eta_{hit};n_{events}",100,-3.1416,3.1416,100,1.4,3.6);
@@ -188,10 +188,10 @@ void PositionFit::initialiseFitHistograms(){
 
 void PositionFit::getGlobalMaximum(std::vector<HGCSSRecoHit> *rechitvec,double & aPhimax,double & aEtamax){
 
-  TH2F *letavsphi = new TH2F("letavsphi",";#phi;#eta;hits",150,-3.1416,3.1416,160,1.4,3.0);
+  TH2F *letavsphi = new TH2F("letavsphi",";#phi;#eta;hits",900,-3.1416,3.1416,250,1.4,3.0);
   
-  //cross check using only back layers with less PU
-  TH2F *letavsphi_back = new TH2F("letavsphi_back",";#phi;#eta;hits (layers 15-29)",150,-3.1416,3.1416,160,1.4,3.0);
+  //cross check using only shower max with less PU
+  TH2F *letavsphi_showermax = new TH2F("letavsphi_showermax",";#phi;#eta;hits (layers 12-19)",900,-3.1416,3.1416,250,1.4,3.0);
  
 
   for (unsigned iH(0); iH<(*rechitvec).size(); ++iH){//loop on hits
@@ -215,7 +215,7 @@ void PositionFit::getGlobalMaximum(std::vector<HGCSSRecoHit> *rechitvec,double &
     
     ROOT::Math::XYZVector pos(posx,posy,posz);
     letavsphi->Fill(pos.phi(),pos.eta(),energy);
-    if (lHit.layer()>14) letavsphi_back->Fill(pos.phi(),pos.eta(),energy);
+    if (lHit.layer()>11 && lHit.layer()<20) letavsphi_showermax->Fill(pos.phi(),pos.eta(),energy);
     p_etavsphi->Fill(pos.phi(),pos.eta(),energy);
   }//loop on hits
 
@@ -224,22 +224,25 @@ void PositionFit::getGlobalMaximum(std::vector<HGCSSRecoHit> *rechitvec,double &
   
   //get position of maximum E tower
   int maxbin = letavsphi->GetMaximumBin();
-  int maxbin_crosscheck = letavsphi_back->GetMaximumBin();
-
-  if (maxbin != maxbin_crosscheck) {
-    std::cout << " -- Warning ! Event with another max probably from PU. Taking max in back 15 layers." << std::endl;
-    maxbin = maxbin_crosscheck;
-  }
+  int maxbin_crosscheck = letavsphi_showermax->GetMaximumBin();
 
   int binx,biny,binz;
   letavsphi->GetBinXYZ(maxbin,binx,biny,binz);
+  int binxxc,binyxc,binzxc;
+  letavsphi_showermax->GetBinXYZ(maxbin_crosscheck,binxxc,binyxc,binzxc);
+
+  if (fabs(binx-binxxc)>3 || fabs(biny-binyxc)>3) {
+    std::cout << " -- Warning ! Event with another max " << fabs(binx-binxxc) << "-" << fabs(biny-binyxc) << " x-y bins away, probably from PU. Taking max in showermax layers 12-19." << std::endl;
+    maxbin = maxbin_crosscheck;
+  }
+
   aPhimax =letavsphi->GetXaxis()->GetBinCenter(binx); 
   aEtamax =letavsphi->GetYaxis()->GetBinCenter(biny); 
 
   if (debug_) std::cout << " MaxE cell eta,phi = " << aEtamax << " " << aPhimax << std::endl;
 
   letavsphi->Delete();
-  letavsphi_back->Delete();
+  letavsphi_showermax->Delete();
 }
 
 void PositionFit::getTruthPosition(std::vector<HGCSSGenParticle> *genvec,std::vector<ROOT::Math::XYPoint> & truthPos){

@@ -32,7 +32,7 @@ enlist=[0]
 #if opt.dogun : enlist=[10,15,18,20,25] #30,35,40,45,50,60,80]
 #if opt.dogun : enlist=[1000,2000]
 #do constant ET
-if opt.dogun : enlist=[20,30,40,50,60,70,80,90,100,125,150,175,200]
+if opt.dogun : enlist=[3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200]
 
 granularity='0-20:4,21-63:6'
 noise='0-63:0.12'
@@ -69,7 +69,7 @@ for et in enlist :
     #if en>150: nevents=nevents/2
     
     myqueue=opt.lqueue
-    if et>0 and et<100 : myqueue=opt.squeue
+    if et>0 and et<60 : myqueue=opt.squeue
     
     bval="BOFF"
     if opt.Bfield>0 : bval="BON" 
