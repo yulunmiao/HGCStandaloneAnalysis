@@ -84,7 +84,7 @@ unsigned fitEnergy(TH1F *hist,
   hist->Draw("PE");
 
 
-  double nRMSm = isr<5? 0.5 : 2;
+  double nRMSm = isr<1? 1 : 2;
   double nRMSp = 2;
   
   TF1 *fitResult = new TF1("fitResult","[0]*TMath::Gaus(x,[1],[2],0)",hist->GetXaxis()->GetXmin(),hist->GetXaxis()->GetXmax());
@@ -318,16 +318,16 @@ int plotEGReso(){//main
 
   SetTdrStyle();
 
-  const unsigned nPu = 3;
-  unsigned pu[nPu] = {0,0,140};
+  const unsigned nPu = 1;//3;
+  unsigned pu[nPu] = {140};//{0,0,140};
 
   const unsigned nS = 1;
   std::string scenario[nS] = {
     "gamma/200um/"
   };
 
-  const unsigned neta = 7;
-  unsigned eta[neta]={17,19,21,23,25,27,29};
+  const unsigned neta = 1;//7;
+  unsigned eta[neta]={17};//,19,21,23,25,27,29};
 
   double etaval[neta];
   double etaerr[neta];
@@ -364,7 +364,7 @@ int plotEGReso(){//main
   
   std::ostringstream saveName;
 
-  unsigned genEnAll[]={20,30,40,50,60,70,80,90,100,125,150,175,200};
+  unsigned genEnAll[]={20};//,30,40,50,60,70,80,90,100,125,150,175,200};
   const unsigned nGenEnAll=sizeof(genEnAll)/sizeof(unsigned);
 
   //canvas so they are created only once
@@ -502,7 +502,7 @@ int plotEGReso(){//main
 	      else if (iSR==6) {
 		for (unsigned iL(0);iL<nLayers;++iL){	      
 		  if (iL==0) lName << "subtractedenergy_" << iL << "_SR0" ;
-		  else if (iL<5) lName << "+subtractedenergy_" << iL << "_SR1";
+		  else if (iL<5) lName << "+subtractedenergy_" << iL << "_SR0";
 		  else if (iL<12) lName << "+subtractedenergy_" << iL << "_SR2";
 		  else lName << "+subtractedenergy_" << iL << "_SR4";
 		}
@@ -540,11 +540,14 @@ int plotEGReso(){//main
 	      if (fitEnergy(p_Ereco[iE][iSR],lpad,unit,lres,iSR)!=0) return 1;
 	      lpad->cd();
 	      char buf[500];
-	      sprintf(buf,"#gamma #eta=%3.1f E_{T}=%d GeV + PU %d, SR %d",etaval[ieta],genEn[iE],pu[ipu],iSR);
+	      sprintf(buf,"#gamma E_{T}=%d GeV + PU %d",genEn[iE],pu[ipu]);
 	      TLatex lat;
+	      lat.SetTextSize(0.05);
+	      lat.DrawLatexNDC(0.25,0.965,buf);
+	      sprintf(buf,"#eta=%3.1f, SR %d",etaval[ieta],iSR);
 	      lat.SetTextSize(0.06);
 	      lat.DrawLatexNDC(0.15,0.87,buf);
-	      if (iSR==nSR-2) lat.DrawLatexNDC(0.01,0.01,"HGCAL G4 standalone");
+	      if (iSR==4) lat.DrawLatexNDC(0.01,0.01,"HGCAL G4 standalone");
 
 	      Int_t np=calibRecoFit[iSR]->GetN();
 	      calibRecoFit[iSR]->SetPoint(np,genEn[iE],lres.mean);
@@ -637,6 +640,8 @@ int plotEGReso(){//main
 	}//loop on pu
       }//loop on eta
 
+      if (nGenEnAll==1) continue;
+
       TCanvas *mycR = new TCanvas("mycR","Sampling",1500,1000);
       TCanvas *mycC = new TCanvas("mycC","Constant",1500,1000);
       TCanvas *mycN = new TCanvas("mycN","Noise",1500,1000);
@@ -669,7 +674,7 @@ int plotEGReso(){//main
       TGraphErrors *grNoise[nPu-1][neta];
       for (unsigned ieta(0); ieta<neta;++ieta){
 	
-	for (unsigned ipu(0); ipu<nPu-1; ++ipu){//loop on pu
+	for (unsigned ipu(0); ipu<( (nPu>1)?(nPu-1):nPu ); ++ipu){//loop on pu
 	  
 	  grStoch[ipu][ieta] = new TGraphErrors(nSR,srval,sigmaStoch[ipu+1][ieta],srerr,sigmaStochErr[ipu+1][ieta]);
 	  grConst[ipu][ieta] = new TGraphErrors(nSR,srval,sigmaConst[ipu+1][ieta],srerr,sigmaConstErr[ipu+1][ieta]);

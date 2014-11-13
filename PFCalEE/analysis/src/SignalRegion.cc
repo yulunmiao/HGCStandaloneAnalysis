@@ -55,6 +55,12 @@ SignalRegion:: SignalRegion(const std::string inputFolder,
     double xpos(0),ypos(0),xangle(0),yangle(0);
     double fitMatrix[4] = {0,0,0,0};
     fxypos >> eventIndex >> xpos >> fitMatrix[0] >> xangle >> fitMatrix[1] >> ypos >> fitMatrix[2] >> yangle >> fitMatrix[3];
+    //testing for nan
+    if ( eventIndex != eventIndex || xpos != xpos || fitMatrix[0]!=fitMatrix[0] || xangle!=xangle || fitMatrix[1]!=fitMatrix[1] || ypos!=ypos || fitMatrix[2]!=fitMatrix[2] || yangle!=yangle || fitMatrix[3]!=fitMatrix[3]){
+      std::cout << " Found nan ! Fix code !" << std::endl;
+      std::cout << eventIndex << " " << xpos << " " << fitMatrix[0] << " " << xangle << " " << fitMatrix[1] << " " << ypos << " " << fitMatrix[2] << " " << yangle << " " << fitMatrix[3]<< std::endl;
+      exit(1);
+    }
     if (eventIndex<nevt_) {
       std::vector<ROOT::Math::XYZVector> tmpXYZ;
       tmpXYZ.reserve(nLayers_);
@@ -97,7 +103,7 @@ void SignalRegion::initialise(TTree *aSimTree, TTree *aRecTree,
   if (aRecTree->GetBranch("nPuVtx")) aRecTree->SetBranchAddress("nPuVtx",&nPuVtx);
 
   std::cout << " -- Now filling signal region histograms..." << std::endl;
-
+  unsigned nSkipped = 0;
     for (unsigned ievt(0); ievt< nevt_; ++ievt){//loop on entries
         if (ievt%50 == 0) std::cout << "... Processing entry: " << ievt << std::endl;
     
@@ -108,13 +114,24 @@ void SignalRegion::initialise(TTree *aSimTree, TTree *aRecTree,
         if (ievt==0){
 	  absweight_.clear();
 	  absweight_.reserve(nLayers_);
+	  std::cout << " -- Absorber weights used for total energy:" << std::endl;
 	  for(unsigned iL(0); iL<nLayers_; iL++){
-            absweight_.push_back((*ssvec)[iL].volX0trans()/(*ssvec)[1].volX0trans() );
+	    double w = (*ssvec)[iL].volX0trans()/(*ssvec)[1].volX0trans();
+	    std::cout << " - Layer " << iL << " w=" << w << std::endl;
+            absweight_.push_back(w);
 	  }
+	}
+	if (absweight_.size()!=nLayers_) {
+	  std::cout << " -- Error! Not all layers found! Fix code." << std::endl;
+	  exit(1);
 	}
         std::vector<ROOT::Math::XYZVector> eventPos = accuratePos_[ievt];
 
-        if(eventPos.size()!=nLayers_) continue; 
+        if(eventPos.size()!=nLayers_) {
+	  std::cout << " -- Event " << ievt << " skipped, accurate position size = " << eventPos.size() << std::endl;
+	  nSkipped++;
+	  continue;
+	}
 
 	//initialise values for current event
         totalE_ = 0;
@@ -182,7 +199,8 @@ void SignalRegion::initialise(TTree *aSimTree, TTree *aRecTree,
             totalE_ += energy;
             wgttotalE_ += energy*absweight_[layer];    
 
-            double subtractedenergy = std::max(0.,energy - puDensity_.getDensity(leta,layer,geomConv_.cellSizeInCm(layer,leta),nPuVtx));
+	    double puE = puDensity_.getDensity(leta,layer,geomConv_.cellSizeInCm(layer,leta),nPuVtx);
+            double subtractedenergy = std::max(0.,energy - puE);
             double halfCell = 0.5*geomConv_.cellSize(layer,leta);
 
 	    double dx = eventPos[layer].x()-posx;
@@ -203,7 +221,7 @@ void SignalRegion::initialise(TTree *aSimTree, TTree *aRecTree,
     }//loop on events
 
     std::cout << " -- Histograms for signal regions have been filled !" << std::endl;
- 
+    std::cout << " -- Number of skipped events: " << nSkipped << std::endl;
 }
 
 

@@ -26,14 +26,14 @@ HGCSSRecoHit::HGCSSRecoHit(const HGCSSSimHit & aSimHit, const unsigned granulari
 
 
 double HGCSSRecoHit::theta() const {
-  return 2*atan(exp(-eta()));
+  return 2*atan(exp(-1.*eta()));
 }
 
 double HGCSSRecoHit::eta() const {
   double theta = acos(fabs(zpos_)/sqrt(zpos_*zpos_+xpos_*xpos_+ypos_*ypos_));
-  double leta = -log(tan(theta/2.));
+  double leta = -1.*log(tan(theta/2.));
   if (zpos_>0) return leta;
-  else return -leta;
+  else return -1.*leta;
 }
 
 double HGCSSRecoHit::phi() const {
@@ -42,7 +42,7 @@ double HGCSSRecoHit::phi() const {
   if (x==0) return 0;
   if (x>0) return atan(y/x);
   else if (y>0) return TMath::Pi()+atan(y/x);
-  else return -TMath::Pi()+atan(y/x);
+  else return -1.*TMath::Pi()+atan(y/x);
 }
 
 // void HGCSSRecoHit::encodeCellId(const bool x_side,const bool y_side,const unsigned x_cell,const unsigned y_cell, const unsigned granularity){

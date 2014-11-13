@@ -34,6 +34,7 @@ public:
   PositionFit(const unsigned nSR,const double & residualMax, const unsigned nLayers, const unsigned nSiLayers,const bool applyPuMixFix,const unsigned debug=0);
   ~PositionFit(){};
 
+  std::pair<unsigned, std::pair<double,double> > findMajorityValue(std::vector<std::pair<double,double> > & values) const;
 
   void initialise(TFile *outputFile,
 		  const std::string outputDir, 
@@ -52,9 +53,9 @@ public:
 			   TTree *recoTree,
 			   const unsigned nEvts);
   
-  void getGlobalMaximum(std::vector<HGCSSRecoHit> *rechitvec,double & phimax,double & etamax);
+  bool getGlobalMaximum(const unsigned ievt, const unsigned nVtx, std::vector<HGCSSRecoHit> *rechitvec,double & phimax,double & etamax);
 
-  void getTruthPosition(std::vector<HGCSSGenParticle> *genvec,std::vector<ROOT::Math::XYPoint> & truthPos);
+  bool getTruthPosition(std::vector<HGCSSGenParticle> *genvec,std::vector<ROOT::Math::XYPoint> & truthPos);
 
   void getMaximumCellFromGeom(const double & phimax,const double & etamax,std::vector<double> & xmax,std::vector<double> & ymax);
 
@@ -81,10 +82,12 @@ public:
 
   bool performLeastSquareFit(TTree *recoTree, const unsigned nEvts);
 
-  bool fitEvent(const unsigned ievt,
-		unsigned & nInvalidFits,
-		std::ofstream & fout,
-		const bool cutOutliers=false);
+  //return 1 if no input file or <3 layers
+  //return 2 if chi2/ndf>chi2ndfmax_
+  unsigned fitEvent(const unsigned ievt,
+		    unsigned & nInvalidFits,
+		    std::ofstream & fout,
+		    const bool cutOutliers=false);
 
   inline void setOutputFile(TFile *outputFile){
     outputFile_ = outputFile;
@@ -130,6 +133,8 @@ private:
   std::string outFolder_;
   std::string outputDir_;
   TFile *outputFile_;
+
+  TH1F *p_nGenParticles;
 
   std::vector<TH2F *> p_genxy;
   std::vector<TH2F *> p_recoxy;

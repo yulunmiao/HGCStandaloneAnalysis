@@ -48,17 +48,20 @@ public:
 
   double getEtotalSR(unsigned iSR, bool subtractPU){
     double Etotal(0);
+    if (iSR>=nSR_) return 0;
     for(unsigned iL(0);iL<nLayers_;iL++){
-      if(subtractPU) Etotal += subtractedenergySR_[iSR][iL];
-      else Etotal += energySR_[iSR][iL];
+      if(subtractPU) Etotal += subtractedenergySR_[iL][iSR];
+      else Etotal += energySR_[iL][iSR];
     }
     return Etotal;
-  }
+  };
   
   double getSR(unsigned iSR, unsigned layer, bool subtractPU){
-    if(subtractPU) {return subtractedenergySR_[iSR][layer];}
-    else {return energySR_[iSR][layer];}
-  }
+    if(layer >= nLayers_) return 0;
+    if (iSR>=nSR_) return 0;
+    if(subtractPU) {return subtractedenergySR_[layer][iSR];}
+    else {return energySR_[layer][iSR];}
+  };
 
   double absweight(unsigned layer){
     if(layer >= nLayers_) return 0;

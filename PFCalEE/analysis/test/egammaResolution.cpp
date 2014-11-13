@@ -273,10 +273,10 @@ int main(int argc, char** argv){//main
   
   //perform second loop over events to find positions to fit.
   //from input file or from event loop
-  if ((redoStep<1 && !lChi2Fit.performLeastSquareFit(lRecTree,nEvts)) || redoStep>0){
+  if ((redoStep<1 && !lChi2Fit.performLeastSquareFit(lSimTree,nEvts)) || redoStep>0){
     lChi2Fit.getInitialPositions(lSimTree,lRecTree,nEvts);
     lChi2Fit.finaliseErrorMatrix();
-    lChi2Fit.performLeastSquareFit(lRecTree,nEvts);
+    lChi2Fit.performLeastSquareFit(lSimTree,nEvts);
   }
 
   SignalRegion SignalEnergy(outFolder, nLayers, nEvts, geomConv, puDensity,applyPuMixFix);
