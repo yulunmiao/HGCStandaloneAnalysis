@@ -54,6 +54,8 @@ PositionFit::PositionFit(const unsigned nSR,
   fixForPuMixBug_ = applyPuMixFix;
 
   p_nGenParticles = 0;
+  p_numberOfMaxTried = 0;
+  p_dRMaxTruth = 0;
   p_hitMeanPuContrib = 0;
   p_hitEventPuContrib = 0;
   p_diffPuContrib = 0;
@@ -129,6 +131,9 @@ void PositionFit::initialisePositionHistograms(){
   outputFile_->cd(outputDir_.c_str());
 
   p_nGenParticles = new TH1F("p_nGenParticles",";nGenParticles",10,0,10);
+  p_numberOfMaxTried = new TH1F("p_numberOfMaxTried",";max cells tried",250,0,250);
+  p_dRMaxTruth = new TH1F("p_dRMaxTruth",";#Delta R(max,truth)",200,0,0.1);
+  p_dRMaxTruth->StatOverflows();
 
   p_genxy.resize(nLayers_,0);
   p_recoxy.resize(nLayers_,0);
@@ -224,7 +229,11 @@ void PositionFit::initialiseFitHistograms(){
   }
 }
 
-bool PositionFit::getGlobalMaximum(const unsigned ievt, const unsigned nVtx, std::vector<HGCSSRecoHit> *rechitvec,double & aPhimax,double & aEtamax){
+bool PositionFit::getGlobalMaximum(const unsigned ievt, 
+				   const unsigned nVtx, 
+				   std::vector<HGCSSRecoHit> *rechitvec,
+				   const ROOT::Math::XYZVector & truthPos0, 
+				   double & aPhimax,double & aEtamax){
 
   bool oneresult = true;
   TH2F *letavsphi = new TH2F("letavsphi",";#phi;#eta;hits",
@@ -255,7 +264,7 @@ bool PositionFit::getGlobalMaximum(const unsigned ievt, const unsigned nVtx, std
     double posz = lHit.get_z();
     //double radius = sqrt(posx*posx+posy*posy);
     double energy = lHit.energy();
-    unsigned layer = lHit.layer();
+    //unsigned layer = lHit.layer();
     //if (energy>1) std::cout << "Hit " << layer << " " << posx << " " << posy << " " << posz << " " << energy << std::endl;
     
     if (debug_>1) {
@@ -281,14 +290,39 @@ bool PositionFit::getGlobalMaximum(const unsigned ievt, const unsigned nVtx, std
   //}
   
   //get position of maximum E tower
-  int maxbin = letavsphi->GetMaximumBin();
+  int maxbin = -1;
+  int binx=-1,biny=-1,binz=-1;
+  //compare with truth
+  double etatruth = truthPos0.eta();
+  double phitruth = truthPos0.phi();
+  double dR = 10;
+  unsigned counter = 0;
+  while (dR>0.1) {
+    letavsphi->SetBinContent(maxbin,0);
+    maxbin = letavsphi->GetMaximumBin();
+    letavsphi->GetBinXYZ(maxbin,binx,biny,binz);
+    double leta = letavsphi->GetYaxis()->GetBinCenter(biny);
+    double lphi = letavsphi->GetXaxis()->GetBinCenter(binx);
+    double deta = leta-etatruth;
+    double dphi = lphi-phitruth;
+    if (dphi< (-1.*TMath::Pi())) dphi += 2*TMath::Pi();
+    dR = sqrt(pow(deta,2)+pow(dphi,2));
+    if (counter>nVtx) {
+      break;
+    }
+    counter++;
+  }
 
-  int binx,biny,binz;
-  letavsphi->GetBinXYZ(maxbin,binx,biny,binz);
-  
+  if (debug_ || counter>nVtx) std::cout << " -- Maximum found after " << counter << " trials, dR = " << dR;
+  if (counter>nVtx) std::cout << " --> away from truth pos for evt " << ievt ;
+  if (debug_ || counter>nVtx) std::cout << std::endl;  
+
+  if (counter>1) oneresult = false;
   aPhimax =letavsphi->GetXaxis()->GetBinCenter(binx); 
   aEtamax =letavsphi->GetYaxis()->GetBinCenter(biny); 
 
+  p_numberOfMaxTried->Fill(counter);
+  p_dRMaxTruth->Fill(dR);
   /*
   if (nVtx>0){
     double binxsize =  letavsphi->GetXaxis()->GetBinWidth(binx);
@@ -549,22 +583,23 @@ void PositionFit::getInitialPositions(TTree *aSimTree,
     //////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////
 
-    double phimax = 0;
-    double etamax = 0;
-    bool oneresult = getGlobalMaximum(ievt,nPuVtx,rechitvec,phimax,etamax);
-    if (!oneresult) nMultipleMax++;
-    p_etavsphi_max->Fill(phimax,etamax);
-
     std::vector<ROOT::Math::XYPoint> truthPos;
     truthPos.resize(nLayers_,ROOT::Math::XYPoint(0,0));
     bool found = getTruthPosition(genvec,truthPos);
-
     if (!found) {
       nConvertedPhotons++;
       continue;
     }
     
     p_yvsx_truth->Fill(truthPos[10].X(),truthPos[10].Y());
+
+    double phimax = 0;
+    double etamax = 0;
+    ROOT::Math::XYZVector truthPos0(truthPos[0].X(),truthPos[0].Y(),avgZ_[0]);
+    bool oneresult = getGlobalMaximum(ievt,nPuVtx,rechitvec,truthPos0,phimax,etamax);
+    if (!oneresult) nMultipleMax++;
+    p_etavsphi_max->Fill(phimax,etamax);
+
 
     std::vector<double> xmax;
     xmax.resize(nLayers_,0);
@@ -595,7 +630,7 @@ void PositionFit::getInitialPositions(TTree *aSimTree,
 	//take from geom to not be biased by hit having PU, because
 	//not from geom means find cell with a hit closest to maxpos...
 	getMaximumCellFromGeom(phirc,etamax,xmaxrc,ymaxrc);
-	if (debug_) std::cout << "rc #" << ipm << " phirc=" << phirc << " xmax[10]=" << xmaxrc[10] << " ymax[10]=" << ymaxrc[10] << " r=" << sqrt(pow(xmaxrc[10],2)+pow(ymaxrc[10],2)) << std::endl;
+	if (debug_>1) std::cout << "rc #" << ipm << " phirc=" << phirc << " xmax[10]=" << xmaxrc[10] << " ymax[10]=" << ymaxrc[10] << " r=" << sqrt(pow(xmaxrc[10],2)+pow(ymaxrc[10],2)) << std::endl;
 	getPuContribution(rechitvec,xmaxrc,ymaxrc,puE);
       }
       
@@ -907,9 +942,7 @@ bool PositionFit::fillMatrixFromFile(){
   return true;
 }
 
-bool PositionFit::performLeastSquareFit(TTree *aSimTree, 
-					const unsigned nEvts){
-  
+bool PositionFit::initialiseLeastSquareFit(){
   initialiseFitHistograms();
 
   //try reading matrix from file, if fail
@@ -922,41 +955,26 @@ bool PositionFit::performLeastSquareFit(TTree *aSimTree,
   //get back data for each event and perform chi2 fit:
   std::cout << " -- Performing chi2 fit for each event" << std::endl;
 
-  unsigned nInvalidFits=0;
-  //unsigned nFailedFits=0;
-  unsigned nFailedFitsAfterCut=0;
+  nInvalidFits_=0;
+  nFailedFitsAfterCut_=0;
 
   //open new file to save accurate positions
-  std::ofstream fout;
   std::ostringstream foutname;
   foutname << outFolder_ << "/accuratePos.dat";
-  fout.open(foutname.str());
-  if (!fout.is_open()){
+  fout_.open(foutname.str());
+  if (!fout_.is_open()){
     std::cout << " Cannot open outfile " << foutname.str() << " for writing ! Exiting..." << std::endl;
     exit(1);
   }
 
-  //std::vector<HGCSSRecoHit> * rechitvec = 0;
-  //aRecTree->SetBranchAddress("HGCSSRecoHitVec",&rechitvec);
-  HGCSSEvent * event = 0;
-  std::vector<HGCSSSamplingSection> * ssvec = 0;
-  std::vector<HGCSSSimHit> * simhitvec = 0;
-  //std::vector<HGCSSRecoHit> * rechitvec = 0;
-  std::vector<HGCSSGenParticle> * genvec = 0;
+  return true;
 
-  aSimTree->SetBranchAddress("HGCSSEvent",&event);
-  aSimTree->SetBranchAddress("HGCSSSamplingSectionVec",&ssvec);
-  aSimTree->SetBranchAddress("HGCSSSimHitVec",&simhitvec);
-  aSimTree->SetBranchAddress("HGCSSGenParticleVec",&genvec);
-  
-  for (unsigned ievt(0); ievt<nEvts; ++ievt){//loop on entries
-    if (debug_) std::cout << "... Processing entry: " << ievt << std::endl;
-    else if (ievt%50 == 0) std::cout << "... Processing entry: " << ievt << std::endl;
+}
 
-    aSimTree->GetEntry(ievt);
+unsigned PositionFit::performLeastSquareFit(const unsigned ievt, std::vector<ROOT::Math::XYZVector> & eventPos){
 
     //cut outliers
-    unsigned fit = fitEvent(ievt,nInvalidFits,fout,true);
+  unsigned fit = fitEvent(ievt,eventPos,true);
     if (fit==1){
       // std::cout << " -- Number of genparticles: " << (*genvec).size() << std::endl;
       // for (unsigned iP(0); iP<(*genvec).size(); ++iP){//loop on gen particles 
@@ -968,24 +986,25 @@ bool PositionFit::performLeastSquareFit(TTree *aSimTree,
     if (fit>1) {
       //std::cout << " ---- Fit failed ! Reprocess event " << ievt << " cutting outliers" << std::endl;
       //nFailedFits++;
-      //if (fitEvent(ievt,nInvalidFits,fout,true)>1)
+      //if (fitEvent(ievt,eventPos,true)>1)
       std::cout << " -- Event " << ievt << " failed fit." << std::endl;
-      nFailedFitsAfterCut++;
+      nFailedFitsAfterCut_++;
     }
-
-  }//loop on entries
   
-  fout.close();    
+    return fit;
+}
 
-
-  std::cout << " -- Number of invalid fits: " << nInvalidFits << std::endl;
-  //std::cout << " -- Number of fits failed: " << nFailedFits << std::endl;
-  std::cout << " -- Number of fits failed after cutting outliers: " << nFailedFitsAfterCut << std::endl;
-  return true;
+void PositionFit::finaliseFit(){
+  fout_.close();    
+  outputFile_->Flush();
+  std::cout << " -- Number of invalid fits: " << nInvalidFits_ << std::endl;
+  std::cout << " -- Number of fits failed after cutting outliers: " << nFailedFitsAfterCut_ << std::endl;
 
 }
 
-unsigned PositionFit::fitEvent(const unsigned ievt, unsigned & nInvalidFits, std::ofstream & fout, const bool cutOutliers){
+unsigned PositionFit::fitEvent(const unsigned ievt, 
+			       std::vector<ROOT::Math::XYZVector> & eventPos,
+			       const bool cutOutliers){
 
   std::vector<unsigned> layerId;
   std::vector<double> posx;
@@ -1004,7 +1023,7 @@ unsigned PositionFit::fitEvent(const unsigned ievt, unsigned & nInvalidFits, std
 			   layerId,posx,posy,posz,
 			   posxtruth,posytruth,
 			   cutOutliers)){
-    nInvalidFits++;
+    nInvalidFits_++;
     return 1;
   }
 
@@ -1028,7 +1047,7 @@ unsigned PositionFit::fitEvent(const unsigned ievt, unsigned & nInvalidFits, std
 
   //if less than 3 valid layers: no point doing a fit !!
   if (nL<3){
-    nInvalidFits++;
+    nInvalidFits_++;
     return 1;
   }
   
@@ -1152,7 +1171,7 @@ unsigned PositionFit::fitEvent(const unsigned ievt, unsigned & nInvalidFits, std
       p_positionReso->Fill(sqrt(fitMatrix[0][0]));
       p_angularReso->Fill(sqrt(fitMatrix[1][1]));
       
-      fout << ievt << " " 
+      fout_ << ievt << " " 
 	   << position[0] << " " 
 	   << sqrt(fitMatrix[0][0]) << " " 
 	   << TanAngle[0][0] << " " 
@@ -1163,9 +1182,13 @@ unsigned PositionFit::fitEvent(const unsigned ievt, unsigned & nInvalidFits, std
 	   << sqrt(fitMatrix[3][3])
 	   << std::endl;
     
+
       for (unsigned iL(0); iL<nL;++iL){
-	p_fitXvsLayer->Fill(layerId[iL],position[0]+TanAngle[0][0]*posz[iL]);
-	p_fitYvsLayer->Fill(layerId[iL],position[1]+TanAngle[0][1]*posz[iL]);
+	double x = position[0]+TanAngle[0][0]*posz[iL];
+	double y = position[1]+TanAngle[0][1]*posz[iL];
+	p_fitXvsLayer->Fill(layerId[iL],x);
+	p_fitYvsLayer->Fill(layerId[iL],y);
+	eventPos[layerId[iL]] = ROOT::Math::XYZVector(x,y,posz[iL]);
       }
     }
 
@@ -1176,7 +1199,7 @@ unsigned PositionFit::fitEvent(const unsigned ievt, unsigned & nInvalidFits, std
   p_impactY_residual->Fill(positionFF[0][1]-positionFF[1][1]);
   p_tanAngleY_residual->Fill(TanAngle[0][1]-TanAngle[1][1]);
       
-
+  //std::cout << " -- Size of eventPos=" << eventPos.size() << std::endl;
   return 0;
 }
 

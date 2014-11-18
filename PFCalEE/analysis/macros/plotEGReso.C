@@ -162,12 +162,12 @@ TPad* plotCalibration(TGraphErrors *gr,TPad *pad,bool doRatio, TGraphErrors *grD
     lower = plot_ratio(pad, false);
     upper->cd();
   }
-  gr->GetXaxis()->SetLabelSize(0.06);
-  gr->GetXaxis()->SetTitleSize(0.06);
+  gr->GetXaxis()->SetLabelSize(0.0);
+  gr->GetXaxis()->SetTitleSize(0.0);
   gr->GetYaxis()->SetLabelSize(0.06);
   gr->GetYaxis()->SetTitleSize(0.06);
-  gr->GetXaxis()->SetTitleOffset(0.7);
-  gr->GetYaxis()->SetTitleOffset(0.8);
+  gr->GetXaxis()->SetTitleOffset(7);
+  gr->GetYaxis()->SetTitleOffset(0.9);
   
   gr->Draw("ap");
 
@@ -219,7 +219,7 @@ TPad* plotCalibration(TGraphErrors *gr,TPad *pad,bool doRatio, TGraphErrors *grD
       grDelta->SetPoint(ip,x,(y-loffset)/lslope-x);
       double err = gr->GetErrorY(ip)/lslope;
       grDelta->SetPointError(ip,0,err);
-      std::cout << ip << " " << x << " " << y << " " << (y-loffset)/lslope-x << std::endl;
+      std::cout << "Calib " << ip << " Egen=" << x << " Erec=" << y << " delta=" << (y-loffset)/lslope-x << std::endl;
     }
     grDelta->SetTitle("");
     grDelta->SetMinimum(-1.*range);
@@ -314,20 +314,149 @@ void plotResolution(TGraphErrors *gr,TPad *pad,
   
 };
 
+void retrievePuSigma(TTree *atree, TTree *atreePu, 
+		     std::vector<double> & aSigmaVec, 
+		     const std::string plotdir,
+		     double * calib){
+
+  unsigned nLayers = 30;
+  unsigned nSR=5;
+  aSigmaVec.resize(nSR+2,0.5);
+  if (!atree || !atreePu) return;
+  else std::cout << " Trees found." << std::endl;
+
+  unsigned evtIndex = 0;
+  unsigned evtIndexPu = 0;
+  atree->SetBranchAddress("eventIndex",&evtIndex);
+  atreePu->SetBranchAddress("eventIndex",&evtIndexPu);
+
+  std::vector<std::vector<double> > energySR[2];
+  //  std::vector<std::vector<double> > subtractedenergySR[2];
+ 
+  std::vector<double> emptyvec;
+  emptyvec.resize(nSR,0);
+  energySR[0].resize(nLayers,emptyvec);
+  energySR[1].resize(nLayers,emptyvec);
+  //subtractedenergySR[0].resize(nLayers,emptyvec);
+
+  std::ostringstream label;
+  for (unsigned iL(0); iL<nLayers;++iL){
+    for (unsigned iSR(0);iSR<nSR;++iSR){
+      label.str("");
+      label << "energy_" << iL << "_SR" << iSR;
+      atree->SetBranchAddress(label.str().c_str(),&energySR[0][iL][iSR]);
+      atreePu->SetBranchAddress(label.str().c_str(),&energySR[1][iL][iSR]);
+      //label.str("");
+      //label << "subtractedenergy_" << iL << "_SR" << iSR;
+      //outtree_->SetBranchAddress(label.str().c_str(),&subtractedenergySR[iL][iSR]);
+    }
+  }
+  int nEvtsPu = atreePu->GetEntries();
+  int nEvts = atree->GetEntries();
+  if (nEvts!=nEvtsPu) {
+    std::cout << " -- pb, not all events found! nEvts = " << nEvts << " nEvtsPu=" << nEvtsPu << std::endl;
+    nEvts = std::min(nEvts,nEvtsPu);
+    return;
+  }
+
+  TH1F *p_sigma[nSR+2];
+  for (unsigned iSR(0); iSR<nSR+2;++iSR){
+    label.str("");
+    label << "p_sigma_" << iSR;
+    p_sigma[iSR] = new TH1F(label.str().c_str(),";PuE-E (GeV)",1000,0,200);
+    p_sigma[iSR]->StatOverflows();
+  }
+
+  for (int ievt(0); ievt<nEvts; ++ievt){//loop on entries
+    if (ievt%50 == 0) std::cout << "... Processing entry: " << ievt << std::endl;
+    atree->GetEntry(ievt);
+    atreePu->GetEntry(ievt);
+
+    if (evtIndex != evtIndexPu) {
+      //std::cout << " -- Different events found: " << evtIndex << " " << evtIndexPu << ". Skipping." << std::endl;
+      continue;
+    }
+
+    double puE[nSR+2];
+    double E[nSR+2];
+    for (unsigned iSR(0); iSR<nSR+2;++iSR){//loop on signal region
+      puE[iSR]=0;
+      E[iSR]=0;
+      for (unsigned iL(0);iL<nLayers;++iL){
+	if (iSR<nSR){
+	  E[iSR]   += energySR[0][iL][iSR];
+	  puE[iSR] += energySR[1][iL][iSR];
+	}
+	else if (iSR==nSR) {
+	  if (iL<5) {
+	    E[iSR] += energySR[0][iL][0];
+	    puE[iSR] += energySR[1][iL][0];
+	  }
+	  else if (iL<10) {
+	    E[iSR] += energySR[0][iL][1];
+	    puE[iSR] += energySR[1][iL][1];
+	      }
+	  else if (iL<15) {
+	    E[iSR] += energySR[0][iL][2];
+	    puE[iSR] += energySR[1][iL][2];
+	  } 
+	  else if (iL<20) {
+	    E[iSR] += energySR[0][iL][3];
+	    puE[iSR] += energySR[1][iL][3];
+	  } 
+	  else  {
+	    E[iSR] += energySR[0][iL][4];
+	    puE[iSR] += energySR[1][iL][4];
+	  }
+	}
+	else if (iSR==nSR+1) {
+	  if (iL<5) {
+	    E[iSR] += energySR[0][iL][0];
+	    puE[iSR] += energySR[1][iL][0];
+	  }
+	  else if (iL<12) {
+	    E[iSR] += energySR[0][iL][2];
+	    puE[iSR] += energySR[1][iL][2];
+	  }
+	  else  {
+	    E[iSR] += energySR[0][iL][4];
+	    puE[iSR] += energySR[1][iL][4];
+	  } 
+	}
+      }//loop on layers
+      p_sigma[iSR]->Fill((puE[iSR]-E[iSR])/calib[iSR]);
+
+    }//loop on SR
+
+  }//loop on events
+  TCanvas *mycS = new TCanvas("mycS","sigma Pu",1500,1000);
+  mycS->Divide(4,2);
+  gStyle->SetOptStat("eMRuo");
+  for (unsigned iSR(0); iSR<nSR+2;++iSR){//loop on signal region
+    aSigmaVec[iSR] = p_sigma[iSR]->GetRMS();
+    mycS->cd(iSR+1);
+    p_sigma[iSR]->Draw();
+  }
+  
+  mycS->Update();
+  mycS->Print((plotdir+"_PuSubtractedE.pdf").c_str());
+
+};
+
 int plotEGReso(){//main
 
   SetTdrStyle();
 
-  const unsigned nPu = 1;//3;
-  unsigned pu[nPu] = {140};//{0,0,140};
+  const unsigned nPu = 3;
+  unsigned pu[nPu] = {0,0,140};
 
   const unsigned nS = 1;
   std::string scenario[nS] = {
     "gamma/200um/"
   };
 
-  const unsigned neta = 1;//7;
-  unsigned eta[neta]={17};//,19,21,23,25,27,29};
+  const unsigned neta = 2;//7;
+  unsigned eta[neta]={17,25};//19,21,23,25,27,29};
 
   double etaval[neta];
   double etaerr[neta];
@@ -350,10 +479,10 @@ int plotEGReso(){//main
     srerr[iSR] = 0.;
   }
 
-  double calib[nPu][nSR][neta];
-  double calibErr[nPu][nSR][neta];
-  double offset[nPu][nSR][neta];
-  double offsetErr[nPu][nSR][neta];
+  double calib[nPu][neta][nSR];
+  double calibErr[nPu][neta][nSR];
+  double offset[nPu][neta][nSR];
+  double offsetErr[nPu][neta][nSR];
 
   double sigmaStoch[nPu][neta][nSR];
   double sigmaStochErr[nPu][neta][nSR];
@@ -364,7 +493,8 @@ int plotEGReso(){//main
   
   std::ostringstream saveName;
 
-  unsigned genEnAll[]={20};//,30,40,50,60,70,80,90,100,125,150,175,200};
+  //unsigned genEnAll[]={3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200};
+  unsigned genEnAll[]={20};//,40,60,80,100};
   const unsigned nGenEnAll=sizeof(genEnAll)/sizeof(unsigned);
 
   //canvas so they are created only once
@@ -388,14 +518,14 @@ int plotEGReso(){//main
   for (unsigned iV(0); iV<nV;++iV){//loop on versions
     for (unsigned iS(0); iS<nS;++iS){//loop on scenarios
       
-      TString plotDir = "../PLOTS/gitV00-02-09/version"+version[iV]+"/"+scenario[iS]+"/";
+      TString plotDir = "../PLOTS/gitV00-02-12/version"+version[iV]+"/"+scenario[iS]+"/";
+      TTree *ltree[neta][nPu][nGenEnAll];
       
       for (unsigned ieta(0);ieta<neta;++ieta){//loop on eta
 	
 	etaval[ieta] = eta[ieta]/10.;
 	etaerr[ieta] = 0;
 	
-
 	for (unsigned ipu(0); ipu<nPu; ++ipu){//loop on pu
 	  unsigned puOption = pu[ipu];
 
@@ -417,10 +547,10 @@ int plotEGReso(){//main
 	      skip[iE] = true;
 	    }
 	    else {
-	      inputFile->cd();
-	      TTree *ltree = (TTree*)gDirectory->Get("Ereso");
+	      inputFile->cd("Energies");
+	      ltree[ieta][ipu][iE] = (TTree*)gDirectory->Get("Ereso");
 	      
-	      if (!ltree){
+	      if (!ltree[ieta][ipu][iE]){
 		std::cout << " -- File " << inputFile->GetName() << " sucessfully opened but tree Ereso not found! Skipping." << std::endl;
 		skip[iE] = true;
 	      } else { 
@@ -472,8 +602,10 @@ int plotEGReso(){//main
 	    std::ostringstream linputStr;
 	    linputStr << plotDir << "eta" << eta[ieta] << "_et" << genEn[iE] << "_pu" << pu[ipu] << pSuffix << ".root";
 	    inputFile = TFile::Open(linputStr.str().c_str());
-	    inputFile->cd();
-	    TTree *ltree = (TTree*)gDirectory->Get("Ereso");
+	    inputFile->cd("Energies");
+	    ltree[ieta][ipu][iE] = (TTree*)gDirectory->Get("Ereso");
+
+	    std::cout << " -- Tree entries for eta=" << eta[ieta] << " pu=" << pu[ipu] << " : " << ltree[ieta][ipu][iE]->GetEntries() << std::endl;
 
 	    for (unsigned iSR(0); iSR<nSR;++iSR){//loop on signal region
 	      std::cout << " --Processing signal region: " << iSR << std::endl;
@@ -508,8 +640,8 @@ int plotEGReso(){//main
 		}
 	      }
 	      else lName << "wgtEtotal";
-	      if (ipu>0) lName << " - " << offset[0][iSR][ieta] << ")/" << calib[0][iSR][ieta];
-	      ltree->Draw(lName.str().c_str(),"","");
+	      if (ipu>0) lName << " - " << offset[0][ieta][iSR] << ")/" << calib[0][ieta][iSR];
+	      ltree[ieta][ipu][iE]->Draw(lName.str().c_str(),"","");
 	      lName.str("");
 	      lName << "energy" << genEn[iE] << "_SR" << iSR ;
 	      p_Ereco[iE][iSR] = (TH1F*)(gPad->GetPrimitive("htemp"))->Clone(lName.str().c_str()); // 1D
@@ -568,6 +700,18 @@ int plotEGReso(){//main
 	    mycE[iE]->Update();
 	    mycE[iE]->Print((saveName.str().c_str()+pSuffix)+".pdf");
 	    
+
+	    std::vector<double> sigmaVec;
+	    if (ipu>1) {
+	      std::ostringstream lsave;
+	      lsave << plotDir << "/eta"<< eta[ieta] << "_pu" << puOption << pSuffix;
+	      retrievePuSigma(ltree[ieta][1][iE], ltree[ieta][ipu][iE], 
+			      sigmaVec, 
+			      lsave.str(),
+			      calib[0][ieta]);
+	    }
+
+
 	  }//loop on energies
 
 
@@ -577,16 +721,18 @@ int plotEGReso(){//main
 	    TPad *upper = plotCalibration(calibRecoFit[iSR],lpad,
 					  true,calibRecoDelta[iSR],
 					  unit,
-					  calib[ipu][iSR][ieta],
-					  calibErr[ipu][iSR][ieta],
-					  offset[ipu][iSR][ieta],
-					  offsetErr[ipu][iSR][ieta]);
+					  calib[ipu][ieta][iSR],
+					  calibErr[ipu][ieta][iSR],
+					  offset[ipu][ieta][iSR],
+					  offsetErr[ipu][ieta][iSR]);
 	    upper->cd();
 	    char buf[500];
-	    sprintf(buf,"#gamma #eta=%3.1f + PU %d, SR %d",etaval[ieta],pu[ipu],iSR);
+	    sprintf(buf,"#gamma #eta=%3.1f + PU %d",etaval[ieta],pu[ipu]);
 	    TLatex lat;
 	    lat.SetTextSize(0.07);
-	    lat.DrawLatexNDC(0.6,0.15,buf);
+	    lat.DrawLatexNDC(0.4,0.15,buf);
+	    sprintf(buf,"SR %d",iSR);
+	    lat.DrawLatexNDC(0.6,0.22,buf);
 	    if (iSR==0) lat.DrawLatexNDC(0.01,0.95,"HGCAL G4 standalone");
 	    
 	  }
@@ -599,14 +745,13 @@ int plotEGReso(){//main
 	  lsave << "_eta" << eta[ieta] << "_pu" << puOption << pSuffix;
 	  myc[0]->Print((lsave.str()+".pdf").c_str());
 
-
 	  //plot reso
 	  for (unsigned iSR(0); iSR<nSR;++iSR){//loop on signal region
 	    TPad *lpad = (TPad*)(myc[1]->cd(iSR+1));
 
 	    double stoch0 = pu[ipu]==0? 0.14 : sigmaStoch[1][ieta][iSR];
 	    double const0 = pu[ipu]==0? 0.01 : sigmaConst[1][ieta][iSR];
-	    double noise0 = pu[ipu]==0? 0 : 0.5;
+	    double noise0 = pu[ipu]==0? 0 : 0.5;//sigmaVec[iSR];
 
 	    plotResolution(resoRecoFit[iSR],lpad,
 			   ipu,
@@ -619,11 +764,13 @@ int plotEGReso(){//main
 			   sigmaNoiseErr[ipu][ieta][iSR]);
 	    lpad->cd();
 	    char buf[500];
-	    sprintf(buf,"#gamma #eta=%3.1f + PU %d, SR %d",etaval[ieta],pu[ipu],iSR);
+	    sprintf(buf,"#gamma #eta=%3.1f + PU %d",etaval[ieta],pu[ipu]);
 	    TLatex lat;
 	    lat.SetTextSize(0.07);
-	    lat.DrawLatexNDC(0.6,0.87,buf);
-	    if (iSR==nSR-2) lat.DrawLatexNDC(0.01,0.01,"HGCAL G4 standalone");
+	    lat.DrawLatexNDC(0.25,0.965,buf);
+	    sprintf(buf,"SR %d",iSR);
+	    lat.DrawLatexNDC(0.5,0.87,buf);
+	    if (iSR==4) lat.DrawLatexNDC(0.01,0.01,"HGCAL G4 standalone");
 	    
 	  }
 

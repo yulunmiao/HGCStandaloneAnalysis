@@ -51,11 +51,11 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod) : version_(ver)
 	for(unsigned i=0; i<10; i++) m_caloStruct.push_back( SamplingSection(lThick,lEle) );
 	break;
       }
-    case v_HGCALEE_v5: case v_HGCALEE_v5_gap4: case v_HGCAL_v5:
+    case v_HGCALEE_v5: case v_HGCALEE_v5_gap4: case v_HGCAL_v5: case v_HGCAL_v5_gap4:
       {
 	G4cout << "[DetectorConstruction] starting v_HCALEE_v5"<< G4endl;
 	G4double airThick = 2*mm;
-	if(version_==v_HGCALEE_v5_gap4) airThick = 4*mm;
+	if(version_==v_HGCALEE_v5_gap4 || version_==v_HGCAL_v5_gap4) airThick = 4*mm;
 
 	G4double pcbThick = 1.2*mm;
 
@@ -129,7 +129,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod) : version_(ver)
 	lThick1.push_back(1*mm);lEle1.push_back("Pb");
 	m_caloStruct.push_back( SamplingSection(lThick1,lEle1) );
 
-	if(version_==v_HGCAL_v5){
+	if(version_==v_HGCAL_v5 || version_==v_HGCAL_v5_gap4){
 	  //add HCAL
 	  buildHGCALFHE(5);
 	  buildHGCALBHE(5);
@@ -246,6 +246,8 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod) : version_(ver)
 }
 
 void DetectorConstruction::buildHGCALFHE(const unsigned aVersion){
+  G4double airThick = 2*mm;
+  if(version_==v_HGCAL_v5_gap4) airThick = 4*mm;
   std::vector<G4double> lThick;
   std::vector<std::string> lEle;
   lThick.push_back(50.*mm);lEle.push_back("SSteel");
@@ -257,7 +259,7 @@ void DetectorConstruction::buildHGCALFHE(const unsigned aVersion){
   lThick.push_back(0.1*mm);lEle.push_back("Si");
   G4double pcbthick = (aVersion==4)? 2*mm : 1.2*mm;
   lThick.push_back(pcbthick);lEle.push_back("PCB");
-  lThick.push_back(2);lEle.push_back("Air");
+  lThick.push_back(airThick);lEle.push_back("Air");
   
   for(unsigned i=0; i<12; i++) {
     //add an intermediate Si layer to study resolution improvement
@@ -270,7 +272,7 @@ void DetectorConstruction::buildHGCALFHE(const unsigned aVersion){
       lThick[0] = 0;
       lThick[2] = 3*mm;
       lThick[6] = pcbthick;
-      lThick[7] = 2*mm;
+      lThick[7] = airThick;
     }
     if (i==11) lThick[7] = 103.6*mm;
     m_caloStruct.push_back( SamplingSection(lThick,lEle) );

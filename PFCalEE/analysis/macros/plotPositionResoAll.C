@@ -68,7 +68,7 @@ Result plotOnePoint(unsigned etabin, unsigned pt, unsigned pu){//main
   res.residual_tany_rms = 0;
 
   std::ostringstream plotDir;
-  plotDir << "../PLOTS/gitV00-02-09/version12/gamma/200um/eta" << etabin << "_et" << pt << "_pu" << pu;
+  plotDir << "../PLOTS/gitV00-02-12/version12/gamma/200um/eta" << etabin << "_et" << pt << "_pu" << pu;
 
   TFile *file = TFile::Open((plotDir.str()+".root").c_str());
   
@@ -80,7 +80,7 @@ Result plotOnePoint(unsigned etabin, unsigned pt, unsigned pu){//main
 
   std::string suffix = "";
   
-  file->cd();
+  file->cd("PositionFit");
 
   SetTdrStyle();
   gStyle->SetOptStat("eMRuo");
@@ -431,8 +431,8 @@ int plotPositionResoAll(){//main
   TGraphErrors *grResidualTanX[neta][npu];
   TGraphErrors *grResidualTanY[neta][npu];
 
-  const unsigned npt = 13;
-  unsigned pt[npt] = {20,30,40,50,60,70,80,90,100,125,150,175,200};
+  const unsigned npt = 17;
+  unsigned pt[npt] = {3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200};
   double ptval[npu][npt];
 
   
@@ -518,7 +518,7 @@ int plotPositionResoAll(){//main
       grEvts[ieta][ipu]->SetMarkerColor(ipu+1);
       grEvts[ieta][ipu]->SetMarkerStyle(ipu+21);
       grEvts[ieta][ipu]->SetMinimum(0);
-      grEvts[ieta][ipu]->SetMaximum(1200);
+      grEvts[ieta][ipu]->SetMaximum(5200);
       grEvts[ieta][ipu]->Draw(ipu==0?"APE":"PE");
       
       mypad[1][ieta]->cd();

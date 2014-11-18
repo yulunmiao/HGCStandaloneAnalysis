@@ -83,7 +83,7 @@ for et in enlist :
     outlog='%s/digitizer.log'%(outDir)
 
     os.system('mkdir -p %s'%outDir)
-    
+
     #wrapper
     scriptFile = open('%s/runJob.sh'%(outDir), 'w')
     scriptFile.write('#!/bin/bash\n')
@@ -132,6 +132,8 @@ for et in enlist :
         scriptFile.write('rm DigiPFcal.root\n')
         scriptFile.write('fi\n')
         scriptFile.write('fi\n')
+    scriptFile.write('echo "--deleting core files: too heavy!!"\n')
+    scriptFile.write('rm core.*\n')
     scriptFile.write('cp * %s/\n'%(outDir))
     scriptFile.write('echo "All done"\n')
     scriptFile.close()

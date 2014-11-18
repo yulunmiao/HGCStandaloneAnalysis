@@ -36,7 +36,7 @@ public:
 
   std::pair<unsigned, std::pair<double,double> > findMajorityValue(std::vector<std::pair<double,double> > & values) const;
 
-  void initialise(TFile *outputFile,
+  void initialise(TFile* outputFile,
 		  const std::string outputDir, 
 		  const std::string outFolder, 
 		  const HGCSSGeometryConversion & geomConv, 
@@ -53,7 +53,11 @@ public:
 			   TTree *recoTree,
 			   const unsigned nEvts);
   
-  bool getGlobalMaximum(const unsigned ievt, const unsigned nVtx, std::vector<HGCSSRecoHit> *rechitvec,double & phimax,double & etamax);
+  bool getGlobalMaximum(const unsigned ievt, 
+			const unsigned nVtx, 
+			std::vector<HGCSSRecoHit> *rechitvec, 
+			const ROOT::Math::XYZVector & truthPos0, 
+			double & phimax,double & etamax);
 
   bool getTruthPosition(std::vector<HGCSSGenParticle> *genvec,std::vector<ROOT::Math::XYPoint> & truthPos);
 
@@ -80,16 +84,22 @@ public:
 			   std::vector<double> & posytruth,
 			   bool cutOutliers=false);
 
-  bool performLeastSquareFit(TTree *recoTree, const unsigned nEvts);
+  bool initialiseLeastSquareFit();
+  //return 1 if no input file or <3 layers
+  //return 2 if chi2/ndf>chi2ndfmax_
+  //return 0 if success
+  unsigned performLeastSquareFit(const unsigned ievt,
+			     std::vector<ROOT::Math::XYZVector> & eventPos);
+  void finaliseFit();
 
   //return 1 if no input file or <3 layers
   //return 2 if chi2/ndf>chi2ndfmax_
+  //return 0 if success
   unsigned fitEvent(const unsigned ievt,
-		    unsigned & nInvalidFits,
-		    std::ofstream & fout,
+		    std::vector<ROOT::Math::XYZVector> & eventPos,
 		    const bool cutOutliers=false);
 
-  inline void setOutputFile(TFile *outputFile){
+  inline void setOutputFile(TFile * outputFile){
     outputFile_ = outputFile;
     outputFile_->mkdir(outputDir_.c_str());
   };
@@ -128,6 +138,10 @@ private:
   std::vector<std::vector<unsigned> > nL_sigma_;
   TMatrixD matrix_;
   TMatrixD corrMatrix_;
+  
+  unsigned nInvalidFits_;
+  unsigned nFailedFitsAfterCut_;
+  std::ofstream fout_;
 
   //path for saving data files
   std::string outFolder_;
@@ -139,6 +153,8 @@ private:
   std::vector<TH2F *> p_genxy;
   std::vector<TH2F *> p_recoxy;
 
+  TH1F *p_numberOfMaxTried;
+  TH1F *p_dRMaxTruth;
   TH2F *p_hitEventPuContrib;
   TH2F *p_hitMeanPuContrib;
   TH1F *p_diffPuContrib;

@@ -35,18 +35,33 @@ public:
 
     ~SignalRegion();
 
-    void initialise(TTree *aSimTree, TTree *aRecoTree, 
-		    TFile *outputFile);
+  bool initialiseFitPositions();
+  void initialise(TFile *outputFile,
+		  const std::string outputDir);
+
+  bool fillEnergies(const unsigned ievt,
+		    const std::vector<HGCSSSamplingSection> & ssvec,
+		    const std::vector<HGCSSSimHit> & simhitvec,
+		    const std::vector<HGCSSRecoHit> & rechitvec,
+		    const unsigned nPuVtx);
+
+  bool fillEnergies(const unsigned ievt,
+		    const std::vector<HGCSSSamplingSection> & ssvec,
+		    const std::vector<HGCSSSimHit> & simhitvec,
+		    const std::vector<HGCSSRecoHit> & rechitvec,
+		    const unsigned nPuVtx,
+		    const std::vector<ROOT::Math::XYZVector> & eventPos);
+  void finalise();
    
-    void initialiseHistograms();
-
-    void fillHistograms();
-
-    inline void setOutputFile(TFile *outputFile){
-      outputFile_ = outputFile;
-    };
-
-  double getEtotalSR(unsigned iSR, bool subtractPU){
+  void initialiseHistograms();
+  void fillHistograms();
+  
+  inline void setOutputFile(TFile* outputFile){
+    outputFile_ = outputFile;
+    outputFile_->mkdir(outputDir_.c_str());
+  };
+  
+  inline double getEtotalSR(const unsigned iSR, const bool subtractPU) const{
     double Etotal(0);
     if (iSR>=nSR_) return 0;
     for(unsigned iL(0);iL<nLayers_;iL++){
@@ -56,24 +71,26 @@ public:
     return Etotal;
   };
   
-  double getSR(unsigned iSR, unsigned layer, bool subtractPU){
+  inline double getSR(const unsigned iSR, const unsigned layer, const bool subtractPU) const{
     if(layer >= nLayers_) return 0;
     if (iSR>=nSR_) return 0;
     if(subtractPU) {return subtractedenergySR_[layer][iSR];}
     else {return energySR_[layer][iSR];}
   };
 
-  double absweight(unsigned layer){
+  inline double absweight(const unsigned layer) const{
     if(layer >= nLayers_) return 0;
     return absweight_[layer];
-  }
+  };
   
 private:
   
   unsigned nSR_;
   unsigned nevt_;
+  std::string inputFolder_;
   unsigned nLayers_;    
-  
+
+  std::string outputDir_;
   TFile *outputFile_;
   TTree *outtree_;
   
@@ -86,8 +103,12 @@ private:
   std::vector<double> zPos_;
   std::vector<std::vector<ROOT::Math::XYZVector> > accuratePos_;
   std::vector<double> absweight_;
-  
+
+  unsigned nSkipped_;
+  bool firstEvent_;
+
   //for tree
+  unsigned evtIdx_;
   double totalE_;
   double wgttotalE_;
   std::vector<std::vector<double> > energySR_;
