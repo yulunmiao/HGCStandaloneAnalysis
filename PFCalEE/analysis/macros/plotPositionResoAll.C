@@ -43,8 +43,55 @@ struct Result{
   double residual_tany_rms;
 };
 
+void fillPuPlots(unsigned etabin, unsigned pt, unsigned pu, TH1F *& meanPu, TH1F *& eventPu, TH1F *& diffPu){
 
-Result plotOnePoint(unsigned etabin, unsigned pt, unsigned pu){//main
+  std::ostringstream plotDir;
+  plotDir << "../PLOTS/gitV00-02-12/version12/gamma/200um/eta" << etabin << "_et" << pt << "_pu" << pu;
+  
+  TFile *file = TFile::Open((plotDir.str()+".root").c_str());
+  
+  if (!file){
+    std::cout << " -- Error, input file " << plotDir.str() << ".root cannot be opened. Skipping..." << std::endl;
+    return; 
+  }
+  else std::cout << " -- file " << file->GetName() << " successfully opened." << std::endl;
+
+  std::string suffix = "";
+  
+  file->cd("PositionFit");
+
+  SetTdrStyle();
+  gStyle->SetOptStat(0);
+
+  TH2F *p_hitMeanPuContrib = (TH2F*)gDirectory->Get("p_hitMeanPuContrib");
+  TH2F *p_hitEventPuContrib = (TH2F*)gDirectory->Get("p_hitEventPuContrib");
+  TH1F *p_diffPuContrib = (TH1F*)gDirectory->Get("p_diffPuContrib");
+
+  //SR2 calib
+  double slope = 79.;
+
+  if (p_hitMeanPuContrib && p_hitEventPuContrib && p_diffPuContrib){
+
+    std::ostringstream lname;
+    lname << "meanPu_eta" << etabin << "_pu" << pu;
+    if (!meanPu) meanPu = (TH1F*)p_hitMeanPuContrib->ProjectionY(lname.str().c_str());
+    else meanPu->Add(p_hitMeanPuContrib->ProjectionY());
+    std::cout << " -- meanPu entries: " << meanPu->GetEntries() << std::endl;
+    lname.str("");
+    lname << "eventPu_eta" << etabin << "_pu" << pu;
+    if (!eventPu) eventPu = (TH1F*)p_hitEventPuContrib->ProjectionY(lname.str().c_str());
+    else eventPu->Add(p_hitEventPuContrib->ProjectionY());
+    std::cout << " -- eventPu entries: " << eventPu->GetEntries() << std::endl;
+
+    for (int bin(1);bin < p_diffPuContrib->GetNbinsX()+1;++bin){
+      diffPu->Fill(p_diffPuContrib->GetBinCenter(bin)/slope,p_diffPuContrib->GetBinContent(bin));
+    }
+    std::cout << " -- diffPu entries: " << diffPu->Integral() << std::endl;
+  }
+  
+}
+
+Result plotOnePoint(unsigned etabin, unsigned pt, unsigned pu){
 
   Result res;
   res.nEvts = 0;
@@ -396,17 +443,20 @@ int plotPositionResoAll(){//main
   unsigned pu[npu] = {0,140};
   const unsigned eta[neta] = {17,19,21,23,25,27,29};
   
+  TCanvas *mycPu = new TCanvas("mycPu","mycPu",1500,1000);
   TCanvas *mycFit = new TCanvas("mycFit","mycFit",1500,1000);
   TCanvas *mycEvt = new TCanvas("mycEvt","mycEvt",1500,1000);
   TCanvas *mycRP = new TCanvas("mycRP","mycRP",1500,1000);
   TCanvas *mycRA = new TCanvas("mycRA","mycRA",1500,1000);
+  mycPu->Divide(2,1);
   mycEvt->Divide(2,1);
   mycFit->Divide(2,1);
   mycRP->Divide(2,1);
   mycRA->Divide(2,1);
-  TPad *mypad[4][neta];
-  TPad *left[4];
-  TPad *right[4];
+  const unsigned nCan = 5;
+  TPad *mypad[nCan][neta];
+  TPad *left[nCan];
+  TPad *right[nCan];
   left[0] = (TPad*)mycEvt->cd(1);
   right[0] = (TPad*)mycEvt->cd(2);
   left[1] = (TPad*)mycFit->cd(1);
@@ -415,7 +465,9 @@ int plotPositionResoAll(){//main
   right[2] = (TPad*)mycRP->cd(2);
   left[3] = (TPad*)mycRA->cd(1);
   right[3] = (TPad*)mycRA->cd(2);
-  for (unsigned iC(0);iC<4;++iC){
+  left[4] = (TPad*)mycPu->cd(1);
+  right[4] = (TPad*)mycPu->cd(2);
+  for (unsigned iC(0);iC<nCan;++iC){
     left[iC]->Divide(1,4);
     right[iC]->Divide(1,3);
     for (unsigned ieta=0; ieta<neta;++ieta){//loop on pt values
@@ -435,8 +487,87 @@ int plotPositionResoAll(){//main
   unsigned pt[npt] = {3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200};
   double ptval[npu][npt];
 
+  //plot pu
+
+  for (unsigned ipu(1); ipu<npu;++ipu){//loop on pu values
+    TH1F *meanPuProj[neta];
+    TH1F *eventPuProj[neta];
+    TH1F *diffPu[neta];
+    for (unsigned ieta=0; ieta<neta;++ieta){//loop on eta values
+      meanPuProj[ieta] = 0;
+      eventPuProj[ieta] = 0;
+      std::ostringstream lname;
+      lname.str("");
+      lname << "diffPu_eta" << ieta << "_pu" << pu[ipu];
+      diffPu[ieta] = new TH1F(lname.str().c_str(),";E_{PU}^{RC}-E_{PU}^{Mean} (GeV);events",100,-5,25);
+
+      for (unsigned ipt(0);ipt<npt;++ipt){
+	fillPuPlots(eta[ieta],pt[ipt],pu[ipu],meanPuProj[ieta],eventPuProj[ieta],diffPu[ieta]);
+      }
+      if (!meanPuProj[ieta] || !eventPuProj[ieta]) {
+	std::cout << " Pu histos not found, continuing..." << std::endl;
+	continue;
+      }
+      mypad[4][ieta]->cd();
+      gStyle->SetOptStat(0);
+      meanPuProj[ieta]->SetMarkerStyle(21);
+      meanPuProj[ieta]->GetXaxis()->SetRangeUser(0,20);
+      meanPuProj[ieta]->GetXaxis()->SetTitle("E^{hit}_{PU} (MIPs)");
+      meanPuProj[ieta]->Draw("PE");
+      eventPuProj[ieta]->SetLineColor(2);
+      eventPuProj[ieta]->SetMarkerColor(2);
+      eventPuProj[ieta]->SetMarkerStyle(22);
+      eventPuProj[ieta]->Draw("PEsame");
+      
+      TLegend *leg3 = new TLegend(0.65,0.74,0.94,0.94);
+      leg3->SetFillColor(10);
+      leg3->AddEntry(meanPuProj[ieta],"Avg from expo fit","P");
+      leg3->AddEntry(eventPuProj[ieta],"Evt-by-evt from RC","P");
+      leg3->Draw("same");
+      TLatex lat;
+      lat.SetTextSize(0.08);
+      char buf[500];
+      sprintf(buf,"<%d> pu, #eta = %3.1f",pu[ipu],eta[ieta]/10.);
+      lat.DrawLatexNDC(0.2,0.85,buf);
+      sprintf(buf,"RMS <pu> = %3.1f",meanPuProj[ieta]->GetRMS());
+      lat.DrawLatexNDC(0.2,0.65,buf);
+      sprintf(buf,"RMS pu^{RC} = %3.1f",eventPuProj[ieta]->GetRMS());
+      lat.DrawLatexNDC(0.2,0.5,buf);
+      
+      lat.DrawLatexNDC(0.02,0.02,"HGCAL Geant4 Standalone");
+    }
+    std::ostringstream lPrint;
+    lPrint << "PLOTS/SummaryAll_Pu" << pu[ipu];
+    lPrint << ".pdf";
+    mycPu->Update();
+    mycPu->Print(lPrint.str().c_str());
+    
+    for (unsigned ieta=0; ieta<neta;++ieta){//loop on eta values
+      if (!diffPu[ieta]){
+	std::cout << " Pu histos not found, continuing..." << std::endl;
+	continue;
+      }
+
+      mypad[4][ieta]->cd();
+      gStyle->SetOptStat("eMRuo");
+      diffPu[ieta]->Draw();
+      TLatex lat;
+      lat.SetTextSize(0.08);
+      char buf[500];
+      sprintf(buf,"<%d> pu, #eta = %3.1f",pu[ipu],eta[ieta]/10.);
+      lat.DrawLatexNDC(0.2,0.85,buf);
+      lat.DrawLatexNDC(0.02,0.02,"HGCAL Geant4 Standalone");
+    }
+    lPrint.str("");
+    lPrint << "PLOTS/SummaryAll_DiffPu" << pu[ipu];
+    lPrint << ".pdf";
+    mycPu->Update();
+    mycPu->Print(lPrint.str().c_str());
+  }//loop on pu val
   
-  for (unsigned ieta=0; ieta<neta;++ieta){//loop on pt values
+  return 1;
+
+  for (unsigned ieta=0; ieta<neta;++ieta){//loop on eta values
     for (unsigned ipu(0); ipu<npu;++ipu){//loop on pu values
       
       std::vector<Result> resVec;
@@ -599,7 +730,7 @@ int plotPositionResoAll(){//main
     lat.DrawLatexNDC(0.02,0.02,"HGCAL Geant4 Standalone");
     leg2->Draw("same");
 
-  }//loop on pt
+  }//loop on eta
 
 
   std::ostringstream lPrint;

@@ -64,6 +64,17 @@ public:
     return trackID_;
   };
 
+  inline double pt() const {
+    return sqrt(px_*px_+py_*py_);
+  };
+
+  inline double p() const {
+    return sqrt(px_*px_+py_*py_+pz_*pz_);
+  };
+
+  inline double E() const {
+    return sqrt(mass_*mass_+p()*p());
+  };
 
   inline double eta() const {
     double theta = acos(fabs(zpos_)/sqrt(zpos_*zpos_+xpos_*xpos_+ypos_*ypos_));

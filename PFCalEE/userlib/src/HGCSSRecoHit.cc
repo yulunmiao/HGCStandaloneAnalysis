@@ -30,19 +30,11 @@ double HGCSSRecoHit::theta() const {
 }
 
 double HGCSSRecoHit::eta() const {
-  double theta = acos(fabs(zpos_)/sqrt(zpos_*zpos_+xpos_*xpos_+ypos_*ypos_));
-  double leta = -1.*log(tan(theta/2.));
-  if (zpos_>0) return leta;
-  else return -1.*leta;
+  return position().eta();
 }
 
 double HGCSSRecoHit::phi() const {
-  double x = get_x();
-  double y = get_y();
-  if (x==0) return 0;
-  if (x>0) return atan(y/x);
-  else if (y>0) return TMath::Pi()+atan(y/x);
-  else return -1.*TMath::Pi()+atan(y/x);
+  return position().phi();
 }
 
 // void HGCSSRecoHit::encodeCellId(const bool x_side,const bool y_side,const unsigned x_cell,const unsigned y_cell, const unsigned granularity){

@@ -77,13 +77,25 @@ void HGCSSSimHit::Add(const G4SiHit & aSiHit){
 
 }
 
-double HGCSSSimHit::eta() const {
+/*double HGCSSSimHit::eta() const {
   double x = get_x();
   double y = get_y();
   double theta = acos(fabs(zpos_)/sqrt(zpos_*zpos_+x*x+y*y));
   double leta = -log(tan(theta/2.));
   if (zpos_>0) return leta;
   else return -leta;
+  }*/
+
+double HGCSSSimHit::theta() const {
+  return 2*atan(exp(-1.*eta()));
+}
+
+double HGCSSSimHit::eta() const {
+  return position().eta();
+}
+
+double HGCSSSimHit::phi() const {
+  return position().phi();
 }
 
 void HGCSSSimHit::Print(std::ostream & aOs) const{

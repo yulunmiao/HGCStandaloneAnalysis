@@ -12,13 +12,14 @@ USERINCLUDES += -isystem $(BOOSTSYS)/include
 USERINCLUDES += -Iinclude/ -I../userlib/include/ -I$(FASTJET_INSTALL)/include/
 
 # Define libraries to link
-USERLIBS += $(shell root-config --glibs) -lRooFit #-lGenVector -lTreePlayer -lTMVA
+USERLIBS += $(shell root-config --glibs) -lRooFit -lGenVector #-lTreePlayer -lTMVA
 USERLIBS += -L../userlib/lib -lPFCalEEuserlib
 USERLIBS += -Wl,-rpath,$(FASTJET_INSTALL)/lib -lm  -L$(FASTJET_INSTALL)/lib -lfastjettools -lfastjet -lfastjetplugins -lsiscone_spherical -lsiscone
 USERLIBS += -L$(BOOSTSYS)/lib -lboost_regex -lboost_program_options -lboost_filesystem
 
 #CXXFLAGS = -Wall -W -Wno-unused-function -Wno-parentheses -Wno-char-subscripts -Wno-unused-parameter -O2 
-CXXFLAGS = -Wall -W -O2 -std=c++0x
+CXXFLAGS = -Wall -W -O2 -std=c++0x # -std=c++11 
+#CXXFLAGS = -Wall -W -O2 -std=c++11 
 LDFLAGS = -shared -Wall -W
 
 
@@ -51,7 +52,9 @@ TEST_EXT=cpp
 SRCS=$(wildcard $(BASEDIR)/src/*.cc)
 EXES=$(wildcard $(BASEDIR)/test/*.cpp)
 OBJS=$(subst $(SRCDIR), $(OBJDIR),$(subst cc,$(OBJ_EXT),$(SRCS)))
-BINS=$(subst $(TESTDIR), $(EXEDIR),$(subst .$(TEST_EXT),,$(EXES)))
+#BINS=$(subst $(TESTDIR), $(EXEDIR),$(subst .$(TEST_EXT),,$(EXES)))
+
+BINS=$(EXEDIR)/MixPUSignal $(EXEDIR)/egammaResolution $(EXEDIR)/higgsResolution
 
 SUBDIRS = ../userlib
 
@@ -69,7 +72,11 @@ $(SUBDIRS):
 
 $(EXEDIR)/MixPUSignal:  $(TESTDIR)/MixPUSignal.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
 	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
+
 $(EXEDIR)/egammaResolution:  $(TESTDIR)/egammaResolution.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
+	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
+
+$(EXEDIR)/higgsResolution:  $(TESTDIR)/higgsResolution.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
 	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
 
 $(OBJDIR)/%.$(OBJ_EXT):  $(SRCDIR)/%.cc $(BASEDIR)/include/%.h*

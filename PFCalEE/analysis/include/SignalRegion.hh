@@ -16,12 +16,14 @@
 #include "HGCSSPUenergy.hh"
 #include "HGCSSGeometryConversion.hh"
 #include "HGCSSCalibration.hh"
+#include "PositionFit.hh"
 
 #include "Math/Vector3D.h"
 #include "Math/Vector3Dfwd.h"
 #include "Math/Point2D.h"
 #include "Math/Point2Dfwd.h"
-
+#include "Math/Point3D.h"
+#include "Math/Point3Dfwd.h"
 
 class SignalRegion{
 
@@ -39,6 +41,14 @@ public:
   void initialise(TFile *outputFile,
 		  const std::string outputDir);
 
+  const FitResult & getAccurateFit(const unsigned ievt) const;
+
+  ROOT::Math::XYZPoint getAccuratePos(const unsigned ievt, const unsigned iL) const;
+
+  ROOT::Math::XYZPoint getAccuratePos(const FitResult & fit, const unsigned iL) const;
+
+  Direction getAccurateDirection(const unsigned ievt) const;
+
   bool fillEnergies(const unsigned ievt,
 		    const std::vector<HGCSSSamplingSection> & ssvec,
 		    const std::vector<HGCSSSimHit> & simhitvec,
@@ -50,7 +60,7 @@ public:
 		    const std::vector<HGCSSSimHit> & simhitvec,
 		    const std::vector<HGCSSRecoHit> & rechitvec,
 		    const unsigned nPuVtx,
-		    const std::vector<ROOT::Math::XYZVector> & eventPos);
+		    const FitResult & fit);
   void finalise();
    
   void initialiseHistograms();
@@ -101,7 +111,7 @@ private:
   bool fixForPuMixBug_;
   
   std::vector<double> zPos_;
-  std::vector<std::vector<ROOT::Math::XYZVector> > accuratePos_;
+  std::vector<FitResult> accurateFit_;
   std::vector<double> absweight_;
 
   unsigned nSkipped_;

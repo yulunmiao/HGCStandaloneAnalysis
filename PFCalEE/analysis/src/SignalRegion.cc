@@ -60,9 +60,9 @@ bool SignalRegion::initialiseFitPositions(){
   
   //all events did not pass the chi2 fit: fill only those found.
   //keep failed ones to emptyvec so they are ignored afterwards
-  accuratePos_.clear();
-  std::vector<ROOT::Math::XYZVector> emptyvec;
-  accuratePos_.resize(nevt_,emptyvec);
+  accurateFit_.clear();
+  FitResult res;
+  accurateFit_.resize(nevt_,res);
 
   unsigned nfound = 0;
 
@@ -78,22 +78,21 @@ bool SignalRegion::initialiseFitPositions(){
       exit(1);
     }
     if (eventIndex<nevt_) {
-      std::vector<ROOT::Math::XYZVector> tmpXYZ;
-      tmpXYZ.reserve(nLayers_);
-      for(unsigned iL(0);iL<nLayers_;iL++){
-	ROOT::Math::XYZVector position( xpos + xangle*zPos_[iL], ypos + yangle*zPos_[iL], zPos_[iL]);
-	tmpXYZ.push_back(position);
-      }
-      accuratePos_[eventIndex] = tmpXYZ;
+      accurateFit_[eventIndex].pos_x = xpos;
+      accurateFit_[eventIndex].pos_y = ypos;
+      accurateFit_[eventIndex].tanangle_x = xangle;
+      accurateFit_[eventIndex].tanangle_y = yangle;
+      accurateFit_[eventIndex].found=true;
       nfound++;
     }
     else break;
   }
-  //if not all events found: redo least square fit...
+  //if not all events found
   if (nfound < nevt_) {
     std::cout << " Warning, file " << finname.str() << " contains only " << nfound 
 	      << " events, program running on " << nevt_ 
 	      << "." << std::endl;
+    if (nfound==0) return false;
   }
   std::cout << " -- Now filling signal region histograms..." << std::endl;
   return true;
@@ -109,14 +108,29 @@ void SignalRegion::initialise(TFile *outputFile,
   initialiseHistograms();
 }
 
+const FitResult & SignalRegion::getAccurateFit(const unsigned ievt) const{
+  return accurateFit_[ievt];
+}
+
+ROOT::Math::XYZPoint SignalRegion::getAccuratePos(const unsigned ievt, const unsigned iL) const{
+  return getAccuratePos(accurateFit_[ievt],iL);
+}
+
+ROOT::Math::XYZPoint SignalRegion::getAccuratePos(const FitResult& fit, const unsigned iL) const{
+  return ROOT::Math::XYZPoint(fit.pos_x + fit.tanangle_x*zPos_[iL], fit.pos_y + fit.tanangle_y*zPos_[iL], zPos_[iL]);
+}
+
+Direction SignalRegion::getAccurateDirection(const unsigned ievt) const{
+  return Direction(accurateFit_[ievt].tanangle_x,accurateFit_[ievt].tanangle_y);
+}
 
 bool SignalRegion::fillEnergies(const unsigned ievt,
 				const std::vector<HGCSSSamplingSection> & ssvec,
 				const std::vector<HGCSSSimHit> & simhitvec,
 				const std::vector<HGCSSRecoHit> & rechitvec,
 				const unsigned nPuVtx){
-  std::vector<ROOT::Math::XYZVector> eventPos = accuratePos_[ievt];
-  return fillEnergies(ievt,ssvec,simhitvec,rechitvec,nPuVtx,eventPos);
+  const FitResult & fit = accurateFit_[ievt];
+  return fillEnergies(ievt,ssvec,simhitvec,rechitvec,nPuVtx,fit);
 }
 
 bool SignalRegion::fillEnergies(const unsigned ievt,
@@ -124,7 +138,7 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
 				const std::vector<HGCSSSimHit> & simhitvec,
 				const std::vector<HGCSSRecoHit> & rechitvec,
 				const unsigned nPuVtx,
-				const std::vector<ROOT::Math::XYZVector> & eventPos){
+				const FitResult & fit){
   
   //fill weights for first event only: same in all events
   if (firstEvent_){
@@ -156,16 +170,24 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
     }
   }
 
-  if(eventPos.size()!=nLayers_) {
-    std::cout << " -- Event " << ievt << " skipped, accurate position size = " << eventPos.size() << std::endl;
+  if(!fit.found) {
+    //std::cout << " -- Event " << ievt << " skipped, accurate position not found." << std::endl;
     nSkipped_++;
     //fill tree to find correspondance between noPu and PU...
     outtree_->Fill();
-    return 1;
+    return false;
   }
   
-  
+  //std::cout << " -- Accurate direction for evt " << ievt << ": " << std::endl;
+  //getAccurateDirection(ievt).Print();
 
+  //initialise accuratepos per layer
+  std::vector<ROOT::Math::XYZPoint> eventPos;
+  eventPos.resize(nLayers_,ROOT::Math::XYZPoint(0,0,0));
+  for (unsigned iL(0); iL<nLayers_;++iL){
+    eventPos[iL] = getAccuratePos(fit,iL);
+  }
+ 
   //get event-by-event PU
   //get PU contrib from elsewhere in the event
   //loop over phi with same etamax
@@ -239,7 +261,7 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
   outputFile_->cd(outputDir_.c_str());
   fillHistograms();
   outtree_->Fill();
-  return 0;
+  return true;
 }
 
 void SignalRegion::finalise(){

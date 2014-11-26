@@ -32,7 +32,9 @@ enlist=[0]
 #if opt.dogun : enlist=[10,15,18,20,25] #30,35,40,45,50,60,80]
 #if opt.dogun : enlist=[1000,2000]
 #do constant ET
-if opt.dogun : enlist=[3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200]
+if opt.dogun : 
+    #enlist=[3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200]
+    enlist=[2,5,10,20,40,60,80,100,150,200]
 
 granularity='0-20:4,21-63:6'
 noise='0-63:0.12'
@@ -46,7 +48,7 @@ elif opt.version<20 :
     granularity='0-19:4,20-29:4'
     noise='0-29:0.12'
     threshold='0-29:2'
-elif (opt.version==21 or opt.version==25):
+elif (opt.version==21 or opt.version==24):
     granularity='0-23:6,24-33:8'
     noise='0-33:0.12'
     threshold='0-33:2'
@@ -58,10 +60,10 @@ elif opt.version==23:
     granularity='0-53:12'
     noise='0-53:0.12'
     threshold='0-53:2'
-elif opt.version==24:
-    granularity='0-19:4,20-53:6,54-65:8'
-    noise='0-65:0.12'
-    threshold='0-65:2'
+elif opt.version>24:
+    granularity='0-29:4,30-53:4,54-65:8'
+    noise='0-53:0.14,54-65:0.2'
+    threshold='0-53:2,54-65:4'
 
 for et in enlist :
 

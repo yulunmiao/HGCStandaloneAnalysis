@@ -348,10 +348,9 @@ int main(int argc, char** argv){//main
     lSimTree->GetEntry(ievt);
     lRecTree->GetEntry(ievt);
     if (dofit) {
-      std::vector<ROOT::Math::XYZVector> eventPos;
-      eventPos.resize(nLayers,ROOT::Math::XYZVector(0,0,0));
-      if ( lChi2Fit.performLeastSquareFit(ievt,eventPos)==0 ){
-	SignalEnergy.fillEnergies(ievt,(*ssvec),(*simhitvec),(*rechitvec),nPuVtx,eventPos);
+      FitResult fit;
+      if ( lChi2Fit.performLeastSquareFit(ievt,fit)==0 ){
+	SignalEnergy.fillEnergies(ievt,(*ssvec),(*simhitvec),(*rechitvec),nPuVtx,fit);
       }
       else std::cout << " -- Fit failed." << std::endl;
     }

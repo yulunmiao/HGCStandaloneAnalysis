@@ -9,6 +9,8 @@
 #include "TMath.h"
 
 #include "HGCSSSimHit.hh"
+#include "Math/Point3D.h"
+#include "Math/Point3Dfwd.h"
 
 class HGCSSRecoHit{
 
@@ -35,6 +37,10 @@ public:
   double eta() const;
   double theta() const;
   double phi() const;
+
+  inline ROOT::Math::XYZPoint position() const{
+    return ROOT::Math::XYZPoint(xpos_/10.,ypos_/10.,zpos_/10.);
+  };
 
   inline double E() const {
     return energy_;

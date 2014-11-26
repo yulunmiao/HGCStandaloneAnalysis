@@ -9,6 +9,8 @@
 #include <map>
 
 #include "G4SiHit.hh"
+#include "Math/Point3D.h"
+#include "Math/Point3Dfwd.h"
 
 static const float CELL_SIZE_X=2.5;//mm
 static const float CELL_SIZE_Y=CELL_SIZE_X;
@@ -55,6 +57,10 @@ public:
 
   inline unsigned silayer() const {
     return layer_%3;
+  };
+
+  inline ROOT::Math::XYZPoint position() const{
+    return ROOT::Math::XYZPoint(get_x()/10.,get_y()/10.,zpos_/10.);
   };
 
   //re-encode local layer into det layer + si layer if several sensitive layers (up to 3...)
@@ -190,6 +196,8 @@ public:
   };
 
   double eta() const;
+  double theta() const;
+  double phi() const;
 
   inline unsigned getGranularity() const{
     return 1;
