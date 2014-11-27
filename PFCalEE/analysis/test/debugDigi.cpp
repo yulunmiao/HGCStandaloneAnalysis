@@ -123,46 +123,7 @@ int main(int argc, char** argv){//main
   //initialise detector
   HGCSSDetector & myDetector = theDetector();
 
-  unsigned indices[7] = {0,0,0,0,0,0,0};
-  //fill layer indices
-  if (versionNumber==22) {
-    indices[4] = 0;
-    indices[5] = 9;
-    indices[6] = 9;
-  }
-  else if (isCaliceHcal) {
-    indices[3] = 0;
-    indices[4] = 38;
-    indices[5] = 47;
-    indices[6] = 54;
-  }
-  else if (versionNumber==21) {
-    indices[3] = 0;
-    indices[4] = 24;
-    indices[5] = 33;
-    indices[6] = 33;
-  }
-  else if (versionNumber < 20){
-    indices[0] = 0;
-    indices[1] = versionNumber==8?11:10;
-    indices[2] = versionNumber==8?21:20;
-    indices[3] = versionNumber==8?31:30;
-    indices[4] = indices[3];
-    indices[5] = indices[3];
-    indices[6] = indices[3];
-  }
-  else {
-    indices[0] = 0;
-    indices[1] = 11;
-    indices[2] = 21;
-    indices[3] = 31;
-    indices[4] = 55;
-    indices[5] = 64;
-    indices[6] = 64;
-  }
-
-
-  myDetector.buildDetector(indices,false,isCaliceHcal);
+  myDetector.buildDetector(versionNumber,false,isCaliceHcal);
 
   //initialise calibration class
   HGCSSCalibration mycalib(inFilePath);

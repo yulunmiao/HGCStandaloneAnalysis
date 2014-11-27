@@ -56,7 +56,50 @@ class HGCSSDetector {
 public:
   friend HGCSSDetector & theDetector();
 
-  void buildDetector(const unsigned indices[],
+  inline void initialiseIndices(const unsigned versionNumber){
+    
+    indices_.clear();
+    indices_.resize(7,0);
+    //fill layer indices
+    if (versionNumber==22) {
+      indices_[4] = 0;
+      indices_[5] = 10;
+      indices_[6] = 10;
+    }
+    else if (versionNumber==23) {
+      indices_[3] = 0;
+      indices_[4] = 38;
+      indices_[5] = 47;
+      indices_[6] = 54;
+    }
+    else if (versionNumber==21) {
+      indices_[3] = 0;
+      indices_[4] = 24;
+      indices_[5] = 34;
+      indices_[6] = 34;
+    }
+    else if (versionNumber < 20){
+      indices_[0] = 0;
+      indices_[1] = versionNumber==8?11:10;
+      indices_[2] = versionNumber==8?21:20;
+      indices_[3] = versionNumber==8?31:30;
+      indices_[4] = indices_[3];
+      indices_[5] = indices_[3];
+      indices_[6] = indices_[3];
+    }
+    else {
+      indices_[0] = 0;
+      indices_[1] = versionNumber==24?11:10;
+      indices_[2] = versionNumber==24?21:20;
+      indices_[3] = versionNumber==24?31:30;
+      indices_[4] = versionNumber==24?55:54;
+      indices_[5] = versionNumber==24?65:66;
+      indices_[6] = versionNumber==24?65:66;
+    }
+    
+  };
+
+  void buildDetector(const unsigned versionNumber,
 		     bool concept=true,
 		     bool isCaliceHcal=false);
 

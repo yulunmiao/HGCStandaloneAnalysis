@@ -9,16 +9,17 @@ HGCSSDetector & theDetector(){
   return lDet;
 }
 
-void HGCSSDetector::buildDetector(const unsigned indices[],
+void HGCSSDetector::buildDetector(const unsigned versionNumber,
 				  bool concept,
 				  bool isCaliceHcal){
   
   reset();
+  initialiseIndices(versionNumber);
   HGCSSSubDetector FECAL;
   FECAL.type = DetectorEnum::FECAL;
   FECAL.name = "FECAL";
-  FECAL.layerIdMin = indices[0];
-  FECAL.layerIdMax = indices[1];
+  FECAL.layerIdMin = indices_[0];
+  FECAL.layerIdMax = indices_[1];
   FECAL.mipWeight = 1./0.0548;//mip for 200um si
   FECAL.absWeight = 1.;//ratio of abs dedx
   FECAL.gevWeight = 1.0;
@@ -29,8 +30,8 @@ void HGCSSDetector::buildDetector(const unsigned indices[],
   HGCSSSubDetector MECAL;
   MECAL.type = DetectorEnum::MECAL;
   MECAL.name = "MECAL";
-  MECAL.layerIdMin = indices[1];
-  MECAL.layerIdMax = indices[2];
+  MECAL.layerIdMin = indices_[1];
+  MECAL.layerIdMax = indices_[2];
   MECAL.mipWeight = 1./0.0548;//mip for 200um si
   MECAL.absWeight = 8.001/5.848;//ratio of abs dedx
   MECAL.gevWeight = 1.0;
@@ -41,8 +42,8 @@ void HGCSSDetector::buildDetector(const unsigned indices[],
   HGCSSSubDetector BECAL;
   BECAL.type = DetectorEnum::BECAL;
   BECAL.name = "BECAL";
-  BECAL.layerIdMin = indices[2];
-  BECAL.layerIdMax = indices[3];
+  BECAL.layerIdMin = indices_[2];
+  BECAL.layerIdMax = indices_[3];
   BECAL.mipWeight = 1./0.0548;//mip for 200um si
   BECAL.absWeight = 10.854/5.848;//ratio of abs dedx
   BECAL.gevWeight = 1.0;
@@ -53,8 +54,8 @@ void HGCSSDetector::buildDetector(const unsigned indices[],
   HGCSSSubDetector FHCAL;
   FHCAL.type = DetectorEnum::FHCAL;
   FHCAL.name = "FHCAL";
-  FHCAL.layerIdMin = indices[3];
-  FHCAL.layerIdMax = indices[4];
+  FHCAL.layerIdMin = indices_[3];
+  FHCAL.layerIdMax = indices_[4];
   FHCAL.mipWeight = 1./0.0849;//mip for 300um si
   FHCAL.absWeight = 65.235/5.848;//ratio of abs dedx
   if (!concept) FHCAL.absWeight = 0.5*65.235/5.848;
@@ -74,8 +75,8 @@ void HGCSSDetector::buildDetector(const unsigned indices[],
   HGCSSSubDetector BHCAL;
   BHCAL.type = DetectorEnum::BHCAL1;
   BHCAL.name = "BHCAL";
-  BHCAL.layerIdMin = indices[4];
-  BHCAL.layerIdMax = indices[5];
+  BHCAL.layerIdMin = indices_[4];
+  BHCAL.layerIdMax = indices_[5];
   BHCAL.mipWeight = 1./1.49;
   BHCAL.absWeight = 92.196/5.848;
   BHCAL.gevWeight = 1.0;
@@ -94,8 +95,8 @@ void HGCSSDetector::buildDetector(const unsigned indices[],
   HGCSSSubDetector BHCAL2;
   BHCAL2.type = DetectorEnum::BHCAL2;
   BHCAL2.name = "BHCAL2";
-  BHCAL2.layerIdMin = indices[5];
-  BHCAL2.layerIdMax = indices[6];
+  BHCAL2.layerIdMin = indices_[5];
+  BHCAL2.layerIdMax = indices_[6];
   BHCAL2.mipWeight = FHCAL.mipWeight;
   BHCAL2.absWeight = 104./21.;
   BHCAL2.gevWeight = FHCAL.gevWeight;//MIPtoGeV
@@ -127,12 +128,12 @@ unsigned HGCSSDetector::getSection(const unsigned aLayer) const{
 void HGCSSDetector::addSubdetector(const HGCSSSubDetector & adet){
   subdets_.push_back(adet);
   enumMap_[adet.type]=subdets_.size()-1;
-  indices_.push_back(adet.layerIdMin);
+  //indices_.push_back(adet.layerIdMin);
 }
   
 void HGCSSDetector::finishInitialisation(){
   nSections_ = subdets_.size();
-  indices_.push_back(subdets_[nSections_-1].layerIdMax);
+  //indices_.push_back(subdets_[nSections_-1].layerIdMax);
   unsigned lastEle = indices_.size()-1;
   nLayers_ = indices_[lastEle];
   //initialise layer-section conversion

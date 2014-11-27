@@ -96,21 +96,23 @@ double absWeight(const unsigned layer){
   return 1;
 };
 
-double calibratedE(const double Etot){
+double calibratedE(const double Etot, const double eta){
   //calibration for signal region 2: 3*3 cm^2
-  double offset = -50.;
-  double slope = 79.;
+  double pars[3] = {509.4,-510.6,204.3};
+  double paro[3] = {-29.5,9.89,-13.17};
+  double offset = paro[0] + paro[1]*eta + paro[2]*eta*eta;
+  double slope = pars[0] + pars[1]*eta + pars[2]*eta*eta;
   return (Etot-offset)/slope;
 };
 
-double getCalibratedE(const std::vector<double> & Evec){
+double getCalibratedE(const std::vector<double> & Evec, const double eta){
   double Etot = 0;
   unsigned nL = Evec.size();
   for (unsigned iL(0); iL<nL;++iL){
     Etot += Evec[iL]*absWeight(iL);
   }
   //calibration for signal region 2: 3*3 cm^2
-  return calibratedE(Etot);
+  return calibratedE(Etot,eta);
 };
 
 double E(const unsigned pT, const unsigned eta){
@@ -309,46 +311,7 @@ int main(int argc, char** argv){//main
   //initialise detector
   HGCSSDetector & myDetector = theDetector();
  
-  unsigned indices[7] = {0,0,0,0,0,0,0};
-  //fill layer indices
-  if (versionNumber==22) {
-    indices[4] = 0;
-    indices[5] = 10;
-    indices[6] = 10;
-  }
-  else if (isCaliceHcal) {
-    indices[3] = 0;
-    indices[4] = 38;
-    indices[5] = 47;
-    indices[6] = 54;
-  }
-  else if (versionNumber==21) {
-    indices[3] = 0;
-    indices[4] = 24;
-    indices[5] = 34;
-    indices[6] = 34;
-  }
-  else if (versionNumber < 20){
-    indices[0] = 0;
-    indices[1] = versionNumber==8?11:10;
-    indices[2] = versionNumber==8?21:20;
-    indices[3] = versionNumber==8?31:30;
-    indices[4] = indices[3];
-    indices[5] = indices[3];
-    indices[6] = indices[3];
-  }
-  else {
-    indices[0] = 0;
-    indices[1] = 11;
-    indices[2] = 21;
-    indices[3] = 31;
-    indices[4] = 55;
-    indices[5] = 65;
-    indices[6] = 65;
-  }
-
-
-  myDetector.buildDetector(indices,concept,isCaliceHcal);
+  myDetector.buildDetector(versionNumber,concept,isCaliceHcal);
 
   const unsigned nLayers = myDetector.nLayers();
   const unsigned nSections = myDetector.nSections();
@@ -469,6 +432,16 @@ int main(int argc, char** argv){//main
     lSimTree->GetEntry(ievt);
     lRecTree->GetEntry(ievt);
 
+    lGamma1.setTruthInfo(genvec,1);
+    const Direction & truthDir1 = lGamma1.truthDir();
+    const ROOT::Math::XYZPoint & truthVtx1 = lGamma1.truthVtx();
+    const double truthE1 = lGamma1.truthE();
+
+    lGamma2.setTruthInfo(genvec,2);
+    const Direction & truthDir2 = lGamma2.truthDir();
+    const ROOT::Math::XYZPoint & truthVtx2 = lGamma2.truthVtx();
+    const double truthE2 = lGamma2.truthE();
+
     bool found1 = false;
     bool found2 = false;
     Direction recoDir1;
@@ -512,7 +485,8 @@ int main(int argc, char** argv){//main
 	return 1;
       }
       if (doFit1){
-	double e1 = getCalibratedE(Ereco1);
+	//CAMM - Fix with using recoinfo...
+	double e1 = truthE1;//getCalibratedE(Ereco1,eta1);
 	
 	std::ostringstream mFolder;
 	mFolder << singleGammaPath << getMatrixFolder(e1) << "_pu" << nVtx;
@@ -534,7 +508,8 @@ int main(int argc, char** argv){//main
       }
       
       if (doFit2){
-	double e2 = getCalibratedE(Ereco2);
+	//fix with using reco info
+	double e2 = truthE2;//getCalibratedE(Ereco2,eta2);
 	std::ostringstream mFolder;
 	mFolder << singleGammaPath << getMatrixFolder(e2) << "_pu" << nVtx;
 	
@@ -567,18 +542,10 @@ int main(int argc, char** argv){//main
     //get Higgs mass
     ROOT::Math::XYZPoint posFF1 = Signal1.getAccuratePos(fit1,0);
     recoDir1 = Direction(fit1.tanangle_x,fit1.tanangle_y);
-    lGamma1.setTruthInfo(genvec,1);
-    const Direction & truthDir1 = lGamma1.truthDir();
-    const ROOT::Math::XYZPoint & truthVtx1 = lGamma1.truthVtx();
-    const double truthE1 = lGamma1.truthE();
 
     ROOT::Math::XYZPoint posFF2 = Signal2.getAccuratePos(fit2,0);
     recoDir2 = Direction(fit2.tanangle_x,fit2.tanangle_y);
-    lGamma2.setTruthInfo(genvec,2);
-    const Direction & truthDir2 = lGamma2.truthDir();
-    const ROOT::Math::XYZPoint & truthVtx2 = lGamma2.truthVtx();
-    const double truthE2 = lGamma2.truthE();
-
+ 
     if (debug) {
       std::cout << " - Photon 1 direction:" << std::endl;
       std::cout << " Truth= "; truthDir1.Print();
@@ -589,10 +556,10 @@ int main(int argc, char** argv){//main
     }
 
     TLorentzVector l1;
-    double E1 = calibratedE(Signal1.getEtotalSR(2,true));
+    double E1 = calibratedE(Signal1.getEtotalSR(2,true),recoDir1.dir().Eta());
     l1.SetPtEtaPhiE(recoDir1.dir().Pt()*E1,recoDir1.dir().Eta(),recoDir1.dir().Phi(),E1);
     TLorentzVector l2;
-    double E2 = calibratedE(Signal2.getEtotalSR(2,true));
+    double E2 = calibratedE(Signal2.getEtotalSR(2,true),recoDir2.dir().Eta());
     l2.SetPtEtaPhiE(recoDir2.dir().Pt()*E2,recoDir2.dir().Eta(),recoDir2.dir().Phi(),E2);
 
     hM.setRecoInfo(l1,l2,posFF1,posFF2);

@@ -54,38 +54,42 @@ void drawChi2(TCanvas *myc,TH1F ** p_chi2ndf){
   myc->Print(lsave.str().c_str());
 }
 
-double absWeight(const unsigned layer){
-  if (layer == 0) return 0.0378011;
-  if (layer == 1) return 1;
-  if (layer == 2) return 0.646989;
-  if (layer == 3) return 0.617619;
-  if (layer == 4) return 0.646989;
-  if (layer == 5) return 0.617619;
-  if (layer == 6) return 0.646989;
-  if (layer == 7) return 0.617619;
-  if (layer == 8) return 0.646989;
-  if (layer == 9) return 0.617619;
-  if (layer == 10) return 0.646989;
-  if (layer == 11) return 0.942829;
-  if (layer == 12) return 0.859702;
-  if (layer == 13) return 0.942829;
-  if (layer == 14) return 0.859702;
-  if (layer == 15) return 0.942829;
-  if (layer == 16) return 0.859702;
-  if (layer == 17) return 0.942829;
-  if (layer == 18) return 0.859702;
-  if (layer == 19) return 0.942829;
-  if (layer == 20) return 0.859702;
-  if (layer == 21) return 1.37644;
-  if (layer == 22) return 1.30447;
-  if (layer == 23) return 1.37644;
-  if (layer == 24) return 1.30447;
-  if (layer == 25) return 1.37644;
-  if (layer == 26) return 1.30447;
-  if (layer == 27) return 1.37644;
-  if (layer == 28) return 1.30447;
-  if (layer == 29) return 1.79662;
-  return 1;
+double absWeight(const unsigned layer, const double eta){
+  //already added to tree variables
+  //return 1.;
+  double weight = 1.0;
+  if (layer == 0) weight = 0.0378011;
+  else if (layer == 1) weight = 1;
+  else if (layer == 2) weight = 0.646989;
+  else if (layer == 3) weight = 0.617619;
+  else if (layer == 4) weight = 0.646989;
+  else if (layer == 5) weight = 0.617619;
+  else if (layer == 6) weight = 0.646989;
+  else if (layer == 7) weight = 0.617619;
+  else if (layer == 8) weight = 0.646989;
+  else if (layer == 9) weight = 0.617619;
+  else if (layer == 10) weight = 0.646989;
+  else if (layer == 11) weight = 0.942829;
+  else if (layer == 12) weight = 0.859702;
+  else if (layer == 13) weight = 0.942829;
+  else if (layer == 14) weight = 0.859702;
+  else if (layer == 15) weight = 0.942829;
+  else if (layer == 16) weight = 0.859702;
+  else if (layer == 17) weight = 0.942829;
+  else if (layer == 18) weight = 0.859702;
+  else if (layer == 19) weight = 0.942829;
+  else if (layer == 20) weight = 0.859702;
+  else if (layer == 21) weight = 1.37644;
+  else if (layer == 22) weight = 1.30447;
+  else if (layer == 23) weight = 1.37644;
+  else if (layer == 24) weight = 1.30447;
+  else if (layer == 25) weight = 1.37644;
+  else if (layer == 26) weight = 1.30447;
+  else if (layer == 27) weight = 1.37644;
+  else if (layer == 28) weight = 1.30447;
+  else if (layer == 29) weight = 1.79662;
+  else weight = 1;
+  return weight/tanh(eta);
 };
 
 
@@ -408,7 +412,8 @@ bool plotResolution(TGraphErrors *gr,TPad *pad,
 bool retrievePuSigma(TTree *atree, TTree *atreePu, 
 		     TH1F **p_sigma,
 		     TH2F **p_subtrEvspuE,
-		     double * calib){
+		     double * calib,
+		     double etaval){
 
   unsigned nLayers = 30;
   unsigned nSR=5;
@@ -501,52 +506,52 @@ bool retrievePuSigma(TTree *atree, TTree *atreePu,
       subtrE[iSR]=0;
       for (unsigned iL(0);iL<nLayers;++iL){
 	if (iSR<nSR){
-	  E[iSR]   += absWeight(iL)*energySR[0][iL][iSR];
-	  subtrE[iSR]   += absWeight(iL)*subtractedenergySR[iL][iSR];
-	  puE[iSR] += absWeight(iL)*energySR[1][iL][iSR];
+	  E[iSR]   += absWeight(iL,etaval)*energySR[0][iL][iSR];
+	  subtrE[iSR]   += absWeight(iL,etaval)*subtractedenergySR[iL][iSR];
+	  puE[iSR] += absWeight(iL,etaval)*energySR[1][iL][iSR];
 	}
 	else if (iSR==nSR) {
 	  if (iL<5) {
-	    E[iSR] += absWeight(iL)*energySR[0][iL][0];
-	    subtrE[iSR] += absWeight(iL)*subtractedenergySR[iL][0];
-	    puE[iSR] += absWeight(iL)*energySR[1][iL][0];
+	    E[iSR] += absWeight(iL,etaval)*energySR[0][iL][0];
+	    subtrE[iSR] += absWeight(iL,etaval)*subtractedenergySR[iL][0];
+	    puE[iSR] += absWeight(iL,etaval)*energySR[1][iL][0];
 	  }
 	  else if (iL<10) {
-	    E[iSR] += absWeight(iL)*energySR[0][iL][1];
-	    subtrE[iSR] += absWeight(iL)*subtractedenergySR[iL][1];
-	    puE[iSR] += absWeight(iL)*energySR[1][iL][1];
+	    E[iSR] += absWeight(iL,etaval)*energySR[0][iL][1];
+	    subtrE[iSR] += absWeight(iL,etaval)*subtractedenergySR[iL][1];
+	    puE[iSR] += absWeight(iL,etaval)*energySR[1][iL][1];
 	      }
 	  else if (iL<15) {
-	    E[iSR] += absWeight(iL)*energySR[0][iL][2];
-	    subtrE[iSR] += absWeight(iL)*subtractedenergySR[iL][2];
-	    puE[iSR] += absWeight(iL)*energySR[1][iL][2];
+	    E[iSR] += absWeight(iL,etaval)*energySR[0][iL][2];
+	    subtrE[iSR] += absWeight(iL,etaval)*subtractedenergySR[iL][2];
+	    puE[iSR] += absWeight(iL,etaval)*energySR[1][iL][2];
 	  } 
 	  else if (iL<20) {
-	    E[iSR] += absWeight(iL)*energySR[0][iL][3];
-	    subtrE[iSR] += absWeight(iL)*subtractedenergySR[iL][3];
-	    puE[iSR] += absWeight(iL)*energySR[1][iL][3];
+	    E[iSR] += absWeight(iL,etaval)*energySR[0][iL][3];
+	    subtrE[iSR] += absWeight(iL,etaval)*subtractedenergySR[iL][3];
+	    puE[iSR] += absWeight(iL,etaval)*energySR[1][iL][3];
 	  } 
 	  else  {
-	    E[iSR] += absWeight(iL)*energySR[0][iL][4];
-	    subtrE[iSR] += absWeight(iL)*subtractedenergySR[iL][4];
-	    puE[iSR] += absWeight(iL)*energySR[1][iL][4];
+	    E[iSR] += absWeight(iL,etaval)*energySR[0][iL][4];
+	    subtrE[iSR] += absWeight(iL,etaval)*subtractedenergySR[iL][4];
+	    puE[iSR] += absWeight(iL,etaval)*energySR[1][iL][4];
 	  }
 	}
 	else if (iSR==nSR+1) {
 	  if (iL<5) {
-	    E[iSR] += absWeight(iL)*energySR[0][iL][0];
-	    subtrE[iSR] += absWeight(iL)*subtractedenergySR[iL][0];
-	    puE[iSR] += absWeight(iL)*energySR[1][iL][0];
+	    E[iSR] += absWeight(iL,etaval)*energySR[0][iL][0];
+	    subtrE[iSR] += absWeight(iL,etaval)*subtractedenergySR[iL][0];
+	    puE[iSR] += absWeight(iL,etaval)*energySR[1][iL][0];
 	  }
 	  else if (iL<12) {
-	    E[iSR] += absWeight(iL)*energySR[0][iL][2];
-	    subtrE[iSR] += absWeight(iL)*subtractedenergySR[iL][2];
-	    puE[iSR] += absWeight(iL)*energySR[1][iL][2];
+	    E[iSR] += absWeight(iL,etaval)*energySR[0][iL][2];
+	    subtrE[iSR] += absWeight(iL,etaval)*subtractedenergySR[iL][2];
+	    puE[iSR] += absWeight(iL,etaval)*energySR[1][iL][2];
 	  }
 	  else  {
-	    E[iSR] += absWeight(iL)*energySR[0][iL][4];
-	    subtrE[iSR] += absWeight(iL)*subtractedenergySR[iL][4];
-	    puE[iSR] += absWeight(iL)*energySR[1][iL][4];
+	    E[iSR] += absWeight(iL,etaval)*energySR[0][iL][4];
+	    subtrE[iSR] += absWeight(iL,etaval)*subtractedenergySR[iL][4];
+	    puE[iSR] += absWeight(iL,etaval)*energySR[1][iL][4];
 	  } 
 	}
       }//loop on layers
@@ -554,7 +559,7 @@ bool retrievePuSigma(TTree *atree, TTree *atreePu,
       p_subtrEvspuE[iSR]->Fill((puE[iSR]-E[iSR])/calib[iSR],(puE[iSR]-subtrE[iSR])/calib[iSR]);
     }//loop on SR
 
-    p_sigma[nSR+2]->Fill((totalEpu-totalE)/calib[nSR+2]);
+    p_sigma[nSR+2]->Fill((totalEpu-totalE)/tanh(etaval)*1./calib[nSR+2]);
 
   }//loop on events
 
@@ -645,7 +650,11 @@ int plotEGReso(){//main
   mycEtot->Divide(5,3);
   TCanvas *mycSig = new TCanvas("mycSig","puSigma",1);
   //mycSig->Divide(2,2);
-
+  TCanvas *mycCalibEta = new TCanvas("mycCalibEta","mycCalibEta",1500,1000);
+  mycCalibEta->Divide(4,2);
+  TCanvas *mycOffsetEta = new TCanvas("mycOffsetEta","mycOffsetEta",1500,1000);
+  mycOffsetEta->Divide(4,2);
+  
   const unsigned nCanvas = 3;  
   TCanvas *myc[nCanvas];
   for (unsigned iC(0);iC<nCanvas;++iC){
@@ -656,6 +665,9 @@ int plotEGReso(){//main
   }
 
   TCanvas *mycReso = new TCanvas("mycReso","mycReso",750,500);
+  TCanvas *mycR = new TCanvas("mycR","Sampling",1500,1000);
+  TCanvas *mycC = new TCanvas("mycC","Constant",1500,1000);
+  TCanvas *mycN = new TCanvas("mycN","Noise",1500,1000);
 
   TH1F *p_chi2ndf[nSR];
   for (unsigned iSR(0); iSR<nSR;++iSR){//loop on signal region
@@ -691,7 +703,7 @@ int plotEGReso(){//main
 	    skip[iE] = false;
 	    TFile *inputFile = 0;
 	    std::ostringstream linputStr;
-	    linputStr << plotDir << "eta" << eta[ieta] << "_et" << genEnAll[iE] << "_pu" << pu[ipu] << pSuffix << ".root";
+	    linputStr << plotDir << "eta" << eta[ieta] << "_et" << genEnAll[iE] << "_pu" << pu[ipu] << ".root";// << "_nofit.root";
 	    inputFile = TFile::Open(linputStr.str().c_str());
 	    if (!inputFile) {
 	      std::cout << " -- Error, input file " << linputStr.str() << " cannot be opened. Skipping..." << std::endl;
@@ -777,7 +789,7 @@ int plotEGReso(){//main
 	    
 	    TFile *inputFile = 0;
 	    std::ostringstream linputStr;
-	    linputStr << plotDir << "eta" << eta[ieta] << "_et" << genEn[iE] << "_pu" << pu[ipu] << pSuffix << ".root";
+	    linputStr << plotDir << "eta" << eta[ieta] << "_et" << genEn[iE] << "_pu" << pu[ipu] << ".root" ;// << "_nofit.root";
 	    inputFile = TFile::Open(linputStr.str().c_str());
 	    inputFile->cd("Energies");
 
@@ -796,29 +808,29 @@ int plotEGReso(){//main
 	      if (ipu>0) lName << "(";
 	      if (iSR<5){
 		for (unsigned iL(0);iL<nLayers;++iL){	      
-		  if (iL==0) lName << absWeight(iL) << "*subtractedenergy_" << iL << "_SR" << iSR ;
-		  else lName << "+" << absWeight(iL) << "*subtractedenergy_" << iL << "_SR" << iSR ;
+		  if (iL==0) lName << absWeight(iL,etaval[ieta]) << "*subtractedenergy_" << iL << "_SR" << iSR ;
+		  else lName << "+" << absWeight(iL,etaval[ieta]) << "*subtractedenergy_" << iL << "_SR" << iSR ;
 		}
 	      }
 	      else if (iSR==5) {
 		for (unsigned iL(0);iL<nLayers;++iL){	      
-		  if (iL==0) lName << absWeight(iL) << "*subtractedenergy_" << iL << "_SR0" ;
-		  else if (iL<5) lName << "+" << absWeight(iL) << "*subtractedenergy_" << iL << "_SR0";
-		  else if (iL<10) lName << "+" << absWeight(iL) << "*subtractedenergy_" << iL << "_SR1";
-		  else if (iL<15) lName << "+" << absWeight(iL) << "*subtractedenergy_" << iL << "_SR2";
-		  else if (iL<20) lName << "+" << absWeight(iL) << "*subtractedenergy_" << iL << "_SR3";
-		  else lName << "+" << absWeight(iL) << "*subtractedenergy_" << iL << "_SR4";
+		  if (iL==0) lName << absWeight(iL,etaval[ieta]) << "*subtractedenergy_" << iL << "_SR0" ;
+		  else if (iL<5) lName << "+" << absWeight(iL,etaval[ieta]) << "*subtractedenergy_" << iL << "_SR0";
+		  else if (iL<10) lName << "+" << absWeight(iL,etaval[ieta]) << "*subtractedenergy_" << iL << "_SR1";
+		  else if (iL<15) lName << "+" << absWeight(iL,etaval[ieta]) << "*subtractedenergy_" << iL << "_SR2";
+		  else if (iL<20) lName << "+" << absWeight(iL,etaval[ieta]) << "*subtractedenergy_" << iL << "_SR3";
+		  else lName << "+" << absWeight(iL,etaval[ieta]) << "*subtractedenergy_" << iL << "_SR4";
 		}
 	      }
 	      else if (iSR==6) {
 		for (unsigned iL(0);iL<nLayers;++iL){	      
-		  if (iL==0) lName<< absWeight(iL) << "*subtractedenergy_" << iL << "_SR0" ;
-		  else if (iL<5) lName << "+" << absWeight(iL) << "*subtractedenergy_" << iL << "_SR0";
-		  else if (iL<12) lName << "+" << absWeight(iL) << "*subtractedenergy_" << iL << "_SR2";
-		  else lName << "+" << absWeight(iL) << "*subtractedenergy_" << iL << "_SR4";
+		  if (iL==0) lName<< absWeight(iL,etaval[ieta]) << "*subtractedenergy_" << iL << "_SR0" ;
+		  else if (iL<5) lName << "+" << absWeight(iL,etaval[ieta]) << "*subtractedenergy_" << iL << "_SR0";
+		  else if (iL<12) lName << "+" << absWeight(iL,etaval[ieta]) << "*subtractedenergy_" << iL << "_SR2";
+		  else lName << "+" << absWeight(iL,etaval[ieta]) << "*subtractedenergy_" << iL << "_SR4";
 		}
 	      }
-	      else lName << "wgtEtotal";
+	      else lName << "wgtEtotal/" << tanh(etaval[ieta]);
 	      if (ipu>0) lName << " - " << offset[0][ieta][iSR] << ")/" << calib[0][ieta][iSR];
 	      ltree[ieta][ipu][oldIdx[iE]]->Draw(lName.str().c_str(),"","");
 	      lName.str("");
@@ -899,7 +911,8 @@ int plotEGReso(){//main
 	      bool success = retrievePuSigma(ltree[ieta][1][oldIdx[iE]], ltree[ieta][ipu][oldIdx[iE]],
 					     p_sigma,
 					     p_subtrEvspuE,
-					     calib[0][ieta]);
+					     calib[0][ieta],
+					     etaval[ieta]);
 	      if (!success) return 1;
 	      mycSig->cd();
 	      p_subtrEvspuE[2]->Draw("colz");
@@ -1002,6 +1015,82 @@ int plotEGReso(){//main
       fout->Write();
       if (nGenEnAll==1) continue;
 
+      TLatex lat;
+      char buf[500];
+
+      
+      //plot and fit calib parameters vs eta
+      TGraphErrors *grSlope[nPu][nSR];
+      TGraphErrors *grOffset[nPu][nSR];
+
+      gStyle->SetOptStat(0);
+      gStyle->SetOptFit(1111);
+      gStyle->SetStatX(0.64);//top-right corner
+      gStyle->SetStatY(0.85);
+      gStyle->SetStatW(0.25);
+      gStyle->SetStatH(0.25);
+
+      for (unsigned ipu(0); ipu<nPu; ++ipu){//loop on pu
+	for (unsigned iSR(0); iSR<nSR;++iSR){//loop on signal region
+	  if (pu[ipu]!=0 && iSR==nSR-1) continue;
+	  grSlope[ipu][iSR] = new TGraphErrors();
+	  std::ostringstream llabel;
+	  llabel << "grSlope_" << ipu << "_SR" << iSR;
+	  grSlope[ipu][iSR]->SetName(llabel.str().c_str());
+	  llabel.str("");
+	  llabel << ";#eta;Calib slope (" ;
+	  if (ipu==0) llabel << "MIPs/GeV)";
+	  else llabel << "GeV/GeV)";
+	  grSlope[ipu][iSR]->SetTitle(llabel.str().c_str());
+	  grSlope[ipu][iSR]->SetMarkerStyle(20+iSR);
+	  grSlope[ipu][iSR]->SetMarkerColor(1+iSR);
+	  grSlope[ipu][iSR]->SetLineColor(1+iSR);
+	  llabel.str("");
+	  llabel << "grOffset_" << ipu << "_SR" << iSR;
+	  grOffset[ipu][iSR] = (TGraphErrors *)grSlope[ipu][iSR]->Clone(llabel.str().c_str());
+	  llabel.str("");
+	  llabel << ";#eta;Calib offset (" ;
+	  if (ipu==0) llabel << "MIPs)";
+	  else llabel << "GeV)";
+	  grOffset[ipu][iSR]->SetTitle(llabel.str().c_str());
+
+	  for (unsigned ieta(0);ieta<neta;++ieta){//loop on eta
+	    grSlope[ipu][iSR]->SetPoint(ieta,etaval[ieta],calib[ipu][ieta][iSR]);
+	    grSlope[ipu][iSR]->SetPointError(ieta,0.0,calibErr[ipu][ieta][iSR]);
+
+	    grOffset[ipu][iSR]->SetPoint(ieta,etaval[ieta],offset[ipu][ieta][iSR]);
+	    grOffset[ipu][iSR]->SetPointError(ieta,0.0,offsetErr[ipu][ieta][iSR]);
+	  }//loop on eta
+	  mycCalibEta->cd(iSR+1);
+	  grSlope[ipu][iSR]->Draw();
+	  grSlope[ipu][iSR]->Fit("pol2","","same");
+	     
+	  lat.SetTextSize(0.06);
+	  sprintf(buf,"pu %d, SR %d",pu[ipu],iSR);
+	  lat.DrawLatexNDC(0.2,0.87,buf);
+	  if (iSR==4) lat.DrawLatexNDC(0.01,0.01,"HGCAL G4 standalone");
+
+	  mycOffsetEta->cd(iSR+1);
+	  grOffset[ipu][iSR]->Draw();
+	  grOffset[ipu][iSR]->Fit("pol2","","same");
+
+	  lat.DrawLatexNDC(0.2,0.87,buf);
+	  if (iSR==4) lat.DrawLatexNDC(0.01,0.01,"HGCAL G4 standalone");
+	}//loop on SR
+	mycCalibEta->Update();
+	std::ostringstream lsave;
+	lsave << plotDir << "/CalibSlopevsEta_pu" << ipu;
+	if (ipu==0) lsave << "raw";
+	lsave << ".pdf";
+	mycCalibEta->Print(lsave.str().c_str());
+	lsave.str("");
+	lsave << plotDir << "/CalibOffsetvsEta_pu" << ipu;
+	if (ipu==0) lsave << "raw";
+	lsave << ".pdf";
+	mycOffsetEta->Update();
+	mycOffsetEta->Print(lsave.str().c_str());
+
+      }//loop on pu
 
       TGraph *grDummy = new TGraph();
       grDummy->SetName("grDummy");
@@ -1049,9 +1138,7 @@ int plotEGReso(){//main
 	    legeta->AddEntry(resoRecoFit[1][0][iSR],"Ref pu=0","L");
 	  }
 	  legeta->Draw("same");
-	  char buf[500];
 	  sprintf(buf,"#gamma + PU %d",pu[ipu]);
-	  TLatex lat;
 	  //lat.SetTextSize(0.1);
 	  lat.DrawLatexNDC(0.45,0.85,buf);
 	  sprintf(buf,"SR %d",iSR);
@@ -1068,9 +1155,6 @@ int plotEGReso(){//main
       }
 
 
-      TCanvas *mycR = new TCanvas("mycR","Sampling",1500,1000);
-      TCanvas *mycC = new TCanvas("mycC","Constant",1500,1000);
-      TCanvas *mycN = new TCanvas("mycN","Noise",1500,1000);
       TLegend *leg = new TLegend(0.75,0.8,0.94,0.94);
       leg->SetFillColor(10);
 
@@ -1130,7 +1214,6 @@ int plotEGReso(){//main
 	      label << "PU " << pu[ipu+1];
 	      leg->AddEntry(gr,label.str().c_str(),"P");
 	    }
-	    TLatex lat;
 	    if (ipu==nPu-2){
 	      label.str("");
 	      label << "#eta=" << etaval[ieta];
