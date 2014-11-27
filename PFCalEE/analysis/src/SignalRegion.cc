@@ -140,6 +140,7 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
 				const unsigned nPuVtx,
 				const FitResult & fit){
   
+ 
   //fill weights for first event only: same in all events
   if (firstEvent_){
     absweight_.clear();
@@ -187,7 +188,9 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
   for (unsigned iL(0); iL<nLayers_;++iL){
     eventPos[iL] = getAccuratePos(fit,iL);
   }
- 
+
+  //double etacor = 1./tanh(getAccurateDirection(ievt).eta());
+
   //get event-by-event PU
   //get PU contrib from elsewhere in the event
   //loop over phi with same etamax
@@ -238,9 +241,10 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
     if (fixForPuMixBug_) posy-=1.25;
     double energy = lHit.energy();
     double leta = lHit.eta();
-    
+    double etacor = 1./tanh(leta);
+
     totalE_ += energy;
-    wgttotalE_ += energy*absweight_[layer];    
+    wgttotalE_ += energy*absweight_[layer]*etacor;    
     
     double puE = puDensity_.getDensity(leta,layer,geomConv_.cellSizeInCm(layer,leta),nPuVtx);
     double subtractedenergy = std::max(0.,energy - puE);
@@ -252,8 +256,8 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
     //SR0-4
     for (unsigned isr(0); isr<nSR_;++isr){
       if ( (fabs(dx) <= ((isr+1)*halfCell)) && (fabs(dy) <= ((isr+1)*halfCell))){
-	energySR_[layer][isr] += energy;
-	subtractedenergySR_[layer][isr] += subtractedenergy;
+	energySR_[layer][isr] += energy*absweight_[layer]*etacor;
+	subtractedenergySR_[layer][isr] += subtractedenergy*absweight_[layer]*etacor;
       }
     }
   }//loop on hits
@@ -306,26 +310,26 @@ void SignalRegion::initialiseHistograms(){
     p_rawEtotal = new TH1F("p_rawEtotal", "Total E (MIP)", 5000,0,200000);
     p_wgtEtotal = new TH1F("p_wgtEtotal", "Total weighted E (MIP)",5000, 0, 200000);
 
-    p_rawESR.resize(nSR_,0);
+    //p_rawESR.resize(nSR_,0);
     p_wgtESR.resize(nSR_,0);
-    p_rawSubtractESR.resize(nSR_,0);
+    //p_rawSubtractESR.resize(nSR_,0);
     p_wgtSubtractESR.resize(nSR_,0);
 
     for (unsigned iSR(0);iSR<nSR_;++iSR){
-      label.str("");
-      label << "rawESR" << iSR;
-      p_rawESR[iSR] = new TH1F(("p_"+label.str()).c_str(),";E_{SR} (MIPs);events", 5000,0,200000);
-      p_rawESR[iSR]->StatOverflows();
+      //label.str("");
+      //label << "rawESR" << iSR;
+      //p_rawESR[iSR] = new TH1F(("p_"+label.str()).c_str(),";E_{SR} (MIPs);events", 5000,0,200000);
+      //p_rawESR[iSR]->StatOverflows();
 
       label.str("");
       label << "wgtESR" << iSR;
       p_wgtESR[iSR] = new TH1F(("p_"+label.str()).c_str(),";E_{SR} (MIPs);events", 5000,0,200000);
       p_wgtESR[iSR]->StatOverflows();
       
-      label.str("");
-      label << "rawSubtractESR" << iSR;
-      p_rawSubtractESR[iSR] = new TH1F(("p_"+label.str()).c_str(),";E_{SR}^{PUsubtr} (MIPs);events", 5000,0,200000);
-      p_rawSubtractESR[iSR]->StatOverflows();
+      //label.str("");
+      //label << "rawSubtractESR" << iSR;
+      //p_rawSubtractESR[iSR] = new TH1F(("p_"+label.str()).c_str(),";E_{SR}^{PUsubtr} (MIPs);events", 5000,0,200000);
+      //p_rawSubtractESR[iSR]->StatOverflows();
       label.str("");
       label << "wgtSubtractESR" << iSR;
       p_wgtSubtractESR[iSR] = new TH1F(("p_"+label.str()).c_str(),";E_{SR}^{PUsubtr} (MIPs);events", 5000,0,200000);
@@ -344,21 +348,20 @@ void SignalRegion::fillHistograms(){
   for (unsigned iSR(0);iSR<nSR_;++iSR){
     //Fill energy without PU subtraction
     bool subtractPU = false;
-    p_rawESR[iSR]->Fill( getEtotalSR(iSR, subtractPU));
+    //p_rawESR[iSR]->Fill( getEtotalSR(iSR, subtractPU));
 
     double wgtESR = 0;
     for(unsigned iL(0); iL < nLayers_;iL++){
-      wgtESR += getSR(iSR, iL, subtractPU)*absweight(iL);
-
+      wgtESR += getSR(iSR, iL, subtractPU);
     }
     p_wgtESR[iSR]->Fill(wgtESR);
 
     //Fill energy after PU subtraction
     subtractPU = true;
-    p_rawSubtractESR[iSR]->Fill( getEtotalSR(iSR, subtractPU));
+    //p_rawSubtractESR[iSR]->Fill( getEtotalSR(iSR, subtractPU));
     double wgtSubtractESR = 0;
     for(unsigned iL(0); iL < nLayers_;iL++){
-      wgtSubtractESR += getSR(iSR, iL, subtractPU)*absweight(iL);
+      wgtSubtractESR += getSR(iSR, iL, subtractPU);
     }
     p_wgtSubtractESR[iSR]->Fill(wgtSubtractESR);
 

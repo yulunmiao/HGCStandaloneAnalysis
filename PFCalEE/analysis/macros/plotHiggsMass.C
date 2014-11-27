@@ -56,6 +56,9 @@ int plotHiggsMass(){//main
   TCanvas *myc2 = new TCanvas("myc2","myc2",1500,1000);
   myc2->Divide(3,2);
   gStyle->SetOptStat("eMRuo");
+  gStyle->SetOptFit(1111);
+  //gStyle->SetStatH(0.2);
+  //gStyle->SetStatW(0.4);
   for (unsigned ipu(0);ipu<nP;++ipu){//loop on pu
     if (!f[ipu]) {
       std::cout << " -- Input file for pu " << puVal[ipu] << " not found ! " << std::endl;
@@ -76,10 +79,16 @@ int plotHiggsMass(){//main
     for (unsigned iV(0);iV<nV;++iV){//loop on masses
       myc2->cd(2+iV);
       hMass[iV]->Draw();
-      mean[ipu][iV] = hMass[iV]->GetMean();
-      meanerr[ipu][iV] = hMass[iV]->GetMeanError();
-      sigma[ipu][iV] = hMass[iV]->GetRMS();
-      sigmaerr[ipu][iV] = hMass[iV]->GetRMSError();
+      hMass[iV]->Fit("gaus","+","same",110,160);
+      TF1 *fit = (TF1*)hMass[iV]->GetFunction("gaus");
+      mean[ipu][iV] = fit->GetParameter(1);
+      meanerr[ipu][iV] = fit->GetParError(1);
+      sigma[ipu][iV] = fit->GetParameter(2);
+      sigmaerr[ipu][iV] = fit->GetParError(2);
+      //mean[ipu][iV] = hMass[iV]->GetMean();
+      //meanerr[ipu][iV] = hMass[iV]->GetMeanError();
+      //sigma[ipu][iV] = hMass[iV]->GetRMS();
+      //sigmaerr[ipu][iV] = hMass[iV]->GetRMSError();
     }
     std::ostringstream lsave;
     lsave << "PLOTS/HiggsMasses_pu" << puVal[ipu] << ".pdf";
@@ -106,7 +115,14 @@ int plotHiggsMass(){//main
       gr[iP] = iH==0? grMass[iP] : grSigma[iP];
       gr[iP]->SetMarkerStyle(21+iP);
       gr[iP]->SetMarkerColor(iP+1);
-      if (iH==1) gr[iP]->SetMaximum(4.5);
+      if (iH==1) {
+	gr[iP]->SetMinimum(0);
+	gr[iP]->SetMaximum(7);
+      }
+      else {
+	gr[iP]->SetMinimum(120);
+	gr[iP]->SetMaximum(140);
+      }
       TAxis *ax = gr[iP]->GetHistogram()->GetXaxis();
       Double_t x1 = ax->GetBinLowEdge(1);
       Double_t x2 = ax->GetBinUpEdge(ax->GetNbins());
@@ -129,8 +145,8 @@ int plotHiggsMass(){//main
     TLatex lat;
     lat.DrawLatexNDC(0.1,0.92,"Pythia gg->Higgs");
     myc->Update();
-    if (iH==0) myc->Print("PLOTS/SummaryHiggsMass.png");
-    else myc->Print("PLOTS/SummaryHiggsReso.png");
+    if (iH==0) myc->Print("PLOTS/SummaryHiggsMass.pdf");
+    else myc->Print("PLOTS/SummaryHiggsReso.pdf");
 
   }//loop on histos
 

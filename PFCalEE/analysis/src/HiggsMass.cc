@@ -123,11 +123,12 @@ void HiggsMass::fillHistograms(){
   p_dvtx_y->Fill(tvtx2_.y()-tvtx1_.y());
   p_dvtx_z->Fill(tvtx2_.z()-tvtx1_.z());
 
+  //true
   p_trueDir_trueE->Fill(th.M());
 
   //true dir, reco E
   lg1.SetPtEtaPhiE(tg1_.Pt()*g1_.E()/tg1_.E(),tg1_.Eta(),tg1_.Phi(),g1_.E());
-  lg1.SetPtEtaPhiE(tg2_.Pt()*g2_.E()/tg2_.E(),tg2_.Eta(),tg2_.Phi(),g2_.E());  
+  lg2.SetPtEtaPhiE(tg2_.Pt()*g2_.E()/tg2_.E(),tg2_.Eta(),tg2_.Phi(),g2_.E());  
   TLorentzVector lh = lg1+lg2;
   p_trueDir_recoE->Fill(lh.M());
 
@@ -166,7 +167,7 @@ void HiggsMass::fillHistograms(){
 
   //reco angle true E
   lg1.SetPtEtaPhiE(g1_.Pt()*tg1_.E()/g1_.E(),g1_.Eta(),g1_.Phi(),tg1_.E());
-  lg1.SetPtEtaPhiE(g2_.Pt()*tg2_.E()/g2_.E(),g2_.Eta(),g2_.Phi(),tg2_.E());
+  lg2.SetPtEtaPhiE(g2_.Pt()*tg2_.E()/g2_.E(),g2_.Eta(),g2_.Phi(),tg2_.E());
   lh = lg1+lg2;
   p_angle_trueE->Fill(lh.M());
 

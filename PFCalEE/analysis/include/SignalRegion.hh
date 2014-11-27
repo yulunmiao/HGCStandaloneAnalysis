@@ -126,9 +126,9 @@ private:
   
   TH1F *p_rawEtotal;
   TH1F *p_wgtEtotal;
-  std::vector<TH1F*> p_rawESR;
+  //std::vector<TH1F*> p_rawESR;
   std::vector<TH1F*> p_wgtESR;
-  std::vector<TH1F*> p_rawSubtractESR;
+  //std::vector<TH1F*> p_rawSubtractESR;
   std::vector<TH1F*> p_wgtSubtractESR;
 
 };

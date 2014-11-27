@@ -71,27 +71,27 @@ int plotE(){//main
     //"pi-/twiceSampling/GeVCal/MipThresh_0p5/ECALloss/"
     //"pi-/twiceSampling/GeVCal/EarlyDecay/MipThresh_0p5/"
     //"e-/twiceSampling/MipThresh_0p5/"
-    "gitV00-02-09/gamma/200um/"
+    "gamma/200um/"
   };
 
   bool isCalib = scenario[0].find("calib")!=scenario[0].npos;
 
-  bool isEM = scenario[0].find("e-")!=scenario[0].npos;
+  bool isEM = scenario[0].find("e-")!=scenario[0].npos || scenario[0].find("gamma")!=scenario[0].npos;
 
   std::string particle = isEM? "e-":"pi-";
 
-  TString pSuffix = "";
+  TString pSuffix = "_pu0";
 
   unsigned rebinSim = 1;//4;//2;
-  unsigned rebinReco = (isCalib && isEM) ? 2: isEM? 50 : 4;//2;//40;
+  unsigned rebinReco = (isCalib && isEM) ? 2: isEM? 1 : 4;//2;//40;
 
   bool addNoiseTerm = false;
   bool doReco = true;
 
   const unsigned nV = 1;
-  TString version[nV] = {"23"};//,"0"};
+  TString version[nV] = {"12"};//,"0"};
   
-  const unsigned nLayers = 54;//34;//9;//33; //54;
+  const unsigned nLayers = 30;//34;//9;//33; //54;
 
   const bool doVsE = true;
 
@@ -104,9 +104,9 @@ int plotE(){//main
 
   //double MIPtoGeVsim = 39.74;//0.831;//39.22;//183.;//0.914;//41.69;//43.97;//0.92;// 41.98;
   //double offsetsim = 0;//-0.7;//-1.6;//318;//-1.04;//-4.3;//-38;//-1.06;
-  double MIPtoGeV = isCalib? 1 : isEM ? 118 : 1.;//0.95;//467.6;//312.58;//157.03;//0.90;//39.33;
+  double MIPtoGeV = isCalib? 1 : isEM ? 613.4 : 1.;//0.95;//467.6;//312.58;//157.03;//0.90;//39.33;
   double G4MIPtoGeV = isCalib ? 118*(isEM?1:0.92) : !isEM? 118 : 1;//277.64;//39.33*0.90;
-  double offset = isCalib? 0 : isEM ? -209 : 0;//-2;//-9;//-0.77;//-1.8;
+  double offset = isCalib? 0 : isEM ? -86.4 : 0;//-2;//-9;//-0.77;//-1.8;
 
   bool doLinCor = false;
   double linScale = 40.4;
@@ -130,12 +130,12 @@ int plotE(){//main
   
   //unsigned genEn[]={15,20,25,30,40,50,60,80,100,150,200,300,400,500};//150,200,300,500};
   //unsigned genEn[]={5,10,15,20,30,50,60,80,100,400};//150,200,300,500};
-  unsigned genEn[]={10,15,18,20,25,30,35,40,45,50,60,80};
+  //unsigned genEn[]={10,15,18,20,25,30,35,40,45,50,60,80};
   //60,80};//,100,200,300,
   //500};//,1000,2000};
   //unsigned genEn[]={10,20,30,40,60,80};
   //unsigned genEn[]={40,50,60,80,100,200,300,400,500,1000,2000};
-  //unsigned genEn[]={5,10,20,25,50,75,100,125,150,175,200,300,500};
+  unsigned genEn[]={3,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200};
   //unsigned genEn[]={10,25,40,50,60,80};
   //unsigned genEn[]={10,40};
   const unsigned nGenEn=sizeof(genEn)/sizeof(unsigned);
@@ -194,7 +194,7 @@ int plotE(){//main
       
       if (scenario[iS].find("PU") != scenario[iS].npos) isPU = true;
       
-      TString plotDir = "../PLOTS/gitV00-02-03/version"+version[iV]+"/"+scenario[iS]+"/";
+      TString plotDir = "../PLOTS/gitV00-02-12/version"+version[iV]+"/"+scenario[iS]+"/";
       //plotDir += "noWeights/";
       //TString plotDir = "../PLOTS/gitV00-01-00/version_"+version[iV]+"/scenario_"+scenario[iS]+"/";
       //TString plotDir = "../PLOTS/gitV00-01-00/version_"+version[iV]+"/";
@@ -224,13 +224,15 @@ int plotE(){//main
 	  TFile *inputFile = 0;
 	  std::ostringstream linputStr;
 	  if (doShower) linputStr << plotDir << "CalibHcalHistos_" << pSuffix << ".root";
-	  else linputStr << plotDir << "validation_e" << genEn[iE] << pSuffix << ".root";
+	  //else linputStr << plotDir << "validation_e" << genEn[iE] << pSuffix << ".root";
+	  else linputStr << plotDir << "eta25_et" << genEn[iE] << pSuffix << ".root";
 	  inputFile = TFile::Open(linputStr.str().c_str());
 	  if (!inputFile) {
 	    std::cout << " -- Error, input file " << linputStr.str() << " cannot be opened. Exiting..." << std::endl;
 	    return 1;
 	  }
 	  else std::cout << " -- File " << inputFile->GetName() << " sucessfully opened." << std::endl;
+	  inputFile->cd("Energies");
 	  
 	  if (isPU) rebin[iE] = 1;//rebin[iE]*4;
 	  
@@ -281,10 +283,12 @@ int plotE(){//main
 	    }
 	  }//doFrac
 
+	  inputFile->cd("Energies/");
 	  lName.str("");
 	  if (doShower) lName << "p_EshowerCor_" << genEn[iE];
 	  //if (doShower) lName << "p_Eshower_" << genEn[iE] << "_" << 5;
-	  else lName << "p_Esim" << pDetector;
+	  //else lName << "p_Esim" << pDetector;
+	  else lName << "p_wgtEtotal";
 	  p_Etotal[iE] = (TH1F*)gDirectory->Get(lName.str().c_str());
 	  if (!p_Etotal[iE]){
 	    std::cout << " -- ERROR, pointer for histogram " << lName.str() << " is null. Exiting..." << std::endl;
@@ -300,10 +304,11 @@ int plotE(){//main
 		    << std::endl;
 
 	  //p_Etotal[iE]->Rebin(rebin[iE]);
-	  p_Etotal[iE]->Rebin(genEn[iE]<100?rebinSim:genEn[iE]<50?2*rebinSim:genEn[iE]<150?4*rebinSim:8*rebinSim);
+	  p_Etotal[iE]->Rebin(genEn[iE]<100?rebinSim:genEn[iE]<50?2*rebinSim:genEn[iE]<300?4*rebinSim:8*rebinSim);
 
 	  lName.str("");
-	  lName << "p_Ereco" << pDetector;
+	  //lName << "p_Ereco" << pDetector;
+	  lName << "p_wgtEtotal";
 	  p_Ereco[iE] = (TH1F*)gDirectory->Get(lName.str().c_str());
 	  if (!p_Ereco[iE]){
 	    std::cout << " -- ERROR, pointer for histogram Ereco is null. Running on G4 file before digitizer." << std::endl;
@@ -600,7 +605,7 @@ int plotE(){//main
 	    char buf[500];
 	    if(i<2 || (!isG4File && (i==4 || i==5))) {
 	      //TF1 *fitFunc=new TF1("calib","[0]+[1]*x",gr->GetXaxis()->GetXmin(),gr->GetXaxis()->GetXmax());
-	      TF1 *fitFunc=new TF1("calib","[0]+[1]*x",20,100);
+	      TF1 *fitFunc=new TF1("calib","[0]+[1]*x",0,200);
 	      if (i<4) fitFunc->SetLineColor(1);
 	      else fitFunc->SetLineColor(6);
 	      gr->Fit(fitFunc,"RME");

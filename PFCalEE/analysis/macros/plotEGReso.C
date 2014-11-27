@@ -244,8 +244,10 @@ TPad* plotCalibration(TGraphErrors *gr,TPad *pad,bool doRatio, TGraphErrors *grD
   TF1 *fitFunc=new TF1("calib","[0]+[1]*x",gr->GetXaxis()->GetXmin(),gr->GetXaxis()->GetXmax());
   fitFunc->SetLineColor(6);
 
-  if (dovsE) gr->Fit(fitFunc,"RIME","same",0,200);
-  else gr->Fit(fitFunc,"RIME","same",0,pT(200,eta));
+  //if (dovsE) gr->Fit(fitFunc,"RIME","same",0,200);
+  //else gr->Fit(fitFunc,"RIME","same",0,pT(200,eta));
+  if (dovsE) gr->Fit(fitFunc,"IME","same");
+  else gr->Fit(fitFunc,"IME","same");
   TLatex lat;
   lat.SetTextColor(6);
   lat.SetTextSize(0.1);
@@ -273,11 +275,11 @@ TPad* plotCalibration(TGraphErrors *gr,TPad *pad,bool doRatio, TGraphErrors *grD
 
     double loffset = fitFunc->GetParameter(0);
     double lslope = fitFunc->GetParameter(1);
-    double range = 1;
+    double range = 0.05;
     if (unit=="GeV") {
       loffset=0;
       lslope=1;
-      range = 2;
+      range = 0.1;
     }
 
     //fill delta
@@ -285,10 +287,10 @@ TPad* plotCalibration(TGraphErrors *gr,TPad *pad,bool doRatio, TGraphErrors *grD
       double x=0;
       double y=0;
       gr->GetPoint(ip,x,y);
-      grDelta->SetPoint(ip,x,(y-loffset)/lslope-x);
-      double err = gr->GetErrorY(ip)/lslope;
+      grDelta->SetPoint(ip,x,((y-loffset)/lslope-x)/x);
+      double err = gr->GetErrorY(ip)/lslope*1./x;
       grDelta->SetPointError(ip,0,err);
-      std::cout << "Calib " << ip << " Egen=" << x << " Erec=" << y << " delta=" << (y-loffset)/lslope-x << std::endl;
+      std::cout << "Calib " << ip << " Egen=" << x << " Erec=" << y << " delta=" << ((y-loffset)/lslope-x)/x << std::endl;
     }
     grDelta->SetTitle("");
     grDelta->SetMinimum(-1.*range);
@@ -581,7 +583,7 @@ int plotEGReso(){//main
   std::string foutname = "PLOTS/PuSubtraction.root";
   TFile *fout = TFile::Open(foutname.c_str(),"RECREATE");
 
-  //const unsigned neta = 1;//7;
+  //const unsigned neta = 1;
   //unsigned eta[neta]={25};
   const unsigned neta = 7;
   unsigned eta[neta]={17,19,21,23,25,27,29};
@@ -639,6 +641,8 @@ int plotEGReso(){//main
     mycE[iE]->Divide(4,2);
   }
 
+  TCanvas *mycEtot = new TCanvas("mycEtot","mycEtot",1500,1000);
+  mycEtot->Divide(5,3);
   TCanvas *mycSig = new TCanvas("mycSig","puSigma",1);
   //mycSig->Divide(2,2);
 
@@ -820,6 +824,7 @@ int plotEGReso(){//main
 	      lName.str("");
 	      lName << "energy" << genEn[iE] << "_SR" << iSR ;
 	      p_Ereco[iE][iSR] = (TH1F*)(gPad->GetPrimitive("htemp"))->Clone(lName.str().c_str()); // 1D
+	      //if (iSR==7) p_Ereco[iE][iSR] = (TH1F*)gDirectory->Get("p_wgtEtotal");
 	      if (!p_Ereco[iE][iSR]){
 		std::cout << " -- ERROR, pointer for histogram " << lName.str() << " is null." << std::endl;
 		return 1;

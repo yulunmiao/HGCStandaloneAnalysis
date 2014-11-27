@@ -28,7 +28,7 @@ parser.add_option('-g', '--gun'         ,    action="store_true",  dest='dogun' 
 parser.add_option('-S', '--no-submit'   ,    action="store_true",  dest='nosubmit'           , help='Do not submit batch job.')
 (opt, args) = parser.parse_args()
 
-redofit=1
+redofit=0
 
 enlist=[0]
 if opt.dogun : 
@@ -101,7 +101,10 @@ for nPuVtx in nPuVtxset :
             scriptFile.write('echo "--deleting evt-by-evt files: too many!!" >> %s\n'%(g4log))
             scriptFile.write('rm -f %s/initialPos_* >> %s\n'%(outDir,g4log))
             scriptFile.write('cp %s/* %s/%s/\n'%(outDir,os.getcwd(),outDir))
-            scriptFile.write('cp %s.root %s/%s.root\n'%(outDir,os.getcwd(),outDir))
+            if (redofit==1):
+                scriptFile.write('cp %s.root %s/%s.root\n'%(outDir,os.getcwd(),outDir))
+            else:
+                scriptFile.write('cp %s.root %s/%s_nofit.root\n'%(outDir,os.getcwd(),outDir))
             scriptFile.write('cp * %s/%s/\n'%(os.getcwd(),outDir))
             scriptFile.write('echo "All done"\n')
             scriptFile.close()
