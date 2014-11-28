@@ -818,7 +818,7 @@ void PositionFit::getInitialPositions(TTree *aSimTree,
       for (unsigned iL(0);iL<nLayers_;++iL){//loop on layers
 	if (debug_) std::cout << "layer " << iL ;
 	unsigned nCells = nRandomCones*nSR_*geomConv_.cellSize()/geomConv_.cellSize(iL,etamax);
-	puE[iL] = puE[iL]/nCells;
+	puE[iL] = puE[iL]/(nCells*nCells);
 	if (debug_) std::cout << " Epu=" << puE[iL] << std::endl;	
       }
 

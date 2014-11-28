@@ -45,7 +45,7 @@ void drawChi2(TCanvas *myc,TH1F ** p_chi2ndf){
   gStyle->SetStatW(0.4);
   for (unsigned iSR(0); iSR<8;++iSR){
     myc->cd(iSR+1);
-    p_chi2ndf[iSR]->Draw();
+    if (p_chi2ndf[iSR]) p_chi2ndf[iSR]->Draw();
   }
   
   myc->Update();
@@ -56,7 +56,7 @@ void drawChi2(TCanvas *myc,TH1F ** p_chi2ndf){
 
 double absWeight(const unsigned layer, const double eta){
   //already added to tree variables
-  //return 1.;
+  return 1.;
   double weight = 1.0;
   if (layer == 0) weight = 0.0378011;
   else if (layer == 1) weight = 1;
@@ -559,12 +559,13 @@ bool retrievePuSigma(TTree *atree, TTree *atreePu,
       p_subtrEvspuE[iSR]->Fill((puE[iSR]-E[iSR])/calib[iSR],(puE[iSR]-subtrE[iSR])/calib[iSR]);
     }//loop on SR
 
-    p_sigma[nSR+2]->Fill((totalEpu-totalE)/tanh(etaval)*1./calib[nSR+2]);
+    //p_sigma[nSR+2]->Fill((totalEpu-totalE)/tanh(etaval)*1./calib[nSR+2]);
+    if (p_sigma[nSR+2]) p_sigma[nSR+2]->Fill((totalEpu-totalE)/calib[nSR+2]);
 
   }//loop on events
 
   for (unsigned iSR(0); iSR<nSR+3;++iSR){
-    std::cout << " -- SR " << iSR << " - Found " << p_sigma[iSR]->GetEntries() << " events for pu subtraction sigma! nEvts = " << nEvts << " nEvtsPu=" << nEvtsPu << std::endl;
+    if (p_sigma[iSR]) std::cout << " -- SR " << iSR << " - Found " << p_sigma[iSR]->GetEntries() << " events for pu subtraction sigma! nEvts = " << nEvts << " nEvtsPu=" << nEvtsPu << std::endl;
   }
 
   return true;
@@ -575,7 +576,8 @@ int plotEGReso(){//main
 
   SetTdrStyle();
 
-  bool dovsE = false;
+  bool dovsE = true;
+  bool processNoFitFiles = true;
 
   const unsigned nPu = 3;
   unsigned pu[nPu] = {0,0,140};
@@ -588,8 +590,8 @@ int plotEGReso(){//main
   std::string foutname = "PLOTS/PuSubtraction.root";
   TFile *fout = TFile::Open(foutname.c_str(),"RECREATE");
 
-  //const unsigned neta = 1;
-  //unsigned eta[neta]={25};
+  //const unsigned neta = 2;
+  //unsigned eta[neta]={21,25};
   const unsigned neta = 7;
   unsigned eta[neta]={17,19,21,23,25,27,29};
 
@@ -606,7 +608,7 @@ int plotEGReso(){//main
   
   const unsigned nLayers = 30;
 
-  const unsigned nSR = 8;
+  const unsigned nSR = 7;
   double fitQual[nSR];
   double srval[nSR];
   double srerr[nSR];
@@ -651,9 +653,7 @@ int plotEGReso(){//main
   TCanvas *mycSig = new TCanvas("mycSig","puSigma",1);
   //mycSig->Divide(2,2);
   TCanvas *mycCalibEta = new TCanvas("mycCalibEta","mycCalibEta",1500,1000);
-  mycCalibEta->Divide(4,2);
   TCanvas *mycOffsetEta = new TCanvas("mycOffsetEta","mycOffsetEta",1500,1000);
-  mycOffsetEta->Divide(4,2);
   
   const unsigned nCanvas = 3;  
   TCanvas *myc[nCanvas];
@@ -703,7 +703,9 @@ int plotEGReso(){//main
 	    skip[iE] = false;
 	    TFile *inputFile = 0;
 	    std::ostringstream linputStr;
-	    linputStr << plotDir << "eta" << eta[ieta] << "_et" << genEnAll[iE] << "_pu" << pu[ipu] << ".root";// << "_nofit.root";
+	    linputStr << plotDir << "eta" << eta[ieta] << "_et" << genEnAll[iE] << "_pu" << pu[ipu] ;
+	    if (!processNoFitFiles) linputStr << ".root";
+	    else linputStr << "_nofit.root";
 	    inputFile = TFile::Open(linputStr.str().c_str());
 	    if (!inputFile) {
 	      std::cout << " -- Error, input file " << linputStr.str() << " cannot be opened. Skipping..." << std::endl;
@@ -789,7 +791,9 @@ int plotEGReso(){//main
 	    
 	    TFile *inputFile = 0;
 	    std::ostringstream linputStr;
-	    linputStr << plotDir << "eta" << eta[ieta] << "_et" << genEn[iE] << "_pu" << pu[ipu] << ".root" ;// << "_nofit.root";
+	    linputStr << plotDir << "eta" << eta[ieta] << "_et" << genEn[iE] << "_pu" << pu[ipu];
+	    if (!processNoFitFiles) linputStr << ".root" ;
+	    else linputStr << "_nofit.root";
 	    inputFile = TFile::Open(linputStr.str().c_str());
 	    inputFile->cd("Energies");
 
@@ -830,7 +834,7 @@ int plotEGReso(){//main
 		  else lName << "+" << absWeight(iL,etaval[ieta]) << "*subtractedenergy_" << iL << "_SR4";
 		}
 	      }
-	      else lName << "wgtEtotal/" << tanh(etaval[ieta]);
+	      else lName << "wgtEtotal";///" << tanh(etaval[ieta]);
 	      if (ipu>0) lName << " - " << offset[0][ieta][iSR] << ")/" << calib[0][ieta][iSR];
 	      ltree[ieta][ipu][oldIdx[iE]]->Draw(lName.str().c_str(),"","");
 	      lName.str("");
@@ -1029,8 +1033,14 @@ int plotEGReso(){//main
       gStyle->SetStatY(0.85);
       gStyle->SetStatW(0.25);
       gStyle->SetStatH(0.25);
+      gStyle->SetStatColor(0);
 
       for (unsigned ipu(0); ipu<nPu; ++ipu){//loop on pu
+	mycCalibEta->Clear();
+	mycOffsetEta->Clear();
+	mycCalibEta->Divide(4,2);
+	mycOffsetEta->Divide(4,2);
+
 	for (unsigned iSR(0); iSR<nSR;++iSR){//loop on signal region
 	  if (pu[ipu]!=0 && iSR==nSR-1) continue;
 	  grSlope[ipu][iSR] = new TGraphErrors();
@@ -1081,11 +1091,13 @@ int plotEGReso(){//main
 	std::ostringstream lsave;
 	lsave << plotDir << "/CalibSlopevsEta_pu" << ipu;
 	if (ipu==0) lsave << "raw";
+	if (dovsE) lsave << "_vsE";
 	lsave << ".pdf";
 	mycCalibEta->Print(lsave.str().c_str());
 	lsave.str("");
 	lsave << plotDir << "/CalibOffsetvsEta_pu" << ipu;
 	if (ipu==0) lsave << "raw";
+	if (dovsE) lsave << "_vsE";
 	lsave << ".pdf";
 	mycOffsetEta->Update();
 	mycOffsetEta->Print(lsave.str().c_str());
@@ -1108,6 +1120,8 @@ int plotEGReso(){//main
       else grDummy->GetXaxis()->SetTitle("E (GeV)");
       grDummy->GetYaxis()->SetTitle("#sigma/E");
       grDummy->GetYaxis()->SetTitleOffset(1.2);
+      gStyle->SetOptStat(0);
+      gStyle->SetOptFit(0);
       for (unsigned ipu(1); ipu<nPu; ++ipu){//loop on pu
 	if (pu[ipu]==0) grDummy->SetMaximum(0.12);
 	else grDummy->SetMaximum(0.16);

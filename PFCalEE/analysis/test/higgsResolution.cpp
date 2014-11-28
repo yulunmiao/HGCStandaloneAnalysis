@@ -98,8 +98,8 @@ double absWeight(const unsigned layer){
 
 double calibratedE(const double Etot, const double eta){
   //calibration for signal region 2: 3*3 cm^2
-  double pars[3] = {509.4,-510.6,204.3};
-  double paro[3] = {-29.5,9.89,-13.17};
+  double pars[3] = {76.9,3.5,-0.53};
+  double paro[3] = {-5.3,-12.8,-6.9};
   double offset = paro[0] + paro[1]*eta + paro[2]*eta*eta;
   double slope = pars[0] + pars[1]*eta + pars[2]*eta*eta;
   return (Etot-offset)/slope;
@@ -123,24 +123,31 @@ double pT(const unsigned E, const unsigned eta){
   return E/cosh(eta/10.);
 };
 
-std::string getMatrixFolder(const double & Erec){
+std::string getMatrixFolder(const double & Erec, const double & aEta){
   unsigned pt[17] = {3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200};
   unsigned eta[7] = {17,19,21,23,25,27,29};
+  int leta = static_cast<int>(aEta*10+0.5);
   double min = 1000;
   double Egenmin = 0;
   std::ostringstream folder;
-  for (unsigned ipt(0);ipt<17;++ipt){
-    for (unsigned ieta(0);ieta<7;++ieta){
-      double Egen = E(pt[ipt],eta[ieta]);
-      if (fabs(Erec-Egen)<min){
-	min = fabs(Erec-Egen);
-	folder.str("");
-	folder << "eta" << eta[ieta] << "_et" <<  pt[ipt];
-	Egenmin = Egen;
-      }
+  int mineta = 1000;
+  unsigned etapoint = 0;
+  for (unsigned ieta(0);ieta<7;++ieta){
+    if (abs(leta-eta[ieta])<mineta){
+      mineta = abs(leta-eta[ieta]);
+      etapoint = eta[ieta];
     }
   }
-  std::cout << " -- Found minDelta = " << min << " Egen=" << Egenmin << " Ereco=" << Erec << " " << folder.str() << std::endl;
+  for (unsigned ipt(0);ipt<17;++ipt){
+    double Egen = E(pt[ipt],leta);
+    if (fabs(Erec-Egen)<min){
+      min = fabs(Erec-Egen);
+      folder.str("");
+      folder << "eta" << etapoint << "_et" <<  pt[ipt];
+      Egenmin = Egen;
+    }
+  }
+  std::cout << " -- Found minDelta = " << min << " Egen=" << Egenmin << " Ereco=" << Erec << " etarec " << leta << " " << folder.str() << std::endl;
   return folder.str();
 };
 
@@ -376,15 +383,19 @@ int main(int argc, char** argv){//main
   if (!lGamma2.getZpositions())
     lGamma2.getZpositions(lSimTree,nEvts);
   
+  bool doFit1 = false;
+  bool doFit2 = false;
   //initialise
   if (redoStep>0) {
     lGamma1.getInitialPositions(lSimTree,lRecTree,nEvts,1);
     lGamma2.getInitialPositions(lSimTree,lRecTree,nEvts,2);
+    lGamma1.initialiseLeastSquareFit();
+    lGamma2.initialiseLeastSquareFit();
+    doFit1 = true;
+    doFit2 = true;
   }
   
   //initialise signal regions
-  bool doFit1 = false;
-  bool doFit2 = false;
   SignalRegion Signal1(outFolder1, nLayers, nEvts, geomConv, puDensity,applyPuMixFix);
   Signal1.initialise(outputFile,"Gamma1E");
   if (!Signal1.initialiseFitPositions()) {
@@ -486,10 +497,11 @@ int main(int argc, char** argv){//main
       }
       if (doFit1){
 	//CAMM - Fix with using recoinfo...
-	double e1 = truthE1;//getCalibratedE(Ereco1,eta1);
-	
+	double eta1 = truthDir1.dir().Eta();
+	double e1 = getCalibratedE(Ereco1,eta1);
+
 	std::ostringstream mFolder;
-	mFolder << singleGammaPath << getMatrixFolder(e1) << "_pu" << nVtx;
+	mFolder << singleGammaPath << getMatrixFolder(e1,eta1) << "_pu" << nVtx;
 	
 	//std::cout << " -- Ereco = " << e1 << " - matrix folders: " << mFolder.str() << std::endl;
 	
@@ -509,9 +521,11 @@ int main(int argc, char** argv){//main
       
       if (doFit2){
 	//fix with using reco info
-	double e2 = truthE2;//getCalibratedE(Ereco2,eta2);
+	double eta2 = truthDir2.dir().Eta();
+	double e2 = getCalibratedE(Ereco2,eta2);
+
 	std::ostringstream mFolder;
-	mFolder << singleGammaPath << getMatrixFolder(e2) << "_pu" << nVtx;
+	mFolder << singleGammaPath << getMatrixFolder(e2,eta2) << "_pu" << nVtx;
 	
 	//std::cout << " -- Ereco = " << e2 << " - matrix folders: " << mFolder.str() << std::endl;
 	
@@ -557,9 +571,11 @@ int main(int argc, char** argv){//main
 
     TLorentzVector l1;
     double E1 = calibratedE(Signal1.getEtotalSR(2,true),recoDir1.dir().Eta());
+    //std::cout << " Photon1: TrueE = " << truthE1 << " recoE = " << Signal1.getEtotalSR(2,true) << " calibE = " << E1 << std::endl;
     l1.SetPtEtaPhiE(recoDir1.dir().Pt()*E1,recoDir1.dir().Eta(),recoDir1.dir().Phi(),E1);
     TLorentzVector l2;
     double E2 = calibratedE(Signal2.getEtotalSR(2,true),recoDir2.dir().Eta());
+    //std::cout << " Photon 2: TrueE = " << truthE2 << " recoE = " << Signal2.getEtotalSR(2,true)<< " calibE = " << E2 << std::endl;
     l2.SetPtEtaPhiE(recoDir2.dir().Pt()*E2,recoDir2.dir().Eta(),recoDir2.dir().Phi(),E2);
 
     hM.setRecoInfo(l1,l2,posFF1,posFF2);

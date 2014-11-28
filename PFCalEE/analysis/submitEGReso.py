@@ -28,7 +28,7 @@ parser.add_option('-g', '--gun'         ,    action="store_true",  dest='dogun' 
 parser.add_option('-S', '--no-submit'   ,    action="store_true",  dest='nosubmit'           , help='Do not submit batch job.')
 (opt, args) = parser.parse_args()
 
-redofit=0
+redofit=1
 
 enlist=[0]
 if opt.dogun : 

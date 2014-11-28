@@ -241,7 +241,11 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
     if (fixForPuMixBug_) posy-=1.25;
     double energy = lHit.energy();
     double leta = lHit.eta();
-    double etacor = 1./tanh(leta);
+
+    //not interested in hits outside of acceptance...
+    if (leta<1.4 || leta>3.0) continue;
+
+    double etacor = fabs(1./tanh(leta));
 
     totalE_ += energy;
     wgttotalE_ += energy*absweight_[layer]*etacor;    
