@@ -326,7 +326,6 @@ int main(int argc, char** argv){//main
   unsigned maxSimHits = 0;
   unsigned maxRecHits = 0;
   unsigned maxRecJets = 0;
-  outputTree->Branch("nPuVtx",&nPuVtx);
   HGCSSEvent lEvent;
   outputTree->Branch("HGCSSEvent",&lEvent);
   if (nPU!=0) outputTree->Branch("nPuVtx",&nPuVtx);
