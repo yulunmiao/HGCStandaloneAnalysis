@@ -69,25 +69,26 @@ int main(int argc, char** argv){//main
   /////////////////////////////////////////////////////////////
   //parameters
   /////////////////////////////////////////////////////////////
-
-  const unsigned nReqA = 7;
+  const unsigned nReqA = 9;
   const unsigned nPar = static_cast<unsigned>(argc);
-  if (nPar < nReqA) {
-    std::cout << " Usage: " 
-	      << argv[0] << " <nEvts to process (0=all)>"<< std::endl
-	      << "<full path to input file>"<< std::endl
-	      << "<full path to output file>"<< std::endl
-	      << "<granularities \"layer_i-layer_j:factor,layer:factor,...\">"<< std::endl
-	      << "<noise (in Mips) \"layer_i-layer_j:factor,layer:factor,...\">"<< std::endl
-	      << "<threshold (in ADC counts) \"layer_i-layer_j:factor,layer:factor,...\">"<< std::endl
-	      << std::endl
-      //	      << "<optional: model (default=\"model2\")> "  << std::endl
-	      << "<optional: randomSeed (default=0)> "  << std::endl
-	      << "<optional: debug (default=0)>" << std::endl
-	      << "<optional: save sim hits (default=0)> " << std::endl
-	      << "<optional: save digi hits (default=0)> " << std::endl
-	      << "<optional: make jets (default=0)> " << std::endl
-	      << std::endl;
+  if (nPar < nReqA-1) {
+    std::cout << " Usage: "
+              << argv[0] << " <nEvts to process (0=all)>"<< std::endl
+              << "<full path to input file>"<< std::endl
+              << "<full path to output file>"<< std::endl
+              << "<granularities \"layer_i-layer_j:factor,layer:factor,...\">"<< std::endl
+              << "<noise (in Mips) \"layer_i-layer_j:factor,layer:factor,...\">"<< std::endl
+              << "<threshold (in ADC counts) \"layer_i-layer_j:factor,layer:factor,...\">"<< std::endl
+              << "<number of PU>" << std::endl
+              << "<full path to MinBias file if nPU!=0>" << std::endl
+              << std::endl
+              << "<optional: model (default=\"model2\")> "  << std::endl
+              << "<optional: randomSeed (default=0)> "  << std::endl
+              << "<optional: debug (default=0)>" << std::endl
+              << "<optional: save sim hits (default=0)> " << std::endl
+              << "<optional: save digi hits (default=0)> " << std::endl
+              << "<optional: make jets (default=0)> " << std::endl
+              << std::endl;
     return 1;
   }
 
@@ -100,20 +101,20 @@ int main(int argc, char** argv){//main
   const int nPU = atoi(argv[7]);
   std::string puPath = argv[8];
 
-
   std::cout << " ----------------------------------------" << std::endl
-	    << " -- Input parameters: " << std::endl
-	    << " -- Input file path: " << inFilePath << std::endl
-	    << " -- Output file path: " << outFilePath << std::endl
-	    << " -- Processing " ;
+            << " -- Input parameters: " << std::endl
+            << " -- Input file path: " << inFilePath << std::endl
+            << " -- Output file path: " << outFilePath << std::endl
+            << " -- Processing " ;
   if (pNevts>0) std::cout << pNevts;
   else std::cout << "all";
   std::cout << " events." << std::endl
-	    << " -- Granularities: " << granulStr << std::endl
-	    << " -- noise: " << noiseStr << std::endl
-	    << " -- thresholds: " << threshStr << std::endl
+            << " -- Granularities: " << granulStr << std::endl
+            << " -- noise: " << noiseStr << std::endl
+            << " -- thresholds: " << threshStr << std::endl
             << " -- number of PU:" << nPU << std::endl
     ;
+
 	    
   //std::string pModel = "model2";
   unsigned debug = 0;
@@ -245,7 +246,6 @@ int main(int argc, char** argv){//main
 	    << ", cellSize = " << cellSize
 	    << std::endl;
 
-
   myDetector.buildDetector(versionNumber,concept,isCaliceHcal);
 
   //initialise calibration class
@@ -329,7 +329,7 @@ int main(int argc, char** argv){//main
   outputTree->Branch("nPuVtx",&nPuVtx);
   HGCSSEvent lEvent;
   outputTree->Branch("HGCSSEvent",&lEvent);
-  if (nPU!=0) outputTree->Branch("HGCSSRecoHitVec","std::vector<HGCSSRecoHit>",&lRecoHits);
+  if (nPU!=0) outputTree->Branch("nPuVtx",&nPuVtx);
   if (pSaveSims) outputTree->Branch("HGCSSSimHitVec","std::vector<HGCSSSimHit>",&lSimHits);
   if (pSaveDigis) outputTree->Branch("HGCSSDigiHitVec","std::vector<HGCSSRecoHit>",&lDigiHits);
   outputTree->Branch("HGCSSRecoHitVec","std::vector<HGCSSRecoHit>",&lRecoHits);
