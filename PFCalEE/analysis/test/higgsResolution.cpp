@@ -551,7 +551,6 @@ int main(int argc, char** argv){//main
     }
 
     if (!found1 || !found2) continue;
-    nTwoPhotons++;
 
     //get Higgs mass
     ROOT::Math::XYZPoint posFF1 = Signal1.getAccuratePos(fit1,0);
@@ -568,6 +567,12 @@ int main(int argc, char** argv){//main
       std::cout << " Truth= "; truthDir2.Print();
       std::cout << " Reco = "; recoDir2.Print();
     }
+
+    //cut outside acceptance
+    if (recoDir1.dir().Eta()<1.4 || recoDir1.dir().Eta()>3.0 || 
+	recoDir2.dir().Eta()<1.4 || recoDir2.dir().Eta()>3.0 ) continue;
+
+    nTwoPhotons++;
 
     TLorentzVector l1;
     double E1 = calibratedE(Signal1.getEtotalSR(2,true),recoDir1.dir().Eta());

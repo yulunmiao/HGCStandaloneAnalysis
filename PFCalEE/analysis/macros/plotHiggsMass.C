@@ -117,11 +117,11 @@ int plotHiggsMass(){//main
       gr[iP]->SetMarkerColor(iP+1);
       if (iH==1) {
 	gr[iP]->SetMinimum(0);
-	gr[iP]->SetMaximum(7);
+	gr[iP]->SetMaximum(4.5);
       }
       else {
 	gr[iP]->SetMinimum(120);
-	gr[iP]->SetMaximum(140);
+	gr[iP]->SetMaximum(126);
       }
       TAxis *ax = gr[iP]->GetHistogram()->GetXaxis();
       Double_t x1 = ax->GetBinLowEdge(1);

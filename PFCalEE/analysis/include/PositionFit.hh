@@ -90,6 +90,8 @@ public:
 
   ~PositionFit(){};
 
+  double getW0(const unsigned layer);
+
   double DeltaPhi(const double & phi1, const double & phi2);
 
   std::pair<unsigned, std::pair<double,double> > findMajorityValue(std::vector<std::pair<double,double> > & values) const;
@@ -144,7 +146,8 @@ public:
 				 std::vector<ROOT::Math::XYPoint> & recoPos,
 				 std::vector<double> & recoE,
 				 std::vector<unsigned> & nHits,
-				 std::vector<double> & puE, 
+				 std::vector<double> & puE,
+				 std::vector<std::vector<double> > & Exy,
 				 const bool puSubtracted=true);
 
   void getPuContribution(std::vector<HGCSSRecoHit> *rechitvec, const std::vector<double> & xmax,const std::vector<double> & ymax,std::vector<double> & puE);
@@ -233,6 +236,7 @@ private:
   bool useMeanPU_;
   bool fixForPuMixBug_;
   bool doMatrix_;
+  bool saveEtree_;
 
   HGCSSGeometryConversion geomConv_;
   HGCSSPUenergy puDensity_;

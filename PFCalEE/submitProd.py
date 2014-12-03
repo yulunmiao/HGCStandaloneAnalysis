@@ -16,7 +16,8 @@ parser.add_option('-t', '--git-tag'     ,    dest='gittag'             , help='g
 parser.add_option('-r', '--run'         ,    dest='run'                , help='stat run'                     , default=-1,      type=int)
 parser.add_option('-v', '--version'     ,    dest='version'            , help='detector version'             , default=3,      type=int)
 parser.add_option('-m', '--model'       ,    dest='model'              , help='detector model'               , default=3,      type=int)
-parser.add_option('-a', '--alpha'       ,    dest='alpha'              , help='incidence angle in rad'       , default=0,      type=float)
+parser.add_option('-a', '--alpha'       ,    dest='alpha'              , help='incidence theta angle in rad' , default=0,      type=float)
+parser.add_option('-p', '--phi'         ,    dest='phi'                , help='incidence phi angle in pi unit' , default=0.5,      type=float)
 parser.add_option('-b', '--Bfield'      ,    dest='Bfield'             , help='B field value in Tesla'       , default=0,      type=float)
 parser.add_option('-d', '--datatype'    ,    dest='datatype'           , help='data type or particle to shoot', default='e-')
 parser.add_option('-f', '--datafile'    ,    dest='datafile'           , help='full path to HepMC input file', default='data/example_MyPythia.dat')
@@ -33,8 +34,8 @@ enlist=[0]
 #if opt.dogun : enlist=[1000,2000]
 #do constant ET
 if opt.dogun : 
-    #enlist=[3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200]
-    enlist=[2,5,10,20,40,60,80,100,150,200]
+    enlist=[3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200]
+    #enlist=[2,5,10,20,40,60,80,100,150,200]
 
 granularity='0-20:4,21-63:6'
 noise='0-63:0.12'
@@ -80,6 +81,7 @@ for et in enlist :
     if et>0 : outDir='%s/et_%d'%(outDir,et)
     eosDir='%s/git%s/%s'%(opt.eos,opt.gittag,opt.datatype)
     if opt.alpha>0 : outDir='%s/a_%3.3f/'%(outDir,opt.alpha) 
+    if opt.phi!=0.5 : outDir='%s/phi_%3.3fpi/'%(outDir,opt.phi) 
     if (opt.run>=0) : outDir='%s/run_%d/'%(outDir,opt.run)
 
     outlog='%s/digitizer.log'%(outDir)
@@ -96,6 +98,7 @@ for et in enlist :
     outTag='version%d_model%d_%s'%(opt.version,opt.model,bval)
     if et>0 : outTag='%s_et%d'%(outTag,et)
     if opt.alpha>0 : outTag='%s_alpha%3.3f'%(outTag,opt.alpha) 
+    if opt.phi!=0.5 : outTag='%s_phi%3.3fpi'%(outTag,opt.phi) 
     if (opt.run>=0) : outTag='%s_run%d'%(outTag,opt.run)
     scriptFile.write('mv PFcal.root HGcal_%s.root\n'%(outTag))
     scriptFile.write('localdir=`pwd`\n')
@@ -156,7 +159,7 @@ for et in enlist :
         eta=-1.0*math.log(math.tan(opt.alpha/2.))
         en=et*math.cosh(eta)
         g4Macro.write('/gun/energy %f GeV\n'%(en))
-        g4Macro.write('/gun/direction %f %f %f\n'%(0.,math.sin(opt.alpha),math.cos(opt.alpha)))
+        g4Macro.write('/gun/direction %f %f %f\n'%(math.cos(math.pi*opt.phi),math.sin(math.pi*opt.phi)*math.sin(opt.alpha),math.cos(opt.alpha)))
         #g4Macro.write('/gun/direction %f %f %f\n'%(random.uniform(0,1000)/100.-5.,math.sin(opt.alpha),math.cos(opt.alpha)))
     else :
         g4Macro.write('/generator/select hepmcAscii\n')

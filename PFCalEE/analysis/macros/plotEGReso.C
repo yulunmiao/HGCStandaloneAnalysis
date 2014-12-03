@@ -577,7 +577,7 @@ int plotEGReso(){//main
   SetTdrStyle();
 
   bool dovsE = true;
-  bool processNoFitFiles = true;
+  bool processNoFitFiles = false;
 
   const unsigned nPu = 3;
   unsigned pu[nPu] = {0,0,140};
@@ -590,10 +590,14 @@ int plotEGReso(){//main
   std::string foutname = "PLOTS/PuSubtraction.root";
   TFile *fout = TFile::Open(foutname.c_str(),"RECREATE");
 
-  //const unsigned neta = 2;
-  //unsigned eta[neta]={21,25};
-  const unsigned neta = 7;
-  unsigned eta[neta]={17,19,21,23,25,27,29};
+  TFile *fcalib;
+  if (dovsE) fcalib = TFile::Open("PLOTS/CalibReso_vsE.root","RECREATE");
+  else fcalib = TFile::Open("PLOTS/CalibReso.root","RECREATE");
+
+  const unsigned neta = 2;
+  unsigned eta[neta]={17,25};
+  //const unsigned neta = 7;
+  //unsigned eta[neta]={17,19,21,23,25,27,29};
 
   double etaval[neta];
   double etaerr[neta];
@@ -608,7 +612,7 @@ int plotEGReso(){//main
   
   const unsigned nLayers = 30;
 
-  const unsigned nSR = 7;
+  const unsigned nSR = 8;
   double fitQual[nSR];
   double srval[nSR];
   double srerr[nSR];
@@ -746,6 +750,10 @@ int plotEGReso(){//main
 	  for (unsigned iSR(0); iSR<nSR;++iSR){//loop on signal region
 	    TString srStr = "";
 	    srStr += iSR;
+	    srStr += "eta";
+	    srStr += eta[ieta];
+	    srStr += "pu";
+	    srStr += ipu;
 	    calibRecoFit[iSR] = new TGraphErrors();
 	    calibRecoFit[iSR]->SetName("calibRecoFit"+srStr);
 	    calibRecoFit[iSR]->SetTitle("");
@@ -753,10 +761,6 @@ int plotEGReso(){//main
 	    calibRecoFit[iSR]->SetMarkerColor(1);
 	    calibRecoFit[iSR]->SetLineColor(1);
 	    calibRecoDelta[iSR] = (TGraphErrors *) calibRecoFit[iSR]->Clone("calibRecoDelta"+srStr);
-	    srStr += "eta";
-	    srStr += eta[ieta];
-	    srStr += "pu";
-	    srStr += ipu;
 	    resoRecoFit[ipu][ieta][iSR] = (TGraphErrors *) calibRecoFit[iSR]->Clone("resoRecoFit"+srStr);
 	  }
 
@@ -1000,6 +1004,14 @@ int plotEGReso(){//main
 	      return 1;	    
 	    }
 
+	    lsave.str("");
+	    lsave << "SR" << iSR;
+	    fcalib->mkdir(lsave.str().c_str());
+	    fcalib->cd(lsave.str().c_str());
+	    calibRecoFit[iSR]->Write();
+	    calibRecoDelta[iSR]->Write();
+	    resoRecoFit[ipu][ieta][iSR]->Write();
+
 	  }//loop on SR
 
 	  myc[1]->Update();
@@ -1086,6 +1098,13 @@ int plotEGReso(){//main
 
 	  lat.DrawLatexNDC(0.2,0.87,buf);
 	  if (iSR==4) lat.DrawLatexNDC(0.01,0.01,"HGCAL G4 standalone");
+
+	  std::ostringstream lsave;
+	  lsave.str("");
+	  lsave << "SR" << iSR;
+	  fcalib->cd(lsave.str().c_str());
+	  grOffset[ipu][iSR]->Write();
+	  grSlope[ipu][iSR]->Write();
 	}//loop on SR
 	mycCalibEta->Update();
 	std::ostringstream lsave;
@@ -1266,6 +1285,8 @@ int plotEGReso(){//main
     
   }//loop on versions
 
+
+  fcalib->Write();
 
   return 0;
   
