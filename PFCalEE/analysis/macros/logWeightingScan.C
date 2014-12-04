@@ -1,0 +1,572 @@
+#include<string>
+#include<iostream>
+#include<fstream>
+#include<sstream>
+#include<iomanip>
+
+#include "TFile.h"
+#include "TTree.h"
+#include "TNtuple.h"
+#include "TH2F.h"
+#include "TH1F.h"
+#include "TLine.h"
+#include "TCanvas.h"
+#include "TStyle.h"
+#include "TGraphErrors.h"
+#include "TLegend.h"
+#include "TF1.h"
+#include "TString.h"
+#include "TLatex.h"
+#include "TGaxis.h"
+#include "TProfile.h"
+
+#include "TDRStyle.h"
+
+double calibratedE(const double Etot, const double eta){
+  //calibration for signal region 2: 3*3 cm^2
+  double pars[3] = {76.9,3.5,-0.53};
+  double paro[3] = {-5.3,-12.8,-6.9};
+  double offset = paro[0] + paro[1]*eta + paro[2]*eta*eta;
+  double slope = pars[0] + pars[1]*eta + pars[2]*eta*eta;
+  return (Etot-offset)/slope;
+};
+
+double absWeight(const unsigned layer, const double eta){
+  double weight = 1.0;
+  if (layer == 0) weight = 0.0378011;
+  else if (layer == 1) weight = 1;
+  else if (layer == 2) weight = 0.646989;
+  else if (layer == 3) weight = 0.617619;
+  else if (layer == 4) weight = 0.646989;
+  else if (layer == 5) weight = 0.617619;
+  else if (layer == 6) weight = 0.646989;
+  else if (layer == 7) weight = 0.617619;
+  else if (layer == 8) weight = 0.646989;
+  else if (layer == 9) weight = 0.617619;
+  else if (layer == 10) weight = 0.646989;
+  else if (layer == 11) weight = 0.942829;
+  else if (layer == 12) weight = 0.859702;
+  else if (layer == 13) weight = 0.942829;
+  else if (layer == 14) weight = 0.859702;
+  else if (layer == 15) weight = 0.942829;
+  else if (layer == 16) weight = 0.859702;
+  else if (layer == 17) weight = 0.942829;
+  else if (layer == 18) weight = 0.859702;
+  else if (layer == 19) weight = 0.942829;
+  else if (layer == 20) weight = 0.859702;
+  else if (layer == 21) weight = 1.37644;
+  else if (layer == 22) weight = 1.30447;
+  else if (layer == 23) weight = 1.37644;
+  else if (layer == 24) weight = 1.30447;
+  else if (layer == 25) weight = 1.37644;
+  else if (layer == 26) weight = 1.30447;
+  else if (layer == 27) weight = 1.37644;
+  else if (layer == 28) weight = 1.30447;
+  else if (layer == 29) weight = 1.79662;
+  else weight = 1;
+  return weight/tanh(eta);
+};
+
+
+double zpos(const unsigned l){
+  if (l==0) return 3173.9;
+  if (l==1) return 3183.65;
+  if (l==2) return 3190.95;
+  if (l==3) return 3200.4;
+  if (l==4) return 3207.7;
+  if (l==5) return 3217.15;
+  if (l==6) return 3224.45;
+  if (l==7) return 3233.9;
+  if (l==8) return 3241.2;
+  if (l==9) return 3250.65;
+  if (l==10) return 3257.95;
+  if (l==11) return 3268.45;
+  if (l==12) return 3276.85;
+  if (l==13) return 3287.35;
+  if (l==14) return 3295.75;
+  if (l==15) return 3306.25;
+  if (l==16) return 3314.65;
+  if (l==17) return 3325.15;
+  if (l==18) return 3333.55;
+  if (l==19) return 3344.05;
+  if (l==20) return 3352.45;
+  if (l==21) return 3364.35;
+  if (l==22) return 3375.05;
+  if (l==23) return 3386.95;
+  if (l==24) return 3397.65;
+  if (l==25) return 3409.55;
+  if (l==26) return 3420.25;
+  if (l==27) return 3432.15;
+  if (l==28) return 3442.85;
+  if (l==29) return 3454.75;
+  return 0;
+};
+
+int logWeightingScan(){//main
+  SetTdrStyle();
+
+  TString plotDir = "../PLOTS/gitV00-02-12/version12/gamma/200um/";
+  std::string pteta = "eta25_et20";
+
+  bool useFit = true;
+
+  double eta = 2.5;
+
+  const unsigned nPu = 2;
+  unsigned pu[nPu] = {0,140};
+
+  const unsigned nScans = 90;
+  const double wStart = 1.;
+  const double wStep = (10.-wStart)/nScans;
+  const unsigned nLayers = 30;
+
+  TFile *fin[nPu];
+
+  TFile *fout = TFile::Open("PLOTS/LogWeightingStudy.root","RECREATE");
+  fout->mkdir("scan");
+  fout->mkdir("scan/xpos");
+  fout->mkdir("scan/ypos");
+  for (unsigned iS(0); iS<nScans;++iS){
+    std::ostringstream lName;
+    lName << "scan/xpos/scan_" << wStart+iS*wStep;
+    fout->mkdir(lName.str().c_str());
+    lName.str("");
+    lName << "scan/ypos/scan_" << wStart+iS*wStep;
+    fout->mkdir(lName.str().c_str());
+  }
+
+  fout->cd();
+  TH1F *p_xt = new TH1F("p_xt",";x truth (mm)",100,-5,5); 
+  TH1F *p_yt = new TH1F("p_yt",";y truth (mm)",100,-5,5);//200,1170,1370); 
+
+  TH1F *p_intercalibSigmaSquare[nPu];
+  p_intercalibSigmaSquare[0] = new TH1F("p_intercalibSigmaSquare_0",";#sigma_{E}^{2} (2% intercalib) (GeV^2)",3000,0,30000);
+  p_intercalibSigmaSquare[1] = new TH1F("p_intercalibSigmaSquare_140",";#sigma_{E}^{2} (2% intercalib) (GeV^2)",3000,0,30000);
+
+  TH1F *p_chi2ndf = new TH1F("p_chi2ndf",";#chi^{2}/N",100,0,20);
+
+  TH1F *p_posx[nPu][nLayers][nScans];
+  TH1F *p_posy[nPu][nLayers][nScans];
+  TH1F *p_wx[nPu][nLayers][3];
+  TH1F *p_wy[nPu][nLayers][3];
+
+  TH2F *p_Exy[nPu][nLayers];
+  TProfile *p_deltavsreco_x[nPu][nLayers];
+  TProfile *p_deltavsreco_y[nPu][nLayers];
+  TH2F *p_recovstruth_x[nPu][nLayers];
+  TH2F *p_recovstruth_y[nPu][nLayers];
+
+
+  const unsigned nCanvas = 5;  
+  TCanvas *mycx[nCanvas];
+  TCanvas *mycy[nCanvas];
+  for (unsigned iC(0);iC<nCanvas;++iC){
+    std::ostringstream lName;
+    lName << "mycx" << iC;
+    mycx[iC] = new TCanvas(lName.str().c_str(),lName.str().c_str(),1500,1000);
+    mycx[iC]->Divide(3,2);
+    lName.str("");
+    lName << "mycy" << iC;
+    mycy[iC] = new TCanvas(lName.str().c_str(),lName.str().c_str(),1500,1000);
+    mycy[iC]->Divide(3,2);
+  }
+
+  TCanvas *mycW = new TCanvas("mycW","mycW",1);
+  TCanvas *mycFit = new TCanvas("mycFit","mycFit",1);
+
+  mycFit->Print("PLOTS/fits_x.pdf[");
+  mycFit->Print("PLOTS/fits_y.pdf[");
+
+  gStyle->SetOptStat("eMRuo");
+
+  TGraphErrors *grX[nPu][nLayers];
+  TGraphErrors *grY[nPu][nLayers];
+  TGraphErrors *grXrms[nPu][nLayers];
+  TGraphErrors *grYrms[nPu][nLayers];
+
+  double resxmin[nPu][nLayers];
+  double wxmin[nPu][nLayers];
+  double resymin[nPu][nLayers];
+  double wymin[nPu][nLayers];
+  double lay[nLayers];
+
+  for (unsigned ipu(0); ipu<nPu; ++ipu){//loop on pu
+    std::ostringstream linputStr;
+    linputStr << plotDir << "/" << pteta << "_pu" << pu[ipu] ;
+    linputStr << "_logweight.root";
+    fin[ipu] = TFile::Open(linputStr.str().c_str());
+    if (!fin[ipu]) {
+      std::cout << " -- Error, input file " << linputStr.str() << " cannot be opened. Skipping..." << std::endl;
+      continue;
+    }
+    else std::cout << " -- File " << linputStr.str() << " successfully opened." << std::endl;
+
+    TTree *tree = (TTree*)gDirectory->Get("EcellsSR2");
+    if (!tree) {
+      std::cout << " Tree not found! " << std::endl;
+      return 1;
+    }
+    std::vector<std::vector<double> > Exy;
+    std::vector<double> init;
+    init.resize(9,0);
+    Exy.resize(nLayers,init);
+    std::vector<double> truthPosX;
+    truthPosX.resize(nLayers,0);
+    std::vector<double> truthPosY;
+    truthPosY.resize(nLayers,0);
+
+
+    std::ostringstream label;
+    label << "pu" << pu[ipu];
+    fout->mkdir(label.str().c_str());
+    fout->cd(label.str().c_str());
+
+    for (unsigned iL(0);iL<nLayers;++iL){
+      lay[iL] = iL;
+      resxmin[ipu][iL] = 100;
+      wxmin[ipu][iL] = 10;
+      resymin[ipu][iL] = 100;
+      wymin[ipu][iL] = 10;
+      label.str("");   
+      label << "pu" << pu[ipu];
+      fout->cd(label.str().c_str());
+      label.str("");   
+      label << "grX_pu" << pu[ipu] << "_" << iL;
+      grX[ipu][iL] = new TGraphErrors();
+      grX[ipu][iL]->SetName(label.str().c_str());
+      label.str("");   
+      label << "grY_pu" << pu[ipu] << "_" << iL;
+      grY[ipu][iL] = new TGraphErrors();
+      grY[ipu][iL]->SetName(label.str().c_str());
+      label.str("");   
+      label << "grXrms_pu" << pu[ipu] << "_" << iL;
+      grXrms[ipu][iL] = new TGraphErrors();
+      grXrms[ipu][iL]->SetName(label.str().c_str());
+      label.str("");   
+      label << "grYrms_pu" << pu[ipu] << "_" << iL;
+      grYrms[ipu][iL] = new TGraphErrors();
+      grYrms[ipu][iL]->SetName(label.str().c_str());
+
+      label.str("");   
+      label << "Exy_pu"<< pu[ipu] << "_" << iL;
+      p_Exy[ipu][iL] = new TH2F(label.str().c_str(),";x idx;y idx; E (mips)",
+				3,0,3,3,0,3);
+
+      label.str("");   
+      label << "deltavsreco_x_pu"<< pu[ipu] << "_" << iL;
+      p_deltavsreco_x[ipu][iL] = new TProfile(label.str().c_str(),";x reco (mm);x_{reco}-x_{truth} (mm);",
+					      30,-15,15,-100,100);
+      label.str("");
+      label << "deltavsreco_y_pu"<< pu[ipu] << "_" << iL;
+      p_deltavsreco_y[ipu][iL] = new TProfile(label.str().c_str(),";y reco (mm);y_{reco}-y_{truth} (mm);",
+					      30,-15,15,-100,100);
+      label.str("");   
+      label << "recovstruth_x_pu"<< pu[ipu] << "_" << iL;
+      p_recovstruth_x[ipu][iL] = new TH2F(label.str().c_str(),";x_{truth} (mm);x reco (mm)",
+					  30,-15,15,30,-15,15);
+      label.str("");
+      label << "recovstruth_y_pu"<< pu[ipu] << "_" << iL;
+      p_recovstruth_y[ipu][iL] = new TH2F(label.str().c_str(),";y_{truth} (mm);y reco (mm)",
+					  30,-15,15,//200,1170,1370,
+					  30,-15,15
+					  ); 
+
+
+
+      label.str("");     
+      label << "TruthPosX_" << iL;
+      tree->SetBranchAddress(label.str().c_str(),&truthPosX[iL]);
+      label.str("");     
+      label << "TruthPosY_" << iL;
+      tree->SetBranchAddress(label.str().c_str(),&truthPosY[iL]);
+      
+      for (unsigned i(0);i<3;++i){
+	label.str("");     
+	label << "wx_pu" << pu[ipu] << "_" << iL << "_" << i;
+	p_wx[ipu][iL][i] = new TH1F(label.str().c_str(),
+				  ";wx;events",
+				  100,-10,0);
+	label.str("");     
+	label << "wy_pu" << pu[ipu] << "_" << iL << "_" << i;
+	p_wy[ipu][iL][i] = new TH1F(label.str().c_str(),
+				  ";wy;events",
+				  100,-10,0);
+      }
+      for (unsigned iS(0); iS<nScans;++iS){
+	label.str("");
+	label << "scan/xpos/scan_" << wStart+iS*wStep;
+	fout->cd(label.str().c_str());
+	label.str("");
+	label << "posx_pu" << pu[ipu] << "_" << iL << "_" << iS;
+	p_posx[ipu][iL][iS] = new TH1F(label.str().c_str(),
+				     ";x-x_{truth} (mm);events",
+				     100,-10,10);
+	label.str("");
+	label << "scan/ypos/scan_" << wStart+iS*wStep;
+	fout->cd(label.str().c_str());
+	label.str("");
+	label << "posy_pu" << pu[ipu] << "_" << iL << "_" << iS;
+	p_posy[ipu][iL][iS] = new TH1F(label.str().c_str(),
+				     ";y-y_{truth} (mm);events",
+				     100,-10,10);
+      }
+      
+      for (unsigned iy(0);iy<3;++iy){
+	for (unsigned ix(0);ix<3;++ix){
+	  unsigned idx = 3*iy+ix;
+	  label.str("");     
+	  label << "E_" << iL << "_" << idx;
+	  tree->SetBranchAddress(label.str().c_str(),&Exy[iL][idx]);
+	}
+      }
+    }//loop on layers
+
+    unsigned nEvts = tree->GetEntries();
+    for (unsigned ievt(0); ievt<nEvts; ++ievt){//loop on entries
+
+      if (ievt%50 == 0) std::cout << "... Processing entry: " << ievt << std::endl;
+
+      tree->GetEntry(ievt);
+
+      double Etotsq = 0;
+
+      for (unsigned iL(0);iL<nLayers;++iL){
+	double Etot = 0;
+	double Ex[3] = {0,0,0};
+	double Ey[3] = {0,0,0};
+	for (unsigned idx(0);idx<9;++idx){
+	  Etot += Exy[iL][idx];
+	}
+
+	Etotsq += pow(calibratedE(Etot*absWeight(iL,eta),eta),2);
+
+	Ex[0] = Exy[iL][0]+Exy[iL][3]+Exy[iL][6];
+	Ex[1] = Exy[iL][1]+Exy[iL][4]+Exy[iL][7];
+	Ex[2] = Exy[iL][2]+Exy[iL][5]+Exy[iL][8];
+	Ey[0] = Exy[iL][0]+Exy[iL][1]+Exy[iL][2];
+	Ey[1] = Exy[iL][3]+Exy[iL][4]+Exy[iL][5];
+	Ey[2] = Exy[iL][6]+Exy[iL][7]+Exy[iL][8];
+
+	double simplex = 10*(Ex[2]-Ex[0])/Etot;
+	double simpley = 10*(Ey[2]-Ey[0])/Etot;
+	double xt = truthPosX[iL];
+	unsigned cellCenter = static_cast<unsigned>((truthPosY[iL]+5)/10.)*10;
+	double yt = 0;
+	//if (cellCenter>truthPosY[iL]) yt = cellCenter-truthPosY[iL];
+	yt=truthPosY[iL]-cellCenter;
+	p_xt->Fill(xt);
+	p_yt->Fill(yt);
+	p_deltavsreco_x[ipu][iL]->Fill(simplex,simplex-xt);
+	p_deltavsreco_y[ipu][iL]->Fill(simpley,simpley-yt);
+	p_recovstruth_x[ipu][iL]->Fill(xt,simplex);
+	p_recovstruth_y[ipu][iL]->Fill(yt,simpley);
+
+	
+	for (unsigned idx(0);idx<9;++idx){
+	  p_Exy[ipu][iL]->Fill(idx%3,idx/3,Exy[iL][idx]/Etot);
+	}
+	double wx[4][nScans];
+	double wy[4][nScans];
+	  
+	for (unsigned i(0);i<4;++i){
+	  for (unsigned iS(0); iS<nScans;++iS){
+	    wx[i][iS] = 0;
+	    wy[i][iS] = 0;
+	  }
+	}
+	for (unsigned i(0);i<3;++i){
+	  p_wx[ipu][iL][i]->Fill(log(Ex[i]/Etot));
+	  p_wy[ipu][iL][i]->Fill(log(Ey[i]/Etot));
+	  for (unsigned iS(0); iS<nScans;++iS){
+	    double w0 = wStart+iS*wStep;
+	    wx[i][iS] = std::max(0.,log(Ex[i]/Etot)+w0);
+	    wy[i][iS] = std::max(0.,log(Ey[i]/Etot)+w0);
+	    // if (log(Ex[i]/Etot)+w0<0)
+	    //   std::cout << " - iL= " << iL << " i=" << i << " w0=" << w0 
+	    // 		<< " logEx=" << log(Ex[i]/Etot)
+	    // 		<< " wx " << wx[i][iS] 
+	    // 		<< std::endl;
+	    // if (log(Ey[i]/Etot)+w0<0) 
+	    //   std::cout << " - iL= " << iL << " i=" << i << " w0=" << w0 
+	    // 		<< " logEy=" << log(Ey[i]/Etot)
+	    // 		<< " wy " << wy[i][iS] 
+	    // 		<< std::endl;
+	    wx[3][iS] += wx[i][iS];
+	    wy[3][iS] += wy[i][iS];
+	  }
+	}
+	for (unsigned iS(0); iS<nScans;++iS){
+	  double x = 10*(wx[2][iS]-wx[0][iS])/wx[3][iS];
+	  double y = 10*(wy[2][iS]-wy[0][iS])/wy[3][iS];
+	  //if (fabs(y-yt)>5) std::cout << " --- iL=" << iL << " iS=" << iS 
+	  //<< " x=" << x << " xt=" << xt 
+	  //<< " y=" << y << " yt=" << yt 
+	  //<< std::endl;
+	  p_posx[ipu][iL][iS]->Fill(x-xt);
+	  p_posy[ipu][iL][iS]->Fill(y-yt);
+	}
+
+      }//loop on layers
+      p_intercalibSigmaSquare[ipu]->Fill(Etotsq);
+    }//loop on entries
+
+    TLatex lat;
+    char buf[500];
+    for (unsigned iL(0);iL<nLayers;++iL){
+      for (unsigned iS(0); iS<nScans;++iS){
+	mycFit->cd();
+	p_posx[ipu][iL][iS]->Draw();
+	double w0 = wStart+iS*wStep;
+	p_posx[ipu][iL][iS]->Fit("gaus","0+");//,"",-1.5,1.5);
+	TF1 *fitx = p_posx[ipu][iL][iS]->GetFunction("gaus");
+	fitx->SetLineColor(6);
+	fitx->Draw("same");
+	sprintf(buf,"Layer %d, w0=%3.1f, pu=%d",iL,w0,pu[ipu]);
+	lat.DrawLatexNDC(0.1,0.96,buf);
+
+	mycFit->Update();
+	mycFit->Print("PLOTS/fits_x.pdf");
+
+
+	mycFit->cd();
+	p_posy[ipu][iL][iS]->Draw();
+	p_posy[ipu][iL][iS]->Fit("gaus","0+");//,"",-1.5,1.5);
+	TF1 *fity = p_posy[ipu][iL][iS]->GetFunction("gaus");
+	fity->SetLineColor(6);
+	fity->Draw("same");
+	sprintf(buf,"Layer %d, w0=%3.1f, pu=%d",iL,w0,pu[ipu]);
+	lat.DrawLatexNDC(0.1,0.96,buf);
+	mycFit->Update();
+	mycFit->Print("PLOTS/fits_y.pdf");
+	//grX[ipu][iL]->SetPoint(iS,w0,p_posx[ipu][iL][iS]->GetRMS());
+	//grX[ipu][iL]->SetPointError(iS,0,p_posx[ipu][iL][iS]->GetRMSError());
+	//grY[ipu][iL]->SetPoint(iS,w0,p_posy[ipu][iL][iS]->GetRMS());
+	//grY[ipu][iL]->SetPointError(iS,0,p_posy[ipu][iL][iS]->GetRMSError());
+	double xval = useFit? fitx->GetParameter(2) : p_posx[ipu][iL][iS]->GetRMS();
+	p_chi2ndf->Fill(fitx->GetChisquare()/fitx->GetNDF());
+	
+	grX[ipu][iL]->SetPoint(iS,w0,fitx->GetParameter(2));
+	grX[ipu][iL]->SetPointError(iS,0,fitx->GetParError(2));
+	grXrms[ipu][iL]->SetPoint(iS,w0,p_posx[ipu][iL][iS]->GetRMS());
+	grXrms[ipu][iL]->SetPointError(iS,0,p_posx[ipu][iL][iS]->GetRMSError());
+	if (xval < resxmin[ipu][iL]){
+	  resxmin[ipu][iL] = xval;
+	  wxmin[ipu][iL] = w0;
+	}
+	double yval = useFit? fity->GetParameter(2) : p_posy[ipu][iL][iS]->GetRMS();
+	p_chi2ndf->Fill(fity->GetChisquare()/fity->GetNDF());
+	grY[ipu][iL]->SetPoint(iS,w0,fity->GetParameter(2));
+	grY[ipu][iL]->SetPointError(iS,0,fity->GetParError(2));
+	grYrms[ipu][iL]->SetPoint(iS,w0,p_posy[ipu][iL][iS]->GetRMS());
+	grYrms[ipu][iL]->SetPointError(iS,0,p_posy[ipu][iL][iS]->GetRMSError());
+	
+	if (yval < resymin[ipu][iL]){
+	  resymin[ipu][iL] = yval;
+	  wymin[ipu][iL] = w0;
+	}
+      }
+      grX[ipu][iL]->SetTitle(";W0; #sigma(x-xt) (mm)");
+      grY[ipu][iL]->SetTitle(";W0; #sigma(y-yt) (mm)");
+      grX[ipu][iL]->SetLineColor(ipu+1);
+      grX[ipu][iL]->SetMarkerColor(ipu+1);
+      grX[ipu][iL]->SetMarkerStyle(ipu+21);
+      grY[ipu][iL]->SetLineColor(ipu+1);
+      grY[ipu][iL]->SetMarkerColor(ipu+1);
+      grY[ipu][iL]->SetMarkerStyle(ipu+21);
+
+      grXrms[ipu][iL]->SetLineColor(ipu+3);
+      grXrms[ipu][iL]->SetMarkerColor(ipu+3);
+      grXrms[ipu][iL]->SetMarkerStyle(ipu+23);
+      grYrms[ipu][iL]->SetLineColor(ipu+3);
+      grYrms[ipu][iL]->SetMarkerColor(ipu+3);
+      grYrms[ipu][iL]->SetMarkerStyle(ipu+23);
+
+      mycx[iL/6]->cd(iL%6+1);
+      grX[ipu][iL]->Draw(ipu==0?"APL":"PLsame");
+      grXrms[ipu][iL]->Draw("PLsame");
+      //gStyle->SetStatX(0.4);
+      //gStyle->SetStatY(1.0);
+      //p_Exy[ipu][iL]->Draw("colztext");
+      sprintf(buf,"Layer %d",iL);
+      lat.DrawLatexNDC(0.4,0.85,buf);
+      mycy[iL/6]->cd(iL%6+1);
+      grY[ipu][iL]->Draw(ipu==0?"APL":"PLsame");
+      grYrms[ipu][iL]->Draw("PLsame");
+      lat.DrawLatexNDC(0.4,0.85,buf);
+
+    }//loop on layers
+
+    //return 1;
+  }//loop on pu
+
+  mycFit->Print("PLOTS/fits_x.pdf]");
+  mycFit->Print("PLOTS/fits_y.pdf]");
+
+  TLegend *leg = new TLegend(0.6,0.6,0.94,0.94);
+  leg->SetFillColor(0);
+  leg->AddEntry(grX[0][0],"fit pu=0","P");
+  leg->AddEntry(grXrms[0][0],"RMS pu=0","P");
+  leg->AddEntry(grX[1][0],"fit pu=140","P");
+  leg->AddEntry(grXrms[1][0],"RMS pu=140","P");
+  for (unsigned iC(0);iC<nCanvas;++iC){
+    mycx[iC]->cd(1);
+    leg->Draw("same");
+    mycx[iC]->Update();
+    std::ostringstream lsave;
+    lsave << "PLOTS/logWeighted_x_" << 6*iC << "_" << 6*iC+5 << "_" << pteta ;
+    lsave << ".pdf";
+    mycx[iC]->Print(lsave.str().c_str());
+    mycx[iC]->Update();
+
+    mycy[iC]->cd(1);
+    leg->Draw("same");
+    lsave.str("");
+    lsave << "PLOTS/logWeighted_y_" << 6*iC << "_" << 6*iC+5 << "_" << pteta;
+    lsave << ".pdf";
+    mycy[iC]->Print(lsave.str().c_str());
+  }
+
+  TGraph *grW[4];
+  for (unsigned ipu(0); ipu<nPu; ++ipu){//loop on pu
+    std::cout << " --Processing pu " << pu[ipu] << std::endl;
+
+    grW[2*ipu] = new TGraph(nLayers,lay,wxmin[ipu]);
+    grW[2*ipu+1] = new TGraph(nLayers,lay,wymin[ipu]);
+    for (unsigned iL(0);iL<nLayers;++iL){
+      std::cout << " if (layer==" << iL 
+		<< ") return " << (wxmin[ipu][iL]+wymin[ipu][iL])/2. <<";"
+	//		<< " minimum x= " << grX[ipu][iL]->GetYaxis()->GetXmin()
+    //		<< " minimum y= " << grY[ipu][iL]->GetYaxis()->GetXmin()
+    		<< std::endl;
+    }
+    mycW->cd();
+    grW[2*ipu]->SetTitle(";layer;W0");
+    grW[2*ipu]->SetMaximum(6);
+    grW[2*ipu]->SetMinimum(0);
+    grW[2*ipu]->SetLineColor(2*ipu+1);
+    grW[2*ipu]->SetMarkerColor(2*ipu+1);
+    grW[2*ipu]->SetMarkerStyle(20+2*ipu+1);
+    grW[2*ipu+1]->SetLineColor(2*ipu+2);
+    grW[2*ipu+1]->SetMarkerColor(2*ipu+2);
+    grW[2*ipu+1]->SetMarkerStyle(20+2*ipu+2);
+    if (ipu==0) {
+      grW[2*ipu]->Draw("APL");
+      grW[2*ipu+1]->Draw("PLsame");
+    }
+    else {
+      grW[2*ipu]->Draw("PLsame");
+      grW[2*ipu+1]->Draw("PLsame");
+    }
+  }
+  std::ostringstream lsave;
+  lsave << "PLOTS/w0minvsLayers_" << pteta;
+  if (useFit) lsave << "_fit";
+  else lsave << "_rms";
+  lsave << ".pdf";
+  mycW->Update();
+  mycW->Print(lsave.str().c_str());
+
+  fout->Write();
+
+  return 0;
+}//main

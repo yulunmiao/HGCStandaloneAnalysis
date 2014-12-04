@@ -82,7 +82,6 @@ int main(int argc, char** argv){//main
               << "<number of PU>" << std::endl
               << "<full path to MinBias file if nPU!=0>" << std::endl
               << std::endl
-              << "<optional: model (default=\"model2\")> "  << std::endl
               << "<optional: randomSeed (default=0)> "  << std::endl
               << "<optional: debug (default=0)>" << std::endl
               << "<optional: save sim hits (default=0)> " << std::endl
@@ -98,8 +97,13 @@ int main(int argc, char** argv){//main
   std::string granulStr = argv[4];
   std::string noiseStr = argv[5];
   std::string threshStr = argv[6];
-  const int nPU = atoi(argv[7]);
-  std::string puPath = argv[8];
+  const unsigned nPU = atoi(argv[7]);
+  std::string puPath;
+  if (nPar > nReqA-1) puPath = argv[8];
+  if (nPU>0 && puPath.size()==0) {
+    std::cout << " -- Error! Missing full path to minbias file. Exiting." << std::endl;
+    return 1;
+  }
 
   std::cout << " ----------------------------------------" << std::endl
             << " -- Input parameters: " << std::endl
@@ -112,7 +116,8 @@ int main(int argc, char** argv){//main
             << " -- Granularities: " << granulStr << std::endl
             << " -- noise: " << noiseStr << std::endl
             << " -- thresholds: " << threshStr << std::endl
-            << " -- number of PU:" << nPU << std::endl
+            << " -- number of PU: " << nPU << std::endl
+	    << " -- pu file path: " << puPath << std::endl
     ;
 
 	    
@@ -122,7 +127,7 @@ int main(int argc, char** argv){//main
   bool pSaveDigis = 0;
   bool pSaveSims = 0;
   bool pMakeJets = false;
-  //if (nPar > nReqA) pModel = argv[nReqA];
+  //if (nPar > nReqA-1) pModel = argv[nReqA];
   if (nPar > nReqA) std::istringstream(argv[nReqA])>>pSeed;
   if (nPar > nReqA+1) {
     debug = atoi(argv[nReqA+1]);
@@ -374,7 +379,7 @@ int main(int argc, char** argv){//main
 	subdetLayer = layer-subdet.layerIdMin;
 	prevLayer = layer;
 	if (debug > 1) std::cout << " - layer " << layer << " " << subdet.name << " " << subdetLayer << std::endl;
-      }      
+      }
       double energy = lHit.energy()*mycalib.MeVToMip(layer);
       double posx = lHit.get_x(cellSize);
       double posy = lHit.get_y(cellSize);
@@ -400,52 +405,51 @@ int main(int argc, char** argv){//main
 
     if(nPU!=0){
       //get PU events
-      std::vector<unsigned> ipuevt;
+      //std::vector<unsigned> ipuevt;
 
       //get poisson <140>
       nPuVtx = lRndm->Poisson(nPU);
-      ipuevt.resize(nPuVtx,1);
+      //ipuevt.resize(nPuVtx,1);
 
       std::cout << " -- Adding " << nPuVtx << " events to signal event: " << ievt << std::endl;
       for (unsigned iV(0); iV<nPuVtx; ++iV){//loop on interactions
-        ipuevt[iV] = lRndm->Integer(nPuEvts);
+        unsigned ipuevt = lRndm->Integer(nPuEvts);
 
-        puTree->GetEntry(ipuevt[iV]);
+        puTree->GetEntry(ipuevt);
         //lRecoHits.reserve(lRecoHits.size()+(*puhitvec).size());
         prevLayer = 10000;
         type = DetectorEnum::FECAL;
         subdetLayer=0;
         for (unsigned iH(0); iH<(*puhitvec).size(); ++iH){//loop on hits
           HGCSSSimHit lHit = (*puhitvec)[iH];
-
-          unsigned layer = lHit.layer();
-          if (layer != prevLayer){
-            const HGCSSSubDetector & subdet = myDetector.subDetectorByLayer(layer);
-            type = subdet.type;
-            subdetLayer = layer-subdet.layerIdMin;
-            prevLayer = layer;
-            //std::cout << " - layer " << layer << " " << subdet.name << " " << subdetLayer << std::endl;
-          }
-           double energy = lHit.energy()*mycalib.MeVToMip(layer);
-           double posx = lHit.get_x(cellSize);
-           double posy = lHit.get_y(cellSize);
-           double posz = lHit.get_z();
-           double realtime = mycalib.correctTime(lHit.time(),posx,posy,posz);
-           bool passTime = myDigitiser.passTimeCut(type,realtime);
-           if (!passTime) continue;
-
-           if (energy>0 &&
-               lHit.silayer() < geomConv.getNumberOfSiLayers(type)//,lHit.eta()) 
-               ){
-             if (debug > 1) std::cout << " hit " << iH
-                                      << " lay " << layer
-                                      << " x " << posx
-                                      << " y " << posy
-                                      << " z " << posz
-                                      << " t " << lHit.time() << " " << realtime
-                                      << std::endl;
-             geomConv.fill(type,subdetLayer,energy,realtime,posx,posy,posz);
-           }
+	  if (lHit.energy()>0){
+	    unsigned layer = lHit.layer();
+	    if (layer != prevLayer){
+	      const HGCSSSubDetector & subdet = myDetector.subDetectorByLayer(layer);
+	      type = subdet.type;
+	      subdetLayer = layer-subdet.layerIdMin;
+	      prevLayer = layer;
+	      //std::cout << " - layer " << layer << " " << subdet.name << " " << subdetLayer << std::endl;
+	    }
+	    if (lHit.silayer() < geomConv.getNumberOfSiLayers(type)){//(type,lHit.eta())
+	      double energy = lHit.energy()*mycalib.MeVToMip(layer);
+	      double posx = lHit.get_x(cellSize);
+	      double posy = lHit.get_y(cellSize);
+	      double posz = lHit.get_z();
+	      double realtime = mycalib.correctTime(lHit.time(),posx,posy,posz);
+	      bool passTime = myDigitiser.passTimeCut(type,realtime);
+	      if (!passTime) continue;
+	      
+	      if (debug > 1) std::cout << " hit " << iH
+				       << " lay " << layer
+				       << " x " << posx
+				       << " y " << posy
+				       << " z " << posz
+				       << " t " << lHit.time() << " " << realtime
+				       << std::endl;
+	      geomConv.fill(type,subdetLayer,energy,realtime,posx,posy,posz);
+	    }
+	  }
 
         }//loop on hits
       }//loop on interactions

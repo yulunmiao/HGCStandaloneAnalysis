@@ -11,36 +11,25 @@
 #include "HGCSSDetector.hh"
 
 double PositionFit::getW0(const unsigned layer){
-  if (layer ==0) return 2.9;
-  if (layer ==1) return 1.75;
-  if (layer ==2) return 2.5;
-  if (layer ==3) return 1.65;
-  if (layer ==4) return 2.55;
-  if (layer ==5) return 2.8;
-  if (layer ==6) return 3.25;
-  if (layer ==7) return 2.8;
-  if (layer ==8) return 3.1;
-  if (layer ==9) return 2.6;
-  if (layer ==10) return 2.9;
-  if (layer ==11) return 2.45;
-  if (layer ==12) return 2.65;
-  if (layer ==13) return 2.25;
-  if (layer ==14) return 2.5;
-  if (layer ==15) return 2.1;
-  if (layer ==16) return 2.25;
-  if (layer ==17) return 2.05;
-  if (layer ==18) return 2.15;
-  if (layer ==19) return 1.95;
-  if (layer ==20) return 2.;
-  if (layer ==21) return 1.9;
-  if (layer ==22) return 2.05;
-  if (layer ==23) return 2;
-  if (layer ==24) return 2.2;
-  if (layer ==25) return 2.;
-  if (layer ==26) return 1.95;
-  if (layer ==27) return 2.25;
-  if (layer ==28) return 2.5;
-  if (layer ==29) return 1.75;
+  if (layer<7) return 4;
+  if (layer==7) return 2.55;
+  if (layer==8) return 2.9;
+  if (layer==9) return 2.45;
+  if (layer==10) return 2.75;
+  if (layer==11) return 2.35;
+  if (layer==12) return 2.55;
+  if (layer==13) return 2.2;
+  if (layer==14) return 2.35;
+  if (layer==15) return 2;
+  if (layer==16) return 2.2;
+  if (layer==17) return 1.9;
+  if (layer==18) return 2.05;
+  if (layer==19) return 1.75;
+  if (layer==20) return 1.9;
+  if (layer==21) return 1.7;
+  if (layer==22) return 1.8;
+  if (layer==23) return 3;
+  if (layer>23) return 4;
   return 0;
 }
 
@@ -98,7 +87,8 @@ PositionFit::PositionFit(const unsigned nSR,
   useMeanPU_ = true;
   fixForPuMixBug_ = applyPuMixFix;
   doMatrix_ = doMatrix;
-  saveEtree_ = false;
+  saveEtree_ = true;
+  doLogWeight_ = true;
 
   p_nGenParticles = 0;
   //p_numberOfMaxTried = 0;
@@ -115,8 +105,10 @@ PositionFit::PositionFit(const unsigned nSR,
 
   p_residuals_x = 0;
   p_residuals_y = 0;
-  p_errorMatrix = 0;
-  p_corrMatrix = 0;
+  p_errorMatrix_x = 0;
+  p_corrMatrix_x = 0;
+  p_errorMatrix_y = 0;
+  p_corrMatrix_y = 0;
   p_chi2[0] = 0;
   p_chi2[1] = 0;
 
@@ -129,6 +121,12 @@ PositionFit::PositionFit(const unsigned nSR,
   p_tanAngleY[0] = 0;
   p_tanAngleX_residual = 0;
   p_tanAngleY_residual = 0;
+  p_eta_reco = 0;
+  p_phi_reco = 0;
+  p_eta_truth = 0;
+  p_phi_truth = 0;
+  p_eta_residual = 0;
+  p_phi_residual = 0;
   p_positionReso = 0;
   p_angularReso = 0;
   p_chi2overNDF[1] = 0;
@@ -210,6 +208,7 @@ void PositionFit::initialiseClusterHistograms(){
 
    p_genxy.resize(nLayers_,0);
    p_recoxy.resize(nLayers_,0);
+   p_dRmin.resize(nLayers_,0);
    std::ostringstream lName;
    for (unsigned iL(0); iL<nLayers_; ++iL){
      lName.str("");
@@ -222,6 +221,10 @@ void PositionFit::initialiseClusterHistograms(){
      p_recoxy[iL] = new TH2F(lName.str().c_str(),";x(mm);y(mm)",
 			     nX,minX,maxX,
 			     nY,minY,maxY);
+     lName.str("");
+     lName << "p_dRmin_" << iL;
+     p_dRmin[iL] = new TH1F(lName.str().c_str(),";dRmin;events",
+			    100,0,1);
    }
 
    p_hitMeanPuContrib = new TH2F("p_hitMeanPuContrib",";layer;E_{PU} (MIPs) from mean;hits",nLayers_,0,nLayers_,1000,0,50);
@@ -295,6 +298,13 @@ void PositionFit::initialiseClusterHistograms(){
      p_tanAngleX_residual = new TH1F("p_tanAngleX_residual",";residual x direction tanAngle (rad);n_{events}",200,-0.1,0.1);
      p_impactY_residual = new TH1F("p_impactY_residual",";residual y front face impact (mm);n_{events}",200,-10,10);
      p_tanAngleY_residual = new TH1F("p_tanAngleY_residual",";residual y direction tanAngle (rad);n_{events}",200,-0.1,0.1);
+
+     p_eta_reco = new TH1F("p_eta_reco",";reco #eta;n_{events}",200,1.4,3.0);
+     p_phi_reco = new TH1F("p_phi_reco",";reco #phi (rad);n_{events}",200,1.4,3);
+     p_eta_truth = new TH1F("p_eta_truth",";truth #eta;n_{events}",200,-3.1416,3.1416);
+     p_phi_truth = new TH1F("p_phi_truth",";truth #phi (rad);n_{events}",200,-3.1416,3.1416);
+     p_eta_residual = new TH1F("p_eta_residual",";residual #eta;n_{events}",200,-0.1,0.1);
+     p_phi_residual = new TH1F("p_phi_residual",";residual #phi (rad);n_{events}",200,-0.1,0.1);
 
 
      p_positionReso = new TH1F("p_positionReso",";#sigma_{x,y} (mm);n_{events}",500,0,50);
@@ -856,7 +866,8 @@ void PositionFit::initialiseClusterHistograms(){
     xmax.resize(nLayers_,0);
     std::vector<double> ymax;
     ymax.resize(nLayers_,0);
-    getMaximumCell(rechitvec,phimax,etamax,xmax,ymax);
+    getMaximumCellFromGeom(phimax,etamax,xmax,ymax);
+    //getMaximumCell(rechitvec,phimax,etamax,xmax,ymax);
     p_yvsx_max->Fill(xmax[10],ymax[10]);
 
     //get PU contrib from elsewhere in the event
@@ -891,8 +902,8 @@ void PositionFit::initialiseClusterHistograms(){
       //use cell size at etamax...
       for (unsigned iL(0);iL<nLayers_;++iL){//loop on layers
 	if (debug_) std::cout << "layer " << iL ;
-	unsigned nCells = nRandomCones*nSR_*geomConv_.cellSize()/geomConv_.cellSize(iL,etamax);
-	puE[iL] = puE[iL]/(nCells*nCells);
+	unsigned nCells = nRandomCones*pow(nSR_*geomConv_.cellSize()/geomConv_.cellSize(iL,etamax),2);
+	puE[iL] = puE[iL]/nCells;
 	if (debug_) std::cout << " Epu=" << puE[iL] << std::endl;	
       }
 
@@ -942,10 +953,16 @@ void PositionFit::initialiseClusterHistograms(){
 void PositionFit::getMaximumCellFromGeom(const double & phimax,const double & etamax,std::vector<double> & xmax,std::vector<double> & ymax){
 
   for (unsigned iL(0); iL<nLayers_;++iL){
-    double theta = 2*atan(exp(-etamax));
+    double theta = 2*atan(exp(-1.*etamax));
     double rho = avgZ_[iL]/cos(theta);
-    xmax[iL] = rho*tan(theta)*cos(phimax);
-    ymax[iL] = rho*tan(theta)*sin(phimax);
+    xmax[iL] = rho*sin(theta)*cos(phimax);
+    ymax[iL] = rho*sin(theta)*sin(phimax);
+
+    if (xmax[iL]>0) xmax[iL]=static_cast<int>((xmax[iL]+4.999999)/10.)*10;
+    else xmax[iL]=static_cast<int>((xmax[iL]-4.999999)/10.)*10;
+    if (ymax[iL]>0) ymax[iL]=static_cast<int>((ymax[iL]+4.999999)/10.)*10;
+    else ymax[iL]=static_cast<int>((ymax[iL]-4.999999)/10.)*10;
+
   }//loop on layers
 
 }
@@ -967,7 +984,7 @@ void PositionFit::getMaximumCell(std::vector<HGCSSRecoHit> *rechitvec,const doub
     if (fixForPuMixBug_) posx-=1.25;
     double posy = lHit.get_y();
     if (fixForPuMixBug_) posy-=1.25;
-    double posz = lHit.get_z();
+    double posz = avgZ_[layer];//lHit.get_z();
     if (debug_>1) {
       std::cout << " --  RecoHit " << iH << "/" << (*rechitvec).size() << " --" << std::endl
 		<< " --  position x,y " << posx << "," << posy << std::endl;
@@ -991,6 +1008,9 @@ void PositionFit::getMaximumCell(std::vector<HGCSSRecoHit> *rechitvec,const doub
     
   }//loop on rechits
     
+  for (unsigned iL(0);iL<nLayers_;++iL){//loop on layers
+    p_dRmin[iL]->Fill(dRmin[iL]);
+  }
 }
 
 void PositionFit::getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec,
@@ -1037,19 +1057,22 @@ void PositionFit::getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec
 	energy = std::max(0.,energy - lCor);
 	if (debug_>1) std::cout << energy << std::endl;
       }
-      int ix = (posx-xmax[layer])/10.;
-      int iy = (posy-ymax[layer])/10.;
-      unsigned idx = 0;
-      if ((ix > 1 || ix < -1) || (iy>1 || iy<-1)) {
-	std::cout << " error, check ix=" << ix << " iy=" << iy << " posx,y-max=" << posx-xmax[layer] << " " << posy-ymax[layer] << " step " << step << std::endl;
-	continue;
+      if (doLogWeight_){
+	int ix = (posx-xmax[layer])/10.;
+	int iy = (posy-ymax[layer])/10.;
+	unsigned idx = 0;
+	if ((ix > 1 || ix < -1) || (iy>1 || iy<-1)) {
+	  std::cout << " error, check ix=" << ix << " iy=" << iy << " posx,y-max=" << posx-xmax[layer] << " " << posy-ymax[layer] << " step " << step << std::endl;
+	  continue;
+	}
+	else 
+	  idx = 3*(iy+1)+(ix+1);
+	Exy[layer][idx] = energy;
       }
-      else 
-	idx = 3*(iy+1)+(ix+1);
-      Exy[layer][idx] = energy;
-
-      //recoPos[layer].SetX(recoPos[layer].X() + posx*energy);
-      //recoPos[layer].SetY(recoPos[layer].Y() + posy*energy);
+      else {
+	recoPos[layer].SetX(recoPos[layer].X() + posx*energy);
+	recoPos[layer].SetY(recoPos[layer].Y() + posy*energy);
+      }
       recoE[layer] += energy;
       if (energy>0) nHits[layer]++;
     }
@@ -1060,38 +1083,52 @@ void PositionFit::getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec
 
   for (unsigned iL(0);iL<nLayers_;++iL){//loop on layers
     if (nHits[iL]==0) continue;
-    double Etot = 0;
-    double Ex[3] = {0,0,0};
-    double Ey[3] = {0,0,0};
-    for (unsigned idx(0);idx<9;++idx){
-      Etot += Exy[iL][idx];
-    }
 
-    Ex[0] = Exy[iL][0]+Exy[iL][3]+Exy[iL][6];
-    Ex[1] = Exy[iL][1]+Exy[iL][4]+Exy[iL][7];
-    Ex[2] = Exy[iL][2]+Exy[iL][5]+Exy[iL][8];
-    Ey[0] = Exy[iL][0]+Exy[iL][1]+Exy[iL][2];
-    Ey[1] = Exy[iL][3]+Exy[iL][4]+Exy[iL][5];
-    Ey[2] = Exy[iL][6]+Exy[iL][7]+Exy[iL][8];
-    double wx[4];
-    double wy[4];
-    for (unsigned i(0);i<4;++i){
-      wx[i] = 0;
-      wy[i] = 0;
+    if (doLogWeight_){
+      double Etot = 0;
+      double Ex[3] = {0,0,0};
+      double Ey[3] = {0,0,0};
+      for (unsigned idx(0);idx<9;++idx){
+	Etot += Exy[iL][idx];
+      }
+      
+      Ex[0] = Exy[iL][0]+Exy[iL][3]+Exy[iL][6];
+      Ex[1] = Exy[iL][1]+Exy[iL][4]+Exy[iL][7];
+      Ex[2] = Exy[iL][2]+Exy[iL][5]+Exy[iL][8];
+      Ey[0] = Exy[iL][0]+Exy[iL][1]+Exy[iL][2];
+      Ey[1] = Exy[iL][3]+Exy[iL][4]+Exy[iL][5];
+      Ey[2] = Exy[iL][6]+Exy[iL][7]+Exy[iL][8];
+      double wx[4];
+      double wy[4];
+      for (unsigned i(0);i<4;++i){
+	wx[i] = 0;
+	wy[i] = 0;
+      }
+      double w0 = getW0(iL);
+      for (unsigned i(0);i<3;++i){
+	wx[i] = std::max(0.,log(Ex[i]/Etot)+w0);
+	wy[i] = std::max(0.,log(Ey[i]/Etot)+w0);
+	wx[3] += wx[i];
+	wy[3] += wy[i];
+      }
+      double x = xmax[iL];
+      //if none pass, discard layer
+      if (wx[3]!=0) x += 10*(wx[2]-wx[0])/wx[3];
+      else nHits[iL]=0;
+      double y = ymax[iL];
+      if (wy[3]!=0) y += 10*(wy[2]-wy[0])/wy[3];
+      else nHits[iL]=0;
+      
+      if (nHits[iL]!=0){
+	recoPos[iL].SetX(x);
+	recoPos[iL].SetY(y);
+      }
     }
-    double w0 = getW0(iL);
-    for (unsigned i(0);i<3;++i){
-      wx[i] = std::max(0.,log(Ex[i]/Etot)+w0);
-      wy[i] = std::max(0.,log(Ey[i]/Etot)+w0);
-      wx[3] += wx[i];
-      wy[3] += wy[i];
+    else {
+      recoPos[iL].SetX(recoPos[iL].X()/recoE[iL]);
+      recoPos[iL].SetY(recoPos[iL].Y()/recoE[iL]);
     }
-    double x = xmax[iL]+10*(wx[2]-wx[0])/wx[3];
-    double y = ymax[iL]+10*(wy[2]-wy[0])/wy[3];
-    
-    recoPos[iL].SetX(x);//recoPos[iL].X()/recoE[iL]);
-    recoPos[iL].SetY(y);//recoPos[iL].Y()/recoE[iL]);
-  }
+  }//loop on layers
   
 }
 
@@ -1162,43 +1199,52 @@ void PositionFit::fillErrorMatrix(const std::vector<ROOT::Math::XYPoint> & recoP
 
 void PositionFit::finaliseErrorMatrix(){
   //finalise error matrix
+  //x
+  finaliseErrorMatrix(true);
+  //y
+  finaliseErrorMatrix(false);
+}
+
+void PositionFit::finaliseErrorMatrix(const bool doX){
+  //finalise error matrix
 
   std::ofstream fmatrix;
   std::ostringstream fmatrixname;
-  fmatrixname << matrixFolder_ << "/errorMatrix.dat";
+  fmatrixname << matrixFolder_ << "/errorMatrix";
+  if (doX) fmatrixname << "_x";
+  else fmatrixname << "_y";
+  fmatrixname << ".dat";
   fmatrix.open(fmatrixname.str());
   if (!fmatrix.is_open()){
     std::cout << " Cannot open outfile " << fmatrixname.str() << " for writing ! Exiting..." << std::endl;
     exit(1);
   }
 
-  matrix_.ResizeTo(nLayers_,nLayers_);
+  const unsigned index = (doX)? 0 : 1;
+
+  matrix_[index].ResizeTo(nLayers_,nLayers_);
+
 
   //set mean values first
   for (unsigned iL(0);iL<nLayers_;++iL){//loop on layers
-    if (nL_mean_[iL]>0) mean_[0][iL] = mean_[0][iL]/nL_mean_[iL];
-    else mean_[0][iL] = 0;
-    if (nL_mean_[iL]>0) mean_[1][iL] = mean_[1][iL]/nL_mean_[iL];
-    else mean_[1][iL] = 0;
+    if (nL_mean_[iL]>0) mean_[index][iL] = mean_[index][iL]/nL_mean_[iL];
+    else mean_[index][iL] = 0;
   }
   //set sigmas and fill matrix
   for (unsigned iL(0);iL<nLayers_;++iL){//loop on layers
     for (unsigned jL(0);jL<nLayers_;++jL){//loop on layers
-      if (nL_sigma_[iL][jL]>0) sigma_[0][iL][jL] = sigma_[0][iL][jL]/nL_sigma_[iL][jL];
-      else sigma_[0][iL][jL] = 0;
-      if (nL_sigma_[iL][jL]>0) sigma_[1][iL][jL] = sigma_[1][iL][jL]/nL_sigma_[iL][jL];
-      else sigma_[1][iL][jL] = 0;
+      if (nL_sigma_[iL][jL]>0) sigma_[index][iL][jL] = sigma_[index][iL][jL]/nL_sigma_[iL][jL];
+      else sigma_[index][iL][jL] = 0;
       //consider average of both x and y in one matrix
       //matrix_[iL][jL] = 0.5*(sigma_[0][iL][jL]-mean_[0][iL]*mean_[0][jL]+
       //		     sigma_[1][iL][jL]-mean_[1][iL]*mean_[1][jL]);
-      //test just in y
-      matrix_[iL][jL] = sigma_[1][iL][jL]-mean_[1][iL]*mean_[1][jL];
+      matrix_[index][iL][jL] = sigma_[index][iL][jL]-mean_[index][iL]*mean_[index][jL];
       //matrix_[jL][iL] = matrix_[iL][jL];
-      if (matrix_[iL][jL]!=matrix_[iL][jL]) matrix_[iL][jL] = 0;
-      fmatrix << iL << " " << jL << " " << std::setprecision(15) << matrix_[iL][jL] << std::endl;
+      if (matrix_[index][iL][jL]!=matrix_[index][iL][jL]) matrix_[index][iL][jL] = 0;
+      fmatrix << iL << " " << jL << " " << std::setprecision(15) << matrix_[index][iL][jL] << std::endl;
 
       //if (iL!=jL){
-      //p_matrix->Fill(jL,iL,matrix_[iL][jL]);
+      //p_matrix->Fill(jL,iL,matrix_[index][iL][jL]);
       //}
     }
   }
@@ -1213,20 +1259,32 @@ void PositionFit::fillCorrelationMatrix(){
   std::cout << " -- Filling correlation matrix" << std::endl;
   outputFile_->cd(outputDir_.c_str());
 
-  p_errorMatrix = new TH2D("p_errorMatrix",";i;j;M_{ij}",
-			   nLayers_,0,nLayers_,
-			   nLayers_,0,nLayers_);
-  p_corrMatrix = new TH2D("p_corrMatrix",";i;j;M_{ij}",
-			  nLayers_,0,nLayers_,
-			  nLayers_,0,nLayers_);
+  p_errorMatrix_x = new TH2D("p_errorMatrix_x",";i;j;M_{ij}",
+			     nLayers_,0,nLayers_,
+			     nLayers_,0,nLayers_);
+  p_corrMatrix_x = new TH2D("p_corrMatrix_x",";i;j;M_{ij}",
+			    nLayers_,0,nLayers_,
+			    nLayers_,0,nLayers_);
+  p_errorMatrix_y = new TH2D("p_errorMatrix_y",";i;j;M_{ij}",
+			     nLayers_,0,nLayers_,
+			     nLayers_,0,nLayers_);
+  p_corrMatrix_y = new TH2D("p_corrMatrix_y",";i;j;M_{ij}",
+			    nLayers_,0,nLayers_,
+			    nLayers_,0,nLayers_);
 
-  corrMatrix_.ResizeTo(nLayers_,nLayers_);
+  corrMatrix_[0].ResizeTo(nLayers_,nLayers_);
+  corrMatrix_[1].ResizeTo(nLayers_,nLayers_);
   for (unsigned iL(0);iL<nLayers_;++iL){//loop on layers
     for (unsigned jL(0);jL<nLayers_;++jL){//loop on layers
-      p_errorMatrix->Fill(iL,jL,matrix_[iL][jL]);
-      if (matrix_[iL][iL]!=0 && matrix_[jL][jL]!= 0){
-	corrMatrix_[iL][jL] =matrix_[iL][jL]/sqrt(matrix_[iL][iL]*matrix_[jL][jL]); 
-	p_corrMatrix->Fill(iL,jL,corrMatrix_[iL][jL]);
+      p_errorMatrix_x->Fill(iL,jL,matrix_[0][iL][jL]);
+      p_errorMatrix_y->Fill(iL,jL,matrix_[1][iL][jL]);
+      if (matrix_[0][iL][iL]!=0 && matrix_[0][jL][jL]!= 0){
+	corrMatrix_[0][iL][jL] =matrix_[0][iL][jL]/sqrt(matrix_[0][iL][iL]*matrix_[0][jL][jL]); 
+	p_corrMatrix_x->Fill(iL,jL,corrMatrix_[0][iL][jL]);
+      }
+      if (matrix_[1][iL][iL]!=0 && matrix_[1][jL][jL]!= 0){
+	corrMatrix_[1][iL][jL] =matrix_[1][iL][jL]/sqrt(matrix_[1][iL][iL]*matrix_[1][jL][jL]); 
+	p_corrMatrix_y->Fill(iL,jL,corrMatrix_[1][iL][jL]);
       }
     }
   }
@@ -1234,17 +1292,26 @@ void PositionFit::fillCorrelationMatrix(){
 
 
 bool PositionFit::fillMatrixFromFile(){
+  return (fillMatrixFromFile(true) && fillMatrixFromFile(false));
+}
+
+bool PositionFit::fillMatrixFromFile(const bool doX){
 
   std::ifstream fmatrix;
   std::ostringstream fmatrixname;
-  fmatrixname << matrixFolder_ << "/errorMatrix.dat";
+  fmatrixname << matrixFolder_ << "/errorMatrix";
+  if (doX) fmatrixname << "_x";
+  else fmatrixname << "_y";
+  fmatrixname << ".dat";
   fmatrix.open(fmatrixname.str());
   if (!fmatrix.is_open()){
-    std::cout << " -- Cannot open outfile " << fmatrixname.str() << "! Refilling the matrix..." << std::endl;
+    std::cout << " -- Cannot open outfile " << fmatrixname.str() << "! Returning false..." << std::endl;
     return false;
   }
 
-  matrix_.ResizeTo(nLayers_,nLayers_);
+  const unsigned index = (doX)? 0 : 1;
+
+  matrix_[index].ResizeTo(nLayers_,nLayers_);
   if (debug_) std::cout << " -- Error matrix: " << std::endl;
   while (!fmatrix.eof()){
     unsigned iL=nLayers_;
@@ -1253,7 +1320,7 @@ bool PositionFit::fillMatrixFromFile(){
     fmatrix>>iL>>jL>>m;
     if (iL<nLayers_ && jL<nLayers_){
       if (debug_) std::cout << std::setprecision(15) << iL << " " << jL << " " << m << std::endl;
-      matrix_[iL][jL] = m;
+      matrix_[index][iL][jL] = m;
     }
     else std::cout << "!! out of bounds!" << iL << " " << jL << " " << m << std::endl;
   }
@@ -1380,7 +1447,8 @@ unsigned PositionFit::fitEvent(const unsigned ievt,
   double ndf = 2*nL-4;
   
   //Get error matrix removing lines with zero hits
-  TMatrixDSym e(nL);
+  TMatrixDSym ex(nL);
+  TMatrixDSym ey(nL);
   TVectorD u(nL),z(nL),x(nL),y(nL);
   
   for(unsigned i(0);i<nL;++i) {
@@ -1389,12 +1457,15 @@ unsigned PositionFit::fitEvent(const unsigned ievt,
     //std::cout << "fit() z(" << i << ") = " << z(i) << std::endl;
     
     for(unsigned j(i);j<nL;++j) {
-      e(i,j)=matrix_(layerId[i],layerId[j]);
-      e(j,i)=matrix_(layerId[j],layerId[i]);
-    }
+      ex(i,j)=matrix_[0](layerId[i],layerId[j]);
+      ex(j,i)=matrix_[0](layerId[j],layerId[i]);
+      ey(i,j)=matrix_[1](layerId[i],layerId[j]);
+      ey(j,i)=matrix_[1](layerId[j],layerId[i]);
+     }
   }
   
-  e.Invert();
+  ex.Invert();
+  ey.Invert();
   
   //do fit for reco and truth
   double positionFF[2][2];
@@ -1430,6 +1501,8 @@ unsigned PositionFit::fitEvent(const unsigned ievt,
 	//std::cout << "fit() x(" << i << ") = " << x(i) << std::endl;
       }
       
+      TMatrixDSym e = (xy==0) ? ex : ey;
+
       TMatrixD w(2,2);
       TVectorD v(2),p(2);
       
@@ -1531,6 +1604,16 @@ unsigned PositionFit::fitEvent(const unsigned ievt,
   p_impactY_residual->Fill(positionFF[0][1]-positionFF[1][1]);
   p_tanAngleY_residual->Fill(TanAngle[0][1]-TanAngle[1][1]);
       
+  Direction truthDir = Direction(TanAngle[1][0],TanAngle[1][1]);
+
+
+  p_eta_reco->Fill(recoDir_.eta());
+  p_phi_reco->Fill(recoDir_.phi());
+  p_eta_truth->Fill(truthDir.eta());
+  p_phi_truth->Fill(truthDir.phi());
+  p_eta_residual->Fill(recoDir_.eta()-truthDir.eta());
+  p_phi_residual->Fill(recoDir_.phi()-truthDir.phi());
+
   //std::cout << " -- Size of eventPos=" << eventPos.size() << std::endl;
   return 0;
 }
@@ -1562,7 +1645,8 @@ bool PositionFit::getPositionFromFile(const unsigned ievt,
     fin>>l>>xr>>yr>>xt>>yt;
     if (!doMatrix_) fin>>e;
     if (l<nLayers_){
-      bool pass=fabs(xr-xt)<residualMax_ && fabs(yr-yt)<residualMax_;
+      //bool pass = l>6 && l<23;
+      bool pass = fabs(xr-xt)<residualMax_ && fabs(yr-yt)<residualMax_;
       //unsigned posmm = static_cast<unsigned>(fabs(yt)+5);
       bool isEdge = true;//posmm%10 <= 2 || posmm%10 >= 8;
       if (!cutOutliers || (cutOutliers && pass && isEdge)){

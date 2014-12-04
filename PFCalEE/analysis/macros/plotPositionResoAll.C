@@ -438,10 +438,10 @@ int plotPositionResoAll(){//main
   SetTdrStyle();
 
   const unsigned npu = 2;
-  const unsigned neta = 2;//7;
+  const unsigned neta = 7;
 
   unsigned pu[npu] = {0,140};
-  const unsigned eta[neta] = {17,25};//19,21,23,25,27,29};
+  const unsigned eta[neta] = {17,19,21,23,25,27,29};
   
   TCanvas *mycPu = new TCanvas("mycPu","mycPu",1500,1000);
   TCanvas *mycFit = new TCanvas("mycFit","mycFit",1500,1000);

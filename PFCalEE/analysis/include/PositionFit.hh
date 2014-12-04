@@ -154,7 +154,9 @@ public:
 
   void fillErrorMatrix(const std::vector<ROOT::Math::XYPoint> & recoPos,const std::vector<ROOT::Math::XYPoint> & truthPos, const std::vector<unsigned> & nHits);
 
+  void finaliseErrorMatrix(const bool doX);
   void finaliseErrorMatrix();
+  bool fillMatrixFromFile(const bool doX);
   bool fillMatrixFromFile();
   void fillCorrelationMatrix();
 
@@ -237,6 +239,7 @@ private:
   bool fixForPuMixBug_;
   bool doMatrix_;
   bool saveEtree_;
+  bool doLogWeight_;
 
   HGCSSGeometryConversion geomConv_;
   HGCSSPUenergy puDensity_;
@@ -248,9 +251,9 @@ private:
   std::vector<std::vector<double> > sigma_[2];//sum square
   std::vector<unsigned> nL_mean_;//number of valid layers
   std::vector<std::vector<unsigned> > nL_sigma_;
-  TMatrixD matrix_;
-  TMatrixD corrMatrix_;
-  
+  TMatrixD matrix_[2];
+  TMatrixD corrMatrix_[2];
+
   Direction recoDir_;
   Direction truthDir_;
   ROOT::Math::XYZPoint truthVtx_;
@@ -290,6 +293,7 @@ private:
 
   std::vector<TH2F *> p_genxy;
   std::vector<TH2F *> p_recoxy;
+  std::vector<TH1F *> p_dRmin;
 
   //TH1F *p_numberOfMaxTried;
   //TH1F *p_dRMaxTruth;
@@ -316,8 +320,10 @@ private:
   TH2F *p_truthYvsLayer;
   TH2F *p_fitXvsLayer;
   TH2F *p_fitYvsLayer;
-  TH2D *p_errorMatrix;
-  TH2D *p_corrMatrix;
+  TH2D *p_errorMatrix_x;
+  TH2D *p_corrMatrix_x;
+  TH2D *p_errorMatrix_y;
+  TH2D *p_corrMatrix_y;
   TH1F *p_chi2[2];
   TH1F *p_chi2overNDF[2];
   TH1F *p_impactX[2];
@@ -330,6 +336,12 @@ private:
   TH1F *p_impactY_residual;
   TH1F *p_tanAngleX_residual;
   TH1F *p_tanAngleY_residual;
+  TH1F *p_eta_reco;
+  TH1F *p_phi_reco;
+  TH1F *p_eta_truth;
+  TH1F *p_phi_truth;
+  TH1F *p_eta_residual;
+  TH1F *p_phi_residual;
 
 };//class
 

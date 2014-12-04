@@ -43,19 +43,19 @@ threshold='0-63:2'
 
 if (opt.version==8) :
     granularity='0-20:4,21-30:6'
-    noise='0-30:0.12'
+    noise='0-30:0.14'
     threshold='0-30:2'
 elif opt.version<20 :
     granularity='0-19:4,20-29:4'
-    noise='0-29:0.12'
+    noise='0-29:0.14'
     threshold='0-29:2'
 elif (opt.version==21 or opt.version==24):
     granularity='0-23:6,24-33:8'
-    noise='0-33:0.12'
+    noise='0-33:0.14'
     threshold='0-33:2'
 elif opt.version==22:
     granularity='0-9:8'
-    noise='0-9:0.12'
+    noise='0-9:0.14'
     threshold='0-9:2'
 elif opt.version==23:
     granularity='0-53:12'
@@ -159,7 +159,7 @@ for et in enlist :
         eta=-1.0*math.log(math.tan(opt.alpha/2.))
         en=et*math.cosh(eta)
         g4Macro.write('/gun/energy %f GeV\n'%(en))
-        g4Macro.write('/gun/direction %f %f %f\n'%(math.cos(math.pi*opt.phi),math.sin(math.pi*opt.phi)*math.sin(opt.alpha),math.cos(opt.alpha)))
+        g4Macro.write('/gun/direction %f %f %f\n'%(math.cos(math.pi*opt.phi)*math.sin(opt.alpha),math.sin(math.pi*opt.phi)*math.sin(opt.alpha),math.cos(opt.alpha)))
         #g4Macro.write('/gun/direction %f %f %f\n'%(random.uniform(0,1000)/100.-5.,math.sin(opt.alpha),math.cos(opt.alpha)))
     else :
         g4Macro.write('/generator/select hepmcAscii\n')
