@@ -22,17 +22,19 @@
 
 int plotHiggsMass(){//main
 
-  const unsigned nP = 2;
-  unsigned puVal[nP] = {0,140};
+  const unsigned nP = 1;
+  unsigned puVal[nP] = {140};//,140};
 
-  const unsigned nV = 5;
+  const unsigned nV = 7;
 
   std::string label[nV] = {
-    "True E, Shower angle",
     "True E, Shower pos",
+    "True E, Vtx smear",
+    "True E, Shower angle",
     "Reco E, True pos",
+    "Reco E, Shower pos",
+    "Reco E, Vtx smear",
     "Reco E, Shower angle",
-    "Reco E, Shower pos"
   };
 
   double val[nV];
@@ -54,7 +56,7 @@ int plotHiggsMass(){//main
 
   TCanvas *myc = new TCanvas("myc","myc",1);
   TCanvas *myc2 = new TCanvas("myc2","myc2",1500,1000);
-  myc2->Divide(3,2);
+  myc2->Divide(4,2);
   gStyle->SetOptStat("eMRuo");
   gStyle->SetOptFit(1111);
   //gStyle->SetStatH(0.2);
@@ -66,12 +68,14 @@ int plotHiggsMass(){//main
     }
     f[ipu]->cd("HiggsMass");
     TH1F *hMass[nV];
-    hMass[0] = (TH1F*)gDirectory->Get("p_angle_trueE");
-    hMass[1] = (TH1F*)gDirectory->Get("p_position_trueE");
-    hMass[2] = (TH1F*)gDirectory->Get("p_trueDir_recoE");
-    hMass[3] = (TH1F*)gDirectory->Get("p_angle_recoE");
+    hMass[0] = (TH1F*)gDirectory->Get("p_position_trueE");
+    hMass[1] = (TH1F*)gDirectory->Get("p_position_vtxsmear_trueE");
+    hMass[2] = (TH1F*)gDirectory->Get("p_angle_trueE");
+    hMass[3] = (TH1F*)gDirectory->Get("p_trueDir_recoE");
     hMass[4] = (TH1F*)gDirectory->Get("p_position_recoE");
-    
+    hMass[5] = (TH1F*)gDirectory->Get("p_position_vtxsmear_recoE");
+    hMass[6] = (TH1F*)gDirectory->Get("p_angle_recoE");
+   
     TH1F *trueM = (TH1F*)gDirectory->Get("p_trueDir_trueE");
     myc2->cd(1);
     trueM->Draw();
@@ -97,6 +101,8 @@ int plotHiggsMass(){//main
   }
 
   myc->cd();
+  gPad->SetGridy(1);
+
   gStyle->SetOptStat(0);
   TGraphErrors *grMass[nP];
   TGraphErrors *grSigma[nP];

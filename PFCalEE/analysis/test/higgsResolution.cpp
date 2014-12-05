@@ -98,8 +98,8 @@ double absWeight(const unsigned layer){
 
 double calibratedE(const double Etot, const double eta){
   //calibration for signal region 2: 3*3 cm^2
-  double pars[3] = {76.9,3.5,-0.53};
-  double paro[3] = {-5.3,-12.8,-6.9};
+  double pars[3] = {77,3.4,-0.50};
+  double paro[3] = {-11.6,-7.7,-8.8};
   double offset = paro[0] + paro[1]*eta + paro[2]*eta*eta;
   double slope = pars[0] + pars[1]*eta + pars[2]*eta*eta;
   return (Etot-offset)/slope;
@@ -401,7 +401,7 @@ int main(int argc, char** argv){//main
   if (!Signal1.initialiseFitPositions()) {
     std::cout << " -- Redo fit for photon 1" << std::endl;
     doFit1 = true;
-    if (redoStep==0) lGamma1.getInitialPositions(lSimTree,lRecTree,nEvts,1);
+    //if (redoStep==0) lGamma1.getInitialPositions(lSimTree,lRecTree,nEvts,1);
     lGamma1.initialiseLeastSquareFit();
   }
 
@@ -410,7 +410,7 @@ int main(int argc, char** argv){//main
   if (!Signal2.initialiseFitPositions()) {
     std::cout << " -- Redo fit for photon 2" << std::endl;
     doFit2 = true;
-    if (redoStep==0) lGamma2.getInitialPositions(lSimTree,lRecTree,nEvts,2);
+    //if (redoStep==0) lGamma2.getInitialPositions(lSimTree,lRecTree,nEvts,2);
     lGamma2.initialiseLeastSquareFit();
   }
 

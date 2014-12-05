@@ -25,6 +25,7 @@
 #include "Math/Point3Dfwd.h"
 
 #include "TLorentzVector.h"
+#include "TRandom3.h"
 
 bool CheckCosTheta(const TLorentzVector & v){
   double cosTheta = v.CosTheta();
@@ -35,7 +36,9 @@ bool CheckCosTheta(const TLorentzVector & v){
 class HiggsMass{
 
 public:
-  HiggsMass(){};
+  HiggsMass(){
+    rand_.SetSeed(0);
+  };
 
   ~HiggsMass(){};
 
@@ -56,6 +59,9 @@ public:
 
 
 private:
+
+  TRandom3 rand_;
+
   //reco
   TLorentzVector g1_;
   TLorentzVector g2_;
@@ -82,6 +88,12 @@ private:
   //from reco direction, recoE
   TH1F *p_angle_trueE;
   TH1F *p_angle_recoE;
+  //from projected positionFF+smeared vertex, trueE
+  //from projected positionFF+smeared vertex, recoE
+  TH1F *p_position_vtxsmear_trueE;
+  TH1F *p_position_vtxsmear_recoE;
+
+
 
   TH1F *p_vtx_x;
   TH1F *p_vtx_y;
@@ -104,7 +116,6 @@ private:
   TH1F *p_pT_gamma2[2];
   TH1F *p_eta_gamma2[2];
   TH1F *p_phi_gamma2[2];
-
 
 };//class
 

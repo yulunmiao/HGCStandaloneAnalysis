@@ -113,10 +113,14 @@ PositionFit::PositionFit(const unsigned nSR,
   p_chi2[1] = 0;
 
   p_chi2overNDF[0] = 0;
-  p_impactX[0] = 0;
-  p_impactY[0] = 0;
-  p_impactX_residual = 0;
-  p_impactY_residual = 0;
+  p_impactXFF[0] = 0;
+  p_impactYFF[0] = 0;
+  p_impactXFF_residual = 0;
+  p_impactYFF_residual = 0;
+  p_impactX14[0] = 0;
+  p_impactY14[0] = 0;
+  p_impactX14_residual = 0;
+  p_impactY14_residual = 0;
   p_tanAngleX[0] = 0;
   p_tanAngleY[0] = 0;
   p_tanAngleX_residual = 0;
@@ -130,8 +134,10 @@ PositionFit::PositionFit(const unsigned nSR,
   p_positionReso = 0;
   p_angularReso = 0;
   p_chi2overNDF[1] = 0;
-  p_impactX[1] = 0;
-  p_impactY[1] = 0;
+  p_impactXFF[1] = 0;
+  p_impactYFF[1] = 0;
+  p_impactX14[1] = 0;
+  p_impactY14[1] = 0;
   p_tanAngleX[1] = 0;
   p_tanAngleY[1] = 0;
 
@@ -285,18 +291,24 @@ void PositionFit::initialiseClusterHistograms(){
        p_chi2overNDF[rt]->StatOverflows();
      }
 
-     p_impactX[0] = new TH1F("p_impactX",";x front face impact (mm);n_{events}",500,-100,100);
-     p_impactX[1] = new TH1F("p_impactX_truth",";x front face impact (mm);n_{events}",500,-100,100);
-     p_impactY[0] = new TH1F("p_impactY",";y front face impact (mm);n_{events}",1200,300,1500);
-     p_impactY[1] = new TH1F("p_impactY_truth",";y front face impact (mm);n_{events}",1200,300,1500);
+     p_impactXFF[0] = new TH1F("p_impactXFF",";x front face impact (mm);n_{events}",500,-100,100);
+     p_impactXFF[1] = new TH1F("p_impactXFF_truth",";x front face impact (mm);n_{events}",500,-100,100);
+     p_impactYFF[0] = new TH1F("p_impactYFF",";y front face impact (mm);n_{events}",1200,300,1500);
+     p_impactYFF[1] = new TH1F("p_impactYFF_truth",";y front face impact (mm);n_{events}",1200,300,1500);
+     p_impactX14[0] = new TH1F("p_impactX14",";x layer 14 impact (mm);n_{events}",500,-100,100);
+     p_impactX14[1] = new TH1F("p_impactX14_truth",";x layer 14 impact (mm);n_{events}",500,-100,100);
+     p_impactY14[0] = new TH1F("p_impactY14",";y layer 14 impact (mm);n_{events}",1200,300,1500);
+     p_impactY14[1] = new TH1F("p_impactY14_truth",";y layer 14 impact (mm);n_{events}",1200,300,1500);
      p_tanAngleX[0] = new TH1F("p_tanAngleX",";x direction tanAngle (rad);n_{events}",500,-1,1);
      p_tanAngleX[1] = new TH1F("p_tanAngleX_truth",";x direction tanAngle (rad);n_{events}",500,-1,1);
      p_tanAngleY[0] = new TH1F("p_tanAngleY",";y direction tanAngle (rad);n_{events}",500,-1,1);
      p_tanAngleY[1] = new TH1F("p_tanAngleY_truth",";y direction tanAngle (rad);n_{events}",500,-1,1);
 
-     p_impactX_residual = new TH1F("p_impactX_residual",";residual x front face impact (mm);n_{events}",200,-10,10);
+     p_impactXFF_residual = new TH1F("p_impactXFF_residual",";residual x front face impact (mm);n_{events}",200,-10,10);
+     p_impactX14_residual = new TH1F("p_impactX14_residual",";residual x layer 14 impact (mm);n_{events}",200,-10,10);
      p_tanAngleX_residual = new TH1F("p_tanAngleX_residual",";residual x direction tanAngle (rad);n_{events}",200,-0.1,0.1);
-     p_impactY_residual = new TH1F("p_impactY_residual",";residual y front face impact (mm);n_{events}",200,-10,10);
+     p_impactYFF_residual = new TH1F("p_impactYFF_residual",";residual y front face impact (mm);n_{events}",200,-10,10);
+     p_impactY14_residual = new TH1F("p_impactY14_residual",";residual y layer 14 impact (mm);n_{events}",200,-10,10);
      p_tanAngleY_residual = new TH1F("p_tanAngleY_residual",";residual y direction tanAngle (rad);n_{events}",200,-0.1,0.1);
 
      p_eta_reco = new TH1F("p_eta_reco",";reco #eta;n_{events}",200,1.4,3.0);
@@ -1069,10 +1081,9 @@ void PositionFit::getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec
 	  idx = 3*(iy+1)+(ix+1);
 	Exy[layer][idx] = energy;
       }
-      else {
-	recoPos[layer].SetX(recoPos[layer].X() + posx*energy);
-	recoPos[layer].SetY(recoPos[layer].Y() + posy*energy);
-      }
+      //fill anyway linear weight, decide in next loop which to use
+      recoPos[layer].SetX(recoPos[layer].X() + posx*energy);
+      recoPos[layer].SetY(recoPos[layer].Y() + posy*energy);
       recoE[layer] += energy;
       if (energy>0) nHits[layer]++;
     }
@@ -1449,6 +1460,8 @@ unsigned PositionFit::fitEvent(const unsigned ievt,
   //Get error matrix removing lines with zero hits
   TMatrixDSym ex(nL);
   TMatrixDSym ey(nL);
+  //TMatrixDSym exy(nL);
+
   TVectorD u(nL),z(nL),x(nL),y(nL);
   
   for(unsigned i(0);i<nL;++i) {
@@ -1461,14 +1474,19 @@ unsigned PositionFit::fitEvent(const unsigned ievt,
       ex(j,i)=matrix_[0](layerId[j],layerId[i]);
       ey(i,j)=matrix_[1](layerId[i],layerId[j]);
       ey(j,i)=matrix_[1](layerId[j],layerId[i]);
+      //exy(i,j)=0.5*(matrix_[0](layerId[i],layerId[j])+matrix_[1](layerId[i],layerId[j]));
+      //exy(j,i)=0.5*(matrix_[0](layerId[j],layerId[i])+matrix_[1](layerId[j],layerId[i]));
+
      }
   }
   
   ex.Invert();
   ey.Invert();
-  
+  //exy.Invert();
+
   //do fit for reco and truth
   double positionFF[2][2];
+  double position14[2][2];
   double TanAngle[2][2];
  
   for (unsigned rt(0); rt<2;++rt){
@@ -1528,6 +1546,7 @@ unsigned PositionFit::fitEvent(const unsigned ievt,
       
       position[xy] = p(0);
       positionFF[rt][xy] = p(0)+p(1)*posz[0];
+      position14[rt][xy] = p(0)+p(1)*posz[14];
       TanAngle[rt][xy] = p(1);
 
       //sanity check for nan values
@@ -1560,9 +1579,11 @@ unsigned PositionFit::fitEvent(const unsigned ievt,
 
     p_chi2[rt]->Fill(chiSq);
     p_chi2overNDF[rt]->Fill(chiSq/ndf);
-    p_impactX[rt]->Fill(positionFF[rt][0]);
+    p_impactXFF[rt]->Fill(positionFF[rt][0]);
+    p_impactX14[rt]->Fill(position14[rt][0]);
     p_tanAngleX[rt]->Fill(TanAngle[rt][0]);
-    p_impactY[rt]->Fill(positionFF[rt][1]);
+    p_impactYFF[rt]->Fill(positionFF[rt][1]);
+    p_impactY14[rt]->Fill(position14[rt][1]);
     p_tanAngleY[rt]->Fill(TanAngle[rt][1]);
 
     if (rt==0) {
@@ -1599,9 +1620,11 @@ unsigned PositionFit::fitEvent(const unsigned ievt,
 
   recoDir_ = Direction(TanAngle[0][0],TanAngle[0][1]);
 
-  p_impactX_residual->Fill(positionFF[0][0]-positionFF[1][0]);
+  p_impactXFF_residual->Fill(positionFF[0][0]-positionFF[1][0]);
+  p_impactX14_residual->Fill(position14[0][0]-position14[1][0]);
   p_tanAngleX_residual->Fill(TanAngle[0][0]-TanAngle[1][0]);
-  p_impactY_residual->Fill(positionFF[0][1]-positionFF[1][1]);
+  p_impactYFF_residual->Fill(positionFF[0][1]-positionFF[1][1]);
+  p_impactY14_residual->Fill(position14[0][1]-position14[1][1]);
   p_tanAngleY_residual->Fill(TanAngle[0][1]-TanAngle[1][1]);
       
   Direction truthDir = Direction(TanAngle[1][0],TanAngle[1][1]);
@@ -1645,11 +1668,11 @@ bool PositionFit::getPositionFromFile(const unsigned ievt,
     fin>>l>>xr>>yr>>xt>>yt;
     if (!doMatrix_) fin>>e;
     if (l<nLayers_){
-      //bool pass = l>6 && l<23;
+      //bool l7to22 = true;//l>6 && l<23;
       bool pass = fabs(xr-xt)<residualMax_ && fabs(yr-yt)<residualMax_;
       //unsigned posmm = static_cast<unsigned>(fabs(yt)+5);
-      bool isEdge = true;//posmm%10 <= 2 || posmm%10 >= 8;
-      if (!cutOutliers || (cutOutliers && pass && isEdge)){
+      //bool isEdge = true;//posmm%10 <= 2 || posmm%10 >= 8;
+      if (!cutOutliers || (cutOutliers && pass)){
 	layerId.push_back(l);
 	posx.push_back(xr);
 	posy.push_back(yr);

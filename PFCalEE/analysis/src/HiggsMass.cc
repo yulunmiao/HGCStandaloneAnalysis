@@ -33,6 +33,8 @@ void HiggsMass::initialiseHistograms(TFile *fout,
   p_position_recoE = new TH1F("p_position_recoE",";M_{H} (GeV) [P_{pos},E_{reco}]",400,0,200);
   p_angle_trueE = new TH1F("p_angle_trueE",";M_{H} (GeV) [P_{angle},E_{true}]",400,0,200);
   p_angle_recoE = new TH1F("p_angle_recoE",";M_{H} (GeV) [P_{angle},E_{reco}]",400,0,200);
+  p_position_vtxsmear_trueE = new TH1F("p_position_vtxsmear_trueE",";M_{H} (GeV) [P_{pos,vtx smeared},E_{true}]",400,0,200);
+  p_position_vtxsmear_recoE = new TH1F("p_position_vtxsmear_recoE",";M_{H} (GeV) [P_{pos,vtx smeared},E_{reco}]",400,0,200);
 
   p_vtx_x = new TH1F("p_vtx_x",";vtx x (mm)",100,-1,1);
   p_vtx_y = new TH1F("p_vtx_y",";vtx y (mm)",100,-1,1);
@@ -171,6 +173,33 @@ void HiggsMass::fillHistograms(){
   lh = lg1+lg2;
   p_angle_trueE->Fill(lh.M());
 
+  //pos+smeared vtx, true E
+  lg1 = tg1_;
+  dx = posFF1_.x()-tvtx1_.x();
+  dy = posFF1_.y()-tvtx1_.y();
+  double vtxz = rand_.Gaus(tvtx1_.z(),50);
+  dz = posFF1_.z()- vtxz;
+  norm = sqrt(dx*dx+dy*dy+dz*dz);
+
+  vtxFF1 = TVector3(dx/norm,dy/norm,dz/norm)*tg1_.E();
+  lg1.SetVect(vtxFF1);
+  lg2 = tg2_;
+  dx = posFF2_.x()-tvtx2_.x();
+  dy = posFF2_.y()-tvtx2_.y();
+  dz = posFF2_.z()- vtxz;
+  norm = sqrt(dx*dx+dy*dy+dz*dz);
+  vtxFF2 = TVector3(dx/norm,dy/norm,dz/norm)*tg2_.E();
+  lg2.SetVect(vtxFF2);
+  lh = lg1+lg2;
+  p_position_vtxsmear_trueE->Fill(lh.M());
+
+  //pos+smeared vtx, reco E
+  lg1.SetE(g1_.E());
+  lg1.SetVect(vtxFF1*(g1_.E()/tg1_.E()));
+  lg2.SetE(g2_.E());
+  lg2.SetVect(vtxFF2*(g2_.E()/tg2_.E()));
+  lh = lg1+lg2;
+  p_position_vtxsmear_recoE->Fill(lh.M());
 
 
 }

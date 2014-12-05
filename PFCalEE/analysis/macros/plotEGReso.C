@@ -576,7 +576,7 @@ int plotEGReso(){//main
 
   SetTdrStyle();
 
-  bool dovsE = true;
+  bool dovsE = false;
   bool processNoFitFiles = false;
 
   const unsigned nPu = 3;
@@ -594,10 +594,10 @@ int plotEGReso(){//main
   if (dovsE) fcalib = TFile::Open("PLOTS/CalibReso_vsE.root","RECREATE");
   else fcalib = TFile::Open("PLOTS/CalibReso.root","RECREATE");
 
-  const unsigned neta = 2;
-  unsigned eta[neta]={17,25};
-  //const unsigned neta = 7;
-  //unsigned eta[neta]={17,19,21,23,25,27,29};
+  //const unsigned neta = 2;
+  //unsigned eta[neta]={17,25};
+  const unsigned neta = 7;
+  unsigned eta[neta]={17,19,21,23,25,27,29};
 
   double etaval[neta];
   double etaerr[neta];

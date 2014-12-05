@@ -68,7 +68,7 @@ Result plotOnePoint(unsigned etabin, unsigned pt, unsigned pu){//main
   res.residual_tany_rms = 0;
 
   std::ostringstream plotDir;
-  plotDir << "../PLOTS/gitV00-02-09/version12/gamma/200um/eta" << etabin << "_et" << pt << "_pu" << pu;
+  plotDir << "../PLOTS/gitV00-02-12/version12/gamma/200um/eta" << etabin << "_et" << pt << "_pu" << pu;
 
   TFile *file = TFile::Open((plotDir.str()+".root").c_str());
   
@@ -76,10 +76,11 @@ Result plotOnePoint(unsigned etabin, unsigned pt, unsigned pu){//main
     std::cout << " -- Error, input file " << plotDir.str() << ".root cannot be opened. Skipping..." << std::endl;
     return res;
   }
+  else std::cout << " -- input file " << plotDir.str() << ".root successfully opened." << std::endl;
 
   std::string suffix = "";
   
-  file->cd();
+  file->cd("PositionFit");
 
   SetTdrStyle();
   gStyle->SetOptStat("eMRuo");
@@ -118,7 +119,8 @@ Result plotOnePoint(unsigned etabin, unsigned pt, unsigned pu){//main
   TCanvas *mycD = new TCanvas("mycD","mycD",1500,1000);
   TCanvas *mycR = new TCanvas("mycR","mycR",1500,1000);
 
-  TH2D *p_errorMatrix = (TH2D*)gDirectory->Get("p_errorMatrix");
+  TH2D *p_errorMatrix_x = (TH2D*)gDirectory->Get("p_errorMatrix_x");
+  TH2D *p_errorMatrix_y = (TH2D*)gDirectory->Get("p_errorMatrix_y");
   TH1F *p_chi2overNDF = (TH1F*)gDirectory->Get("p_chi2overNDF");
   TH1F *p_impactX = (TH1F*)gDirectory->Get("p_impactX");
   TH1F *p_impactX_residual = (TH1F*)gDirectory->Get("p_impactX_residual");
@@ -149,16 +151,20 @@ Result plotOnePoint(unsigned etabin, unsigned pt, unsigned pu){//main
   mycL->Divide(3,2);
   mycL->cd(1);
   gPad->SetLogz(1);
-  p_errorMatrix->SetStats(0);
-  p_errorMatrix->SetMinimum(0.01);
-  p_errorMatrix->Draw("colz");
+  p_errorMatrix_x->SetStats(0);
+  p_errorMatrix_x->SetMinimum(0.01);
+  p_errorMatrix_x->Draw("colz");
 
   mycL->cd(4);
-  gPad->SetLogy(1);
-  gStyle->SetStatW(0.4);
+  gPad->SetLogz(1);
+  p_errorMatrix_y->SetStats(0);
+  p_errorMatrix_y->SetMinimum(0.01);
+  p_errorMatrix_y->Draw("colz");
+  //  gPad->SetLogy(1);
+  //gStyle->SetStatW(0.4);
   //gStyle->SetStatH(0.3);
   p_chi2overNDF->GetXaxis()->SetRangeUser(0,20);
-  p_chi2overNDF->Draw();
+  // p_chi2overNDF->Draw();
 
   res.fitQuality = p_chi2overNDF->GetMean();
   res.fitQuality_rms = p_chi2overNDF->GetRMS();
@@ -327,10 +333,10 @@ int plotPositionReso(){//main
   bool runAll = true;
   std::cin>>runAll;
 
-  const unsigned npu = 2;
+  const unsigned npu = 1;//2;
   const unsigned npt = 13;
 
-  unsigned pu[npu] = {0,140};
+  unsigned pu[npu] = {0};//,140};
   unsigned pt[npt] = {20,30,40,50,60,70,80,90,100,125,150,175,200};
   
   if (!runAll) {
@@ -356,8 +362,8 @@ int plotPositionReso(){//main
   TGraphErrors *grResidualTanX[npt][npu];
   TGraphErrors *grResidualTanY[npt][npu];
 
-  const unsigned neta = 7;
-  const unsigned eta[neta] = {17,19,21,23,25,27,29};
+  const unsigned neta = 1;//7;
+  const unsigned eta[neta] = {29};//,19,21,23,25,27,29};
   double etaval[npu][neta];
 
   
@@ -385,6 +391,7 @@ int plotPositionReso(){//main
 	  else break;*/
 	}
       }
+      //continue;
 
       const unsigned nP = resVec.size();
       double etaerr[nP];
@@ -499,49 +506,51 @@ int plotPositionReso(){//main
       
     }//loop on pu
 
-    TLegend *leg1 = new TLegend(0.64,0.8,0.94,0.94);
-    leg1->SetFillColor(10);
-    leg1->AddEntry(grFit[ipt][0],"PU 0","P");
-    leg1->AddEntry(grFit[ipt][1],"PU 140","P");
-
-    TLegend *leg2 = new TLegend(0.64,0.66,0.94,0.94);
-    leg2->SetFillColor(10);
-    leg2->AddEntry(grResidualX[ipt][0],"PU 0, x","P");
-    leg2->AddEntry(grResidualY[ipt][0],"PU 0, y","P");
-    leg2->AddEntry(grResidualX[ipt][1],"PU 140, x","P");
-    leg2->AddEntry(grResidualY[ipt][1],"PU 140, y","P");
-
-    if (runAll) mycEvt->cd(ipt+1);
-    else mycEvt->cd();
-    TLatex lat;
-    //lat.SetTextSize(0.04);
-    char buf[500];
-    sprintf(buf,"E_{T}^{#gamma} = %d GeV",pt[ipt]);
-    lat.DrawLatexNDC(0.2,0.85,buf);
-    lat.DrawLatexNDC(0.02,0.02,"HGCAL Geant4 Standalone");
-    leg1->Draw("same");
-    
-    if (runAll) mycFit->cd(ipt+1);
-    else mycFit->cd();
-    lat.DrawLatexNDC(0.2,0.85,buf);
-    lat.DrawLatexNDC(0.02,0.02,"HGCAL Geant4 Standalone");
-    leg1->Draw("same");
-    
-    if (runAll) mycRP->cd(ipt+1);
-    else mycRP->cd();
-    lat.DrawLatexNDC(0.2,0.85,buf);
-    lat.DrawLatexNDC(0.02,0.02,"HGCAL Geant4 Standalone");
-    leg2->Draw("same");
-    
-    if (runAll) mycRA->cd(ipt+1);
-    else mycRA->cd();
-    lat.DrawLatexNDC(0.2,0.85,buf);
-    lat.DrawLatexNDC(0.02,0.02,"HGCAL Geant4 Standalone");
-    leg2->Draw("same");
+    if (nPu>1){
+      TLegend *leg1 = new TLegend(0.64,0.8,0.94,0.94);
+      leg1->SetFillColor(10);
+      leg1->AddEntry(grFit[ipt][0],"PU 0","P");
+      leg1->AddEntry(grFit[ipt][1],"PU 140","P");
+      
+      TLegend *leg2 = new TLegend(0.64,0.66,0.94,0.94);
+      leg2->SetFillColor(10);
+      leg2->AddEntry(grResidualX[ipt][0],"PU 0, x","P");
+      leg2->AddEntry(grResidualY[ipt][0],"PU 0, y","P");
+      leg2->AddEntry(grResidualX[ipt][1],"PU 140, x","P");
+      leg2->AddEntry(grResidualY[ipt][1],"PU 140, y","P");
+      
+      if (runAll) mycEvt->cd(ipt+1);
+      else mycEvt->cd();
+      TLatex lat;
+      //lat.SetTextSize(0.04);
+      char buf[500];
+      sprintf(buf,"E_{T}^{#gamma} = %d GeV",pt[ipt]);
+      lat.DrawLatexNDC(0.2,0.85,buf);
+      lat.DrawLatexNDC(0.02,0.02,"HGCAL Geant4 Standalone");
+      leg1->Draw("same");
+      
+      if (runAll) mycFit->cd(ipt+1);
+      else mycFit->cd();
+      lat.DrawLatexNDC(0.2,0.85,buf);
+      lat.DrawLatexNDC(0.02,0.02,"HGCAL Geant4 Standalone");
+      leg1->Draw("same");
+      
+      if (runAll) mycRP->cd(ipt+1);
+      else mycRP->cd();
+      lat.DrawLatexNDC(0.2,0.85,buf);
+      lat.DrawLatexNDC(0.02,0.02,"HGCAL Geant4 Standalone");
+      leg2->Draw("same");
+      
+      if (runAll) mycRA->cd(ipt+1);
+      else mycRA->cd();
+      lat.DrawLatexNDC(0.2,0.85,buf);
+      lat.DrawLatexNDC(0.02,0.02,"HGCAL Geant4 Standalone");
+      leg2->Draw("same");
+    }
 
   }//loop on pt
-
-
+  
+  
   std::ostringstream lPrint;
   
   lPrint.str("");
@@ -550,7 +559,7 @@ int plotPositionReso(){//main
   lPrint << ".pdf";
   mycEvt->Update();
   mycEvt->Print(lPrint.str().c_str());
-  
+    
   lPrint.str("");
   lPrint << "PLOTS/Summary_fitQuality";
   if (!runAll) lPrint << "_et" << pt[0];
@@ -573,5 +582,5 @@ int plotPositionReso(){//main
   mycRA->Print(lPrint.str().c_str());
 
   return 0;
-    
+
 }//main
