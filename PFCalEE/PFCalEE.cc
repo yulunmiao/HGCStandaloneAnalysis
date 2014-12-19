@@ -43,8 +43,11 @@ int main(int argc,char** argv)
   //int model=DetectorConstruction::m_FULLSECTION;
   int model=DetectorConstruction::m_SIMPLE_20;
 
+  double eta=0;
+
   if(argc>2) version=atoi(argv[2]);
   if(argc>3) model=atoi(argv[3]);
+  if(argc>4) eta=atoi(argv[4]);
 
   std::cout << "-- Running version " << version << " model " << model << std::endl;
 
@@ -52,7 +55,7 @@ int main(int argc,char** argv)
   runManager->SetUserInitialization(new PhysicsList);
 
   // Set user action classes
-  runManager->SetUserAction(new PrimaryGeneratorAction(model));
+  runManager->SetUserAction(new PrimaryGeneratorAction(model,eta));
   runManager->SetUserAction(new RunAction);
   runManager->SetUserAction(new EventAction);
   runManager->SetUserAction(new SteppingAction);
