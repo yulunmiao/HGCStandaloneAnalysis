@@ -44,15 +44,15 @@ void HiggsMass::initialiseHistograms(TFile *fout,
   p_dvtx_y = new TH1F("p_dvtx_y",";dvtx y (mm)",100,-1,1);
   p_dvtx_z = new TH1F("p_dvtx_z",";dvtx z (mm)",100,-50,50);
 
-  p_pT_Higgs = new TH1F("p_pT_Higgs",";p_{T}^{H} (GeV)",200,0,300);
-  p_eta_Higgs = new TH1F("p_eta_Higgs",";#eta^{H}",120,1.3,3.5);
+  p_pT_Higgs = new TH1F("p_pT_Higgs",";p_{T}^{H} (GeV)",200,0,400);
+  p_eta_Higgs = new TH1F("p_eta_Higgs",";#eta^{H}",150,1.3,6);
 
   p_pTvseta[0] = new TH2F("p_pTvseta",";#eta^{H};p_{T}^{H} (GeV)",
-			  120,1.3,3.5,
-			  300,0,300);
+			  150,1.3,6,
+			  200,0,400);
   p_MvspT[0] = new TH2F("p_MvspT",";p_{T}^{H} (GeV);M_{H} (GeV)",
-			200,0,300,
-			400,0,200);
+			200,0,400,
+			100,105,145);
 
   p_pT_gamma1[0] = new TH1F("p_pT_gamma1",";p_{T}^{#gamma1}",200,0,300);
   p_eta_gamma1[0] = new TH1F("p_eta_gamma1",";#eta^{#gamma1}",120,1.3,3.5);
@@ -63,11 +63,11 @@ void HiggsMass::initialiseHistograms(TFile *fout,
   p_phi_gamma2[0] = new TH1F("p_phi_gamma2",";#phi^{#gamma2}",120,-3.1416,3.1416);
 
   p_pTvseta[1] = new TH2F("p_pTvseta_truth",";#eta^{H};p_{T}^{H} (GeV)",
-			  120,1.3,3.5,
-			  200,0,300);
+			  150,1.3,6,
+			  200,0,400);
   p_MvspT[1] = new TH2F("p_MvspT_truth",";p_{T}^{H} (GeV);M_{H} (GeV)",
-		     200,0,300,
-		     400,0,200);
+		     200,0,400,
+		     100,105,145);
 
   p_pT_gamma1[1] = new TH1F("p_pT_gamma1_truth",";p_{T}^{#gamma1}",200,0,300);
   p_eta_gamma1[1] = new TH1F("p_eta_gamma1_truth",";#eta^{#gamma1}",120,1.3,3.5);
@@ -76,7 +76,6 @@ void HiggsMass::initialiseHistograms(TFile *fout,
   p_pT_gamma2[1] = new TH1F("p_pT_gamma2_truth",";p_{T}^{#gamma2}",200,0,300);
   p_eta_gamma2[1] = new TH1F("p_eta_gamma2_truth",";#eta^{#gamma2}",120,1.3,3.5);
   p_phi_gamma2[1] = new TH1F("p_phi_gamma2_truth",";#phi^{#gamma2}",120,-3.1416,3.1416);
-
 
 }
 

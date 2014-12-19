@@ -33,7 +33,8 @@ public:
                  const unsigned nevt,
                  const HGCSSGeometryConversion & geomConv,
                  const HGCSSPUenergy & puDensity,
-		 const bool applyPuMixFix);
+		 const bool applyPuMixFix,
+		 const unsigned versionNumber=12);
 
     ~SignalRegion();
 

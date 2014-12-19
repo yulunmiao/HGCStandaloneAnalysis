@@ -576,11 +576,11 @@ int plotEGReso(){//main
 
   SetTdrStyle();
 
-  bool dovsE = false;
+  bool dovsE = true;
   bool processNoFitFiles = false;
 
-  const unsigned nPu = 3;
-  unsigned pu[nPu] = {0,0,140};
+  const unsigned nPu = 4;
+  unsigned pu[nPu] = {0,0,140,200};
 
   const unsigned nS = 1;
   std::string scenario[nS] = {
@@ -707,7 +707,9 @@ int plotEGReso(){//main
 	    skip[iE] = false;
 	    TFile *inputFile = 0;
 	    std::ostringstream linputStr;
-	    linputStr << plotDir << "eta" << eta[ieta] << "_et" << genEnAll[iE] << "_pu" << pu[ipu] ;
+	    if (pu[ipu]!=200) linputStr << plotDir ;
+	    else linputStr << "/afs/cern.ch/work/a/amagnan/PFCalEEAna/PLOTS/gitV00-02-12/version"+version[iV]+"/"+scenario[iS]+"/";
+	    linputStr << "eta" << eta[ieta] << "_et" << genEnAll[iE] << "_pu" << pu[ipu] ;
 	    if (!processNoFitFiles) linputStr << ".root";
 	    else linputStr << "_nofit.root";
 	    inputFile = TFile::Open(linputStr.str().c_str());
@@ -795,7 +797,9 @@ int plotEGReso(){//main
 	    
 	    TFile *inputFile = 0;
 	    std::ostringstream linputStr;
-	    linputStr << plotDir << "eta" << eta[ieta] << "_et" << genEn[iE] << "_pu" << pu[ipu];
+	    if (pu[ipu]!=200) linputStr << plotDir ;
+	    else linputStr << "/afs/cern.ch/work/a/amagnan/PFCalEEAna/PLOTS/gitV00-02-12/version"+version[iV]+"/"+scenario[iS]+"/";
+	    linputStr << "eta" << eta[ieta] << "_et" << genEn[iE] << "_pu" << pu[ipu] ;
 	    if (!processNoFitFiles) linputStr << ".root" ;
 	    else linputStr << "_nofit.root";
 	    inputFile = TFile::Open(linputStr.str().c_str());

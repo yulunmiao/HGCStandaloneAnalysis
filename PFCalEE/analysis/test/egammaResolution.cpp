@@ -71,6 +71,7 @@ int main(int argc, char** argv){//main
   double residualMax;//mm
   unsigned pNevts;
   std::string filePath;
+  std::string digifilePath;
   unsigned nRuns;
   std::string simFileName;
   std::string recoFileName;
@@ -94,6 +95,7 @@ int main(int argc, char** argv){//main
     ("residualMax",    po::value<double>(&residualMax)->default_value(25))
     ("pNevts,n",       po::value<unsigned>(&pNevts)->default_value(0))
     ("filePath,i",     po::value<std::string>(&filePath)->required())
+    ("digifilePath", po::value<std::string>(&digifilePath)->default_value(""))
     ("nRuns",        po::value<unsigned>(&nRuns)->default_value(0))
     ("simFileName,s",  po::value<std::string>(&simFileName)->required())
     ("recoFileName,r", po::value<std::string>(&recoFileName)->required())
@@ -120,6 +122,7 @@ int main(int argc, char** argv){//main
 
   std::cout << " -- Input parameters: " << std::endl
 	    << " -- Input file path: " << filePath << std::endl
+	    << " -- Digi Input file path: " << digifilePath << std::endl
 	    << " -- Output file path: " << outPath << std::endl
 	    << " -- Output folder: " << outFolder << std::endl
 	    << " -- Requiring " << nSiLayers << " si layers." << std::endl
@@ -140,7 +143,10 @@ int main(int argc, char** argv){//main
   std::ostringstream inputsim;
   inputsim << filePath << "/" << simFileName;
   std::ostringstream inputrec;
-  inputrec << filePath << "/" << recoFileName;
+  if (digifilePath.size()==0)
+    inputrec << filePath << "/" << recoFileName;
+  else 
+    inputrec << digifilePath << "/" << recoFileName;
 
   //std::cout << inputsim.str() << " " << inputrec.str() << std::endl;
 
@@ -268,11 +274,11 @@ int main(int argc, char** argv){//main
 
   //try getting z position from input file, if doesn't exit,
   //perform first loop over simhits to find z positions of layers
-  if ((redoStep<2 && !lChi2Fit.getZpositions()) || redoStep>1)
-    lChi2Fit.getZpositions(lSimTree,nEvts);
+  if ((redoStep<2 && !lChi2Fit.getZpositions(versionNumber)) || redoStep>1)
+    lChi2Fit.getZpositions(versionNumber,lSimTree,nEvts);
   
   //perform second loop over events to find positions to fit and get energies
-  SignalRegion SignalEnergy(outFolder, nLayers, nEvts, geomConv, puDensity,applyPuMixFix);
+  SignalRegion SignalEnergy(outFolder, nLayers, nEvts, geomConv, puDensity,applyPuMixFix,versionNumber);
   SignalEnergy.initialise(outputFile,"Energies");
 
   //initialise

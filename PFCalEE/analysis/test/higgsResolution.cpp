@@ -125,14 +125,16 @@ double pT(const unsigned E, const unsigned eta){
 
 std::string getMatrixFolder(const double & Erec, const double & aEta){
   unsigned pt[17] = {3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200};
-  unsigned eta[7] = {17,19,21,23,25,27,29};
+  const unsigned neta=7;
+  unsigned eta[neta] = {17,19,21,23,25,27,29};
+  //unsigned eta[neta] = {17,21,25,29};
   int leta = static_cast<int>(aEta*10+0.5);
   double min = 1000;
   double Egenmin = 0;
   std::ostringstream folder;
   int mineta = 1000;
   unsigned etapoint = 0;
-  for (unsigned ieta(0);ieta<7;++ieta){
+  for (unsigned ieta(0);ieta<neta;++ieta){
     if (abs(leta-eta[ieta])<mineta){
       mineta = abs(leta-eta[ieta]);
       etapoint = eta[ieta];
@@ -372,23 +374,27 @@ int main(int argc, char** argv){//main
   PositionFit lGamma1(nSR,residualMax,nLayers,nSiLayers,applyPuMixFix,debug,false);
   lGamma1.initialise(outputFile,"Gamma1Fit",outFolder1,geomConv,puDensity);
 
-  if (!lGamma1.getZpositions())
-    lGamma1.getZpositions(lSimTree,nEvts);
+  if (!lGamma1.getZpositions(versionNumber))
+    lGamma1.getZpositions(versionNumber,lSimTree,nEvts);
   
   
   //Photon 2
   PositionFit lGamma2(nSR,residualMax,nLayers,nSiLayers,applyPuMixFix,debug,false);
   lGamma2.initialise(outputFile,"Gamma2Fit",outFolder2,geomConv,puDensity);
 
-  if (!lGamma2.getZpositions())
-    lGamma2.getZpositions(lSimTree,nEvts);
+  if (!lGamma2.getZpositions(versionNumber))
+    lGamma2.getZpositions(versionNumber,lSimTree,nEvts);
   
   bool doFit1 = false;
   bool doFit2 = false;
   //initialise
   if (redoStep>0) {
-    lGamma1.getInitialPositions(lSimTree,lRecTree,nEvts,1);
-    lGamma2.getInitialPositions(lSimTree,lRecTree,nEvts,2);
+    //lGamma1.getInitialPositions(lSimTree,lRecTree,nEvts,1);
+    //lGamma2.getInitialPositions(lSimTree,lRecTree,nEvts,2);
+    lGamma1.initialiseClusterHistograms();
+    lGamma1.initialisePositionHistograms();
+    lGamma2.initialiseClusterHistograms();
+    lGamma2.initialisePositionHistograms();
     lGamma1.initialiseLeastSquareFit();
     lGamma2.initialiseLeastSquareFit();
     doFit1 = true;
@@ -396,27 +402,40 @@ int main(int argc, char** argv){//main
   }
   
   //initialise signal regions
-  SignalRegion Signal1(outFolder1, nLayers, nEvts, geomConv, puDensity,applyPuMixFix);
+  bool doOld = false;
+  if (doOld) {
+    doFit1 = true;
+    doFit2 = true;
+  }
+  SignalRegion Signal1(outFolder1, nLayers, nEvts, geomConv, puDensity,applyPuMixFix,versionNumber);
   Signal1.initialise(outputFile,"Gamma1E");
-  if (!Signal1.initialiseFitPositions()) {
+  if (!doOld && !Signal1.initialiseFitPositions()) {
     std::cout << " -- Redo fit for photon 1" << std::endl;
     doFit1 = true;
-    //if (redoStep==0) lGamma1.getInitialPositions(lSimTree,lRecTree,nEvts,1);
-    lGamma1.initialiseLeastSquareFit();
+    if (redoStep==0) {
+      lGamma1.initialiseClusterHistograms();
+      lGamma1.initialisePositionHistograms();
+      lGamma1.initialiseLeastSquareFit();
+    }
   }
 
-  SignalRegion Signal2(outFolder2, nLayers, nEvts, geomConv, puDensity,applyPuMixFix);
+  SignalRegion Signal2(outFolder2, nLayers, nEvts, geomConv, puDensity,applyPuMixFix,versionNumber);
   Signal2.initialise(outputFile,"Gamma2E");
-  if (!Signal2.initialiseFitPositions()) {
+  if (!doOld && !Signal2.initialiseFitPositions()) {
     std::cout << " -- Redo fit for photon 2" << std::endl;
     doFit2 = true;
-    //if (redoStep==0) lGamma2.getInitialPositions(lSimTree,lRecTree,nEvts,2);
-    lGamma2.initialiseLeastSquareFit();
+    if (redoStep==0){
+      lGamma2.initialiseClusterHistograms();
+      lGamma2.initialisePositionHistograms();
+      lGamma2.initialiseLeastSquareFit();
+    }
   }
 
   unsigned nTwoPhotons = 0;
   unsigned nMatrixNotFound1 = 0;
   unsigned nMatrixNotFound2 = 0;
+  unsigned nTooFar1 = 0;
+  unsigned nTooFar2 = 0;
 
   std::cout << " --- Number of events: " << nEvts << std::endl;
 
@@ -436,6 +455,7 @@ int main(int argc, char** argv){//main
   lRecTree->SetBranchAddress("HGCSSRecoHitVec",&rechitvec);
   if (lRecTree->GetBranch("nPuVtx")) lRecTree->SetBranchAddress("nPuVtx",&nPuVtx);
 
+
   for (unsigned ievt(0); ievt<nEvts; ++ievt){//loop on entries
     if (debug) std::cout << "... Processing entry: " << ievt << std::endl;
     else if (ievt%50 == 0) std::cout << "... Processing entry: " << ievt << std::endl;
@@ -443,12 +463,12 @@ int main(int argc, char** argv){//main
     lSimTree->GetEntry(ievt);
     lRecTree->GetEntry(ievt);
 
-    lGamma1.setTruthInfo(genvec,1);
+    if (!lGamma1.setTruthInfo(genvec,1)) continue;
     const Direction & truthDir1 = lGamma1.truthDir();
     const ROOT::Math::XYZPoint & truthVtx1 = lGamma1.truthVtx();
     const double truthE1 = lGamma1.truthE();
 
-    lGamma2.setTruthInfo(genvec,2);
+    if (!lGamma2.setTruthInfo(genvec,2)) continue;
     const Direction & truthDir2 = lGamma2.truthDir();
     const ROOT::Math::XYZPoint & truthVtx2 = lGamma2.truthVtx();
     const double truthE2 = lGamma2.truthE();
@@ -463,6 +483,14 @@ int main(int argc, char** argv){//main
     if (debug) std::cout << " dofit = " << doFit1 << " " << doFit2 << std::endl;
 
     if (doFit1 || doFit2){
+      //get initial position
+      std::vector<std::vector<double> > Exy;
+      std::vector<double> init;
+      init.resize(9,0);
+      Exy.resize(nLayers,init);
+      lGamma1.getInitialPosition(ievt,nPuVtx,rechitvec,nTooFar1,Exy);
+      lGamma2.getInitialPosition(ievt,nPuVtx,rechitvec,nTooFar2,Exy);
+
       //get first guess at energy
       std::vector<unsigned> layerId;
       std::vector<double> posx;
@@ -501,12 +529,12 @@ int main(int argc, char** argv){//main
 	double e1 = getCalibratedE(Ereco1,eta1);
 
 	std::ostringstream mFolder;
-	mFolder << singleGammaPath << getMatrixFolder(e1,eta1) << "_pu" << nVtx;
+	mFolder << singleGammaPath << getMatrixFolder(e1,eta1) << "_pu0";// << nVtx;
 	
 	//std::cout << " -- Ereco = " << e1 << " - matrix folders: " << mFolder.str() << std::endl;
 	
 	lGamma1.setMatrixFolder(mFolder.str());
-	if (!lGamma1.fillMatrixFromFile()) {
+	if (!lGamma1.fillMatrixFromFile(doOld)) {
 	  nMatrixNotFound1++;
 	  continue;
 	}
@@ -525,12 +553,12 @@ int main(int argc, char** argv){//main
 	double e2 = getCalibratedE(Ereco2,eta2);
 
 	std::ostringstream mFolder;
-	mFolder << singleGammaPath << getMatrixFolder(e2,eta2) << "_pu" << nVtx;
+	mFolder << singleGammaPath << getMatrixFolder(e2,eta2) << "_pu0";// << nVtx;
 	
 	//std::cout << " -- Ereco = " << e2 << " - matrix folders: " << mFolder.str() << std::endl;
 	
 	lGamma2.setMatrixFolder(mFolder.str());
-	if (!lGamma2.fillMatrixFromFile()) {
+	if (!lGamma2.fillMatrixFromFile(doOld)) {
 	  nMatrixNotFound2++;
 	  continue;
 	}
@@ -569,8 +597,8 @@ int main(int argc, char** argv){//main
     }
 
     //cut outside acceptance
-    if (recoDir1.dir().Eta()<1.4 || recoDir1.dir().Eta()>3.0 || 
-	recoDir2.dir().Eta()<1.4 || recoDir2.dir().Eta()>3.0 ) continue;
+    if (recoDir1.dir().Eta()<1.5 || recoDir1.dir().Eta()>2.7 || 
+	recoDir2.dir().Eta()<1.5 || recoDir2.dir().Eta()>2.7 ) continue;
 
     nTwoPhotons++;
 
@@ -634,6 +662,8 @@ int main(int argc, char** argv){//main
   std::cout << " -- Number of two photon events found: " << nTwoPhotons << std::endl;
   std::cout << " -- Number of matrix not found for photon 1: " << nMatrixNotFound1 << std::endl;
   std::cout << " -- Number of matrix not found for photon 2: " << nMatrixNotFound2 << std::endl;
+  std::cout << " -- Number of events with closest cluster 1 away from truth : " << nTooFar1 << std::endl;
+  std::cout << " -- Number of events with closest cluster 2 away from truth : " << nTooFar2 << std::endl;
   std::cout << " - End of higgsResolution program." << std::endl;
 
   return 0;

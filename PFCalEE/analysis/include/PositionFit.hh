@@ -110,15 +110,22 @@ public:
   void initialisePositionHistograms();
   void initialiseFitHistograms();
 
-  bool getZpositions();
-  void getZpositions(TTree *aSimTree,
+  bool getZpositions(const unsigned versionNumber);
+  void getZpositions(const unsigned versionNumber,
+		     TTree *aSimTree,
 		     const unsigned nEvts);
 
   void getInitialPositions(TTree *simTree, 
 			   TTree *recoTree,
 			   const unsigned nEvts,
 			   const unsigned G4TrackID=1);
-  
+
+  bool getInitialPosition(const unsigned ievt,
+			  const unsigned nVtx, 
+			  std::vector<HGCSSRecoHit> *rechitvec,
+			  unsigned & nTooFar,
+			  std::vector<std::vector<double> > & Exy);
+
   bool getGlobalMaximum(const unsigned ievt, 
 			const unsigned nVtx, 
 			std::vector<HGCSSRecoHit> *rechitvec, 
@@ -133,7 +140,7 @@ public:
 
   bool setTruthInfo(std::vector<HGCSSGenParticle> *genvec, const int G4TrackID);
 
-  bool getTruthPosition(std::vector<HGCSSGenParticle> *genvec,std::vector<ROOT::Math::XYPoint> & truthPos, const int trackID=1);
+  //bool getTruthPosition(std::vector<HGCSSGenParticle> *genvec,std::vector<ROOT::Math::XYPoint> & truthPos, const int trackID=1);
 
   void getMaximumCellFromGeom(const double & phimax,const double & etamax,std::vector<double> & xmax,std::vector<double> & ymax);
 
@@ -152,12 +159,12 @@ public:
 
   void getPuContribution(std::vector<HGCSSRecoHit> *rechitvec, const std::vector<double> & xmax,const std::vector<double> & ymax,std::vector<double> & puE);
 
-  void fillErrorMatrix(const std::vector<ROOT::Math::XYPoint> & recoPos,const std::vector<ROOT::Math::XYPoint> & truthPos, const std::vector<unsigned> & nHits);
+  void fillErrorMatrix(const std::vector<ROOT::Math::XYPoint> & recoPos, const std::vector<unsigned> & nHits);
 
   void finaliseErrorMatrix(const bool doX);
   void finaliseErrorMatrix();
-  bool fillMatrixFromFile(const bool doX);
-  bool fillMatrixFromFile();
+  bool fillMatrixFromFile(const bool doX, const bool old);
+  bool fillMatrixFromFile(const bool old=false);
   void fillCorrelationMatrix();
 
   bool getPositionFromFile(const unsigned ievt,
@@ -221,6 +228,12 @@ public:
 
   inline double truthE() const{
     return truthE_;
+  };
+
+  inline ROOT::Math::XYPoint truthPos(const unsigned iL) const{
+    return ROOT::Math::XYPoint(truthDir_.GetX(avgZ_[iL],truthVtx_.x(),truthVtx_.z()),
+			       truthDir_.GetY(avgZ_[iL],truthVtx_.y(),truthVtx_.z()));
+
   };
 
 private:
@@ -340,6 +353,8 @@ private:
   TH1F *p_impactY14_residual;
   TH1F *p_tanAngleX_residual;
   TH1F *p_tanAngleY_residual;
+  TH1F *p_angleX_residual;
+  TH1F *p_angleY_residual;
   TH1F *p_eta_reco;
   TH1F *p_phi_reco;
   TH1F *p_eta_truth;

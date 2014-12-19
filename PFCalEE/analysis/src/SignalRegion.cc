@@ -10,7 +10,8 @@ SignalRegion::SignalRegion(const std::string inputFolder,
 			   const unsigned nevt,
 			   const HGCSSGeometryConversion & geomConv,
 			   const HGCSSPUenergy & puDensity,
-			   const bool applyPuMixFix){
+			   const bool applyPuMixFix,
+			   const unsigned versionNumber){
 
   nSR_ = 5;
   nevt_ = nevt;
@@ -27,7 +28,7 @@ SignalRegion::SignalRegion(const std::string inputFolder,
   
   std::ifstream fzpos;
   std::ostringstream finname;
-  finname << inputFolder_ << "/zPositions.dat";
+  finname << "data/zPositions_v" << versionNumber << ".dat";
   fzpos.open(finname.str());
   if (!fzpos.is_open()){
     std::cout << " Cannot open input file " << finname.str() << "! Exiting..." << std::endl;
@@ -92,7 +93,7 @@ bool SignalRegion::initialiseFitPositions(){
     std::cout << " Warning, file " << finname.str() << " contains only " << nfound 
 	      << " events, program running on " << nevt_ 
 	      << "." << std::endl;
-    if (nfound==0) return false;
+    if (nfound*1./nevt_ < 0.5) return false;
   }
   std::cout << " -- Now filling signal region histograms..." << std::endl;
   return true;

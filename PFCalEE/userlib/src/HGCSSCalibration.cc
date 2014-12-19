@@ -54,3 +54,15 @@ double HGCSSCalibration::MeVToMip(const unsigned layer, const bool absWeight) co
       *(absWeight?theDetector().subDetectorByLayer(layer).absWeight : 1.0);
   return 1;
 }
+
+double HGCSSCalibration::MeVToMip(const unsigned layer, const double aEta, const bool absWeight) const{
+  double res = 1;
+  if (layer < theDetector().nLayers())
+    res = theDetector().subDetectorByLayer(layer).mipWeight
+      *(absWeight?theDetector().subDetectorByLayer(layer).absWeight : 1.0);
+
+  if (aEta<=1.75) return res*2./3.;//300um
+  else if (aEta > 2.15) return res*2.;//100um
+  return res;
+
+}

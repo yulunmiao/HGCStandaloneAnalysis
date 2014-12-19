@@ -21,9 +21,9 @@ unsigned HGCSSGeometryConversion::getNumberOfSiLayers(const DetectorEnum type,
   if (model_ != 2) return 3;
   if (type == DetectorEnum::FHCAL) return 3;
   unsigned etaBin = 0;
-  if (fabs(eta)>=1.4 && fabs(eta)<1.9) etaBin = 1;
-  else if (fabs(eta)>=1.9 && fabs(eta)<2.4) etaBin = 2;
-  else if (fabs(eta) >= 2.4) etaBin = 3;
+  if (fabs(eta)>=1.4 && fabs(eta)<=1.75) etaBin = 1;
+  else if (fabs(eta)>1.75 && fabs(eta)<=2.15) etaBin = 2;
+  else if (fabs(eta) > 2.15) etaBin = 3;
   if (etaBin==0){
     if (type == DetectorEnum::FECAL) return 2;
     else if (type == DetectorEnum::MECAL) return 2;

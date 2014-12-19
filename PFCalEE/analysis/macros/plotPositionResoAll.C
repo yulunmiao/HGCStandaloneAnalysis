@@ -21,6 +21,36 @@
 
 #include "TDRStyle.h"
 
+std::string plotDir(const bool doPhi45,
+		    const unsigned version,
+		    const unsigned etabin,
+		    const unsigned pt,
+		    const unsigned pu){
+  std::ostringstream dir;
+  if (!doPhi45) {
+    if (version==12){
+      if ((pu<200 && etabin!=19)) 
+	dir << "../PLOTS/gitV00-02-12/version12/gamma/200um/eta" << etabin << "_et" << pt << "_pu" << pu;
+      else 
+	dir << "/afs/cern.ch/work/a/amagnan/PFCalEEAna/PLOTS/gitV00-02-12/version12/gamma/200um/eta" << etabin << "_et" << pt << "_pu" << pu;
+    }
+    else {
+      dir << "/afs/cern.ch/work/a/amagnan/PFCalEEAna/PLOTS/gitV00-02-13/version13/gamma/200um/eta" << etabin << "_et" << pt << "_pu" << pu;
+    }
+  } else {
+    dir << "/afs/cern.ch/work/a/amagnan/PFCalEEAna/PLOTS/gitV00-02-12/version12/gamma/200um/phi_0.250pi/eta" << etabin << "_et" << pt << "_pu" << pu;
+  }
+  return dir.str();
+};
+
+double E(const unsigned pT, const unsigned eta){
+  return pT*cosh(eta/10.);
+};
+
+double pT(const unsigned E, const unsigned eta){
+  return E/cosh(eta/10.);
+};
+
 struct Result{
   unsigned nEvts;
   double fitQuality;
@@ -53,15 +83,12 @@ struct Result{
   double residual_tany_rmserr;
 };
 
-void fillPuPlots(unsigned etabin, unsigned pt, unsigned pu, TH1F *& meanPu, TH1F *& eventPu, TH1F *& diffPu){
+void fillPuPlots(std::string plotDir,unsigned etabin, unsigned pt, unsigned pu, TH1F *& meanPu, TH1F *& eventPu, TH1F *& diffPu){
 
-  std::ostringstream plotDir;
-  plotDir << "../PLOTS/gitV00-02-12/version12/gamma/200um/eta" << etabin << "_et" << pt << "_pu" << pu;
-  
-  TFile *file = TFile::Open((plotDir.str()+".root").c_str());
+  TFile *file = TFile::Open((plotDir+".root").c_str());
   
   if (!file){
-    std::cout << " -- Error, input file " << plotDir.str() << ".root cannot be opened. Skipping..." << std::endl;
+    std::cout << " -- Error, input file " << plotDir << ".root cannot be opened. Skipping..." << std::endl;
     return; 
   }
   else std::cout << " -- file " << file->GetName() << " successfully opened." << std::endl;
@@ -101,7 +128,7 @@ void fillPuPlots(unsigned etabin, unsigned pt, unsigned pu, TH1F *& meanPu, TH1F
   
 }
 
-Result plotOnePoint(TCanvas * mycFit,unsigned etabin, unsigned pt, unsigned pu){
+Result plotOnePoint(std::string plotDir, TCanvas * & mycFit, TString sumDir, unsigned etabin, unsigned pt, unsigned pu){
 
   Result res;
   res.nEvts = 0;
@@ -134,13 +161,10 @@ Result plotOnePoint(TCanvas * mycFit,unsigned etabin, unsigned pt, unsigned pu){
   res.residual_tanx_rmserr = 0;
   res.residual_tany_rmserr = 0;
 
-  std::ostringstream plotDir;
-  plotDir << "../PLOTS/gitV00-02-12/version12/gamma/200um/eta" << etabin << "_et" << pt << "_pu" << pu;
-
-  TFile *file = TFile::Open((plotDir.str()+".root").c_str());
+  TFile *file = TFile::Open((plotDir+".root").c_str());
   
   if (!file){
-    std::cout << " -- Error, input file " << plotDir.str() << ".root cannot be opened. Skipping..." << std::endl;
+    std::cout << " -- Error, input file " << plotDir << ".root cannot be opened. Skipping..." << std::endl;
     return res;
   }
   else std::cout << " -- file " << file->GetName() << " successfully opened." << std::endl;
@@ -178,7 +202,7 @@ Result plotOnePoint(TCanvas * mycFit,unsigned etabin, unsigned pt, unsigned pu){
     p_hitEventPuContrib->Draw("colz");
     
     mycE->Update();
-    mycE->Print((plotDir.str()+"/AveragePuE"+suffix+".pdf").c_str());
+    mycE->Print((plotDir+"/AveragePuE"+suffix+".pdf").c_str());
   }
   //return 1;
 
@@ -195,7 +219,7 @@ Result plotOnePoint(TCanvas * mycFit,unsigned etabin, unsigned pt, unsigned pu){
   TH2D *p_corrMatrix_y = (TH2D*)gDirectory->Get("p_corrMatrix_y");
   bool skipDetailed = false;
   if (!p_errorMatrix_x) {
-    std::cout << " -- Warning, input file " << plotDir.str() << " does not contain detailed fit histos..." << std::endl;
+    std::cout << " -- Warning, input file " << plotDir << " does not contain detailed fit histos..." << std::endl;
     //return res;
     skipDetailed = true;
     return res;
@@ -204,7 +228,7 @@ Result plotOnePoint(TCanvas * mycFit,unsigned etabin, unsigned pt, unsigned pu){
   TH1F *p_chi2overNDF = (TH1F*)gDirectory->Get("p_chi2overNDF");
 
   if (!p_chi2overNDF){
-    std::cout << " -- Error, input file " << plotDir.str() << ".root does not contain fit histos. Skipping..." << std::endl;
+    std::cout << " -- Error, input file " << plotDir << ".root does not contain fit histos. Skipping..." << std::endl;
     return res;
   }
 
@@ -215,6 +239,7 @@ Result plotOnePoint(TCanvas * mycFit,unsigned etabin, unsigned pt, unsigned pu){
   TH1F *p_impactX_truth = (TH1F*)gDirectory->Get("p_impactXFF_truth");
   TH1F *p_tanAngleX = (TH1F*)gDirectory->Get("p_tanAngleX");
   TH1F *p_tanAngleX_residual = (TH1F*)gDirectory->Get("p_tanAngleX_residual");
+  TH1F *p_angleX_residual = (TH1F*)gDirectory->Get("p_angleX_residual");
   TH1F *p_tanAngleX_truth = (TH1F*)gDirectory->Get("p_tanAngleX_truth");
   TH1F *p_impactY = (TH1F*)gDirectory->Get("p_impactYFF");
   TH1F *p_impactYFF_residual = (TH1F*)gDirectory->Get("p_impactYFF_residual");
@@ -222,6 +247,7 @@ Result plotOnePoint(TCanvas * mycFit,unsigned etabin, unsigned pt, unsigned pu){
   TH1F *p_impactY_truth = (TH1F*)gDirectory->Get("p_impactYFF_truth");
   TH1F *p_tanAngleY = (TH1F*)gDirectory->Get("p_tanAngleY");
   TH1F *p_tanAngleY_residual = (TH1F*)gDirectory->Get("p_tanAngleY_residual");
+  TH1F *p_angleY_residual = (TH1F*)gDirectory->Get("p_angleY_residual");
   TH1F *p_tanAngleY_truth = (TH1F*)gDirectory->Get("p_tanAngleY_truth");
   
   TH1F *p_nLayersFit = (TH1F*)gDirectory->Get("p_nLayersFit");
@@ -331,7 +357,7 @@ Result plotOnePoint(TCanvas * mycFit,unsigned etabin, unsigned pt, unsigned pu){
   res.tanAngleY_rms = p_tanAngleY->GetRMS();
 
   mycL->Update();
-  mycL->Print((plotDir.str()+"/PositionFitSummary"+suffix+".pdf").c_str());
+  mycL->Print((plotDir+"/PositionFitSummary"+suffix+".pdf").c_str());
 
   mycD->Divide(3,2);
   mycD->cd(1);
@@ -341,7 +367,7 @@ Result plotOnePoint(TCanvas * mycFit,unsigned etabin, unsigned pt, unsigned pu){
   //p_etavsphi_max->SetStats(0);
   mycD->cd(4);
   gPad->SetLogy(1);
-  gStyle->SetStatW(0.4);
+  gStyle->SetStatW(0.3);
   //gStyle->SetStatH(0.3);
   p_chi2overNDF->GetXaxis()->SetRangeUser(0,20);
   p_chi2overNDF->Draw();
@@ -385,104 +411,131 @@ Result plotOnePoint(TCanvas * mycFit,unsigned etabin, unsigned pt, unsigned pu){
   p_fitYvsLayer->SetStats(0);
 
   mycD->Update();
-  mycD->Print((plotDir.str()+"/PositionFitDebug"+suffix+".pdf").c_str());
+  mycD->Print((plotDir+"/PositionFitDebug"+suffix+".pdf").c_str());
 
-  mycR->Divide(3,2);
+  mycR->Divide(4,2);
   mycR->cd(1);
   p_positionReso->GetXaxis()->SetRangeUser(p_positionReso->GetMean()-5*p_positionReso->GetRMS(),
 					    p_positionReso->GetMean()+5*p_positionReso->GetRMS());
   p_positionReso->Draw();
-  mycR->cd(4);
+  mycR->cd(5);
   p_angularReso->GetXaxis()->SetRangeUser(0,0.1);
   //p_angularReso->GetMean()-5*p_angularReso->GetRMS(),
   //p_angularReso->GetMean()+5*p_angularReso->GetRMS());
   p_angularReso->Draw();
   mycR->cd(2);
-  p_impactX14_residual->GetXaxis()->SetRangeUser(p_impactX14_residual->GetMean()-5*p_impactX14_residual->GetRMS(),
-					    p_impactX14_residual->GetMean()+5*p_impactX14_residual->GetRMS());
+  p_impactXFF_residual->GetXaxis()->SetRangeUser(-2.5,5);
+  p_impactXFF_residual->Draw();
+  mycR->cd(3);
+  p_impactX14_residual->GetXaxis()->SetRangeUser(-2.5,5);
   p_impactX14_residual->Draw();
 
   mycFit->cd();
   p_impactXFF_residual->Draw("PE");
   p_impactXFF_residual->Fit("gaus","0+");
   TF1 *fit = p_impactXFF_residual->GetFunction("gaus");
+  fit->SetLineColor(6);
+  fit->Draw("same");
   res.residual_xFF = fit->GetParameter(1);
   res.residual_xFF_rms = fit->GetParameter(2);
   res.residual_xFF_rmserr = fit->GetParError(2);
   sprintf(buf,"#eta=%3.1f, pT=%d GeV, pu=%d",etabin/10.,pt,pu);
   lat.DrawLatexNDC(0.1,0.96,buf);
-  mycFit->Print("PLOTS/fits_x.pdf");
+  mycFit->Print(sumDir+"/Positionfits_x.pdf");
+
+  if (etabin==19 && pt==50 && pu==0) mycFit->Print(sumDir+"/posFF_x_eta19_et50_pu0.C");
+  if (etabin==19 && pt==50 && pu==140) mycFit->Print(sumDir+"/posFF_x_eta19_et50_pu140.C");
 
   mycFit->cd();
   p_impactX14_residual->Draw("PE");
   p_impactX14_residual->Fit("gaus","0+");
   fit = p_impactX14_residual->GetFunction("gaus");
+  fit->SetLineColor(6);
+  fit->Draw("same");
   res.residual_x14 = fit->GetParameter(1);
   res.residual_x14_rms = fit->GetParameter(2);
   res.residual_x14_rmserr = fit->GetParError(2);
   sprintf(buf,"#eta=%3.1f, pT=%d GeV, pu=%d",etabin/10.,pt,pu);
   lat.DrawLatexNDC(0.1,0.96,buf);
-  mycFit->Print("PLOTS/fits_x.pdf");
+  mycFit->Print(sumDir+"/Positionfits_x.pdf");
+  if (etabin==19 && pt==50 && pu==0) mycFit->Print(sumDir+"/pos14_x_eta19_et50_pu0.C");
+  if (etabin==19 && pt==50 && pu==140) mycFit->Print(sumDir+"/pos14_x_eta19_et50_pu140.C");
 
-  mycR->cd(5);
-  p_impactYFF_residual->GetXaxis()->SetRangeUser(p_impactYFF_residual->GetMean()-5*p_impactYFF_residual->GetRMS(),
-					    p_impactYFF_residual->GetMean()+5*p_impactYFF_residual->GetRMS());
+  mycR->cd(6);
+  p_impactYFF_residual->GetXaxis()->SetRangeUser(-2.5,5);
   p_impactYFF_residual->Draw();
+  mycR->cd(7);
+  p_impactY14_residual->GetXaxis()->SetRangeUser(-2.5,5);
+  p_impactY14_residual->Draw();
 
   mycFit->cd();
   p_impactYFF_residual->Draw("PE");
   p_impactYFF_residual->Fit("gaus","0+");
   fit = p_impactYFF_residual->GetFunction("gaus");
+  fit->SetLineColor(6);
+  fit->Draw("same");
   res.residual_yFF = fit->GetParameter(1);
   res.residual_yFF_rms = fit->GetParameter(2);
   res.residual_yFF_rmserr = fit->GetParError(2);
   sprintf(buf,"#eta=%3.1f, pT=%d GeV, pu=%d",etabin/10.,pt,pu);
   lat.DrawLatexNDC(0.1,0.96,buf);
-  mycFit->Print("PLOTS/fits_y.pdf");
+  mycFit->Print(sumDir+"/Positionfits_y.pdf");
+  if (etabin==19 && pt==50 && pu==0) mycFit->Print(sumDir+"/posFF_y_eta19_et50_pu0.C");
+  if (etabin==19 && pt==50 && pu==140) mycFit->Print(sumDir+"/posFF_y_eta19_et50_pu140.C");
 
   mycFit->cd();
   p_impactY14_residual->Draw("PE");
   p_impactY14_residual->Fit("gaus","0+");
   fit = p_impactY14_residual->GetFunction("gaus");
+  fit->SetLineColor(6);
+  fit->Draw("same");
   res.residual_y14 = fit->GetParameter(1);
   res.residual_y14_rms = fit->GetParameter(2);
   res.residual_y14_rmserr = fit->GetParError(2);
   sprintf(buf,"#eta=%3.1f, pT=%d GeV, pu=%d",etabin/10.,pt,pu);
   lat.DrawLatexNDC(0.1,0.96,buf);
-  mycFit->Print("PLOTS/fits_y.pdf");
+  mycFit->Print(sumDir+"/Positionfits_y.pdf");
+  if (etabin==19 && pt==50 && pu==0) mycFit->Print(sumDir+"/pos14_y_eta19_et50_pu0.C");
+  if (etabin==19 && pt==50 && pu==140) mycFit->Print(sumDir+"/pos14_y_eta19_et50_pu140.C");
 
-  mycR->cd(3);
-  p_tanAngleX_residual->GetXaxis()->SetRangeUser(p_tanAngleX_residual->GetMean()-5*p_tanAngleX_residual->GetRMS(),
-					    p_tanAngleX_residual->GetMean()+5*p_tanAngleX_residual->GetRMS());
+  mycR->cd(4);
+  p_tanAngleX_residual->GetXaxis()->SetRangeUser(-0.03,0.06);
   p_tanAngleX_residual->Draw();
 
   mycFit->cd();
-  p_tanAngleX_residual->Draw("PE");
-  p_tanAngleX_residual->Fit("gaus","0+");
-  fit = p_tanAngleX_residual->GetFunction("gaus");
+  p_angleX_residual->Draw("PE");
+  p_angleX_residual->Fit("gaus","0+");
+  fit = p_angleX_residual->GetFunction("gaus");
+  fit->SetLineColor(6);
+  fit->Draw("same");
   res.residual_tanx = fit->GetParameter(1);
   res.residual_tanx_rms = fit->GetParameter(2);//p_tanAngleX->GetRMS();
   res.residual_tanx_rmserr = fit->GetParError(2);//p_tanAngleX->GetRMS();
   sprintf(buf,"#eta=%3.1f, pT=%d GeV, pu=%d",etabin/10.,pt,pu);
   lat.DrawLatexNDC(0.1,0.96,buf);
-  mycFit->Print("PLOTS/fits_x.pdf");
+  mycFit->Print(sumDir+"/Positionfits_x.pdf");
+  if (etabin==19 && pt==50 && pu==0) mycFit->Print(sumDir+"/angle_x_eta19_et50_pu0.C");
+  if (etabin==19 && pt==50 && pu==140) mycFit->Print(sumDir+"/angle_x_eta19_et50_pu140.C");
 
 
 
-  mycR->cd(6);
-  p_tanAngleY_residual->GetXaxis()->SetRangeUser(p_tanAngleY_residual->GetMean()-5*p_tanAngleY_residual->GetRMS(),
-  						 p_tanAngleY_residual->GetMean()+5*p_tanAngleY_residual->GetRMS());
-  p_tanAngleY_residual->Draw();
+  mycR->cd(8);
+  p_angleY_residual->GetXaxis()->SetRangeUser(-0.03,0.06);
+  p_angleY_residual->Draw();
   mycFit->cd();
-  p_tanAngleY_residual->Draw("PE");
-  p_tanAngleY_residual->Fit("gaus","0+");
-  fit = p_tanAngleY_residual->GetFunction("gaus");
+  p_angleY_residual->Draw("PE");
+  p_angleY_residual->Fit("gaus","0+");
+  fit = p_angleY_residual->GetFunction("gaus");
+  fit->SetLineColor(6);
+  fit->Draw("same");
   res.residual_tany = fit->GetParameter(1);
   res.residual_tany_rms = fit->GetParameter(2);//p_tanAngleX->GetRMS();
   res.residual_tany_rmserr = fit->GetParError(2);//p_tanAngleX->GetRMS();
   sprintf(buf,"#eta=%3.1f, pT=%d GeV, pu=%d",etabin/10.,pt,pu);
   lat.DrawLatexNDC(0.1,0.96,buf);
-  mycFit->Print("PLOTS/fits_y.pdf");
+  mycFit->Print(sumDir+"/Positionfits_y.pdf");
+  if (etabin==19 && pt==50 && pu==0) mycFit->Print(sumDir+"/angle_y_eta19_et50_pu0.C");
+  if (etabin==19 && pt==50 && pu==140) mycFit->Print(sumDir+"/angle_y_eta19_et50_pu140.C");
 
   //res.residual_x = p_impactX_residual->GetMean();
   //res.residual_x_rms = p_impactX_residual->GetRMS();
@@ -496,7 +549,7 @@ Result plotOnePoint(TCanvas * mycFit,unsigned etabin, unsigned pt, unsigned pu){
 
 
   mycR->Update();
-  mycR->Print((plotDir.str()+"/PositionFitReso"+suffix+".pdf").c_str());
+  mycR->Print((plotDir+"/PositionFitReso"+suffix+".pdf").c_str());
 
   return res;
 
@@ -550,16 +603,30 @@ int plotPositionResoAll(){//main
 
   SetTdrStyle();
 
-  const unsigned npu = 2;
-  const unsigned neta = 7;
+  const bool doPhi45 = false;
+  const unsigned version=12;
 
-  unsigned pu[npu] = {0,140};
-  const unsigned eta[neta] = {17,19,21,23,25,27,29};
+  const unsigned npu = 2;//3;
+  const unsigned neta = 1;//4;//(doPhi45 || version==13) ? 4 : 7;
+
+  const bool doVsE = false;
+
+  unsigned pu[npu] = {0,140};//,200};
+  unsigned eta[neta] = {19};
+  //for (unsigned ieta(0);ieta<neta;++ieta){
+  //eta[ieta] = 17+4*ieta;
+    //if (doPhi45 || version==13) eta[ieta] = 17+4*ieta;
+    //else eta[ieta] = 17+2*ieta;
+  //}
+
+  TString sumDir = version==13? "PLOTS_v13" : doPhi45 ? "PLOTS_phi45" : "PLOTS" ;
 
   TCanvas *mycFit = new TCanvas("mycFit","mycFit",1);
   
-  mycFit->Print("PLOTS/fits_x.pdf[");
-  mycFit->Print("PLOTS/fits_y.pdf[");
+  mycFit->Print(sumDir+"/Positionfits_x.pdf[");
+  mycFit->Print(sumDir+"/Positionfits_y.pdf[");
+
+  TCanvas *mycNice = new TCanvas("mycNice","mycNice",1500,750);
 
   TCanvas *mycPu = new TCanvas("mycPu","mycPu",1500,1000);
   TCanvas *mycFitQual = new TCanvas("mycFitQual","mycFitQual",1500,1000);
@@ -602,11 +669,15 @@ int plotPositionResoAll(){//main
   left[8] = (TPad*)mycRAsig->cd(1);
   right[8] = (TPad*)mycRAsig->cd(2);
   for (unsigned iC(0);iC<nCan;++iC){
-    left[iC]->Divide(1,4);
-    right[iC]->Divide(1,3);
+    //left[iC]->Divide(1,(doPhi45||version==13)?2:4);
+    //right[iC]->Divide(1,(doPhi45||version==13)?2:3);
+    left[iC]->Divide(1,2);
+    right[iC]->Divide(1,2);
     for (unsigned ieta=0; ieta<neta;++ieta){//loop on pt values
-      if (ieta<4) mypad[iC][ieta] = (TPad*)left[iC]->GetPad(ieta+1);
-      else mypad[iC][ieta] = (TPad*)right[iC]->GetPad((ieta-4)+1);
+      //if (ieta< ((doPhi45||version==13)?2:4)) mypad[iC][ieta] = (TPad*)left[iC]->GetPad(ieta+1);
+      //else mypad[iC][ieta] = (TPad*)right[iC]->GetPad((ieta-((doPhi45||version==13)?2:4))+1);
+      if (ieta< 2) mypad[iC][ieta] = (TPad*)left[iC]->GetPad(ieta+1);
+      else mypad[iC][ieta] = (TPad*)right[iC]->GetPad((ieta-2)+1);
     }
   }
 
@@ -628,7 +699,6 @@ int plotPositionResoAll(){//main
   const unsigned npt = 17;
   unsigned pt[npt] = {3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200};
   double ptval[npu][npt];
-
   //plot pu
 
   for (unsigned ipu(1); ipu<npu;++ipu){//loop on pu values
@@ -644,7 +714,7 @@ int plotPositionResoAll(){//main
       diffPu[ieta] = new TH1F(lname.str().c_str(),";E_{PU}^{RC}-E_{PU}^{Mean} (GeV);events",100,-5,25);
 
       for (unsigned ipt(0);ipt<npt;++ipt){
-	fillPuPlots(eta[ieta],pt[ipt],pu[ipu],meanPuProj[ieta],eventPuProj[ieta],diffPu[ieta]);
+	fillPuPlots(plotDir(doPhi45,version,eta[ieta],pt[ipt],pu[ipu]),eta[ieta],pt[ipt],pu[ipu],meanPuProj[ieta],eventPuProj[ieta],diffPu[ieta]);
       }
       if (!meanPuProj[ieta] || !eventPuProj[ieta]) {
 	std::cout << " Pu histos not found, continuing..." << std::endl;
@@ -679,7 +749,7 @@ int plotPositionResoAll(){//main
       lat.DrawLatexNDC(0.02,0.02,"HGCAL Geant4 Standalone");
     }
     std::ostringstream lPrint;
-    lPrint << "PLOTS/SummaryAll_Pu" << pu[ipu];
+    lPrint << sumDir << "/SummaryAll_Pu" << pu[ipu];
     lPrint << ".pdf";
     mycPu->Update();
     mycPu->Print(lPrint.str().c_str());
@@ -701,16 +771,13 @@ int plotPositionResoAll(){//main
       lat.DrawLatexNDC(0.02,0.02,"HGCAL Geant4 Standalone");
     }
     lPrint.str("");
-    lPrint << "PLOTS/SummaryAll_DiffPu" << pu[ipu];
+    lPrint << sumDir << "/SummaryAll_DiffPu" << pu[ipu];
     lPrint << ".pdf";
     mycPu->Update();
     mycPu->Print(lPrint.str().c_str());
   }//loop on pu val
   
   //return 1;
-  mycFit->Print("PLOTS/fits_x.pdf]");
-  mycFit->Print("PLOTS/fits_y.pdf]");
-
   for (unsigned ieta=0; ieta<neta;++ieta){//loop on eta values
     for (unsigned ipu(0); ipu<npu;++ipu){//loop on pu values
       
@@ -718,9 +785,10 @@ int plotPositionResoAll(){//main
 
       unsigned newp = 0;
       for (unsigned ipt(0);ipt<npt;++ipt){
-	Result lres = plotOnePoint(mycFit,eta[ieta],pt[ipt],pu[ipu]);
+	Result lres = plotOnePoint(plotDir(doPhi45,version,eta[ieta],pt[ipt],pu[ipu]),mycFit,sumDir,eta[ieta],pt[ipt],pu[ipu]);
 	if (lres.nEvts > 0){
 	  ptval[ipu][newp] = pt[ipt]+1.*(2.*ipu-1.);
+	  if (doVsE) ptval[ipu][newp] = E(pt[ipt],eta[ieta])+2.*(2.*ipu-1.);
 	  //std::cout << pu[ipu] << " " << eta[ie] << " " << etaval[ipu][newp] << std::endl;
 	  newp++;
 	  resVec.push_back(lres);
@@ -818,6 +886,7 @@ int plotPositionResoAll(){//main
       mypad[0][ieta]->cd();
       gPad->SetGridy(1);
       grEvts[ieta][ipu]->SetTitle(";E_{T} (GeV);N_{events}");
+      if (doVsE) grEvts[ieta][ipu]->SetTitle(";E (GeV);N_{events}");
       grEvts[ieta][ipu]->SetLineColor(ipu+1);
       grEvts[ieta][ipu]->SetMarkerColor(ipu+1);
       grEvts[ieta][ipu]->SetMarkerStyle(ipu+21);
@@ -828,6 +897,7 @@ int plotPositionResoAll(){//main
       mypad[1][ieta]->cd();
       gPad->SetGridy(1);
       grFit[ieta][ipu]->SetTitle(";E_{T} (GeV);#chi^{2}/NDF");
+      if (doVsE) grFit[ieta][ipu]->SetTitle(";E (GeV);#chi^{2}/NDF");
       grFit[ieta][ipu]->SetLineColor(ipu+1);
       grFit[ieta][ipu]->SetMarkerColor(ipu+1);
       grFit[ieta][ipu]->SetMarkerStyle(ipu+21);
@@ -838,6 +908,7 @@ int plotPositionResoAll(){//main
       mypad[2][ieta]->cd();
       gPad->SetGridy(1);
       grResidualX14[ieta][ipu]->SetTitle(";E_{T} (GeV);x14_{reco}-x14_{truth} (mm)");
+      if (doVsE) grResidualX14[ieta][ipu]->SetTitle(";E (GeV);x14_{reco}-x14_{truth} (mm)");
       grResidualX14[ieta][ipu]->SetLineColor(ipu+1);
       grResidualX14[ieta][ipu]->SetMarkerColor(ipu+1);
       grResidualX14[ieta][ipu]->SetMarkerStyle(ipu+21);
@@ -853,6 +924,7 @@ int plotPositionResoAll(){//main
       mypad[3][ieta]->cd();
       gPad->SetGridy(1);
       grResidualTanX[ieta][ipu]->SetTitle(";E_{T} (GeV);tanA_{reco}-tanA_{truth} (mrad)");
+      if (doVsE) grResidualTanX[ieta][ipu]->SetTitle(";E (GeV);tanA_{reco}-tanA_{truth} (mrad)");
       grResidualTanX[ieta][ipu]->SetLineColor(ipu+1);
       grResidualTanX[ieta][ipu]->SetMarkerColor(ipu+1);
       grResidualTanX[ieta][ipu]->SetMarkerStyle(ipu+21);
@@ -868,6 +940,7 @@ int plotPositionResoAll(){//main
       mypad[5][ieta]->cd();
       gPad->SetGridy(1);
       grResidualXFF[ieta][ipu]->SetTitle(";E_{T} (GeV);xFF_{reco}-xFF_{truth} (mm)");
+      if (doVsE) grResidualXFF[ieta][ipu]->SetTitle(";E (GeV);xFF_{reco}-xFF_{truth} (mm)");
       grResidualXFF[ieta][ipu]->SetLineColor(ipu+1);
       grResidualXFF[ieta][ipu]->SetMarkerColor(ipu+1);
       grResidualXFF[ieta][ipu]->SetMarkerStyle(ipu+21);
@@ -882,55 +955,144 @@ int plotPositionResoAll(){//main
       
       mypad[6][ieta]->cd();
       gPad->SetGridy(1);
+      gPad->SetLogy(1);
       grResolXFF[ieta][ipu]->SetTitle(";E_{T} (GeV);#sigma(xFF_{reco}-xFF_{truth}) (mm)");
+      if (doVsE) grResolXFF[ieta][ipu]->SetTitle(";E (GeV);#sigma(xFF_{reco}-xFF_{truth}) (mm)");
       grResolXFF[ieta][ipu]->SetLineColor(ipu+1);
       grResolXFF[ieta][ipu]->SetMarkerColor(ipu+1);
       grResolXFF[ieta][ipu]->SetMarkerStyle(ipu+21);
       grResolXFF[ieta][ipu]->SetMaximum(4);//max_pos);
-      grResolXFF[ieta][ipu]->SetMinimum(0);//max_pos);
+      grResolXFF[ieta][ipu]->SetMinimum(0.08);//max_pos);
+      grResolXFF[ieta][ipu]->GetXaxis()->SetRangeUser(10,200);
+      if (doVsE) grResolXFF[ieta][ipu]->GetXaxis()->SetRangeUser(E(10,eta[ieta]),E(200,eta[ieta]));
       grResolXFF[ieta][ipu]->Draw(ipu==0?"APE":"PE");
       
-      grResolYFF[ieta][ipu]->SetLineColor(ipu+3);
-      grResolYFF[ieta][ipu]->SetMarkerColor(ipu+3);
-      grResolYFF[ieta][ipu]->SetMarkerStyle(ipu+23);
+      grResolYFF[ieta][ipu]->SetTitle(";E_{T} (GeV);#sigma(y_{FF}^{reco}-y_{FF}^{truth}) (mm)");
+      if (doVsE) grResolYFF[ieta][ipu]->SetTitle(";E (GeV);#sigma(y_{FF}^{reco}-y_{FF}^{truth}) (mm)");
+      grResolYFF[ieta][ipu]->SetMaximum(1.);//max_pos);
+      grResolYFF[ieta][ipu]->SetMinimum(0.0);//max_pos);
+      grResolYFF[ieta][ipu]->GetXaxis()->SetRangeUser(9,110);
+      grResolYFF[ieta][ipu]->GetYaxis()->SetTitleOffset(0.8);
+      if (doVsE) grResolYFF[ieta][ipu]->GetXaxis()->SetRangeUser(E(9,eta[ieta]),E(110,eta[ieta]));
+      grResolYFF[ieta][ipu]->SetLineColor(ipu+1);
+      grResolYFF[ieta][ipu]->SetMarkerColor(ipu+1);
+      grResolYFF[ieta][ipu]->SetMarkerStyle(ipu+21);
       grResolYFF[ieta][ipu]->Draw("PE");
       
       mypad[7][ieta]->cd();
       gPad->SetGridy(1);
+      gPad->SetLogy(1);
       grResolX14[ieta][ipu]->SetTitle(";E_{T} (GeV);#sigma(x14_{reco}-x14_{truth}) (mm)");
+      if (doVsE) grResolX14[ieta][ipu]->SetTitle(";E (GeV);#sigma(x14_{reco}-x14_{truth}) (mm)");
       grResolX14[ieta][ipu]->SetLineColor(ipu+1);
       grResolX14[ieta][ipu]->SetMarkerColor(ipu+1);
       grResolX14[ieta][ipu]->SetMarkerStyle(ipu+21);
       grResolX14[ieta][ipu]->SetMaximum(4);//max_pos);
-      grResolX14[ieta][ipu]->SetMinimum(0);//max_pos);
+      grResolX14[ieta][ipu]->SetMinimum(0.08);//max_pos);
+      grResolX14[ieta][ipu]->GetXaxis()->SetRangeUser(10,200);
+      if (doVsE)  grResolX14[ieta][ipu]->GetXaxis()->SetRangeUser(E(10,eta[ieta]),E(200,eta[ieta]));
       grResolX14[ieta][ipu]->Draw(ipu==0?"APE":"PE");
       
-      grResolY14[ieta][ipu]->SetLineColor(ipu+3);
-      grResolY14[ieta][ipu]->SetMarkerColor(ipu+3);
-      grResolY14[ieta][ipu]->SetMarkerStyle(ipu+23);
+      grResolY14[ieta][ipu]->SetTitle(";E_{T} (GeV);#sigma(y_{14}^{reco}-y_{14}^{truth}) (mm)");
+      if (doVsE) grResolY14[ieta][ipu]->SetTitle(";E (GeV);#sigma(y_{14}^{reco}-y_{14}^{truth}) (mm)");
+      grResolY14[ieta][ipu]->SetMaximum(1.);//max_pos);
+      grResolY14[ieta][ipu]->SetMinimum(0.);//max_pos);
+      grResolY14[ieta][ipu]->GetXaxis()->SetRangeUser(9,110);
+      grResolY14[ieta][ipu]->GetYaxis()->SetTitleOffset(0.8);
+      if (doVsE) grResolY14[ieta][ipu]->GetXaxis()->SetRangeUser(E(9,eta[ieta]),E(110,eta[ieta]));
+      grResolY14[ieta][ipu]->SetLineColor(ipu+1);
+      grResolY14[ieta][ipu]->SetMarkerColor(ipu+1);
+      grResolY14[ieta][ipu]->SetMarkerStyle(ipu+21);
       grResolY14[ieta][ipu]->Draw("PE");
-      
+
       mypad[8][ieta]->cd();
       gPad->SetGridy(1);
+      gPad->SetLogy(1);
+      //grResolTanX[ieta][ipu]->SetTitle(";E_{T} (GeV);#sigma(tanA_{reco}-tanA_{truth}) (mrad)");
+      //if (doVsE) grResolTanX[ieta][ipu]->SetTitle(";E (GeV);#sigma(tanA_{reco}-tanA_{truth}) (mrad)");
       grResolTanX[ieta][ipu]->SetTitle(";E_{T} (GeV);#sigma(tanA_{reco}-tanA_{truth}) (mrad)");
+      if (doVsE) grResolTanX[ieta][ipu]->SetTitle(";E (GeV);#sigma(tanA_{reco}-tanA_{truth}) (mrad)");
       grResolTanX[ieta][ipu]->SetLineColor(ipu+1);
       grResolTanX[ieta][ipu]->SetMarkerColor(ipu+1);
       grResolTanX[ieta][ipu]->SetMarkerStyle(ipu+21);
-      grResolTanX[ieta][ipu]->SetMaximum(20);//max_angle);
-      grResolTanX[ieta][ipu]->SetMinimum(0);//max_angle);
+      grResolTanX[ieta][ipu]->GetXaxis()->SetRangeUser(9,200);
+      if (doVsE) grResolTanX[ieta][ipu]->GetXaxis()->SetRangeUser(E(9,eta[ieta]),E(200,eta[ieta]));
+      grResolTanX[ieta][ipu]->SetMaximum(10);//max_angle);
+      grResolTanX[ieta][ipu]->SetMinimum(1);//max_angle);
       grResolTanX[ieta][ipu]->Draw(ipu==0?"APE":"PE");
       
-      grResolTanY[ieta][ipu]->SetLineColor(ipu+3);
-      grResolTanY[ieta][ipu]->SetMarkerColor(ipu+3);
-      grResolTanY[ieta][ipu]->SetMarkerStyle(ipu+23);
+      //grResolTanY[ieta][ipu]->SetTitle(";E_{T} (GeV);#sigma(tan(#theta_{y}^{reco})-tan(#theta_{y}^{truth})) (mrad)");
+      //if (doVsE) grResolTanY[ieta][ipu]->SetTitle(";E (GeV);#sigma((tan(#theta_{y}^{reco})-tan(#theta_{y}^{truth})) (mrad)");
+      grResolTanY[ieta][ipu]->SetTitle(";E_{T} (GeV);#sigma(#theta_{y}^{reco}-#theta_{y}^{truth}) (mrad)");
+      if (doVsE) grResolTanY[ieta][ipu]->SetTitle(";E (GeV);#sigma(#theta_{y}^{reco}-#theta_{y}^{truth}) (mrad)");
+      grResolTanY[ieta][ipu]->GetXaxis()->SetRangeUser(9,110);
+      grResolTanY[ieta][ipu]->GetYaxis()->SetTitleOffset(0.8);
+      if (doVsE) grResolTanY[ieta][ipu]->GetXaxis()->SetRangeUser(E(9,eta[ieta]),E(110,eta[ieta]));
+      grResolTanY[ieta][ipu]->SetMaximum(7);//max_angle);
+      grResolTanY[ieta][ipu]->SetMinimum(1);//max_angle);
+      grResolTanY[ieta][ipu]->SetLineColor(ipu+1);
+      grResolTanY[ieta][ipu]->SetMarkerColor(ipu+1);
+      grResolTanY[ieta][ipu]->SetMarkerStyle(ipu+21);
       grResolTanY[ieta][ipu]->Draw("PE");
-      
+
     }//loop on pu
 
-    TLegend *leg1 = new TLegend(0.79,0.82,0.94,0.94);
+    TLegend *leg1 = new TLegend(0.75,0.75,0.94,0.94);
     leg1->SetFillColor(10);
     leg1->AddEntry(grFit[ieta][0],"PU 0","P");
     leg1->AddEntry(grFit[ieta][1],"PU 140","P");
+    if (npu==3) leg1->AddEntry(grFit[ieta][2],"PU 200","P");
+
+    TLatex lat;
+    //lat.SetTextSize(0.04);
+    char buf[500];
+    if (eta[ieta]==19){
+      mycNice->cd();
+      gPad->SetGridy(1);
+      for (unsigned ipu(0);ipu<npu;ipu++){
+	grResolYFF[ieta][ipu]->Draw(ipu==0?"APLE":"PLEsame");
+      }
+      sprintf(buf,"Single #gamma, #eta = %3.1f",eta[ieta]/10.);
+      lat.DrawLatexNDC(0.2,0.85,buf);
+      lat.DrawLatexNDC(0.02,0.02,"HGCAL Geant4 Standalone");
+      leg1->Draw("same");
+      mycNice->Update();
+      if (!doVsE) mycNice->Print(sumDir+"/resolvspT_yFF_eta19.C");
+      else mycNice->Print(sumDir+"/resolvsE_yFF_eta19.C");
+      if (!doVsE) mycNice->Print(sumDir+"/resolvspT_yFF_eta19.pdf");
+      else mycNice->Print(sumDir+"/resolvsE_yFF_eta19.pdf");
+      
+      mycNice->cd();
+      gPad->SetGridy(1);
+      for (unsigned ipu(0);ipu<npu;ipu++){
+	grResolY14[ieta][ipu]->Draw(ipu==0?"APLE":"PLEsame");
+      }
+      lat.DrawLatexNDC(0.02,0.02,"HGCAL Geant4 Standalone");
+      lat.DrawLatexNDC(0.2,0.85,buf);
+      leg1->Draw("same");
+      mycNice->Update();
+      if (!doVsE) mycNice->Print(sumDir+"/resolvspT_y14_eta19.C");
+      else mycNice->Print(sumDir+"/resolvsE_y14_eta19.C");
+      if (!doVsE) mycNice->Print(sumDir+"/resolvspT_y14_eta19.pdf");
+      else mycNice->Print(sumDir+"/resolvsE_y14_eta19.pdf");
+
+      mycNice->cd();
+      gPad->SetGridy(1);
+      for (unsigned ipu(0);ipu<npu;ipu++){
+	grResolTanY[ieta][ipu]->Draw(ipu==0?"APLE":"PLEsame");
+      }
+      lat.DrawLatexNDC(0.2,0.85,buf);
+      lat.DrawLatexNDC(0.02,0.02,"HGCAL Geant4 Standalone");
+      leg1->Draw("same");
+      mycNice->Update();
+      if (!doVsE) mycNice->Print(sumDir+"/resolvspT_thetay_eta19.C");
+      else mycNice->Print(sumDir+"/resolvsE_thetay_eta19.C");
+      if (!doVsE) mycNice->Print(sumDir+"/resolvspT_tethay_eta19.pdf");
+      else mycNice->Print(sumDir+"/resolvsE_thetay_eta19.pdf");
+      
+    }
+
+
 
     TLegend *leg2 = new TLegend(0.74,0.66,0.94,0.94);
     leg2->SetFillColor(10);
@@ -938,11 +1100,12 @@ int plotPositionResoAll(){//main
     leg2->AddEntry(grResidualYFF[ieta][0],"PU 0, y","P");
     leg2->AddEntry(grResidualXFF[ieta][1],"PU 140, x","P");
     leg2->AddEntry(grResidualYFF[ieta][1],"PU 140, y","P");
+    if (npu==3) {
+      leg2->AddEntry(grResidualXFF[ieta][2],"PU 200, x","P");
+      leg2->AddEntry(grResidualYFF[ieta][2],"PU 200, y","P");
+    }
 
     mypad[0][ieta]->cd();
-    TLatex lat;
-    //lat.SetTextSize(0.04);
-    char buf[500];
     sprintf(buf,"Single #gamma, #eta = %3.1f",eta[ieta]/10.);
     lat.DrawLatexNDC(0.2,0.85,buf);
     lat.DrawLatexNDC(0.02,0.02,"HGCAL Geant4 Standalone");
@@ -989,52 +1152,65 @@ int plotPositionResoAll(){//main
   std::ostringstream lPrint;
   
   lPrint.str("");
-  lPrint << "PLOTS/SummaryAll_nEvts";
+  lPrint << sumDir << "/SummaryAll_nEvts";
+  if (doVsE) lPrint << "_vsE";
   lPrint << ".pdf";
   mycEvt->Update();
   mycEvt->Print(lPrint.str().c_str());
   
   lPrint.str("");
-  lPrint << "PLOTS/SummaryAll_fitQuality";
+  lPrint << sumDir << "/SummaryAll_fitQuality";
+  if (doVsE) lPrint << "_vsE";
   lPrint << ".pdf";
   mycFitQual->Update();
   mycFitQual->Print(lPrint.str().c_str());
   
   lPrint.str("");
-  lPrint << "PLOTS/SummaryAll_ResidualPos14";
+  lPrint << sumDir << "/SummaryAll_ResidualPos14";
+  if (doVsE) lPrint << "_vsE";
   lPrint << ".pdf";  
   mycRP14->Update();
   mycRP14->Print(lPrint.str().c_str());
   
   lPrint.str("");
-  lPrint << "PLOTS/SummaryAll_ResidualPosFF";
+  lPrint << sumDir << "/SummaryAll_ResidualPosFF";
+  if (doVsE) lPrint << "_vsE";
   lPrint << ".pdf";  
   mycRPFF->Update();
   mycRPFF->Print(lPrint.str().c_str());
   
   lPrint.str("");
-  lPrint << "PLOTS/SummaryAll_ResidualAngle";
+  lPrint << sumDir << "/SummaryAll_ResidualAngle";
+  if (doVsE) lPrint << "_vsE";
   lPrint << ".pdf";
   mycRA->Update();
   mycRA->Print(lPrint.str().c_str());
 
   lPrint.str("");
-  lPrint << "PLOTS/SummaryAll_ResolPos14";
+  lPrint << sumDir << "/SummaryAll_ResolPos14";
+  if (doVsE) lPrint << "_vsE";
   lPrint << ".pdf";  
   mycRP14sig->Update();
   mycRP14sig->Print(lPrint.str().c_str());
   
   lPrint.str("");
-  lPrint << "PLOTS/SummaryAll_ResolPosFF";
+  lPrint << sumDir << "/SummaryAll_ResolPosFF";
+  if (doVsE) lPrint << "_vsE";
   lPrint << ".pdf";  
   mycRPFFsig->Update();
   mycRPFFsig->Print(lPrint.str().c_str());
   
   lPrint.str("");
-  lPrint << "PLOTS/SummaryAll_ResolAngle";
+  lPrint << sumDir << "/SummaryAll_ResolAngle";
+  if (doVsE) lPrint << "_vsE";
   lPrint << ".pdf";
   mycRAsig->Update();
   mycRAsig->Print(lPrint.str().c_str());
+
+
+  mycFit->Print(sumDir+"/Positionfits_x.pdf]");
+  mycFit->Print(sumDir+"/Positionfits_y.pdf]");
+
 
   return 0;
     

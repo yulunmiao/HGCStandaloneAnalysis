@@ -125,6 +125,8 @@ PositionFit::PositionFit(const unsigned nSR,
   p_tanAngleY[0] = 0;
   p_tanAngleX_residual = 0;
   p_tanAngleY_residual = 0;
+  p_angleX_residual = 0;
+  p_angleY_residual = 0;
   p_eta_reco = 0;
   p_phi_reco = 0;
   p_eta_truth = 0;
@@ -307,9 +309,11 @@ void PositionFit::initialiseClusterHistograms(){
      p_impactXFF_residual = new TH1F("p_impactXFF_residual",";residual x front face impact (mm);n_{events}",200,-10,10);
      p_impactX14_residual = new TH1F("p_impactX14_residual",";residual x layer 14 impact (mm);n_{events}",200,-10,10);
      p_tanAngleX_residual = new TH1F("p_tanAngleX_residual",";residual x direction tanAngle (rad);n_{events}",200,-0.1,0.1);
+     p_angleX_residual = new TH1F("p_angleX_residual",";residual x direction angle (rad);n_{events}",200,-0.1,0.1);
      p_impactYFF_residual = new TH1F("p_impactYFF_residual",";residual y front face impact (mm);n_{events}",200,-10,10);
      p_impactY14_residual = new TH1F("p_impactY14_residual",";residual y layer 14 impact (mm);n_{events}",200,-10,10);
      p_tanAngleY_residual = new TH1F("p_tanAngleY_residual",";residual y direction tanAngle (rad);n_{events}",200,-0.1,0.1);
+     p_angleY_residual = new TH1F("p_angleY_residual",";residual y direction angle (rad);n_{events}",200,-0.1,0.1);
 
      p_eta_reco = new TH1F("p_eta_reco",";reco #eta;n_{events}",200,1.4,3.0);
      p_phi_reco = new TH1F("p_phi_reco",";reco #phi (rad);n_{events}",200,1.4,3);
@@ -527,6 +531,8 @@ void PositionFit::initialiseClusterHistograms(){
        found = true;
        //set direction
        truthDir_ = Direction((*genvec)[iP].px()/(*genvec)[iP].pz(),(*genvec)[iP].py()/(*genvec)[iP].pz());
+       p_etavsphi_truth->Fill(truthDir_.phi(),truthDir_.eta());
+ 
        double zvtx = (*genvec)[iP].z()-((*genvec)[iP].y()/truthDir_.tanangle_y);
        double xvtx = (*genvec)[iP].x()-(((*genvec)[iP].z()-zvtx)*truthDir_.tanangle_x);
        truthVtx_ = ROOT::Math::XYZPoint(xvtx,0,zvtx);
@@ -535,14 +541,30 @@ void PositionFit::initialiseClusterHistograms(){
 
        if (debug_) std::cout << " Found truth vertex pos at: x=" << xvtx << " z=" << zvtx << " xpos was: " << (*genvec)[iP].x() << std::endl;
 
+       break;
      }
 
    }
+   for (unsigned iL(0); iL<nLayers_; ++iL){
+     p_genxy[iL]->Fill(truthPos(iL).X(),truthPos(iL).Y(),1);
+   }
 
+   if (!found){
+     std::cout << " - Info: no photon G4trackID=" << G4TrackID << " found, already converted or outside of acceptance ..." << std::endl;
+     //std::cout << " -- Number of genparticles: " << (*genvec).size() << std::endl;
+     //for (unsigned iP(0); iP<(*genvec).size(); ++iP){//loop on gen particles 
+     //std::cout << " --- particle " << iP << std::endl;
+     //(*genvec)[iP].Print(std::cout);
+     //}
+   }
+   else {
+     p_nGenParticles->Fill((*genvec).size());
+   }
    return found;
 
  }
 
+/*
  bool PositionFit::getTruthPosition(std::vector<HGCSSGenParticle> *genvec,std::vector<ROOT::Math::XYPoint> & truthPos, const int G4TrackID){
 
    bool found = false;
@@ -594,11 +616,13 @@ void PositionFit::initialiseClusterHistograms(){
    return found;
 
  }
+*/
 
- bool PositionFit::getZpositions(){
+ bool PositionFit::getZpositions(const unsigned versionNumber){
    std::ifstream fin;
    std::ostringstream finname;
-   finname << outFolder_ << "/zPositions.dat";
+   //finname << outFolder_ << "/zPositions.dat";
+   finname << "data/zPositions_v" << versionNumber << ".dat";
    fin.open(finname.str());
    if (!fin.is_open()){
      std::cout << " Cannot open input file " << finname.str() << "! Refilling now..." << std::endl;
@@ -633,7 +657,8 @@ void PositionFit::initialiseClusterHistograms(){
 
  }
 
- void PositionFit::getZpositions(TTree *aSimTree,
+void PositionFit::getZpositions(const unsigned versionNumber,
+				TTree *aSimTree,
 				 const unsigned nEvts){
 
 
@@ -642,7 +667,8 @@ void PositionFit::initialiseClusterHistograms(){
 
    std::ofstream fout;
    std::ostringstream foutname;
-   foutname << outFolder_ << "/zPositions.dat";
+   //foutname << outFolder_ << "/zPositions.dat";
+   foutname << "data/zPositions_v" << versionNumber << ".dat";
    fout.open(foutname.str());
    if (!fout.is_open()){
      std::cout << " Cannot open outfile " << foutname.str() << " for writing ! Exiting..." << std::endl;
@@ -726,7 +752,7 @@ void PositionFit::initialiseClusterHistograms(){
    std::vector<double> truthPosY;
    std::vector<std::vector<double> > Exy;
    std::vector<double> init;
-   init.resize(9,0);
+   init.resize(25,0);
    Exy.resize(nLayers_,init);
    if (saveEtree_){
      outputFile_->cd();
@@ -741,9 +767,9 @@ void PositionFit::initialiseClusterHistograms(){
        label.str("");     
        label << "TruthPosY_" << iL;
        outtree->Branch(label.str().c_str(),&truthPosY[iL]);
-       for (unsigned iy(0);iy<3;++iy){
-	 for (unsigned ix(0);ix<3;++ix){
-	   unsigned idx = 3*iy+ix;
+       for (unsigned iy(0);iy<5;++iy){
+	 for (unsigned ix(0);ix<5;++ix){
+	   unsigned idx = 5*iy+ix;
 	   label.str("");     
 	   label << "E_" << iL << "_" << idx;
 	   outtree->Branch(label.str().c_str(),&Exy[iL][idx]);
@@ -773,21 +799,23 @@ void PositionFit::initialiseClusterHistograms(){
     //////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////
 
-    std::vector<ROOT::Math::XYPoint> truthPos;
-    truthPos.resize(nLayers_,ROOT::Math::XYPoint(0,0));
-    bool found = getTruthPosition(genvec,truthPos,G4TrackID);
+    bool found = setTruthInfo(genvec,G4TrackID);
+
+    //std::vector<ROOT::Math::XYPoint> truthPos;
+    //truthPos.resize(nLayers_,ROOT::Math::XYPoint(0,0));
+    //bool found = getTruthPosition(genvec,truthPos,G4TrackID);
     if (!found) {
       nConvertedPhotons++;
       continue;
     }
-    if (saveEtree_){
+    if (saveEtree_) {
       for (unsigned iL(0);iL<nLayers_;++iL){
-	truthPosX[iL] = truthPos[iL].X();
-	truthPosY[iL] = truthPos[iL].Y();
+	truthPosX[iL] = truthPos(iL).X();
+	truthPosY[iL] = truthPos(iL).Y();
       }
     }
     
-    p_yvsx_truth->Fill(truthPos[10].X(),truthPos[10].Y());
+    p_yvsx_truth->Fill(truthPos(10).X(),truthPos(10).Y());
 
 
     //get position of maximum to start with
@@ -796,169 +824,182 @@ void PositionFit::initialiseClusterHistograms(){
     /*
     double phimax = 0;
     double etamax = 0;
-    ROOT::Math::XYZVector truthPos0(truthPos[0].X(),truthPos[0].Y(),avgZ_[0]);
+    ROOT::Math::XYZVector truthPos0(truthPos(0).X(),truthPos(0).Y(),avgZ_[0]);
     bool oneresult = getGlobalMaximum(ievt,nPuVtx,rechitvec,truthPos0,phimax,etamax);
     if (!oneresult) nMultipleMax++;
     */
-    //from clusters -- using Lindsey's clustering
-    HGCSSClusterVec lClusVec;
-    unsigned nClusters = getClusters(rechitvec,lClusVec);
 
-    p_nClusters->Fill(nClusters);
-
-    if (nClusters == 0) {
-      std::cout << " -- Error, no cluster found !" << std::endl;
-      exit(1);
-      //continue;
-    }
-    else if (debug_) std::cout << " -- Found " << nClusters << " clusters." << std::endl;
-
-    //loop over clusters to find closest to the truth
-    //get eta-phi of the seed ...
-    ROOT::Math::XYZVector truthPos0(truthPos[0].X(),truthPos[0].Y(),avgZ_[0]);
-    double etatruth = truthPos0.eta();
-    double phitruth = truthPos0.phi();
-    double dRmin = 10;
-    unsigned clusIdx = 0;
-    for (unsigned iClus(0); iClus<nClusters;++iClus){
-      const HGCSSCluster & lCluster = lClusVec[iClus];
-      double leta = lCluster.eta();
-      double lphi = lCluster.phi();
-      p_clusnHits_all->Fill(lCluster.nRecHits());
-      if (lCluster.energy()>0) p_seedEoverE_all->Fill(lCluster.getSeedE()/lCluster.energy());
-      p_clusLayer_all->Fill(lCluster.layer());
-      p_clusWidth_all->Fill(lCluster.width());
-      p_etavsphi->Fill(lphi,leta,lCluster.energy());
-      double deta = leta-etatruth;
-      double dphi = DeltaPhi(lphi,phitruth);
-      double dR = sqrt(pow(deta,2)+pow(dphi,2));
-      if (dR<dRmin){
-	dRmin = dR;
-	clusIdx = iClus;
-      }
-      double detas = leta-lCluster.getSeedEta();
-      double dphis = DeltaPhi(lphi,lCluster.getSeedPhi());
-      p_seeddeta_all->Fill(detas);
-      p_seeddphi_all->Fill(dphis);
-      if (debug_) {
-	std::cout << " Cluster " << iClus << ":" ;
-	lCluster.Print(std::cout);
-      }
-    }
-
-    const HGCSSCluster & lCluster = lClusVec[clusIdx];
-    double phimax = lCluster.phi();//getSeedPhi();
-    double etamax = lCluster.eta();//getSeedEta();
+    if (!getInitialPosition(ievt,nPuVtx,rechitvec,nTooFar,Exy)) continue;
     
-    if (debug_){
-      std::cout << " -- evt " << ievt << " found cluster mindR= " << dRmin;
-      lCluster.Print(std::cout);
-      std::cout << " Truth pos eta-phi = " << truthPos0.eta() << " " << truthPos0.phi() << std::endl;
-    }
-    
-    p_mindRtruth->Fill(dRmin);
-
-    if (dRmin > 0.1) {
-      nTooFar++;
-      continue;
-    }
-
-    //fill selected cluster histos
-    p_clusnHits_sel->Fill(lCluster.nRecHits());
-    if (lCluster.energy()>0) p_seedEoverE_sel->Fill(lCluster.getSeedE()/lCluster.energy());
-    p_clusLayer_sel->Fill(lCluster.layer());
-    p_clusWidth_sel->Fill(lCluster.width());
-    double detas = lCluster.eta()-lCluster.getSeedEta();
-    double dphis = DeltaPhi(lCluster.phi(),lCluster.getSeedPhi());
-    p_seeddeta_sel->Fill(detas);
-    p_seeddphi_sel->Fill(dphis);
-    p_etavsphi_max->Fill(phimax,etamax);
-
-    std::vector<double> xmax;
-    xmax.resize(nLayers_,0);
-    std::vector<double> ymax;
-    ymax.resize(nLayers_,0);
-    getMaximumCellFromGeom(phimax,etamax,xmax,ymax);
-    //getMaximumCell(rechitvec,phimax,etamax,xmax,ymax);
-    p_yvsx_max->Fill(xmax[10],ymax[10]);
-
-    //get PU contrib from elsewhere in the event
-    //loop over phi with same etamax
-    //take average per layer: not all 9 cells of 3*3 area have hits...
-    std::vector<double> puE;
-    puE.resize(nLayers_,0);
-    if (nPuVtx>0){
-      unsigned nRandomCones = 50;
-      double phistep = TMath::Pi()/nRandomCones;
-      if (debug_) std::cout << "--- etamax = " << etamax << " phimax=" << phimax << " phistep = " << phistep << std::endl;
-      for (unsigned ipm(0);ipm<nRandomCones;++ipm){
-	std::vector<double> xmaxrc;
-	xmaxrc.resize(nLayers_,0);
-	std::vector<double> ymaxrc;
-	ymaxrc.resize(nLayers_,0);
-	double phirc = phimax-TMath::Pi();
-	if (phirc < -1.*TMath::Pi()) phirc+=2.*TMath::Pi();
-	if (phirc > TMath::Pi()) phirc-=2.*TMath::Pi();
-	if (ipm%2==0) phirc += ipm/2*phistep+phistep/2.;
-	else  phirc = phirc - ipm/2*phistep-phistep/2.;
-	if (phirc < -1.*TMath::Pi()) phirc+=2.*TMath::Pi();
-	if (phirc > TMath::Pi()) phirc-=2.*TMath::Pi();
-	//take from geom to not be biased by hit having PU, because
-	//not from geom means find cell with a hit closest to maxpos...
-	getMaximumCellFromGeom(phirc,etamax,xmaxrc,ymaxrc);
-	if (debug_>1) std::cout << "rc #" << ipm << " phirc=" << phirc << " xmax[10]=" << xmaxrc[10] << " ymax[10]=" << ymaxrc[10] << " r=" << sqrt(pow(xmaxrc[10],2)+pow(ymaxrc[10],2)) << std::endl;
-	getPuContribution(rechitvec,xmaxrc,ymaxrc,puE);
-      }
-      
-      //normalise to one cell: must count cells with 0 hit !
-      //use cell size at etamax...
-      for (unsigned iL(0);iL<nLayers_;++iL){//loop on layers
-	if (debug_) std::cout << "layer " << iL ;
-	unsigned nCells = nRandomCones*pow(nSR_*geomConv_.cellSize()/geomConv_.cellSize(iL,etamax),2);
-	puE[iL] = puE[iL]/nCells;
-	if (debug_) std::cout << " Epu=" << puE[iL] << std::endl;	
-      }
-
-    }//if PU
-
-
-    std::vector<ROOT::Math::XYPoint> recoPos;
-    std::vector<double> recoE;
-    recoPos.resize(nLayers_,ROOT::Math::XYPoint(0,0));
-    recoE.resize(nLayers_,0);
-    std::vector<unsigned> nHits;
-    nHits.resize(nLayers_,0);
-
-    //get energy-weighted position and energy around maximum
-    getEnergyWeightedPosition(rechitvec,nPuVtx,xmax,ymax,recoPos,recoE,nHits,puE,Exy);
     if (saveEtree_) outtree->Fill();
-
-    std::ofstream fout;
-    std::ostringstream foutname;
-    foutname << outFolder_ << "/initialPos_evt" << ievt << ".dat";
-    fout.open(foutname.str());
-    if (!fout.is_open()){
-      std::cout << " Cannot open outfile " << foutname.str() << " for writing ! Exiting..." << std::endl;
-      exit(1);
-    }
-
-    if (debug_) std::cout << " Summary of reco and truth positions:" << std::endl;
-    for (unsigned iL(0);iL<nLayers_;++iL){//loop on layers
-      if (debug_) std::cout << iL << " nHits=" << nHits[iL] << " Max=(" << xmax[iL] << "," << ymax[iL] << ")\t Reco=(" << recoPos[iL].X() << "," << recoPos[iL].Y() << ")\t Truth=(" << truthPos[iL].X() << "," << truthPos[iL].Y() << ")" << std::endl;
-      fout << iL << " " << recoPos[iL].X() << " " << recoPos[iL].Y() << " " << truthPos[iL].X() << " " << truthPos[iL].Y() ;
-      if (!doMatrix_) fout << " " << recoE[iL];
-      fout << std::endl;
-    }
-
-    fout.close();
-
-    if (doMatrix_) fillErrorMatrix(recoPos,truthPos,nHits);
 
     //firstEvent = false;
   }//loop on entries
 
   std::cout << " -- Number of converted photons: " << nConvertedPhotons << std::endl;
   std::cout << " -- Number of events with closest cluster away from truth within dR " << maxdR_ << " : " << nTooFar << std::endl;
+  
+ }
+
+bool PositionFit::getInitialPosition(const unsigned ievt,
+				     const unsigned nPuVtx, 
+				     std::vector<HGCSSRecoHit> *rechitvec,
+				     unsigned & nTooFar,
+				     std::vector<std::vector<double> > & Exy){
+  
+  //from clusters -- using Lindsey's clustering
+  HGCSSClusterVec lClusVec;
+  unsigned nClusters = getClusters(rechitvec,lClusVec);
+  
+  p_nClusters->Fill(nClusters);
+  
+  if (nClusters == 0) {
+    std::cout << " -- Error, no cluster found !" << std::endl;
+    exit(1);
+    //continue;
+  }
+  else if (debug_) std::cout << " -- Found " << nClusters << " clusters." << std::endl;
+  
+  //loop over clusters to find closest to the truth
+  //get eta-phi of the seed ...
+  double etatruth = truthDir_.eta();
+  double phitruth = truthDir_.phi();
+  double dRmin = 10;
+  unsigned clusIdx = 0;
+  for (unsigned iClus(0); iClus<nClusters;++iClus){
+    const HGCSSCluster & lCluster = lClusVec[iClus];
+    double leta = lCluster.eta();
+    double lphi = lCluster.phi();
+    p_clusnHits_all->Fill(lCluster.nRecHits());
+    if (lCluster.energy()>0) p_seedEoverE_all->Fill(lCluster.getSeedE()/lCluster.energy());
+    p_clusLayer_all->Fill(lCluster.layer());
+    p_clusWidth_all->Fill(lCluster.width());
+    p_etavsphi->Fill(lphi,leta,lCluster.energy());
+    double deta = leta-etatruth;
+    double dphi = DeltaPhi(lphi,phitruth);
+    double dR = sqrt(pow(deta,2)+pow(dphi,2));
+    if (dR<dRmin){
+      dRmin = dR;
+      clusIdx = iClus;
+    }
+    double detas = leta-lCluster.getSeedEta();
+    double dphis = DeltaPhi(lphi,lCluster.getSeedPhi());
+    p_seeddeta_all->Fill(detas);
+    p_seeddphi_all->Fill(dphis);
+    if (debug_) {
+      std::cout << " Cluster " << iClus << ":" ;
+      lCluster.Print(std::cout);
+    }
+  }
+  
+  const HGCSSCluster & lCluster = lClusVec[clusIdx];
+  double phimax = lCluster.phi();//getSeedPhi();
+  double etamax = lCluster.eta();//getSeedEta();
+  
+  if (debug_){
+    std::cout << " -- evt " << ievt << " found cluster mindR= " << dRmin;
+    lCluster.Print(std::cout);
+    std::cout << " Truth pos eta-phi = " << etatruth << " " << phitruth << std::endl;
+  }
+  
+  p_mindRtruth->Fill(dRmin);
+  
+  if (dRmin > 0.1) {
+    nTooFar++;
+    return false;
+  }
+  
+  //fill selected cluster histos
+  p_clusnHits_sel->Fill(lCluster.nRecHits());
+  if (lCluster.energy()>0) p_seedEoverE_sel->Fill(lCluster.getSeedE()/lCluster.energy());
+  p_clusLayer_sel->Fill(lCluster.layer());
+  p_clusWidth_sel->Fill(lCluster.width());
+  double detas = lCluster.eta()-lCluster.getSeedEta();
+  double dphis = DeltaPhi(lCluster.phi(),lCluster.getSeedPhi());
+  p_seeddeta_sel->Fill(detas);
+  p_seeddphi_sel->Fill(dphis);
+  p_etavsphi_max->Fill(phimax,etamax);
+  
+  std::vector<double> xmax;
+  xmax.resize(nLayers_,0);
+  std::vector<double> ymax;
+  ymax.resize(nLayers_,0);
+  //getMaximumCellFromGeom(phimax,etamax,xmax,ymax);
+  getMaximumCell(rechitvec,phimax,etamax,xmax,ymax);
+  p_yvsx_max->Fill(xmax[10],ymax[10]);
+  
+  //get PU contrib from elsewhere in the event
+  //loop over phi with same etamax
+  //take average per layer: not all 9 cells of 3*3 area have hits...
+  std::vector<double> puE;
+  puE.resize(nLayers_,0);
+  if (nPuVtx>0){
+    unsigned nRandomCones = 50;
+    double phistep = TMath::Pi()/nRandomCones;
+    if (debug_) std::cout << "--- etamax = " << etamax << " phimax=" << phimax << " phistep = " << phistep << std::endl;
+    for (unsigned ipm(0);ipm<nRandomCones;++ipm){
+      std::vector<double> xmaxrc;
+      xmaxrc.resize(nLayers_,0);
+      std::vector<double> ymaxrc;
+      ymaxrc.resize(nLayers_,0);
+      double phirc = phimax-TMath::Pi();
+      if (phirc < -1.*TMath::Pi()) phirc+=2.*TMath::Pi();
+      if (phirc > TMath::Pi()) phirc-=2.*TMath::Pi();
+      if (ipm%2==0) phirc += ipm/2*phistep+phistep/2.;
+      else  phirc = phirc - ipm/2*phistep-phistep/2.;
+      if (phirc < -1.*TMath::Pi()) phirc+=2.*TMath::Pi();
+      if (phirc > TMath::Pi()) phirc-=2.*TMath::Pi();
+      //take from geom to not be biased by hit having PU, because
+      //not from geom means find cell with a hit closest to maxpos...
+      getMaximumCellFromGeom(phirc,etamax,xmaxrc,ymaxrc);
+      if (debug_>1) std::cout << "rc #" << ipm << " phirc=" << phirc << " xmax[10]=" << xmaxrc[10] << " ymax[10]=" << ymaxrc[10] << " r=" << sqrt(pow(xmaxrc[10],2)+pow(ymaxrc[10],2)) << std::endl;
+      getPuContribution(rechitvec,xmaxrc,ymaxrc,puE);
+    }
+    
+    //normalise to one cell: must count cells with 0 hit !
+    //use cell size at etamax...
+    for (unsigned iL(0);iL<nLayers_;++iL){//loop on layers
+      if (debug_) std::cout << "layer " << iL ;
+      unsigned nCells = nRandomCones*pow(nSR_*geomConv_.cellSize()/geomConv_.cellSize(iL,etamax),2);
+      puE[iL] = puE[iL]/nCells;
+      if (debug_) std::cout << " Epu=" << puE[iL] << std::endl;	
+    }
+    
+  }//if PU
+  
+  
+  std::vector<ROOT::Math::XYPoint> recoPos;
+  std::vector<double> recoE;
+  recoPos.resize(nLayers_,ROOT::Math::XYPoint(0,0));
+  recoE.resize(nLayers_,0);
+  std::vector<unsigned> nHits;
+  nHits.resize(nLayers_,0);
+  
+  //get energy-weighted position and energy around maximum
+  getEnergyWeightedPosition(rechitvec,nPuVtx,xmax,ymax,recoPos,recoE,nHits,puE,Exy);
+  
+  std::ofstream fout;
+  std::ostringstream foutname;
+  foutname << outFolder_ << "/initialPos_evt" << ievt << ".dat";
+  fout.open(foutname.str());
+  if (!fout.is_open()){
+    std::cout << " Cannot open outfile " << foutname.str() << " for writing ! Exiting..." << std::endl;
+    exit(1);
+  }
+  
+  if (debug_) std::cout << " Summary of reco and truth positions:" << std::endl;
+  for (unsigned iL(0);iL<nLayers_;++iL){//loop on layers
+    if (debug_) std::cout << iL << " nHits=" << nHits[iL] << " Max=(" << xmax[iL] << "," << ymax[iL] << ")\t Reco=(" << recoPos[iL].X() << "," << recoPos[iL].Y() << ")\t Truth=(" << truthPos(iL).X() << "," << truthPos(iL).Y() << ")" << std::endl;
+    fout << iL << " " << recoPos[iL].X() << " " << recoPos[iL].Y() << " " << truthPos(iL).X() << " " << truthPos(iL).Y() ;
+    if (!doMatrix_) fout << " " << recoE[iL];
+    fout << std::endl;
+  }
+
+  fout.close();
+
+  if (doMatrix_) fillErrorMatrix(recoPos,nHits);
+
+  return true;
 
 }
 
@@ -981,9 +1022,18 @@ void PositionFit::getMaximumCellFromGeom(const double & phimax,const double & et
 
 void PositionFit::getMaximumCell(std::vector<HGCSSRecoHit> *rechitvec,const double & phimax,const double & etamax,std::vector<double> & xmax,std::vector<double> & ymax){
   
-  std::vector<double> dRmin;
-  dRmin.resize(nLayers_,10);
-  
+  //std::vector<double> dRmin;
+  //dRmin.resize(nLayers_,10);
+  std::vector<double> xmaxgeom;
+  xmaxgeom.resize(nLayers_,0);
+  std::vector<double> ymaxgeom;
+  ymaxgeom.resize(nLayers_,0);
+  getMaximumCellFromGeom(phimax,etamax,xmaxgeom,ymaxgeom);
+
+  //choose cell with maximum energy from 3*3 array around geom pos of max.
+  std::vector<double> Emax;
+  Emax.resize(nLayers_,0);
+
   for (unsigned iH(0); iH<(*rechitvec).size(); ++iH){//loop on rechits
     const HGCSSRecoHit & lHit = (*rechitvec)[iH];
     
@@ -996,33 +1046,41 @@ void PositionFit::getMaximumCell(std::vector<HGCSSRecoHit> *rechitvec,const doub
     if (fixForPuMixBug_) posx-=1.25;
     double posy = lHit.get_y();
     if (fixForPuMixBug_) posy-=1.25;
-    double posz = avgZ_[layer];//lHit.get_z();
+    //double posz = avgZ_[layer];//lHit.get_z();
     if (debug_>1) {
       std::cout << " --  RecoHit " << iH << "/" << (*rechitvec).size() << " --" << std::endl
 		<< " --  position x,y " << posx << "," << posy << std::endl;
       lHit.Print(std::cout);
     }
-
-
-    ROOT::Math::XYZVector pos(posx,posy,posz);
-    double deta = fabs(pos.eta()-etamax);
-    double dphi = DeltaPhi(pos.phi(),phimax);
-    
-    double dR = sqrt(pow(deta,2)+pow(dphi,2));
-    if (dR<dRmin[layer]) {
-      dRmin[layer] = dR;
-      xmax[layer] = posx;
-      ymax[layer] = posy;
-    }
-    
     double energy = lHit.energy();
+
+    if (fabs(posx-xmaxgeom[layer]) <= 15 && 
+	fabs(posy-ymaxgeom[layer]) <= 15){
+
+      if (energy>Emax[layer]){
+	Emax[layer] = energy;
+	xmax[layer] = posx;
+	ymax[layer] = posy;
+      }
+    }
+      //ROOT::Math::XYZVector pos(posx,posy,posz);
+      //double deta = fabs(pos.eta()-etamax);
+      //double dphi = DeltaPhi(pos.phi(),phimax);
+    
+      //double dR = sqrt(pow(deta,2)+pow(dphi,2));
+      //if (dR<dRmin[layer]) {
+      //dRmin[layer] = dR;
+      //xmax[layer] = posx;
+      //ymax[layer] = posy;
+      //}
+    
     p_recoxy[layer]->Fill(posx,posy,energy);
     
   }//loop on rechits
     
-  for (unsigned iL(0);iL<nLayers_;++iL){//loop on layers
-    p_dRmin[iL]->Fill(dRmin[iL]);
-  }
+  //for (unsigned iL(0);iL<nLayers_;++iL){//loop on layers
+  //p_dRmin[iL]->Fill(dRmin[iL]);
+  //}
 }
 
 void PositionFit::getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec,
@@ -1039,6 +1097,7 @@ void PositionFit::getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec
   double eSum_puMean = 0;
   double eSum_puEvt = 0;
 
+  double steplarge = geomConv_.cellSize()*20/2.+0.1;//+0.1 to accomodate double precision
   double step = geomConv_.cellSize()*nSR_/2.+0.1;//+0.1 to accomodate double precision
   if (debug_) std::cout << "step = " << step << std::endl;
 
@@ -1052,8 +1111,8 @@ void PositionFit::getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec
     if (fixForPuMixBug_) posy-=1.25;
 
 
-    if (fabs(posx-xmax[layer]) < step && 
-	fabs(posy-ymax[layer]) < step){
+    if (fabs(posx-xmax[layer]) < steplarge && 
+	fabs(posy-ymax[layer]) < steplarge){
       if (puSubtracted) {
 	double leta = lHit.eta();
 	if (debug_>1) std::cout << " -- Hit " << iH << ", eta=" << leta << ", energy before PU subtraction: " << energy << " after: " ;
@@ -1069,23 +1128,27 @@ void PositionFit::getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec
 	energy = std::max(0.,energy - lCor);
 	if (debug_>1) std::cout << energy << std::endl;
       }
+      //fill anyway linear weight, decide in next loop which to use
+      if (fabs(posx-xmax[layer]) < step && 
+	  fabs(posy-ymax[layer]) < step){
+	recoPos[layer].SetX(recoPos[layer].X() + posx*energy);
+	recoPos[layer].SetY(recoPos[layer].Y() + posy*energy);
+	recoE[layer] += energy;
+	if (energy>0) nHits[layer]++;
+      }
+      
       if (doLogWeight_){
 	int ix = (posx-xmax[layer])/10.;
 	int iy = (posy-ymax[layer])/10.;
 	unsigned idx = 0;
-	if ((ix > 1 || ix < -1) || (iy>1 || iy<-1)) {
+	if ((ix > 2 || ix < -2) || (iy>2 || iy<-2)) {
 	  std::cout << " error, check ix=" << ix << " iy=" << iy << " posx,y-max=" << posx-xmax[layer] << " " << posy-ymax[layer] << " step " << step << std::endl;
 	  continue;
 	}
 	else 
-	  idx = 3*(iy+1)+(ix+1);
+	  idx = 5*(iy+2)+(ix+2);
 	Exy[layer][idx] = energy;
       }
-      //fill anyway linear weight, decide in next loop which to use
-      recoPos[layer].SetX(recoPos[layer].X() + posx*energy);
-      recoPos[layer].SetY(recoPos[layer].Y() + posy*energy);
-      recoE[layer] += energy;
-      if (energy>0) nHits[layer]++;
     }
     
   }//loop on rechits
@@ -1097,37 +1160,60 @@ void PositionFit::getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec
 
     if (doLogWeight_){
       double Etot = 0;
-      double Ex[3] = {0,0,0};
-      double Ey[3] = {0,0,0};
-      for (unsigned idx(0);idx<9;++idx){
-	Etot += Exy[iL][idx];
+      double Ex[5] = {0,0,0,0,0};
+      double Ey[5] = {0,0,0,0,0};
+      for (unsigned idx(0);idx<25;++idx){
+	if (iL>22) Etot += Exy[iL][idx];
+	else if ((idx>5 && idx<9)||
+		 (idx>10 && idx<14)||
+		 (idx>15 && idx<19)) Etot += Exy[iL][idx];
       }
-      
-      Ex[0] = Exy[iL][0]+Exy[iL][3]+Exy[iL][6];
-      Ex[1] = Exy[iL][1]+Exy[iL][4]+Exy[iL][7];
-      Ex[2] = Exy[iL][2]+Exy[iL][5]+Exy[iL][8];
-      Ey[0] = Exy[iL][0]+Exy[iL][1]+Exy[iL][2];
-      Ey[1] = Exy[iL][3]+Exy[iL][4]+Exy[iL][5];
-      Ey[2] = Exy[iL][6]+Exy[iL][7]+Exy[iL][8];
-      double wx[4];
-      double wy[4];
-      for (unsigned i(0);i<4;++i){
+      if (iL>22){
+	Ex[0] = Exy[iL][0]+Exy[iL][5]+Exy[iL][10]+Exy[iL][15]+Exy[iL][20];
+	Ex[1] = Exy[iL][1]+Exy[iL][6]+Exy[iL][11]+Exy[iL][16]+Exy[iL][21];
+	Ex[2] = Exy[iL][2]+Exy[iL][7]+Exy[iL][12]+Exy[iL][17]+Exy[iL][22];
+	Ex[3] = Exy[iL][3]+Exy[iL][8]+Exy[iL][13]+Exy[iL][18]+Exy[iL][23];
+	Ex[4] = Exy[iL][4]+Exy[iL][9]+Exy[iL][14]+Exy[iL][19]+Exy[iL][24];
+	Ey[0] = Exy[iL][0]+Exy[iL][1]+Exy[iL][2]+Exy[iL][3]+Exy[iL][4];
+	Ey[1] = Exy[iL][5]+Exy[iL][6]+Exy[iL][7]+Exy[iL][8]+Exy[iL][9];
+	Ey[2] = Exy[iL][10]+Exy[iL][11]+Exy[iL][12]+Exy[iL][13]+Exy[iL][14];
+	Ey[3] = Exy[iL][15]+Exy[iL][16]+Exy[iL][17]+Exy[iL][18]+Exy[iL][19];
+	Ey[4] = Exy[iL][20]+Exy[iL][21]+Exy[iL][22]+Exy[iL][23]+Exy[iL][24];
+      }
+      else {
+	Ex[0] = Exy[iL][6]+Exy[iL][11]+Exy[iL][16];
+	Ex[1] = Exy[iL][7]+Exy[iL][12]+Exy[iL][17];
+	Ex[2] = Exy[iL][8]+Exy[iL][13]+Exy[iL][18];
+	Ey[0] = Exy[iL][6]+Exy[iL][7]+Exy[iL][8];
+	Ey[1] = Exy[iL][11]+Exy[iL][12]+Exy[iL][13];
+	Ey[2] = Exy[iL][16]+Exy[iL][17]+Exy[iL][18];
+      }
+      double wx[6];
+      double wy[6];
+      for (unsigned i(0);i<6;++i){
 	wx[i] = 0;
 	wy[i] = 0;
       }
       double w0 = getW0(iL);
-      for (unsigned i(0);i<3;++i){
+      //std::cout << iL << "&" << w0 << "\\\\ \n";
+      for (unsigned i(0);i<5;++i){
 	wx[i] = std::max(0.,log(Ex[i]/Etot)+w0);
 	wy[i] = std::max(0.,log(Ey[i]/Etot)+w0);
-	wx[3] += wx[i];
-	wy[3] += wy[i];
+	wx[5] += wx[i];
+	wy[5] += wy[i];
       }
       double x = xmax[iL];
       //if none pass, discard layer
-      if (wx[3]!=0) x += 10*(wx[2]-wx[0])/wx[3];
+      if (wx[5]!=0) {
+	if (iL>22) x += 10*(2*wx[4]+wx[3]-wx[1]-2*wx[0])/wx[5];
+	else x += 10*(wx[2]-wx[0])/wx[5];
+      }
       else nHits[iL]=0;
       double y = ymax[iL];
-      if (wy[3]!=0) y += 10*(wy[2]-wy[0])/wy[3];
+      if (wy[5]!=0) {
+	if (iL>22) y += 10*(wy[4]+wy[3]-wy[1]-2*wy[0])/wy[5];
+	else y += 10*(wy[2]-wy[0])/wy[5];
+      }
       else nHits[iL]=0;
       
       if (nHits[iL]!=0){
@@ -1174,16 +1260,16 @@ void PositionFit::getPuContribution(std::vector<HGCSSRecoHit> *rechitvec, const 
   //exit(1);
 }
 
-void PositionFit::fillErrorMatrix(const std::vector<ROOT::Math::XYPoint> & recoPos,const std::vector<ROOT::Math::XYPoint> & truthPos,const std::vector<unsigned> & nHits){
+void PositionFit::fillErrorMatrix(const std::vector<ROOT::Math::XYPoint> & recoPos,const std::vector<unsigned> & nHits){
 
   for (unsigned iL(0);iL<nLayers_;++iL){//loop on layers
     if (nHits[iL]==0) continue;
-    double residual_xi = recoPos[iL].X()-truthPos[iL].X();
-    double residual_yi = recoPos[iL].Y()-truthPos[iL].Y();
+    double residual_xi = recoPos[iL].X()-truthPos(iL).X();
+    double residual_yi = recoPos[iL].Y()-truthPos(iL).Y();
     p_residuals_x->Fill(residual_xi);
     p_residuals_y->Fill(residual_yi);
     if (fabs(residual_xi)>residualMax_ || fabs(residual_yi)>residualMax_) continue;
-    //unsigned posmm = static_cast<unsigned>(fabs(truthPos[iL].Y())+5);
+    //unsigned posmm = static_cast<unsigned>(fabs(truthPos(iL).Y())+5);
     //bool isEdge = posmm%10 <= 2 || posmm%10 >= 8;
     //if (!isEdge) continue;
     mean_[0][iL] += residual_xi;
@@ -1191,10 +1277,10 @@ void PositionFit::fillErrorMatrix(const std::vector<ROOT::Math::XYPoint> & recoP
     ++nL_mean_[iL];
     for (unsigned jL(0);jL<nLayers_;++jL){//loop on layers
       if (nHits[jL]==0) continue;
-      double residual_xj = recoPos[jL].X()-truthPos[jL].X();
-      double residual_yj = recoPos[jL].Y()-truthPos[jL].Y();
+      double residual_xj = recoPos[jL].X()-truthPos(jL).X();
+      double residual_yj = recoPos[jL].Y()-truthPos(jL).Y();
       if (fabs(residual_xj)>residualMax_ || fabs(residual_yj)>residualMax_) continue;
-      //posmm = static_cast<unsigned>(fabs(truthPos[jL].Y())+5);
+      //posmm = static_cast<unsigned>(fabs(truthPos(jL).Y())+5);
       //isEdge = posmm%10 <= 2 || posmm%10 >= 8;
       //if (!isEdge) continue;
       double sigma_x = residual_xi*residual_xj;
@@ -1302,17 +1388,19 @@ void PositionFit::fillCorrelationMatrix(){
 }
 
 
-bool PositionFit::fillMatrixFromFile(){
-  return (fillMatrixFromFile(true) && fillMatrixFromFile(false));
+bool PositionFit::fillMatrixFromFile(const bool old){
+  return (fillMatrixFromFile(true,old) && fillMatrixFromFile(false,old));
 }
 
-bool PositionFit::fillMatrixFromFile(const bool doX){
+bool PositionFit::fillMatrixFromFile(const bool doX, const bool old){
 
   std::ifstream fmatrix;
   std::ostringstream fmatrixname;
   fmatrixname << matrixFolder_ << "/errorMatrix";
-  if (doX) fmatrixname << "_x";
-  else fmatrixname << "_y";
+  if (!old){
+    if (doX) fmatrixname << "_x";
+    else fmatrixname << "_y";
+  }
   fmatrixname << ".dat";
   fmatrix.open(fmatrixname.str());
   if (!fmatrix.is_open()){
@@ -1333,10 +1421,10 @@ bool PositionFit::fillMatrixFromFile(const bool doX){
       if (debug_) std::cout << std::setprecision(15) << iL << " " << jL << " " << m << std::endl;
       matrix_[index][iL][jL] = m;
     }
-    else std::cout << "!! out of bounds!" << iL << " " << jL << " " << m << std::endl;
+    else if (debug_) std::cout << "!! out of bounds!" << iL << " " << jL << " " << m << std::endl;
   }
   
-  std::cout << " -- Matrix read from file successfully." << std::endl;
+  if (debug_) std::cout << " -- Matrix read from file successfully." << std::endl;
   fmatrix.close();
 
   return true;
@@ -1474,15 +1562,17 @@ unsigned PositionFit::fitEvent(const unsigned ievt,
       ex(j,i)=matrix_[0](layerId[j],layerId[i]);
       ey(i,j)=matrix_[1](layerId[i],layerId[j]);
       ey(j,i)=matrix_[1](layerId[j],layerId[i]);
-      //exy(i,j)=0.5*(matrix_[0](layerId[i],layerId[j])+matrix_[1](layerId[i],layerId[j]));
-      //exy(j,i)=0.5*(matrix_[0](layerId[j],layerId[i])+matrix_[1](layerId[j],layerId[i]));
+      //exy(i,j)=0.5*matrix_[0](layerId[i],layerId[j])+0.5*matrix_[1](layerId[i],layerId[j]);
+      //exy(j,i)=0.5*matrix_[0](layerId[j],layerId[i])+0.5*matrix_[1](layerId[j],layerId[i]);
 
      }
   }
   
+  //if (doMatrix_) {
   ex.Invert();
   ey.Invert();
-  //exy.Invert();
+    //}
+    //else ey.Invert();
 
   //do fit for reco and truth
   double positionFF[2][2];
@@ -1519,6 +1609,7 @@ unsigned PositionFit::fitEvent(const unsigned ievt,
 	//std::cout << "fit() x(" << i << ") = " << x(i) << std::endl;
       }
       
+      //TMatrixDSym e = doMatrix_? ((xy==0) ? ex : ey) : ey;
       TMatrixDSym e = (xy==0) ? ex : ey;
 
       TMatrixD w(2,2);
@@ -1550,10 +1641,10 @@ unsigned PositionFit::fitEvent(const unsigned ievt,
       TanAngle[rt][xy] = p(1);
 
       //sanity check for nan values
-      if (w(0,0)==w(0,0)) fitMatrix[2*xy][2*xy]=w(0,0);
+      if (w(0,0)==w(0,0)) fitMatrix[2*xy][2*xy]=fabs(w(0,0));
       if (w(0,1)==w(0,1)) fitMatrix[2*xy][2*xy+1]=w(0,1);
       if (w(1,0)==w(1,0)) fitMatrix[2*xy+1][2*xy]=w(1,0);
-      if (w(1,1)==w(1,1)) fitMatrix[2*xy+1][2*xy+1]=w(1,1);
+      if (w(1,1)==w(1,1)) fitMatrix[2*xy+1][2*xy+1]=fabs(w(1,1));
       
       
       TVectorD dp(nL);
@@ -1598,9 +1689,8 @@ unsigned PositionFit::fitEvent(const unsigned ievt,
 	   << position[1] << " " 
 	   << sqrt(fitMatrix[2][2]) << " "
 	   << TanAngle[0][1] << " "
-	   << sqrt(fitMatrix[3][3])
-	   << std::endl;
-    
+	    << sqrt(fitMatrix[3][3]);
+      //<< std::endl;
 
       for (unsigned iL(0); iL<nL;++iL){
 	double x = position[0]+TanAngle[0][0]*posz[iL];
@@ -1614,7 +1704,14 @@ unsigned PositionFit::fitEvent(const unsigned ievt,
       fit.tanangle_x = TanAngle[0][0];
       fit.pos_y = position[1];
       fit.tanangle_y = TanAngle[0][1];
-    }
+    }//reco
+    else {
+      fout_ << " " << position[0]
+	    << " " << TanAngle[1][0]
+	    << " " << position[1]
+	    << " " << TanAngle[1][1]
+	    << std::endl;
+    }//truth
 
   }//reco or truth
 
@@ -1623,9 +1720,11 @@ unsigned PositionFit::fitEvent(const unsigned ievt,
   p_impactXFF_residual->Fill(positionFF[0][0]-positionFF[1][0]);
   p_impactX14_residual->Fill(position14[0][0]-position14[1][0]);
   p_tanAngleX_residual->Fill(TanAngle[0][0]-TanAngle[1][0]);
+  p_angleX_residual->Fill(atan(TanAngle[0][0])-atan(TanAngle[1][0]));
   p_impactYFF_residual->Fill(positionFF[0][1]-positionFF[1][1]);
   p_impactY14_residual->Fill(position14[0][1]-position14[1][1]);
   p_tanAngleY_residual->Fill(TanAngle[0][1]-TanAngle[1][1]);
+  p_angleY_residual->Fill(atan(TanAngle[0][1])-atan(TanAngle[1][1]));
       
   Direction truthDir = Direction(TanAngle[1][0],TanAngle[1][1]);
 

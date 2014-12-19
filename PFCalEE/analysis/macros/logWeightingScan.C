@@ -116,13 +116,13 @@ int logWeightingScan(){//main
   const double wStart = 1.;
   const double wStep = (6.-wStart)/nScans;
 
-  const unsigned neta = 2;//7;
-  const unsigned npt = 17;
+  const unsigned neta = 7;
+  const unsigned npt = 13;
 
   const unsigned nLayers = 30;
 
-  unsigned eta[neta] = {17,25};//,19,21,23,25,27,29};
-  unsigned pt[npt] = {3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200};
+  unsigned eta[neta] = {17,19,21,23,25,27,29};
+  unsigned pt[npt] = {20,30,40,50,60,70,80,90,100,125,150,175,200};
 
   double wxminall[nPu][nLayers][neta];
   double wyminall[nPu][nLayers][neta];
@@ -682,7 +682,7 @@ int logWeightingScan(){//main
       grW[2*ipu] = new TGraph(neta,etaval,wxminall[ipu][iL]);
       grW[2*ipu+1] = new TGraph(neta,etaval,wyminall[ipu][iL]);
       mycW->cd();//ieta+1);
-      grW[2*ipu]->SetTitle(";layer;W0");
+      grW[2*ipu]->SetTitle(";#eta;W0");
       grW[2*ipu]->SetMaximum(6);
       grW[2*ipu]->SetMinimum(0);
       grW[2*ipu]->SetLineColor(2*ipu+1);

@@ -21,6 +21,8 @@ public:
 
   double MeVToMip(const unsigned layer,
 		  const bool absWeight=false) const;
+  double MeVToMip(const unsigned layer, const double aEta,
+		  const bool absWeight=false) const;
 
 private:
   HGCSSCalibration(){};
