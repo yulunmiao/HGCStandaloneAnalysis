@@ -47,12 +47,14 @@
 #include "HepMCG4AsciiReader.hh"
 #include "HepMCG4PythiaInterface.hh"
 
+#define PI 3.1415926535
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-PrimaryGeneratorAction::PrimaryGeneratorAction(G4int mod)
+PrimaryGeneratorAction::PrimaryGeneratorAction(G4int mod, double eta)
 {
   model_ = mod;
+  eta_ = eta;
   G4int n_particle = 1;
 
   // default generator is particle gun.
@@ -112,12 +114,18 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
   if (model_ == 2) z0 = 0;
   G4double x0 = 0.*cm, y0 = 0.*cm;
   //smear within 1cm...
-  x0 = (G4RandFlat::shoot(0.,10.)-5)*mm;
-  y0 = (G4RandFlat::shoot(0.,10.)-5)*mm;
+  z0 = (G4RandGauss::shoot(0.,5.))*cm;
+  //x0 = (G4RandFlat::shoot(0.,10.)-5)*mm;
+  //y0 = (G4RandFlat::shoot(0.,10.)-5)*mm;
 
 
   particleGun->SetParticlePosition(G4ThreeVector(x0,y0,z0));
   G4cout << " -- Gun position set to: " << x0 << "," << y0 << "," << z0 << G4endl;
+
+  G4double theta0 = 2*atan(exp(-1*eta_));
+  G4double phi0 = (G4RandFlat::shoot(0.,2*PI));
+  particleGun->SetParticleMomentumDirection(G4ThreeVector(cos(phi0)*sin(theta0), sin(phi0)*sin(theta0), cos(theta0)));
+
   if(currentGenerator){
     currentGenerator->GeneratePrimaryVertex(anEvent);
   }
