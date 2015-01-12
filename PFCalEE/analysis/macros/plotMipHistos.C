@@ -106,7 +106,8 @@ int plotMipHistos(){
 
   const unsigned nLayers = 30;
 
-  bool doSignalOnly = true;//false;
+  //bool doSignalOnly = true;
+  bool doSignalOnly = false;
 
   bool oneOnly = true;
   const double Ethresh = 0.9;
@@ -147,6 +148,7 @@ int plotMipHistos(){
 
   SetTdrStyle();
   TCanvas *myc = new TCanvas("myc","myc",2000,1000);
+  TCanvas *mycP = new TCanvas("mycP","mycP",1);
   TCanvas *mycS = new TCanvas("mycS","mycS",2000,1000);
   mycS->Divide(5,2);
   TCanvas *mycM = new TCanvas("mycM","mycM",2000,1000);
@@ -245,12 +247,13 @@ int plotMipHistos(){
     for (unsigned il(0); il<nLayers;++il){
       for (unsigned in(0); in<nNoise;++in){
 	mycL->cd(in+1);
+	if (noise[in]>0.3) hitSpectrum[ie][in][il]->Rebin(2);
 	hitSpectrum[ie][in][il]->Draw();
 	if (hitSpectrum[ie][in][il]->GetEntries()==0) continue;
 	TF1 *fit = 0;
 	double mpc = 0;
 	double minfit = 0.5;
-	double maxfit = 1.7;
+	double maxfit = noise[in]<0.31 ? 1.5 : 2.5;//1.7;
 	if (in==0){
 	  hitSpectrum[ie][in][il]->Fit("landau","R+","same",minfit,maxfit);
 	  fit = (TF1*)hitSpectrum[ie][in][il]->GetFunction("landau");
@@ -267,13 +270,12 @@ int plotMipHistos(){
 	  landaugaus->FixParameter(3,noise[in]);
 	  landaugaus->SetParLimits(0,0.,0.2);
 	  landaugaus->FixParameter(5,0);
-	  if (doSignalOnly) landaugaus->FixParameter(6,0);
+	  if (doSignalOnly) landaugaus->FixParameter(6,0.);
 	  else {
 	    landaugaus->FixParameter(6,noise[in]);
 	    minfit = 0.;
 	  }
-	  if (in>=nNoise-2) hitSpectrum[ie][in][il]->Fit("landaugaus","BR+","same",minfit,maxfit);
-	  else hitSpectrum[ie][in][il]->Fit("landaugaus","BR+","same",minfit,maxfit);
+	  hitSpectrum[ie][in][il]->Fit("landaugaus","BR+","same",minfit,maxfit);
 	  fit = (TF1*)hitSpectrum[ie][in][il]->GetFunction("landaugaus");
 	  if (!fit) continue;
 	  mpc = fit->GetParameter(1);
@@ -311,15 +313,22 @@ int plotMipHistos(){
     for (unsigned in(0); in<nNoise;++in){
       myc->cd(in+1);
       gPad->SetLogy(1);
+      if (noise[in]>0.3) hitSpectrumAll[ie][in]->Rebin(2);
       hitSpectrumAll[ie][in]->Draw();
       double minfit = 0.5;
-      double maxfit = 1.7;
+      double maxfit = noise[in]<0.31 ? 1.5 : 2.5;//1.7;
       if (in==0){
-	hitSpectrumAll[ie][in]->Fit("landau","+","same",minfit,maxfit);
+	minfit = 0.75;
+	maxfit = 1.4;
+	hitSpectrumAll[ie][in]->Fit("landau","R+","same",minfit,maxfit);
 	TF1 *fit = (TF1*)hitSpectrumAll[ie][in]->GetFunction("landau");
 	if (!fit) continue;
 	landaugaus->SetParameters(fit->GetParameter(2),fit->GetParameter(1),fit->GetParameter(0),noise[in],fit->GetParameter(0),0,noise[in]);
-	if (doSignalOnly) landaugaus->SetParameter(6,0);
+	if (doSignalOnly) {
+	  landaugaus->SetParameter(6,0);
+	  landaugaus->SetParameter(4,0);
+	  landaugaus->FixParameter(4,0);
+	}
       }
       else {
 	//landaugaus->SetParameters(0.11,1,200000.,noise[in]);
@@ -334,13 +343,30 @@ int plotMipHistos(){
 	//if (in>=nNoise-2) landaugaus->FixParameter(0,landaugaus->GetParameter(0));
 	//landaugaus->SetLineColor(6);
 	//landaugaus->Draw("same");
-	if (in>=nNoise-2) hitSpectrumAll[ie][in]->Fit("landaugaus","BR+","same",minfit,maxfit);
-	else hitSpectrumAll[ie][in]->Fit("landaugaus","BR+","same",minfit,maxfit);
+	hitSpectrumAll[ie][in]->Fit("landaugaus","BR+","same",minfit,maxfit);
       }
       sprintf(buf,"Noise = %3.2f MIPs",noise[in]);
       lat.DrawLatexNDC(0.2,0.85,buf);
       sprintf(buf,"%3.2f < #eta < %3.2f",eta[ie]-deta,eta[ie]+deta);
       lat.DrawLatexNDC(0.2,0.75,buf);
+
+      if (noise[in] == 0.3){
+	mycP->cd();
+	gStyle->SetOptFit(0);
+	hitSpectrumAll[ie][in]->Draw();
+	sprintf(buf,"Noise = %3.2f MIPs",noise[in]);
+	lat.DrawLatexNDC(0.6,0.85,buf);
+	sprintf(buf,"%3.2f < #eta < %3.2f",eta[ie]-deta,eta[ie]+deta);
+	lat.DrawLatexNDC(0.6,0.75,buf);
+	label.str("");
+	label << "PLOTS/" << suffix.str() << "/MipSpectrum_eta" << eta[ie]*10 << "_noise" << noise[in] ;
+	//label << suffix.str();
+	//label << ".pdf";
+	mycP->Print((label.str()+".pdf").c_str());
+	mycP->Print((label.str()+".C").c_str());
+      }
+      gStyle->SetOptFit(1111);
+
     }
     label.str("");
     label << "PLOTS/" << suffix.str() << "/MipSpectrum_eta" << eta[ie]*10 ;
@@ -410,7 +436,7 @@ int plotMipHistos(){
   mycS->Clear();
   mycM->Clear();
   for (unsigned ie(0);ie<nEta;++ie){
-    for (unsigned in(0); in<nNoise-1;++in){
+    for (unsigned in(0); in<nNoise;++in){
       mycH->cd();
       gPad->SetGridy(1);
       grNhits[ie][in]->SetMarkerStyle(20+in);

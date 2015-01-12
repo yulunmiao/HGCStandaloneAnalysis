@@ -413,8 +413,17 @@ int main(int argc, char** argv){//main
 	    }
 	    else if ((iL>0 && nbour.layer == iL-1) || (iL==0 && nbour.layer == iL+2)) idxBefore.push_back(index);
 	    else if ((iL<nLayers-1 && nbour.layer == iL+1) || (iL==nLayers-1 && nbour.layer == iL-2)) idxAfter.push_back(index);
-	    else if (layerRange==2 && ((iL>1 && nbour.layer == iL-2) || (iL==1 && nbour.layer == iL+3))) idx2Before.push_back(index);
-	    else if (layerRange==2 && ((iL<nLayers-2 && nbour.layer == iL+2) || (iL==nLayers-2 && nbour.layer == iL-3))) idx2After.push_back(index);
+	    else if (layerRange==2 && 
+		     ((iL>1 && iL<nLayers-1 && nbour.layer == iL-2) || 
+		      (iL==nLayers-1 && nbour.layer == iL-3) || 
+		      (iL==1 && nbour.layer == iL+2) || 
+		      (iL==0 && nbour.layer == iL+3))) idx2Before.push_back(index);
+	    else if (layerRange==2 && 
+		     ((iL>1 && iL<nLayers-2 && nbour.layer == iL+2) || 
+		      (iL==0 && nbour.layer == iL+4) || 
+		      (iL==1 && nbour.layer == iL+3) || 
+		      (iL==nLayers-2 && nbour.layer == iL-3) || 
+		      (iL==nLayers-1 && nbour.layer == iL-4))) idx2After.push_back(index);
 	  }
 
 	  const MyHit & ibef = idxBefore.size()>0?lHitVec[ie][in][idxBefore[0]]:current;
