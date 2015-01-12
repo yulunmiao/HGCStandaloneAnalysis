@@ -54,7 +54,7 @@ EXES=$(wildcard $(BASEDIR)/test/*.cpp)
 OBJS=$(subst $(SRCDIR), $(OBJDIR),$(subst cc,$(OBJ_EXT),$(SRCS)))
 #BINS=$(subst $(TESTDIR), $(EXEDIR),$(subst .$(TEST_EXT),,$(EXES)))
 
-BINS=$(EXEDIR)/MixPUSignal $(EXEDIR)/egammaResolution $(EXEDIR)/higgsResolution $(EXEDIR)/mipStudy $(EXEDIR)/mipProfile
+BINS=$(EXEDIR)/MixPUSignal $(EXEDIR)/egammaResolution $(EXEDIR)/higgsResolution $(EXEDIR)/mipStudy $(EXEDIR)/mipProfile $(EXEDIR)/mipSelection
 
 SUBDIRS = ../userlib
 
@@ -83,6 +83,9 @@ $(EXEDIR)/mipStudy:  $(TESTDIR)/mipStudy.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildca
 	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
 
 $(EXEDIR)/mipProfile:  $(TESTDIR)/mipProfile.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
+	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
+
+$(EXEDIR)/mipSelection:  $(TESTDIR)/mipSelection.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
 	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
 
 $(OBJDIR)/%.$(OBJ_EXT):  $(SRCDIR)/%.cc $(BASEDIR)/include/%.h*

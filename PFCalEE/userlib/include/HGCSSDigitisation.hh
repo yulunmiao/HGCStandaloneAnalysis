@@ -57,6 +57,15 @@ public:
 
   ~HGCSSDigitisation(){};
 
+  inline void setIntercalibrationFactor(const unsigned icFactor){
+    gainSmearing_[DetectorEnum::FECAL] = icFactor/100.;
+    gainSmearing_[DetectorEnum::MECAL] = icFactor/100.;
+    gainSmearing_[DetectorEnum::BECAL] = icFactor/100.;
+    gainSmearing_[DetectorEnum::FHCAL] = icFactor/100.;
+    gainSmearing_[DetectorEnum::BHCAL1] = icFactor/100.;
+    gainSmearing_[DetectorEnum::BHCAL2] = icFactor/100.;
+  };
+
   inline void setRandomSeed(const unsigned aSeed){
     seed_ = aSeed;
     rndm_.SetSeed(seed_);

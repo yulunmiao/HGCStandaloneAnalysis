@@ -36,6 +36,8 @@ if opt.dogun :
 #for seed in 1417791355 1417791400 1417791462 1417791488 1417791672 1417791741 1417791747 1417791766 1417791846
 #command:
 #run=1; for seed in 1417791355 1417791400 1417791462 1417791488 1417791672 1417791741 1417791747 1417791766 1417791846; do ./submitProd.py -s 1nw -q 1nw -t V00-02-14 -v 12 -m 2 -d Hgg -f /afs/cern.ch/work/a/amagnan/public/HepMCFiles/ggHgg_${seed}.dat -r ${run} -n 1300 -o /afs/cern.ch/work/a/amagnan/public/HGCalEEGeant4/ -e /store/cmst3/group/hgcal/HGCalEEGeant4; let run=$run+1; done
+#vbfHgg seeds
+#for seed in 1420833683 1420833689 1420833693 1420833695 1420833696 1420833717
 
 nvtxlist=[140,200]
 INPATHPU="root://eoscms//eos/cms/store/user/msun/V12/MinBias/"

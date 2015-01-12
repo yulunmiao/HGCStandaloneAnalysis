@@ -579,8 +579,11 @@ int plotEGReso(){//main
   bool dovsE = true;
   bool processNoFitFiles = false;
 
-  const unsigned nPu = 4;
-  unsigned pu[nPu] = {0,0,140,200};
+  const unsigned nIC = 10;
+  const unsigned ICval[nIC] = {0,1,2,3,4,5,10,15,20,50};
+
+  const unsigned nPu = 2;//4;
+  unsigned pu[nPu] = {0,0};//,140,200};
 
   const unsigned nS = 1;
   std::string scenario[nS] = {
@@ -590,14 +593,10 @@ int plotEGReso(){//main
   std::string foutname = "PLOTS/PuSubtraction.root";
   TFile *fout = TFile::Open(foutname.c_str(),"RECREATE");
 
-  TFile *fcalib;
-  if (dovsE) fcalib = TFile::Open("PLOTS/CalibReso_vsE.root","RECREATE");
-  else fcalib = TFile::Open("PLOTS/CalibReso.root","RECREATE");
-
-  //const unsigned neta = 2;
-  //unsigned eta[neta]={17,25};
-  const unsigned neta = 7;
-  unsigned eta[neta]={17,19,21,23,25,27,29};
+  const unsigned neta = 1;
+  unsigned eta[neta]={21};
+  //const unsigned neta = 7;
+  //unsigned eta[neta]={17,19,21,23,25,27,29};
 
   double etaval[neta];
   double etaerr[neta];
@@ -681,20 +680,31 @@ int plotEGReso(){//main
     p_chi2ndf[iSR]->StatOverflows();
   }
 
-  for (unsigned iV(0); iV<nV;++iV){//loop on versions
-    for (unsigned iS(0); iS<nS;++iS){//loop on scenarios
-      
-      TString plotDir = "../PLOTS/gitV00-02-12/version"+version[iV]+"/"+scenario[iS]+"/";
-      TTree *ltree[neta][nPu][nGenEnAll];
-      TGraphErrors *resoRecoFit[nPu][neta][nSR];
 
-      for (unsigned ieta(0);ieta<neta;++ieta){//loop on eta
+  for (unsigned ic(0);ic<nIC;++ic){//loop on intercalib
+    
+    TFile *fcalib;
+    std::ostringstream label;
+    label << "PLOTS/CalibReso";
+    if (dovsE) label << "_vsE";
+    label << "_IC" << ICval[ic];
+    label << ".root";
+    fcalib = TFile::Open(label.str().c_str(),"RECREATE");
+    
+    for (unsigned iV(0); iV<nV;++iV){//loop on versions
+      for (unsigned iS(0); iS<nS;++iS){//loop on scenarios
 	
-	etaval[ieta] = eta[ieta]/10.;
-	etaerr[ieta] = 0;
+	TString plotDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/PLOTS/gitV00-02-12/version"+version[iV]+"/"+scenario[iS]+"/";
+	TTree *ltree[neta][nPu][nGenEnAll];
+	TGraphErrors *resoRecoFit[nPu][neta][nSR];
 	
-	for (unsigned ipu(0); ipu<nPu; ++ipu){//loop on pu
-	  unsigned puOption = pu[ipu];
+	for (unsigned ieta(0);ieta<neta;++ieta){//loop on eta
+	  
+	  etaval[ieta] = eta[ieta]/10.;
+	  etaerr[ieta] = 0;
+	  
+	  for (unsigned ipu(0); ipu<nPu; ++ipu){//loop on pu
+	    unsigned puOption = pu[ipu];
 
 	  std::string unit = "MIPS";
 	  if (ipu>0) unit = "GeV";
@@ -709,7 +719,7 @@ int plotEGReso(){//main
 	    std::ostringstream linputStr;
 	    if (pu[ipu]!=200) linputStr << plotDir ;
 	    else linputStr << "/afs/cern.ch/work/a/amagnan/PFCalEEAna/PLOTS/gitV00-02-12/version"+version[iV]+"/"+scenario[iS]+"/";
-	    linputStr << "eta" << eta[ieta] << "_et" << genEnAll[iE] << "_pu" << pu[ipu] ;
+	    linputStr << "eta" << eta[ieta] << "_et" << genEnAll[iE] << "_pu" << pu[ipu] << "_IC" << ICval[ic];
 	    if (!processNoFitFiles) linputStr << ".root";
 	    else linputStr << "_nofit.root";
 	    inputFile = TFile::Open(linputStr.str().c_str());
@@ -777,7 +787,6 @@ int plotEGReso(){//main
 	  TH2F *p_subtrEvspuE[nSR];
 	  if (pu[ipu]>0){
 	    for (unsigned iSR(0); iSR<nSR;++iSR){
-	      std::ostringstream label;
 	      label.str("");
 	      label << "p_sigma_" << iSR << "_" << lsave.str();
 	      if (iSR<(nSR-1) ) p_sigma[iSR] = new TH1F(label.str().c_str(),";PuE-E (GeV)",500,-20,20);
@@ -799,7 +808,7 @@ int plotEGReso(){//main
 	    std::ostringstream linputStr;
 	    if (pu[ipu]!=200) linputStr << plotDir ;
 	    else linputStr << "/afs/cern.ch/work/a/amagnan/PFCalEEAna/PLOTS/gitV00-02-12/version"+version[iV]+"/"+scenario[iS]+"/";
-	    linputStr << "eta" << eta[ieta] << "_et" << genEn[iE] << "_pu" << pu[ipu] ;
+	    linputStr << "eta" << eta[ieta] << "_et" << genEn[iE] << "_pu" << pu[ipu]  << "_IC" << ICval[ic];
 	    if (!processNoFitFiles) linputStr << ".root" ;
 	    else linputStr << "_nofit.root";
 	    inputFile = TFile::Open(linputStr.str().c_str());
@@ -1163,7 +1172,7 @@ int plotEGReso(){//main
 	    resoRecoFit[ipu][ieta][iSR]->SetMarkerColor(ieta+1);
 	    resoRecoFit[ipu][ieta][iSR]->SetMarkerStyle(ieta+20);
 	    resoRecoFit[ipu][ieta][iSR]->Draw("PLsame");
-	    std::ostringstream label;
+	    label.str("");
 	    label << "#eta = " << etaval[ieta];
 	    legeta->AddEntry(resoRecoFit[ipu][ieta][iSR],label.str().c_str(),"P");
 	  }//loop on eta
@@ -1245,7 +1254,7 @@ int plotEGReso(){//main
 	    else if (iP==1) gr->SetTitle(";SR;constant term");
 	    else gr->SetTitle(";SR;noise term (GeV)");
 	    gr->Draw( (ipu==0) ? "APEL" : "PEL");
-	    std::ostringstream label;
+	    label.str("");
 	    if (ieta==0 && iP==0){
 	      label.str("");
 	      label << "PU " << pu[ipu+1];
@@ -1289,8 +1298,10 @@ int plotEGReso(){//main
     
   }//loop on versions
 
+    fcalib->Write();
+    
+  }//loop on IC vals
 
-  fcalib->Write();
 
   return 0;
   

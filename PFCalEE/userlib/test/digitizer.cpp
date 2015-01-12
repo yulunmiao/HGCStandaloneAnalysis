@@ -69,7 +69,7 @@ int main(int argc, char** argv){//main
   /////////////////////////////////////////////////////////////
   //parameters
   /////////////////////////////////////////////////////////////
-  const unsigned nReqA = 9;
+  const unsigned nReqA = 10;
   const unsigned nPar = static_cast<unsigned>(argc);
   if (nPar < nReqA-1) {
     std::cout << " Usage: "
@@ -79,6 +79,7 @@ int main(int argc, char** argv){//main
               << "<granularities \"layer_i-layer_j:factor,layer:factor,...\">"<< std::endl
               << "<noise (in Mips) \"layer_i-layer_j:factor,layer:factor,...\">"<< std::endl
               << "<threshold (in ADC counts) \"layer_i-layer_j:factor,layer:factor,...\">"<< std::endl
+              << "<intercalib factor in %>" << std::endl
               << "<number of PU>" << std::endl
               << "<full path to MinBias file if nPU!=0>" << std::endl
               << std::endl
@@ -97,9 +98,10 @@ int main(int argc, char** argv){//main
   std::string granulStr = argv[4];
   std::string noiseStr = argv[5];
   std::string threshStr = argv[6];
-  const unsigned nPU = atoi(argv[7]);
+  const unsigned interCalib = atoi(argv[7]);
+  const unsigned nPU = atoi(argv[8]);
   std::string puPath;
-  if (nPar > nReqA-1) puPath = argv[8];
+  if (nPar > nReqA-1) puPath = argv[9];
   if (nPU>0 && puPath.size()==0) {
     std::cout << " -- Error! Missing full path to minbias file. Exiting." << std::endl;
     return 1;
@@ -116,6 +118,7 @@ int main(int argc, char** argv){//main
             << " -- Granularities: " << granulStr << std::endl
             << " -- noise: " << noiseStr << std::endl
             << " -- thresholds: " << threshStr << std::endl
+            << " -- intercalibration factor (in %): " << interCalib << std::endl
             << " -- number of PU: " << nPU << std::endl
 	    << " -- pu file path: " << puPath << std::endl
     ;
@@ -297,6 +300,8 @@ int main(int argc, char** argv){//main
 
   std::cout << " -- Random3 seed = " << lRndm->GetSeed() << std::endl
 	    << " ----------------------------------------" << std::endl;
+
+  myDigitiser.setIntercalibrationFactor(interCalib);
 
   /////////////////////////////////////////////////////////////
   //output

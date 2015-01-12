@@ -47,7 +47,7 @@ int main(int argc,char** argv)
 
   if(argc>2) version=atoi(argv[2]);
   if(argc>3) model=atoi(argv[3]);
-  if(argc>4) eta=atoi(argv[4]);
+  if(argc>4) eta=atof(argv[4]);
 
   std::cout << "-- Running version " << version << " model " << model << std::endl;
 

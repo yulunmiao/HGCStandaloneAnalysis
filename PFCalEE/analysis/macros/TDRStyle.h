@@ -102,7 +102,7 @@ void SetTdrStyle() {
     // gStyle->SetTitleXSize(Float_t size = 0.02); // Another way to set the size?
     // gStyle->SetTitleYSize(Float_t size = 0.02);
     gStyle->SetTitleXOffset(0.9);
-    gStyle->SetTitleYOffset(1.2);
+    gStyle->SetTitleYOffset(1.);
     // gStyle->SetTitleOffset(1.1, "Y"); // Another way to set the Offset
 
     // For the axis labels:
