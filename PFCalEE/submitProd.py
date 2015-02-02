@@ -39,8 +39,8 @@ if opt.dogun :
 #vbfHgg seeds
 #for seed in 1420833683 1420833689 1420833693 1420833695 1420833696 1420833717
 
-nvtxlist=[140,200]
-INPATHPU="root://eoscms//eos/cms/store/user/msun/V12/MinBias/"
+#nvtxlist=[0,140]
+#INPATHPU="root://eoscms//eos/cms/store/user/msun/V25/MinBias/"
 
 granularity='0-20:4,21-63:6'
 noise='0-63:0.12'

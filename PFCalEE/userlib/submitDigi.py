@@ -30,20 +30,22 @@ parser.add_option('-S', '--no-submit'   ,    action="store_true",  dest='nosubmi
 (opt, args) = parser.parse_args()
 
 enlist=[0]
-if opt.dogun : enlist=[3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200]
+#if opt.dogun : enlist=[3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200]
 #if opt.dogun : enlist=[25]
-#if opt.dogun : enlist=[10,15,18,20,25,30,35,40,45,50,60,80] #,100,150,200,300,400,500]
+if opt.dogun : enlist=[2,5,10,20,40,60,80,100,150,200]#,300,400,500]
 
 INPATHPU="root://eoscms//eos/cms/store/user/msun/V12/MinBias/"
 
 if opt.version==13:
     INPATHPU="root://eoscms//eos/cms/store/cmst3/group/hgcal/Standalone/V13/MinBias/"
+elif opt.version==25:
+    INPATHPU="root://eoscms//eos/cms/store/cmst3/group/hgcal/Standalone/V25/MinBias/"
 
 #nPuVtxlist=[0,140,200]
-nPuVtxlist=[0]
+nPuVtxlist=[0,140]
 
 #in %
-interCalibList=[0,1,2,3,4,5,10,15,20,50]
+interCalibList=[2];#0,1,2,3,4,5,10,15,20,50]
 
 granularity='0-29:4,30-65:4'
 noise='0-65:0.14'

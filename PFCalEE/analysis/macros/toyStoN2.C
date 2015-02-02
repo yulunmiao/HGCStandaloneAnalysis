@@ -94,7 +94,7 @@ int toyStoN2() {
   SetTdrStyle();
   TCanvas *myc = new TCanvas("myc","myc",1500,1000);
 
-  const double noise = 0.5;
+  const double noise = 1.;
   const unsigned nEvts = 100000;
   const unsigned nPts = 10;
   TRandom3 lRndm;
@@ -104,6 +104,8 @@ int toyStoN2() {
     
     TH1F* mipSignal = new TH1F("mipSignal",";E (mips);cells",100,0,5);
     TH1F* mip = new TH1F("mip",";E (mips);cells",100,0,5);
+    TH1F* mipLangaus = new TH1F("mipLangaus",";E (mips);cells",100,0,5);
+    TH1F* mipNoise = new TH1F("mipNoise",";E (mips);cells",100,0,5);
     TF1 *landaugaus = new TF1("landaugaus",langaufungaus,0,5,7);
     Double_t mpshift  = 0;//-0.22278298;       // Landau maximum location
     
@@ -113,10 +115,12 @@ int toyStoN2() {
       mipSignal->Fill(lSignal);
       double lNoise = lRndm.Gaus(0,noise);
       mip->Fill(lSignal+lNoise);
+      mipLangaus->Fill(lSignal+lNoise);
     }
     for (unsigned ie(0); ie<nEvtsNoise;++ie){
       double lNoise = lRndm.Gaus(0,noise);
       mip->Fill(lNoise);
+      mipNoise->Fill(lNoise);
     }
     
     double lmax = std::max(mipSignal->GetMaximum(),mip->GetMaximum());
@@ -149,6 +153,11 @@ int toyStoN2() {
     landaugaus->SetLineColor(4);
     mip->Fit("landaugaus","B+","same");
     
+    mipNoise->SetLineColor(3);
+    mipNoise->Draw("same");
+    mipLangaus->SetLineColor(6);
+    mipLangaus->Draw("same");
+
     TLatex lat;
     char buf[500];
     sprintf(buf,"signal MPV = %3.3f #pm %3.3f",mpc,mpcerr);
@@ -158,8 +167,16 @@ int toyStoN2() {
     sprintf(buf,"purity = %3.2f",1.0*nEvts/(nEvts+nEvtsNoise));
     lat.DrawLatexNDC(0.4,0.6,buf);
 
+    TLegend *leg = new TLegend(0.55,0.16,0.94,0.5);
+    leg->SetFillColor(10);
+    leg->AddEntry(mipSignal,"Signal","L");
+    leg->AddEntry(mipNoise,"Noise","L");
+    leg->AddEntry(mipLangaus,"Signal#otimesNoise","L");
+    leg->AddEntry(mip,"Noise+Signal#otimesNoise","L");
+    leg->Draw("same");
+
     std::ostringstream label;
-    label << "PLOTS/ToyStoN2_purity" << std::setprecision(2) << 1.0*nEvts/(nEvts+nEvtsNoise) << ".pdf";
+    label << "PLOTS/ToyStoN2_purity" << std::setprecision(2) << 1.0*nEvts/(nEvts+nEvtsNoise) << "_noise" << noise << ".pdf";
     myc->Print(label.str().c_str());
   }
 

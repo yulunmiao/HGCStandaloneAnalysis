@@ -113,7 +113,7 @@ int plotMipHistos(){
   const double Ethresh = 0.9;
   const double EthreshMax = 5.0;
   const double EmaxCut = 0.05;
-  const unsigned layerRange = 1;
+  const unsigned layerRange = 2;
 
   std::ostringstream suffix;
   suffix << "Eta" << eta[0];
@@ -121,6 +121,7 @@ int plotMipHistos(){
   suffix << "_" << EthreshMax;
   suffix << "_EmaxNeighbour" << EmaxCut;
   suffix << "_trk" << 1+2*layerRange << "layers";
+  suffix << "_1x1";  
   if (oneOnly) suffix << "_onlyOne";
 
   ///////////////////////////////////////////////////////////////////
@@ -128,7 +129,7 @@ int plotMipHistos(){
   ///////////////////////////////////////////////////////////////////
 
   std::ostringstream outFilePath;
-  outFilePath << "/afs/cern.ch/work/a/amagnan/PFCalEEAna/PLOTS/gitV00-02-12/version12/MinBias/Histos" << suffix.str() << ".root";
+  outFilePath << "/afs/cern.ch/work/a/amagnan/PFCalEEAna/PLOTS/gitV00-02-12/version12/MinBias/Histos" << suffix.str() << "_0_20.root";
   TFile *file = TFile::Open(outFilePath.str().c_str());
   file->cd();
 
@@ -181,7 +182,7 @@ int plotMipHistos(){
 
   TLegend *leg = new TLegend(0.7,0.7,0.94,0.94);
   leg->SetFillColor(0);
-  TLegend *legN = new TLegend(0.7,0.7,0.94,0.94);
+  TLegend *legN = new TLegend(0.8,0.55,0.94,0.94);
   legN->SetFillColor(0);
 
   for (unsigned ie(0);ie<nEta;++ie){
@@ -220,6 +221,7 @@ int plotMipHistos(){
   }
 
   myc->cd();
+  gStyle->SetOptStat(0);
   myc->SetLogy(1);
   for (unsigned ie(0);ie<nEta;++ie){
 
@@ -227,21 +229,27 @@ int plotMipHistos(){
       p_EmaxNeighbour[ie][in]->SetLineColor(in+1);
       p_EmaxNeighbour[ie][in]->SetMarkerColor(in+1);
       p_EmaxNeighbour[ie][in]->SetMarkerStyle(ie+20);
-      p_EmaxNeighbour[ie][in]->SetMaximum(p_EmaxNeighbour[0][nNoise-1]->GetMaximum());
+      p_EmaxNeighbour[ie][in]->SetMaximum(100000);//p_EmaxNeighbour[0][nNoise-1]->GetMaximum());
       if (ie==0 && in==0) p_EmaxNeighbour[ie][in]->Draw("PEL");
       else p_EmaxNeighbour[ie][in]->Draw("PELsame");
+      label.str("");
+      label << "#sigma_{N} = " << noise[in] << " mips" ;
+      if (ie==0) legN->AddEntry(p_EmaxNeighbour[ie][in],label.str().c_str(),"P");
     }
   }
-
+  legN->Draw("same");
+  myc->Update();
   label.str("");
   label << "PLOTS/" << suffix.str() << "/EmaxNeighbour";
   //label << suffix.str();
   label << ".pdf";
   myc->Print(label.str().c_str());
-
+  //return 1;
   myc->Clear();
   myc->SetLogy(0);
   myc->Divide(5,2);
+
+  gStyle->SetOptStat("eMRuo");
 
   for (unsigned ie(0);ie<nEta;++ie){
     for (unsigned il(0); il<nLayers;++il){
@@ -461,9 +469,9 @@ int plotMipHistos(){
       grMPV[ie][in]->SetMinimum(0.8);
       grMPV[ie][in]->SetMaximum(1.2);
       grMPV[ie][in]->Draw(in==0?"APL":"PLsame");
-      label.str("");
-      label << "#sigma_{N} = " << noise[in] << " mips" ;
-      if (ie==0) legN->AddEntry(grMPV[ie][in],label.str().c_str(),"P");
+      //label.str("");
+      //label << "#sigma_{N} = " << noise[in] << " mips" ;
+      //if (ie==0) legN->AddEntry(grMPV[ie][in],label.str().c_str(),"P");
       mycS->cd();
       gPad->SetGridy(1);
       grSigma[ie][in]->SetMarkerStyle(20+in);

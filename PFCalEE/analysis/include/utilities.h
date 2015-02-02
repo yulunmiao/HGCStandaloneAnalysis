@@ -109,3 +109,19 @@ double zPos(const int l){
   if (l>=29) return 3454.75;
   return 0;
 };
+
+double calibratedE(const double Etot, const double eta){
+  //calibration for signal region 2: 3*3 cm^2
+  double pars[3] = {77,3.4,-0.50};
+  double paro[3] = {-11.6,-7.7,-8.8};
+  double offset = paro[0] + paro[1]*eta + paro[2]*eta*eta;
+  double slope = pars[0] + pars[1]*eta + pars[2]*eta*eta;
+  return (Etot-offset)/slope;
+};
+
+double DeltaPhi(const double & phi1, const double & phi2){
+  double dphi = phi1 - phi2;
+  if (dphi< (-1.*TMath::Pi())) dphi += 2*TMath::Pi();
+  if (dphi>TMath::Pi()) dphi -= 2*TMath::Pi();
+  return dphi;
+}

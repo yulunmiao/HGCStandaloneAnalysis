@@ -95,9 +95,10 @@ int main(int argc, char** argv){//main
   /////////////////////////////////////////////////////////////
 
   const unsigned nEta = 1;
-  const unsigned nNoise = 10;
+  const unsigned nNoise = 5;//10;
 
-  const double noise[nNoise] = {0,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5};
+  //const double noise[nNoise] = {0,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5};
+  const double noise[nNoise] = {0.6,0.7,0.8,0.9,1.0};
   const double eta[nEta] = {2.85};//1.7,2.0,2.5};
 
   const double deta = 0.05;
@@ -181,7 +182,7 @@ int main(int argc, char** argv){//main
   HGCSSGeometryConversion geomConv(inFilePath,model,cellSize);
   //set granularity to get cellsize for PU subtraction
   std::vector<unsigned> granularity;
-  granularity.resize(nLayers,2);
+  granularity.resize(nLayers,2);//0.5*0.5 cells
   geomConv.setGranularity(granularity);
   geomConv.initialiseHistos();
 

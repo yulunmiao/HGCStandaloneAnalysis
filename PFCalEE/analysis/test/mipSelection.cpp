@@ -165,6 +165,7 @@ int main(int argc, char** argv){//main
   std::string outFilePath;
   unsigned debug;
   unsigned layerRange;
+  unsigned start;
 
   po::options_description preconfig("Configuration"); 
   preconfig.add_options()("cfg,c",po::value<std::string>(&cfg)->required());
@@ -182,6 +183,7 @@ int main(int argc, char** argv){//main
     ("oneOnly",   po::value<bool>(&oneOnly)->default_value(true))
     ("debug,d",        po::value<unsigned>(&debug)->default_value(0))
     ("layerRange,l",   po::value<unsigned>(&layerRange)->default_value(1))
+    ("start",        po::value<unsigned>(&start)->default_value(0))
 
     ;
   po::store(po::command_line_parser(argc, argv).options(config).allow_unregistered().run(), vm);
@@ -232,7 +234,7 @@ int main(int argc, char** argv){//main
   for (unsigned i(0); i<nTrees;++i){
     if (nTrees>1){
       input.str("");
-      input << inputbase.str() << i
+      input << inputbase.str() << start+i
 	    << ".root";
     }
     tree->AddFile(input.str().c_str());
@@ -253,8 +255,9 @@ int main(int argc, char** argv){//main
   suffix << "_" << EthreshMax;
   suffix << "_EmaxNeighbour" << EmaxCut;
   suffix << "_trk" << 1+2*layerRange << "layers";
+  if (cell_size > 6) suffix << "_1x1";
   if (oneOnly) suffix << "_onlyOne";
-
+  if (nTrees>1) suffix << "_" << start << "_" << start+nTrees;
 
   std::ostringstream outPath;
   outPath << outFilePath << "/Histos" << suffix.str() << ".root";
