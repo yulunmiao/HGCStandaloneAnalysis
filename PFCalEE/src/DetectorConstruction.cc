@@ -61,7 +61,9 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod) : version_(ver)
 	std::vector<G4double> lThickL;
 	std::vector<std::string> lEleL;
 	lThickL.push_back(0.*mm);lEleL.push_back("Cu");
+	lThickL.push_back(0.5*mm);lEleL.push_back("CFMix");
 	lThickL.push_back(2.0*mm);lEleL.push_back("W");
+	lThickL.push_back(0.5*mm);lEleL.push_back("CFMix");
 	lThickL.push_back(0.5*mm);lEleL.push_back("Cu");
 	lThickL.push_back(airThick);lEleL.push_back("Air");
 	lThickL.push_back(pcbThick);lEleL.push_back("PCB");
@@ -88,7 +90,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod) : version_(ver)
 	  m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
 	}
 
-	lThickL[1] = 2.8*mm;
+	lThickL[2] = 2.8*mm;
 	lThickR[0] = 1.2*mm;
 	lThickR[2] = 1.2*mm;
 	for(unsigned i=0; i<5; i++) {
@@ -96,7 +98,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod) : version_(ver)
 	  m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
 	}
 
-	lThickL[1] = 4.2*mm;
+	lThickL[2] = 4.2*mm;
 	lThickR[0] = 2.2*mm;
 	lThickR[2] = 2.2*mm;
 	for(unsigned i=0; i<4; i++) {
@@ -389,7 +391,13 @@ void DetectorConstruction::buildHGCALBHE(const unsigned aVersion){
   std::vector<G4double> lThick;
   std::vector<std::string> lEle;
   lThick.push_back(78.*mm);lEle.push_back("Brass");
-  lThick.push_back(9.*mm);lEle.push_back("Scintillator");
+  if (aVersion==6) {
+    lThick.push_back(3.8*mm);lEle.push_back("Scintillator");
+    lThick.push_back(5.2*mm);lEle.push_back("Air");
+  }
+  else {
+    lThick.push_back(9.*mm);lEle.push_back("Scintillator");
+  }
   unsigned maxi = (aVersion==4)?10:12;
   for(unsigned i=0; i<maxi; i++) m_caloStruct.push_back( SamplingSection(lThick,lEle) );
 }
@@ -550,6 +558,9 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   char nameBuf[10];
   G4CSGSolid *solid;
 
+  G4double totalLengthX0 = 0;
+  G4double totalLengthL0 = 0;
+
   for(size_t i=0; i<m_caloStruct.size(); i++)
     {
 
@@ -571,7 +582,12 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 	  G4LogicalVolume *logi = new G4LogicalVolume(solid, m_materials[eleName], baseName+"log");
 	  m_caloStruct[i].ele_X0[ie] = m_materials[eleName]->GetRadlen();
 	  m_caloStruct[i].ele_L0[ie] = m_materials[eleName]->GetNuclearInterLength();
-	  G4cout << "************ " << eleName << " layer " << i << " X0=" << m_caloStruct[i].ele_X0[ie] << " w=" << m_caloStruct[i].ele_thick[ie] << "mm, d=" << m_materials[eleName]->GetDensity() << G4endl;
+	  G4cout << "************ " << eleName << " layer " << i << " X0=" << m_caloStruct[i].ele_X0[ie] << " w=" << m_caloStruct[i].ele_thick[ie] << "mm, d=" << m_materials[eleName]->GetDensity();
+
+	  totalLengthX0 += m_caloStruct[i].ele_thick[ie]/m_caloStruct[i].ele_X0[ie];
+	  G4cout << " TotX0=" << totalLengthX0;// << G4endl;
+	  totalLengthL0 += m_caloStruct[i].ele_thick[ie]/m_caloStruct[i].ele_L0[ie];
+	  G4cout << " TotLambda=" << totalLengthL0 << G4endl;
 
 	  if (m_caloStruct[i].isSensitiveElement(ie)) m_logicSi.push_back(logi);
 	  
@@ -595,7 +611,6 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 
       }//loop on elements
     }//loop on layers
- 
       //                                        
   // Visualization attributes
   //
