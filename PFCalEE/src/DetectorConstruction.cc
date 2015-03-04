@@ -335,7 +335,7 @@ void DetectorConstruction::buildHGCALFHE(const unsigned aVersion){
     //putting all absorber in front of each Si layer to have correct reweighting 
     lThick.push_back(0.);lEle.push_back("CFMix");
     lThick.push_back(0.); lEle.push_back("Cu");
-    lThick.push_back(45.*mm);lEle.push_back("Brass");
+    lThick.push_back(49.*mm);lEle.push_back("Brass");
     lThick.push_back(0.5*mm); lEle.push_back("Cu");
     lThick.push_back(airThick);lEle.push_back("Air");
     lThick.push_back(pcbthick);lEle.push_back("PCB");
@@ -582,7 +582,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 	  G4LogicalVolume *logi = new G4LogicalVolume(solid, m_materials[eleName], baseName+"log");
 	  m_caloStruct[i].ele_X0[ie] = m_materials[eleName]->GetRadlen();
 	  m_caloStruct[i].ele_L0[ie] = m_materials[eleName]->GetNuclearInterLength();
-	  G4cout << "************ " << eleName << " layer " << i << " X0=" << m_caloStruct[i].ele_X0[ie] << " w=" << m_caloStruct[i].ele_thick[ie] << "mm, d=" << m_materials[eleName]->GetDensity();
+	  G4cout << "************ " << eleName << " layer " << i << " X0=" << m_caloStruct[i].ele_X0[ie] << " L0=" << m_caloStruct[i].ele_L0[ie] << " w=" << m_caloStruct[i].ele_thick[ie] << "mm, d=" << m_materials[eleName]->GetDensity();
 
 	  totalLengthX0 += m_caloStruct[i].ele_thick[ie]/m_caloStruct[i].ele_X0[ie];
 	  G4cout << " TotX0=" << totalLengthX0;// << G4endl;
