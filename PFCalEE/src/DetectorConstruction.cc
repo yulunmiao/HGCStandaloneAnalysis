@@ -61,7 +61,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod) : version_(ver)
 	std::vector<G4double> lThickL;
 	std::vector<std::string> lEleL;
 	lThickL.push_back(0.*mm);lEleL.push_back("Cu");
-	lThickL.push_back(0.65*3.504*mm);lEleL.push_back("W");
+	lThickL.push_back(2.0*mm);lEleL.push_back("W");
 	lThickL.push_back(0.5*mm);lEleL.push_back("Cu");
 	lThickL.push_back(airThick);lEleL.push_back("Air");
 	lThickL.push_back(pcbThick);lEleL.push_back("PCB");
@@ -71,9 +71,9 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod) : version_(ver)
 
 	std::vector<G4double> lThickR;
 	std::vector<std::string> lEleR;
-	lThickR.push_back(0.5*mm);lEleR.push_back("WCu");
+	lThickR.push_back(0.6*mm);lEleR.push_back("WCu");
 	lThickR.push_back(6*mm);lEleR.push_back("Cu");
-	lThickR.push_back(0.5*mm);lEleR.push_back("WCu");
+	lThickR.push_back(0.6*mm);lEleR.push_back("WCu");
 	lThickR.push_back(0.1*mm);lEleR.push_back("Si");
 	lThickR.push_back(0.1*mm);lEleR.push_back("Si");
 	lThickR.push_back(0.1*mm);lEleR.push_back("Si");
@@ -87,16 +87,18 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod) : version_(ver)
 	  m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
 	  m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
 	}
-	lThickL[1] = 0.85*3.504*mm;
-	lThickR[0] = 1.*mm;
-	lThickR[2] = 1.*mm;
+
+	lThickL[1] = 2.8*mm;
+	lThickR[0] = 1.2*mm;
+	lThickR[2] = 1.2*mm;
 	for(unsigned i=0; i<5; i++) {
 	  m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
 	  m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
 	}
-	lThickL[1] = 1.25*3.504*mm;
-	lThickR[0] = 2.3*mm;
-	lThickR[2] = 2.3*mm;
+
+	lThickL[1] = 4.2*mm;
+	lThickR[0] = 2.2*mm;
+	lThickR[2] = 2.2*mm;
 	for(unsigned i=0; i<4; i++) {
 	  m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
 	  if (i==3) {lThickR.push_back(0.5*mm);lEleR.push_back("Cu");}
@@ -349,7 +351,7 @@ void DetectorConstruction::buildHGCALFHE(const unsigned aVersion){
     }
     lThick[9] = 1.*mm;
     lThick[10] = 6.*mm;
-    lThick[11] = 103.6*mm;
+    lThick[11] = 65*mm;
     m_caloStruct.push_back( SamplingSection(lThick,lEle) );
   }
   else {
