@@ -60,7 +60,9 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod) : version_(ver)
 
 	std::vector<G4double> lThickL;
 	std::vector<std::string> lEleL;
-	lThickL.push_back(0.*mm);lEleL.push_back("Cu");
+	lThickL.push_back(2.*mm);lEleL.push_back("Al");
+	lThickL.push_back(26.*mm);lEleL.push_back("Foam");
+	lThickL.push_back(2.*mm);lEleL.push_back("Al");
 	lThickL.push_back(0.5*mm);lEleL.push_back("CFMix");
 	lThickL.push_back(2.0*mm);lEleL.push_back("W");
 	lThickL.push_back(0.5*mm);lEleL.push_back("CFMix");
@@ -84,7 +86,19 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod) : version_(ver)
 
 	m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
 	m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
-	lThickL[0] = 0.5*mm;
+
+	lThickL.clear();
+	lEleL.clear();
+	lThickL.push_back(0.5*mm);lEleL.push_back("Cu");
+	lThickL.push_back(0.5*mm);lEleL.push_back("CFMix");
+	lThickL.push_back(2.0*mm);lEleL.push_back("W");
+	lThickL.push_back(0.5*mm);lEleL.push_back("CFMix");
+	lThickL.push_back(0.5*mm);lEleL.push_back("Cu");
+	lThickL.push_back(airThick);lEleL.push_back("Air");
+	lThickL.push_back(pcbThick);lEleL.push_back("PCB");
+	lThickL.push_back(0.1*mm);lEleL.push_back("Si");
+	lThickL.push_back(0.1*mm);lEleL.push_back("Si");
+	lThickL.push_back(0.1*mm);lEleL.push_back("Si");
 	for(unsigned i=0; i<4; i++) {
 	  m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
 	  m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
@@ -333,27 +347,30 @@ void DetectorConstruction::buildHGCALFHE(const unsigned aVersion){
     airThick = 3*mm;
     G4double pcbthick = 2*mm;
     //putting all absorber in front of each Si layer to have correct reweighting 
-    lThick.push_back(0.);lEle.push_back("CFMix");
-    lThick.push_back(0.); lEle.push_back("Cu");
-    lThick.push_back(49.*mm);lEle.push_back("Brass");
+    lThick.push_back(15.*mm);lEle.push_back("SSteel");
+    lThick.push_back(45.*mm);lEle.push_back("Brass");
     lThick.push_back(0.5*mm); lEle.push_back("Cu");
     lThick.push_back(airThick);lEle.push_back("Air");
     lThick.push_back(pcbthick);lEle.push_back("PCB");
     lThick.push_back(0.1*mm);lEle.push_back("Si");
     lThick.push_back(0.1*mm);lEle.push_back("Si");
     lThick.push_back(0.1*mm);lEle.push_back("Si");
-    lThick.push_back(0.);lEle.push_back("CFMix");
-    lThick.push_back(0.); lEle.push_back("Cu");
-    lThick.push_back(0.);lEle.push_back("Air");
     m_caloStruct.push_back( SamplingSection(lThick,lEle) );
-    lThick[0] = 1.*mm;
-    lThick[1] = 6.*mm;
-    for(unsigned i=0; i<10; i++) {
+
+    lThick.clear();
+    lEle.clear();
+    lThick.push_back(1.);lEle.push_back("CFMix");
+    lThick.push_back(6.); lEle.push_back("Cu");
+    lThick.push_back(45.*mm);lEle.push_back("Brass");
+    lThick.push_back(0.5*mm); lEle.push_back("Cu");
+    lThick.push_back(airThick);lEle.push_back("Air");
+    lThick.push_back(pcbthick);lEle.push_back("PCB");
+    lThick.push_back(0.1*mm);lEle.push_back("Si");
+    lThick.push_back(0.1*mm);lEle.push_back("Si");
+    lThick.push_back(0.1*mm);lEle.push_back("Si");
+    for(unsigned i=0; i<11; i++) {
       m_caloStruct.push_back( SamplingSection(lThick,lEle) );
     }
-    lThick[9] = 1.*mm;
-    lThick[10] = 6.*mm;
-    lThick[11] = 65*mm;
     m_caloStruct.push_back( SamplingSection(lThick,lEle) );
   }
   else {
@@ -390,16 +407,41 @@ void DetectorConstruction::buildHGCALFHE(const unsigned aVersion){
 void DetectorConstruction::buildHGCALBHE(const unsigned aVersion){
   std::vector<G4double> lThick;
   std::vector<std::string> lEle;
+  //first layer
+  lThick.push_back(1.*mm);lEle.push_back("CFMix");
+  lThick.push_back(6.*mm); lEle.push_back("Cu");
+  lThick.push_back(65.*mm);lEle.push_back("Air");
+  lThick.push_back(2.*mm);lEle.push_back("Al");
+  lThick.push_back(26.*mm);lEle.push_back("Foam");
+  lThick.push_back(2.*mm);lEle.push_back("Al");
   lThick.push_back(78.*mm);lEle.push_back("Brass");
   if (aVersion==6) {
+    lThick.push_back(2.6*mm);lEle.push_back("Air");
     lThick.push_back(3.8*mm);lEle.push_back("Scintillator");
-    lThick.push_back(5.2*mm);lEle.push_back("Air");
+    lThick.push_back(2.6*mm);lEle.push_back("Air");
   }
   else {
     lThick.push_back(9.*mm);lEle.push_back("Scintillator");
   }
-  unsigned maxi = (aVersion==4)?10:12;
-  for(unsigned i=0; i<maxi; i++) m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+  m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+
+  //other layers
+  lThick.clear();
+  lEle.clear();
+  lThick.push_back(78.*mm);lEle.push_back("Brass");
+  if (aVersion==6) {
+    lThick.push_back(2.6*mm);lEle.push_back("Air");
+    lThick.push_back(3.8*mm);lEle.push_back("Scintillator");
+    lThick.push_back(2.6*mm);lEle.push_back("Air");
+  }
+  else {
+    lThick.push_back(9.*mm);lEle.push_back("Scintillator");
+  }
+
+  unsigned maxi = (aVersion==4)?9:11;
+  for(unsigned i=0; i<maxi; i++) {
+    m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+  }
 }
 //
 DetectorConstruction::~DetectorConstruction() { delete m_detectorMessenger;}
@@ -411,6 +453,7 @@ void DetectorConstruction::DefineMaterials()
   m_materials["Abs"] = (version_== v_CALICE || version_==v_HGCALEE_W) ? 
     nistManager->FindOrBuildMaterial("G4_W",false) :
     nistManager->FindOrBuildMaterial("G4_Pb",false);
+  m_materials["Al"] = nistManager->FindOrBuildMaterial("G4_Al",false); 
   m_materials["W"] = nistManager->FindOrBuildMaterial("G4_W",false); 
   m_materials["Pb"] = nistManager->FindOrBuildMaterial("G4_Pb",false); 
   m_materials["Cu"] = nistManager->FindOrBuildMaterial("G4_Cu",false); 
@@ -463,6 +506,10 @@ void DetectorConstruction::DefineMaterials()
   m_materials["CFMix"]->AddMaterial(m_materials["Air"]  , 0.009);
   m_materials["CFMix"]->AddMaterial(m_materials["PVC"]  , 0.872);
   m_materials["CFMix"]->AddMaterial(m_materials["Polystyrole"]  , 0.119);
+
+  m_materials["Foam"]= new G4Material("Foam",0.0999*g/cm3,2);
+  m_materials["Foam"]->AddMaterial(m_materials["C"]  , 0.856);
+  m_materials["Foam"]->AddMaterial(m_materials["H"]  , 0.144);
 
   m_materials["WCu"]= new G4Material("WCu",14.979*g/cm3,2);
   m_materials["WCu"]->AddMaterial(m_materials["W"]  , 75*perCent);
