@@ -280,7 +280,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod) : version_(ver)
 	}
 	else if (version_== v_HGCALHE_v6) {
 	  buildHGCALFHE(6);
-	  buildHGCALBHE(4);
+	  buildHGCALBHE(6);
 	}
 	else {
 	  buildHGCALFHE(4);
