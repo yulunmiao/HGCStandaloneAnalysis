@@ -371,7 +371,6 @@ void DetectorConstruction::buildHGCALFHE(const unsigned aVersion){
     for(unsigned i=0; i<11; i++) {
       m_caloStruct.push_back( SamplingSection(lThick,lEle) );
     }
-    m_caloStruct.push_back( SamplingSection(lThick,lEle) );
   }
   else {
     lThick.push_back(50.*mm);lEle.push_back("SSteel");
