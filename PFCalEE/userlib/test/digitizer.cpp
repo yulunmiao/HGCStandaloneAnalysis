@@ -1,4 +1,5 @@
 #include<string>
+#include<set>
 #include<iostream>
 #include<fstream>
 #include<sstream>
@@ -191,6 +192,8 @@ int main(int argc, char** argv){//main
   //  //input PU hits
   /////////////////////////////////////////////////////////////
 
+  bool signalIsPu = false;
+
   TChain *puTree = new TChain("HGCSSTree");
   unsigned nPuVtx = 0;
   unsigned nPuEvts = 0;
@@ -208,6 +211,11 @@ int main(int argc, char** argv){//main
         std::string temp = std::string(eoslsName).substr(0,strlen(eoslsName)-1);
         if(temp.find("Digi")!=temp.npos)continue;
         puInput << puPath << temp;
+	if (puInput.str()==inFilePath) {
+	  std::cout << " -- duplicate: file already used as signal. Removing." << std::endl; 
+	  signalIsPu = true;
+	  continue;
+	}
         puTree->AddFile(puInput.str().c_str());
         std::cout << "Adding MinBias file:" << puInput.str().c_str() << std::endl;
      }
@@ -271,7 +279,7 @@ int main(int argc, char** argv){//main
   std::vector<double> pNoiseInMips;
   pNoiseInMips.resize(nLayers,0.12);
   std::vector<unsigned> pThreshInADC;
-  pThreshInADC.resize(nLayers,2);
+  pThreshInADC.resize(nLayers,5);
 
   extractParameterFromStr<std::vector<unsigned> >(granulStr,granularity);
   extractParameterFromStr<std::vector<double> >(noiseStr,pNoiseInMips);
@@ -392,9 +400,9 @@ int main(int argc, char** argv){//main
       double realtime = mycalib.correctTime(lHit.time(),posx,posy,posz);
       bool passTime = myDigitiser.passTimeCut(type,realtime);
       if (!passTime) continue;
-
+      double radius = sqrt(pow(posx,2)+pow(posy,2)+pow(posz,2));
       if (energy>0 && 
-	  lHit.silayer() < geomConv.getNumberOfSiLayers(type)//,lHit.eta()) 
+	  lHit.silayer() < geomConv.getNumberOfSiLayers(type,radius) 
 	  ){
 	if (debug > 1) std::cout << " hit " << iH 
 				 << " lay " << layer  
@@ -415,11 +423,23 @@ int main(int argc, char** argv){//main
       //get poisson <140>
       nPuVtx = lRndm->Poisson(nPU);
       //ipuevt.resize(nPuVtx,1);
-
+      if (signalIsPu) nPuVtx -= 1;
       std::cout << " -- Adding " << nPuVtx << " events to signal event: " << ievt << std::endl;
+      std::set<unsigned> lidxSet;
       for (unsigned iV(0); iV<nPuVtx; ++iV){//loop on interactions
-        unsigned ipuevt = lRndm->Integer(nPuEvts);
-
+        unsigned ipuevt = 0;
+	while (1){
+	  ipuevt = lRndm->Integer(nPuEvts);
+	  if (lidxSet.find(ipuevt)==lidxSet.end()){
+	    lidxSet.insert(ipuevt);
+	    break;
+	  }
+	  else {
+	    std::cout << " -- Found duplicate ! Taking another shot." << std::endl;
+	  }
+	}
+	//std::cout << " ---- adding evt " << ipuevt << std::endl;
+	
         puTree->GetEntry(ipuevt);
         //lRecoHits.reserve(lRecoHits.size()+(*puhitvec).size());
         prevLayer = 10000;
@@ -436,11 +456,12 @@ int main(int argc, char** argv){//main
 	      prevLayer = layer;
 	      //std::cout << " - layer " << layer << " " << subdet.name << " " << subdetLayer << std::endl;
 	    }
-	    if (lHit.silayer() < geomConv.getNumberOfSiLayers(type)){//(type,lHit.eta())
+	    double posx = lHit.get_x(cellSize);
+	    double posy = lHit.get_y(cellSize);
+	    double posz = lHit.get_z();
+	    double radius = sqrt(pow(posx,2)+pow(posy,2)+pow(posz,2));
+	    if (lHit.silayer() < geomConv.getNumberOfSiLayers(type,radius)){
 	      double energy = lHit.energy()*mycalib.MeVToMip(layer);
-	      double posx = lHit.get_x(cellSize);
-	      double posy = lHit.get_y(cellSize);
-	      double posz = lHit.get_z();
 	      double realtime = mycalib.correctTime(lHit.time(),posx,posy,posz);
 	      bool passTime = myDigitiser.passTimeCut(type,realtime);
 	      if (!passTime) continue;

@@ -44,8 +44,10 @@ public:
     return cellSize(aLayer, aEta)/10.;
   };
 
+  //unsigned getNumberOfSiLayers(const DetectorEnum type,
+  //const double & eta=0) const;
   unsigned getNumberOfSiLayers(const DetectorEnum type,
-			       const double & eta=0) const;
+			       const double & radius=10000) const;
 
   void initialiseHistos(const bool recreate=false,
 			std::string uniqStr="",

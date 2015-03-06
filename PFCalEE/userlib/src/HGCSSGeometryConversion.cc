@@ -14,7 +14,7 @@ HGCSSGeometryConversion::HGCSSGeometryConversion(std::string filePath, int model
   cellSize_ = cellsize;
   
 }
-
+/*
 unsigned HGCSSGeometryConversion::getNumberOfSiLayers(const DetectorEnum type,
 						      const double & eta) const
 {
@@ -34,6 +34,23 @@ unsigned HGCSSGeometryConversion::getNumberOfSiLayers(const DetectorEnum type,
     else if (etaBin==2) return 2;
     else return 1;
   }
+  return 3;
+  }*/
+
+unsigned HGCSSGeometryConversion::getNumberOfSiLayers(const DetectorEnum type,
+						      const double & radius) const
+{
+  if (model_ != 2) return 3;
+
+  double r1 = 1200;
+  double r2 = 750;
+  if (type == DetectorEnum::FHCAL) {
+    r1 = 1000;
+    r2 = 600;
+  }
+  if (radius>r1) return 3;
+  else if (radius>r2) return 2;
+  else return 1;
   return 3;
 }
 
@@ -167,26 +184,59 @@ void HGCSSGeometryConversion::resetVector(std::vector<TH2D *> & aVec,
       for (unsigned iL(0); iL<nLayers;++iL){
 	std::ostringstream lname;
 	lname << aVar << "_" << aString << "_" << iL ;
-	double newcellsize = cellSize_*getGranularity(iL,aDet);
-	//take smallest pair integer to be sure to fit in the geometry
-	//even if small dead area introduced at the edge
-	//take 0,0,0 as center of new cell.
 	unsigned nBins = 0;
-	double min=0;
-	double max=0;
-	if (getGranularity(iL,aDet) == 1) {
-	  nBins = static_cast<unsigned>(width_*1./cellSize_);
-	  min = -1.0*nBins*newcellsize/2.;
-	  max = nBins*newcellsize/2.;
+	double xyedges[500];
+	//double xy1 = 850;//1200/sqrt(2); multiple of 10
+	double xylim = 525;//750/sqrt(2) and multiple of 7.5
+	if (aDet.type == DetectorEnum::FHCAL) {
+	  //xy1 = 710;//1000/sqrt(2); multiple of 10
+	  xylim = 435;//600/sqrt(2) and multiple of 7.5
 	}
-	else {
-	  nBins = static_cast<unsigned>(width_*1./(newcellsize*2.))*2-2;
-	  min = -1.0*nBins*newcellsize/2.-newcellsize/2.;
-	  max = nBins*newcellsize/2.+newcellsize/2.;
-	  nBins+=1;
+	double xy = -1695;
+	while(1){
+	  if (xy>=(-1.*xylim) && xy < xylim){
+	    xyedges[nBins] = xy;
+	    //std::cout << " xyedges[" << nBins << "]=" << xy << std::endl;
+	    xy += 7.5;
+	    nBins++;
+	  }
+	  else if (fabs(xy)<=1700){
+	    xyedges[nBins] = xy;
+	    //std::cout << " xyedges[" << nBins << "]=" << xy << std::endl;
+	    xy += 10;
+	    nBins++;
+	  }
+	  else break;
 	}
-	aVec[iL] = new TH2D(lname.str().c_str(),";x(mm);y(mm)",nBins,min,max,nBins,min,max);
-	if (print && iL==0) std::cout << " ---- bins, min, max = " << nBins << " " << min << " " << max << std::endl;
+
+	aVec[iL] = new TH2D(lname.str().c_str(),";x(mm);y(mm)",nBins-1,xyedges,nBins-1,xyedges);
+	if (print && aVar == "EmipHits") {
+	  std::cout << " ---- Layer " << iL << " bins, min, max = " << nBins-1 << " " << xyedges[0] << " " << xyedges[nBins-1] << std::endl;
+	  //for (unsigned ib(0);ib<nBins;++ib){
+	  //std::cout << xyedges[ib] << " ";
+	  //}
+	  //std::cout << std::endl;
+	}
+	// double newcellsize = cellSize_*getGranularity(iL,aDet);
+	// //take smallest pair integer to be sure to fit in the geometry
+	// //even if small dead area introduced at the edge
+	// //take 0,0,0 as center of new cell.
+	// unsigned nBins = 0;
+	// double min=0;
+	// double max=0;
+	// if (getGranularity(iL,aDet) == 1) {
+	//   nBins = static_cast<unsigned>(width_*1./cellSize_);
+	//   min = -1.0*nBins*newcellsize/2.;
+	//   max = nBins*newcellsize/2.;
+	// }
+	// else {
+	//   nBins = static_cast<unsigned>(width_*1./(newcellsize*2.))*2-2;
+	//   min = -1.0*nBins*newcellsize/2.-newcellsize/2.;
+	//   max = nBins*newcellsize/2.+newcellsize/2.;
+	//   nBins+=1;
+	// }
+	// aVec[iL] = new TH2D(lname.str().c_str(),";x(mm);y(mm)",nBins,min,max,nBins,min,max);
+	// if (print && iL==0) std::cout << " ---- bins, min, max = " << nBins << " " << min << " " << max << std::endl;
       }
     }
   }
