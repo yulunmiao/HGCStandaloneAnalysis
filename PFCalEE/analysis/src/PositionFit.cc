@@ -208,6 +208,34 @@ void PositionFit::initialiseClusterHistograms(){
    unsigned nY = nX;
 
    outputFile_->cd(outputDir_.c_str());
+   outtree_ = 0;
+   std::vector<double> init;
+   init.resize(9,0);
+   Exy_.resize(nLayers_,init);
+   if (saveEtree_){
+     outputFile_->cd(outputDir_.c_str());
+     outtree_ = new TTree("EcellsSR2","Tree to save energies in each cell of SR2");
+     truthPosX_.resize(nLayers_,0);
+     truthPosY_.resize(nLayers_,0);
+     for (unsigned iL(0);iL<nLayers_;++iL){
+       std::ostringstream label;
+       label.str("");     
+       label << "TruthPosX_" << iL;
+       outtree_->Branch(label.str().c_str(),&truthPosX_[iL]);
+       label.str("");     
+       label << "TruthPosY_" << iL;
+       outtree_->Branch(label.str().c_str(),&truthPosY_[iL]);
+       for (unsigned iy(0);iy<3;++iy){
+	 for (unsigned ix(0);ix<3;++ix){
+	   unsigned idx = 3*iy+ix;
+	   label.str("");     
+	   label << "E_" << iL << "_" << idx;
+	   outtree_->Branch(label.str().c_str(),&Exy_[iL][idx]);
+	 }
+       }
+     }
+   }
+
 
    p_nGenParticles = new TH1F("p_nGenParticles",";nGenParticles",10,0,10);
    //p_numberOfMaxTried = new TH1F("p_numberOfMaxTried",";max cells tried",250,0,250);
@@ -746,37 +774,7 @@ void PositionFit::getZpositions(const unsigned versionNumber,
    unsigned nConvertedPhotons = 0;
    unsigned nTooFar = 0;
 
-   //output tree
-   TTree *outtree = 0;
-   std::vector<double> truthPosX;
-   std::vector<double> truthPosY;
-   std::vector<std::vector<double> > Exy;
-   std::vector<double> init;
-   init.resize(25,0);
-   Exy.resize(nLayers_,init);
-   if (saveEtree_){
-     outputFile_->cd();
-     outtree = new TTree("EcellsSR2","Tree to save energies in each cell of SR2");
-     truthPosX.resize(nLayers_,0);
-     truthPosY.resize(nLayers_,0);
-     for (unsigned iL(0);iL<nLayers_;++iL){
-       std::ostringstream label;
-       label.str("");     
-       label << "TruthPosX_" << iL;
-       outtree->Branch(label.str().c_str(),&truthPosX[iL]);
-       label.str("");     
-       label << "TruthPosY_" << iL;
-       outtree->Branch(label.str().c_str(),&truthPosY[iL]);
-       for (unsigned iy(0);iy<5;++iy){
-	 for (unsigned ix(0);ix<5;++ix){
-	   unsigned idx = 5*iy+ix;
-	   label.str("");     
-	   label << "E_" << iL << "_" << idx;
-	   outtree->Branch(label.str().c_str(),&Exy[iL][idx]);
-	 }
-       }
-     }
-   }
+
 
 
   for (unsigned ievt(0); ievt<nEvts; ++ievt){//loop on entries
@@ -810,8 +808,8 @@ void PositionFit::getZpositions(const unsigned versionNumber,
     }
     if (saveEtree_) {
       for (unsigned iL(0);iL<nLayers_;++iL){
-	truthPosX[iL] = truthPos(iL).X();
-	truthPosY[iL] = truthPos(iL).Y();
+	truthPosX_[iL] = truthPos(iL).X();
+	truthPosY_[iL] = truthPos(iL).Y();
       }
     }
     
@@ -829,12 +827,15 @@ void PositionFit::getZpositions(const unsigned versionNumber,
     if (!oneresult) nMultipleMax++;
     */
 
-    if (!getInitialPosition(ievt,nPuVtx,rechitvec,nTooFar,Exy)) continue;
+    if (!getInitialPosition(ievt,nPuVtx,rechitvec,nTooFar)) continue;
     
-    if (saveEtree_) outtree->Fill();
+    if (saveEtree_) outtree_->Fill();
 
     //firstEvent = false;
   }//loop on entries
+
+  //outputFile_->cd(outputDir_.c_str());
+  //outtree_->Write();
 
   std::cout << " -- Number of converted photons: " << nConvertedPhotons << std::endl;
   std::cout << " -- Number of events with closest cluster away from truth within dR " << maxdR_ << " : " << nTooFar << std::endl;
@@ -844,10 +845,16 @@ void PositionFit::getZpositions(const unsigned versionNumber,
 bool PositionFit::getInitialPosition(const unsigned ievt,
 				     const unsigned nPuVtx, 
 				     std::vector<HGCSSRecoHit> *rechitvec,
-				     unsigned & nTooFar,
-				     std::vector<std::vector<double> > & Exy){
+				     unsigned & nTooFar){
   
-  //from clusters -- using Lindsey's clustering
+  if (saveEtree_) {
+    for (unsigned iL(0);iL<nLayers_;++iL){
+      truthPosX_[iL] = truthPos(iL).X();
+      truthPosY_[iL] = truthPos(iL).Y();
+    }
+  }
+
+   //from clusters -- using Lindsey's clustering
   HGCSSClusterVec lClusVec;
   unsigned nClusters = getClusters(rechitvec,lClusVec);
   
@@ -976,7 +983,7 @@ bool PositionFit::getInitialPosition(const unsigned ievt,
   nHits.resize(nLayers_,0);
   
   //get energy-weighted position and energy around maximum
-  getEnergyWeightedPosition(rechitvec,nPuVtx,xmax,ymax,recoPos,recoE,nHits,puE,Exy);
+  getEnergyWeightedPosition(rechitvec,nPuVtx,xmax,ymax,recoPos,recoE,nHits,puE);
   
   std::ofstream fout;
   std::ostringstream foutname;
@@ -1091,13 +1098,12 @@ void PositionFit::getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec
 					    std::vector<double> & recoE,
 					    std::vector<unsigned> & nHits,
 					    std::vector<double> & puE,
-					    std::vector<std::vector<double> > & Exy,
 					    const bool puSubtracted){
   
   double eSum_puMean = 0;
   double eSum_puEvt = 0;
 
-  double steplarge = geomConv_.cellSize()*20/2.+0.1;//+0.1 to accomodate double precision
+  //double steplarge = geomConv_.cellSize()*20/2.+0.1;//+0.1 to accomodate double precision
   double step = geomConv_.cellSize()*nSR_/2.+0.1;//+0.1 to accomodate double precision
   if (debug_) std::cout << "step = " << step << std::endl;
 
@@ -1111,8 +1117,8 @@ void PositionFit::getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec
     if (fixForPuMixBug_) posy-=1.25;
 
 
-    if (fabs(posx-xmax[layer]) < steplarge && 
-	fabs(posy-ymax[layer]) < steplarge){
+    if (fabs(posx-xmax[layer]) < step && 
+	fabs(posy-ymax[layer]) < step){
       if (puSubtracted) {
 	double leta = lHit.eta();
 	if (debug_>1) std::cout << " -- Hit " << iH << ", eta=" << leta << ", energy before PU subtraction: " << energy << " after: " ;
@@ -1141,13 +1147,13 @@ void PositionFit::getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec
 	int ix = (posx-xmax[layer])/10.;
 	int iy = (posy-ymax[layer])/10.;
 	unsigned idx = 0;
-	if ((ix > 2 || ix < -2) || (iy>2 || iy<-2)) {
+	if ((ix > 1 || ix < -1) || (iy>1 || iy<-1)) {
 	  std::cout << " error, check ix=" << ix << " iy=" << iy << " posx,y-max=" << posx-xmax[layer] << " " << posy-ymax[layer] << " step " << step << std::endl;
 	  continue;
 	}
 	else 
-	  idx = 5*(iy+2)+(ix+2);
-	Exy[layer][idx] = energy;
+	  idx = 3*(iy+1)+(ix+1);
+	Exy_[layer][idx] = energy;
       }
     }
     
@@ -1160,33 +1166,67 @@ void PositionFit::getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec
 
     if (doLogWeight_){
       double Etot = 0;
-      double Ex[5] = {0,0,0,0,0};
+      double Ex[3] = {0,0,0};
+      double Ey[3] = {0,0,0};
+      for (unsigned idx(0);idx<9;++idx){
+	Etot += Exy_[iL][idx];
+      }
+      
+      Ex[0] = Exy_[iL][0]+Exy_[iL][3]+Exy_[iL][6];
+      Ex[1] = Exy_[iL][1]+Exy_[iL][4]+Exy_[iL][7];
+      Ex[2] = Exy_[iL][2]+Exy_[iL][5]+Exy_[iL][8];
+      Ey[0] = Exy_[iL][0]+Exy_[iL][1]+Exy_[iL][2];
+      Ey[1] = Exy_[iL][3]+Exy_[iL][4]+Exy_[iL][5];
+      Ey[2] = Exy_[iL][6]+Exy_[iL][7]+Exy_[iL][8];
+      double wx[4];
+      double wy[4];
+      for (unsigned i(0);i<4;++i){
+	wx[i] = 0;
+	wy[i] = 0;
+      }
+      double w0 = getW0(iL);
+      for (unsigned i(0);i<3;++i){
+	wx[i] = std::max(0.,log(Ex[i]/Etot)+w0);
+	wy[i] = std::max(0.,log(Ey[i]/Etot)+w0);
+	wx[3] += wx[i];
+	wy[3] += wy[i];
+      }
+      double x = xmax[iL];
+      //if none pass, discard layer
+      if (wx[3]!=0) x += 10*(wx[2]-wx[0])/wx[3];
+      else nHits[iL]=0;
+      double y = ymax[iL];
+      if (wy[3]!=0) y += 10*(wy[2]-wy[0])/wy[3];
+      else nHits[iL]=0;
+      
+
+      /*      double Ex[5] = {0,0,0,0,0};
       double Ey[5] = {0,0,0,0,0};
       for (unsigned idx(0);idx<25;++idx){
-	if (iL>22) Etot += Exy[iL][idx];
+	if (iL>22) Etot += Exy_[iL][idx];
 	else if ((idx>5 && idx<9)||
 		 (idx>10 && idx<14)||
-		 (idx>15 && idx<19)) Etot += Exy[iL][idx];
+		 (idx>15 && idx<19)) Etot += Exy_[iL][idx];
       }
       if (iL>22){
-	Ex[0] = Exy[iL][0]+Exy[iL][5]+Exy[iL][10]+Exy[iL][15]+Exy[iL][20];
-	Ex[1] = Exy[iL][1]+Exy[iL][6]+Exy[iL][11]+Exy[iL][16]+Exy[iL][21];
-	Ex[2] = Exy[iL][2]+Exy[iL][7]+Exy[iL][12]+Exy[iL][17]+Exy[iL][22];
-	Ex[3] = Exy[iL][3]+Exy[iL][8]+Exy[iL][13]+Exy[iL][18]+Exy[iL][23];
-	Ex[4] = Exy[iL][4]+Exy[iL][9]+Exy[iL][14]+Exy[iL][19]+Exy[iL][24];
-	Ey[0] = Exy[iL][0]+Exy[iL][1]+Exy[iL][2]+Exy[iL][3]+Exy[iL][4];
-	Ey[1] = Exy[iL][5]+Exy[iL][6]+Exy[iL][7]+Exy[iL][8]+Exy[iL][9];
-	Ey[2] = Exy[iL][10]+Exy[iL][11]+Exy[iL][12]+Exy[iL][13]+Exy[iL][14];
-	Ey[3] = Exy[iL][15]+Exy[iL][16]+Exy[iL][17]+Exy[iL][18]+Exy[iL][19];
-	Ey[4] = Exy[iL][20]+Exy[iL][21]+Exy[iL][22]+Exy[iL][23]+Exy[iL][24];
+	Ex[0] = Exy_[iL][0]+Exy_[iL][5]+Exy_[iL][10]+Exy_[iL][15]+Exy_[iL][20];
+	Ex[1] = Exy_[iL][1]+Exy_[iL][6]+Exy_[iL][11]+Exy_[iL][16]+Exy_[iL][21];
+	Ex[2] = Exy_[iL][2]+Exy_[iL][7]+Exy_[iL][12]+Exy_[iL][17]+Exy_[iL][22];
+	Ex[3] = Exy_[iL][3]+Exy_[iL][8]+Exy_[iL][13]+Exy_[iL][18]+Exy_[iL][23];
+	Ex[4] = Exy_[iL][4]+Exy_[iL][9]+Exy_[iL][14]+Exy_[iL][19]+Exy_[iL][24];
+	Ey[0] = Exy_[iL][0]+Exy_[iL][1]+Exy_[iL][2]+Exy_[iL][3]+Exy_[iL][4];
+	Ey[1] = Exy_[iL][5]+Exy_[iL][6]+Exy_[iL][7]+Exy_[iL][8]+Exy_[iL][9];
+	Ey[2] = Exy_[iL][10]+Exy_[iL][11]+Exy_[iL][12]+Exy_[iL][13]+Exy_[iL][14];
+	Ey[3] = Exy_[iL][15]+Exy_[iL][16]+Exy_[iL][17]+Exy_[iL][18]+Exy_[iL][19];
+	Ey[4] = Exy_[iL][20]+Exy_[iL][21]+Exy_[iL][22]+Exy_[iL][23]+Exy_[iL][24];
       }
       else {
-	Ex[0] = Exy[iL][6]+Exy[iL][11]+Exy[iL][16];
-	Ex[1] = Exy[iL][7]+Exy[iL][12]+Exy[iL][17];
-	Ex[2] = Exy[iL][8]+Exy[iL][13]+Exy[iL][18];
-	Ey[0] = Exy[iL][6]+Exy[iL][7]+Exy[iL][8];
-	Ey[1] = Exy[iL][11]+Exy[iL][12]+Exy[iL][13];
-	Ey[2] = Exy[iL][16]+Exy[iL][17]+Exy[iL][18];
+	Ex[0] = Exy_[iL][6]+Exy_[iL][11]+Exy_[iL][16];
+	Ex[1] = Exy_[iL][7]+Exy_[iL][12]+Exy_[iL][17];
+	Ex[2] = Exy_[iL][8]+Exy_[iL][13]+Exy_[iL][18];
+	Ey[0] = Exy_[iL][6]+Exy_[iL][7]+Exy_[iL][8];
+	Ey[1] = Exy_[iL][11]+Exy_[iL][12]+Exy_[iL][13];
+	Ey[2] = Exy_[iL][16]+Exy_[iL][17]+Exy_[iL][18];
       }
       double wx[6];
       double wy[6];
@@ -1215,7 +1255,8 @@ void PositionFit::getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec
 	else y += 10*(wy[2]-wy[0])/wy[5];
       }
       else nHits[iL]=0;
-      
+      */
+
       if (nHits[iL]!=0){
 	recoPos[iL].SetX(x);
 	recoPos[iL].SetY(y);

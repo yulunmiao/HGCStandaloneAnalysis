@@ -123,8 +123,7 @@ public:
   bool getInitialPosition(const unsigned ievt,
 			  const unsigned nVtx, 
 			  std::vector<HGCSSRecoHit> *rechitvec,
-			  unsigned & nTooFar,
-			  std::vector<std::vector<double> > & Exy);
+			  unsigned & nTooFar);
 
   bool getGlobalMaximum(const unsigned ievt, 
 			const unsigned nVtx, 
@@ -154,7 +153,6 @@ public:
 				 std::vector<double> & recoE,
 				 std::vector<unsigned> & nHits,
 				 std::vector<double> & puE,
-				 std::vector<std::vector<double> > & Exy,
 				 const bool puSubtracted=true);
 
   void getPuContribution(std::vector<HGCSSRecoHit> *rechitvec, const std::vector<double> & xmax,const std::vector<double> & ymax,std::vector<double> & puE);
@@ -196,6 +194,10 @@ public:
   inline void setOutputFile(TFile * outputFile){
     outputFile_ = outputFile;
     outputFile_->mkdir(outputDir_.c_str());
+  };
+
+  inline TTree* getOutTree(){
+    return outtree_;
   };
 
   inline unsigned nSR() const{
@@ -281,6 +283,12 @@ private:
   std::string matrixFolder_;
   std::string outputDir_;
   TFile *outputFile_;
+
+  TTree *outtree_;
+  //output tree
+  std::vector<double> truthPosX_;
+  std::vector<double> truthPosY_;
+  std::vector<std::vector<double> > Exy_;
 
   //cluster histos
   TH1F *p_nClusters;

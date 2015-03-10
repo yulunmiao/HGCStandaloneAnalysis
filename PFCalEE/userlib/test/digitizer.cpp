@@ -400,7 +400,7 @@ int main(int argc, char** argv){//main
       double realtime = mycalib.correctTime(lHit.time(),posx,posy,posz);
       bool passTime = myDigitiser.passTimeCut(type,realtime);
       if (!passTime) continue;
-      double radius = sqrt(pow(posx,2)+pow(posy,2)+pow(posz,2));
+      double radius = sqrt(pow(posx,2)+pow(posy,2));
       if (energy>0 && 
 	  lHit.silayer() < geomConv.getNumberOfSiLayers(type,radius) 
 	  ){
@@ -459,7 +459,7 @@ int main(int argc, char** argv){//main
 	    double posx = lHit.get_x(cellSize);
 	    double posy = lHit.get_y(cellSize);
 	    double posz = lHit.get_z();
-	    double radius = sqrt(pow(posx,2)+pow(posy,2)+pow(posz,2));
+	    double radius = sqrt(pow(posx,2)+pow(posy,2));
 	    if (lHit.silayer() < geomConv.getNumberOfSiLayers(type,radius)){
 	      double energy = lHit.energy()*mycalib.MeVToMip(layer);
 	      double realtime = mycalib.correctTime(lHit.time(),posx,posy,posz);

@@ -484,12 +484,11 @@ int main(int argc, char** argv){//main
 
     if (doFit1 || doFit2){
       //get initial position
-      std::vector<std::vector<double> > Exy;
-      std::vector<double> init;
-      init.resize(9,0);
-      Exy.resize(nLayers,init);
-      lGamma1.getInitialPosition(ievt,nPuVtx,rechitvec,nTooFar1,Exy);
-      lGamma2.getInitialPosition(ievt,nPuVtx,rechitvec,nTooFar2,Exy);
+      lGamma1.getInitialPosition(ievt,nPuVtx,rechitvec,nTooFar1);
+      lGamma2.getInitialPosition(ievt,nPuVtx,rechitvec,nTooFar2);
+
+      lGamma1.getOutTree()->Fill();
+      lGamma2.getOutTree()->Fill();
 
       //get first guess at energy
       std::vector<unsigned> layerId;
