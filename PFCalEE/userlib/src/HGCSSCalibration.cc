@@ -55,7 +55,7 @@ double HGCSSCalibration::MeVToMip(const unsigned layer, const bool absWeight) co
   return 1;
 }
 
-double HGCSSCalibration::MeVToMip(const unsigned layer, const double aEta, const bool absWeight) const{
+/*double HGCSSCalibration::MeVToMip(const unsigned layer, const double aEta, const bool absWeight) const{
   double res = 1;
   if (layer < theDetector().nLayers())
     res = theDetector().subDetectorByLayer(layer).mipWeight
@@ -65,4 +65,22 @@ double HGCSSCalibration::MeVToMip(const unsigned layer, const double aEta, const
   else if (aEta > 2.15) return res*2.;//100um
   return res;
 
+  }*/
+
+double HGCSSCalibration::MeVToMip(const unsigned layer, const double aRadius, const bool absWeight) const{
+  double res = 1;
+  if (layer < theDetector().nLayers())
+    res = theDetector().subDetectorByLayer(layer).mipWeight
+      *(absWeight?theDetector().subDetectorByLayer(layer).absWeight : 1.0);
+
+  if (theDetector().subDetectorByLayer(layer).isSi == false) return res;
+  double r1 = 1200;
+  double r2 = 750;
+  if (theDetector().subDetectorByLayer(layer).type == DetectorEnum::FHCAL) {
+    r1 = 1000;
+    r2 = 600;
+  }
+  if (aRadius>r1) return res*2./3.;//300um
+  else if (aRadius < r2) return res*2.;//100um
+  return res;
 }

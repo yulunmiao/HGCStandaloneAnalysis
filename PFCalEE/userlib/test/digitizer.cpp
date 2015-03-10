@@ -393,14 +393,14 @@ int main(int argc, char** argv){//main
 	prevLayer = layer;
 	if (debug > 1) std::cout << " - layer " << layer << " " << subdet.name << " " << subdetLayer << std::endl;
       }
-      double energy = lHit.energy()*mycalib.MeVToMip(layer);
       double posx = lHit.get_x(cellSize);
       double posy = lHit.get_y(cellSize);
+      double radius = sqrt(pow(posx,2)+pow(posy,2));
       double posz = lHit.get_z();
+      double energy = lHit.energy()*mycalib.MeVToMip(layer,radius);
       double realtime = mycalib.correctTime(lHit.time(),posx,posy,posz);
       bool passTime = myDigitiser.passTimeCut(type,realtime);
       if (!passTime) continue;
-      double radius = sqrt(pow(posx,2)+pow(posy,2));
       if (energy>0 && 
 	  lHit.silayer() < geomConv.getNumberOfSiLayers(type,radius) 
 	  ){
@@ -461,7 +461,7 @@ int main(int argc, char** argv){//main
 	    double posz = lHit.get_z();
 	    double radius = sqrt(pow(posx,2)+pow(posy,2));
 	    if (lHit.silayer() < geomConv.getNumberOfSiLayers(type,radius)){
-	      double energy = lHit.energy()*mycalib.MeVToMip(layer);
+	      double energy = lHit.energy()*mycalib.MeVToMip(layer,radius);
 	      double realtime = mycalib.correctTime(lHit.time(),posx,posy,posz);
 	      bool passTime = myDigitiser.passTimeCut(type,realtime);
 	      if (!passTime) continue;
