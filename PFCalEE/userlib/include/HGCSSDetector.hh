@@ -61,10 +61,15 @@ public:
     indices_.clear();
     indices_.resize(7,0);
     //fill layer indices
-    if (versionNumber==22) {
+    if (versionNumber==22){
       indices_[4] = 0;
       indices_[5] = 10;
       indices_[6] = 10;
+    }
+    else if (versionNumber==32) {
+      indices_[4] = 0;
+      indices_[5] = 12;
+      indices_[6] = 12;
     }
     else if (versionNumber==23) {
       indices_[3] = 0;
@@ -78,6 +83,12 @@ public:
       indices_[5] = 34;
       indices_[6] = 34;
     }
+    else if (versionNumber==31) {
+      indices_[3] = 0;
+      indices_[4] = 12;
+      indices_[5] = 24;
+      indices_[6] = 24;
+    }
     else if (versionNumber < 20){
       indices_[0] = 0;
       indices_[1] = versionNumber==8?11:10;
@@ -86,6 +97,24 @@ public:
       indices_[4] = indices_[3];
       indices_[5] = indices_[3];
       indices_[6] = indices_[3];
+    }
+    else if (versionNumber == 30){
+      indices_[0] = 0;
+      indices_[1] = 10;
+      indices_[2] = 20;
+      indices_[3] = 28;
+      indices_[4] = indices_[3];
+      indices_[5] = indices_[3];
+      indices_[6] = indices_[3];
+    }
+    else if (versionNumber == 33){
+      indices_[0] = 0;
+      indices_[1] = 10;
+      indices_[2] = 20;
+      indices_[3] = 28;
+      indices_[4] = 40;
+      indices_[5] = 52;
+      indices_[6] = 52;
     }
     else {
       indices_[0] = 0;
