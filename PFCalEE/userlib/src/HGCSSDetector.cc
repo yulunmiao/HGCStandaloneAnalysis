@@ -134,13 +134,20 @@ void HGCSSDetector::addSubdetector(const HGCSSSubDetector & adet){
 void HGCSSDetector::finishInitialisation(){
   nSections_ = subdets_.size();
   //indices_.push_back(subdets_[nSections_-1].layerIdMax);
-  unsigned lastEle = indices_.size()-1;
+  const unsigned lastEle = indices_.size()-1;
   nLayers_ = indices_[lastEle];
+
+  unsigned secIndex[lastEle];
+  unsigned iS(0);
+  for(unsigned i(0); i<lastEle ;i++){
+     secIndex[i] = iS;
+     if(indices_[i] < indices_[i+1])iS +=1;
+  }
   //initialise layer-section conversion
   section_.resize(nLayers_,0);
   for (unsigned iL(0); iL<nLayers_;++iL){
     for (unsigned i(0); i<lastEle;++i){
-      if (iL >= indices_[i] && iL < indices_[i+1]) section_[iL] = i;
+      if (iL >= indices_[i] && iL < indices_[i+1]) section_[iL] = secIndex[i];
     }
   }
   printDetector(std::cout);
