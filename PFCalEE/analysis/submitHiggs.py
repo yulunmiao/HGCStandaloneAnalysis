@@ -35,10 +35,10 @@ redofit=1
 workdir='/afs/cern.ch/work/a/amagnan/PFCalEEAna/'
 
 #nPuVtxset=[0,140]
-nPuVtxset=[200]
+nPuVtxset=[0]
 
-#runlist=[0,1,2,3,4,5,6,7,8,9]
-runlist=[0,1,5,6,7]
+runlist=[0,1,2,3,4,5,6,7,8,9]
+#runlist=[0,1,5,6,7]
 
 for nPuVtx in nPuVtxset :
     nevents=opt.nevts

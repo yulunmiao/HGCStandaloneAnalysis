@@ -43,7 +43,7 @@ elif opt.version==25:
     INPATHPU="root://eoscms//eos/cms/store/cmst3/group/hgcal/Standalone/V25/MinBias/"
 
 #nPuVtxlist=[0,140,200]
-nPuVtxlist=[140,200]
+nPuVtxlist=[0]
 
 #in %
 interCalibList=[2];#0,1,2,3,4,5,10,15,20,50]
@@ -99,8 +99,8 @@ for nPuVtx in nPuVtxlist:
             outDir='%s/git_%s/version_%d/model_%d/%s/%s'%(opt.out,opt.gittag,opt.version,opt.model,opt.datatype,bval)
             if en>0 : outDir='%s/et_%d'%(outDir,en)
             eosDir='%s/git%s/%s'%(opt.eos,opt.gittag,opt.datatype)
-            #eosDirIn='%s/git%s/%s'%(opt.eosin,opt.gittag,opt.datatype)
-            eosDirIn='%s'%(opt.eosin)
+            eosDirIn='%s/git%s/%s'%(opt.eosin,opt.gittag,opt.datatype)
+            #eosDirIn='%s'%(opt.eosin)
             if opt.alpha>0 : outDir='%s/a_%3.3f/'%(outDir,opt.alpha) 
             if opt.phi!=0.5 : outDir='%s/phi_%3.3fpi/'%(outDir,opt.phi) 
             if (opt.run>=0) : outDir='%s/run_%d/'%(outDir,opt.run)

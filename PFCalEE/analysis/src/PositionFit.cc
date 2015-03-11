@@ -212,9 +212,11 @@ void PositionFit::initialiseClusterHistograms(){
    std::vector<double> init;
    init.resize(9,0);
    Exy_.resize(nLayers_,init);
+   truthE_ = 0;
    if (saveEtree_){
      outputFile_->cd(outputDir_.c_str());
      outtree_ = new TTree("EcellsSR2","Tree to save energies in each cell of SR2");
+     outtree_->Branch("truthE",&truthE_);
      truthPosX_.resize(nLayers_,0);
      truthPosY_.resize(nLayers_,0);
      for (unsigned iL(0);iL<nLayers_;++iL){
@@ -566,7 +568,6 @@ void PositionFit::initialiseClusterHistograms(){
        truthVtx_ = ROOT::Math::XYZPoint(xvtx,0,zvtx);
        //in GeV
        truthE_ = (*genvec)[iP].E()/1000.;
-
        if (debug_) std::cout << " Found truth vertex pos at: x=" << xvtx << " z=" << zvtx << " xpos was: " << (*genvec)[iP].x() << std::endl;
 
        break;
