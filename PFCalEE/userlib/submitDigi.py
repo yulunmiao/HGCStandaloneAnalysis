@@ -31,8 +31,8 @@ parser.add_option('-S', '--no-submit'   ,    action="store_true",  dest='nosubmi
 
 enlist=[0]
 #if opt.dogun : enlist=[3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200]
-#if opt.dogun : enlist=[25]
-if opt.dogun : enlist=[2,5,10,20,40,60,80,100,150,200]#,300,400,500]
+if opt.dogun : enlist=[60]
+#if opt.dogun : enlist=[2,5,10,20,40,60,80,100,150,200]#,300,400,500]
 
 #INPATHPU="root://eoscms//eos/cms/store/user/msun/V12/MinBias/"
 INPATHPU="root://eoscms//eos/cms/store/cmst3/group/hgcal/Standalone/V12/MinBias/"
@@ -49,7 +49,7 @@ nPuVtxlist=[0]
 interCalibList=[2];#0,1,2,3,4,5,10,15,20,50]
 
 granularity='0-29:4,30-65:4'
-noise='0-65:0.2'
+noise='0-65:0.15'
 threshold='0-65:5'
 
 if (opt.version==8) :
@@ -58,7 +58,7 @@ if (opt.version==8) :
     threshold='0-30:2'
 elif opt.version<20 :
     granularity='0-19:4,20-29:4'
-    noise='0-29:0.2'
+    noise='0-29:0.15'
     threshold='0-29:5'
 elif (opt.version==21 or opt.version==24):
     granularity='0-23:6,24-33:8'
@@ -116,7 +116,7 @@ for nPuVtx in nPuVtxlist:
             #scriptFile.write('cd %s\n'%(outDir))
             outTag='version%d_model%d_%s'%(opt.version,opt.model,bval)
             if en>0 : outTag='%s_et%d'%(outTag,en)
-            if opt.alpha>0 : outTag='%s_alpha%3.3f'%(outTag,opt.alpha) 
+            if opt.alpha>0 : outTag='%s_eta%3.3f'%(outTag,opt.alpha) 
             if opt.phi!=0.5 : outTag='%s_phi%3.3fpi'%(outTag,opt.phi) 
             if (opt.run>=0) : outTag='%s_run%d'%(outTag,opt.run)
             scriptFile.write('localdir=`pwd`\n')

@@ -14,8 +14,8 @@ int main(int argc, char ** argv) {
   std::cout << " -- Starting program..." << std::endl;
 
   const unsigned nZ = 100;
-  const unsigned z0 = 250;
-  const unsigned step = 5;
+  const unsigned z0 = 100;
+  const unsigned step = 2;
 
   //TFile *fout = TFile::Open("PLOTS/output_hepmc_vtxorig.root","RECREATE");
   TFile *fout = TFile::Open("PLOTS/output_hepmc_vtxmodif.root","RECREATE");
