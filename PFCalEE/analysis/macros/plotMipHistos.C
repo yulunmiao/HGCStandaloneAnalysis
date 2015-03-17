@@ -97,9 +97,9 @@ int plotMipHistos(){
   ///////////////////////////////////////////////////////////////////
 
   const unsigned nEta = 1;
-  const unsigned nNoise = 10;
+  const unsigned nNoise = 1;//10;
 
-  const double noise[nNoise] = {0,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5};
+  const double noise[nNoise] = {0};//,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5};
   const double eta[nEta] = {2.85};//1.7,2.0,2.5};
 
   const double deta = 0.05;
@@ -113,7 +113,7 @@ int plotMipHistos(){
   const double Ethresh = 0.9;
   const double EthreshMax = 5.0;
   const double EmaxCut = 0.05;
-  const unsigned layerRange = 2;
+  const unsigned layerRange = 1;
 
   std::ostringstream suffix;
   suffix << "Eta" << eta[0];
@@ -121,7 +121,7 @@ int plotMipHistos(){
   suffix << "_" << EthreshMax;
   suffix << "_EmaxNeighbour" << EmaxCut;
   suffix << "_trk" << 1+2*layerRange << "layers";
-  suffix << "_1x1";  
+  //suffix << "_1x1";  
   if (oneOnly) suffix << "_onlyOne";
 
   ///////////////////////////////////////////////////////////////////
@@ -129,7 +129,7 @@ int plotMipHistos(){
   ///////////////////////////////////////////////////////////////////
 
   std::ostringstream outFilePath;
-  outFilePath << "/afs/cern.ch/work/a/amagnan/PFCalEEAna/PLOTS/gitV00-02-12/version12/MinBias/Histos" << suffix.str() << "_0_20.root";
+  outFilePath << "/afs/cern.ch/work/a/amagnan/PFCalEEAna/PLOTS/gitV00-02-12/version12/MinBias/Histos" << suffix.str() << "_all.root";
   TFile *file = TFile::Open(outFilePath.str().c_str());
   file->cd();
 
@@ -254,9 +254,10 @@ int plotMipHistos(){
   for (unsigned ie(0);ie<nEta;++ie){
     for (unsigned il(0); il<nLayers;++il){
       for (unsigned in(0); in<nNoise;++in){
-	mycL->cd(in+1);
+	mycL->cd(il/3+1);
 	if (noise[in]>0.3) hitSpectrum[ie][in][il]->Rebin(2);
-	hitSpectrum[ie][in][il]->Draw();
+	hitSpectrum[ie][in][il]->SetLineColor(1+il%3);
+	hitSpectrum[ie][in][il]->Draw(il%3==0?"":"same");
 	if (hitSpectrum[ie][in][il]->GetEntries()==0) continue;
 	TF1 *fit = 0;
 	double mpc = 0;
@@ -288,11 +289,18 @@ int plotMipHistos(){
 	  if (!fit) continue;
 	  mpc = fit->GetParameter(1);
 	}
-	sprintf(buf,"Layer %d, Noise = %3.2f MIPs",il,noise[in]);
-	lat.DrawLatexNDC(0.2,0.85,buf);
-	sprintf(buf,"%3.2f < #eta < %3.2f",eta[ie]-deta,eta[ie]+deta);
-	lat.DrawLatexNDC(0.2,0.75,buf);
-
+	if (il%3==0){
+	  sprintf(buf,"Layer %d, Noise = %3.2f MIPs",il,noise[in]);
+	  lat.DrawLatexNDC(0.2,0.85,buf);
+	  sprintf(buf,"%3.2f < #eta < %3.2f",eta[ie]-deta,eta[ie]+deta);
+	  lat.DrawLatexNDC(0.2,0.75,buf);
+	}
+	else {
+	  lat.SetTextColor(il%3+1);
+	  sprintf(buf,"Layer %d",il);
+	  lat.DrawLatexNDC(0.35,0.75-0.1*(il%3),buf);
+	  lat.SetTextColor(1);
+	}
 
 	grNhits[ie][in]->SetPoint(il,il,p_nHits[ie][in][il]->GetMean());
 	grNhits[ie][in]->SetPointError(il,0,p_nHits[ie][in][il]->GetRMS());
@@ -309,14 +317,13 @@ int plotMipHistos(){
 	}
       }
       
-      label.str("");
-      label << "PLOTS/" << suffix.str() << "/MipSpectrum_eta" << eta[ie]*10 ;
-      label << "_layer" << il;
-      //label << suffix.str();
-      label << ".pdf";
-      mycL->Print(label.str().c_str());
-
     }
+    label.str("");
+    label << "PLOTS/" << suffix.str() << "/MipSpectrum_eta" << eta[ie]*10 ;
+    //label << "_layer" << il;
+    //label << suffix.str();
+    label << "_perlayer.pdf";
+    mycL->Print(label.str().c_str());
 
     for (unsigned in(0); in<nNoise;++in){
       myc->cd(in+1);

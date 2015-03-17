@@ -83,6 +83,10 @@ public:
     return HistMapE_[aDet];
   };
 
+  inline std::vector<TH2D *> & get2DEnergyVecSmall(const DetectorEnum aDet){
+    return HistMapESmall_[aDet];
+  };
+
   inline std::vector<TH2D *> & get2DTimeVec(const DetectorEnum aDet){
     return HistMapTime_[aDet];
   };
@@ -99,6 +103,7 @@ private:
   unsigned model_;
 
   std::map<DetectorEnum,std::vector<TH2D *> > HistMapE_;
+  std::map<DetectorEnum,std::vector<TH2D *> > HistMapESmall_;
   std::map<DetectorEnum,std::vector<TH2D *> > HistMapTime_;
   std::map<DetectorEnum,std::vector<TH2D *> > HistMapZ_;
   std::map<DetectorEnum,std::vector<double> > avgMapZ_;

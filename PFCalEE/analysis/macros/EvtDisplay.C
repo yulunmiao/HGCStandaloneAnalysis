@@ -5,7 +5,6 @@
 
 #include "TFile.h"
 #include "TTree.h"
-#include "TNtuple.h"
 #include "TH3F.h"
 #include "TH2F.h"
 #include "TH1F.h"
@@ -56,17 +55,78 @@ void set_plot_style()
     gStyle->SetNumberContours(NCont);
 }
 
+double absWeight(const unsigned layer){
+if (layer==0) return 1;
+if (layer==1) return 1.00258;
+if (layer==2) return 0.984423;
+if (layer==3) return 1.00258;
+if (layer==4) return 0.984423;
+if (layer==5) return 1.00258;
+if (layer==6) return 0.984423;
+if (layer==7) return 1.00258;
+if (layer==8) return 0.984423;
+if (layer==9) return 1.00258;
+if (layer==10) return 1.33536;
+if (layer==11) return 1.3627;
+if (layer==12) return 1.33536;
+if (layer==13) return 1.3627;
+if (layer==14) return 1.33536;
+if (layer==15) return 1.3627;
+if (layer==16) return 1.33536;
+if (layer==17) return 1.3627;
+if (layer==18) return 1.33536;
+if (layer==19) return 1.3627;
+if (layer==20) return 1.9495;
+if (layer==21) return 1.9629;
+if (layer==22) return 1.9495;
+if (layer==23) return 1.9629;
+if (layer==24) return 1.9495;
+if (layer==25) return 1.9629;
+if (layer==26) return 1.9495;
+if (layer==27) return 2.01643;
+if (layer==28) return 6.00121;
+if (layer==29) return 5.31468;
+if (layer==30) return 5.31468;
+if (layer==31) return 5.31468;
+if (layer==32) return 5.31468;
+if (layer==33) return 5.31468;
+if (layer==34) return 5.31468;
+if (layer==35) return 5.31468;
+if (layer==36) return 5.31468;
+if (layer==37) return 5.31468;
+if (layer==38) return 5.31468;
+if (layer==39) return 5.31468;
+if (layer==40) return 8.71728;
+if (layer==41) return 8.00569;
+if (layer==42) return 8.00569;
+if (layer==43) return 8.00569;
+if (layer==44) return 8.00569;
+if (layer==45) return 8.00569;
+if (layer==46) return 8.00569;
+if (layer==47) return 8.00569;
+if (layer==48) return 8.00569;
+if (layer==49) return 8.00569;
+if (layer==50) return 8.00569;
+if (layer==51) return 8.00569;
+ return 1;
+}
+
 int EvtDisplay(){//main  
 
   //const unsigned nS = 7;
   //TString scenario[nS] = {"0","1","2","3","4","5","6"};
-  //TString scenario = "VBFH/concept/";
+  TString scenario = "VBFHgg/";
   //TString scenario = "ZHtautau/concept/";
   //TString scenario = "ZH125/concept/";
-  TString scenario = "GluGlu/concept/";
-  bool doAll = false;
-  TString version = "20";
+  //TString scenario = "GluGlu/concept/";
+  bool doAll = true;
+  unsigned versionNumber = 33;
+
+  TString version = "";
+  version += versionNumber;
+
   unsigned mipThresh = 1;
+
 
   double minRadius = 316;//mm
 
@@ -78,20 +138,20 @@ int EvtDisplay(){//main
 
   std::ostringstream ltitleBase;
   //ltitle << "#gamma 200 GeV"
-  //ltitleBase << "VBF H,H#rightarrow#gamma#gamma";
+  ltitleBase << "VBF H,H#rightarrow#gamma#gamma";
   //ltitleBase << "ZH,H#rightarrow#tau#tau";
-  ltitleBase << "pp #rightarrow gg";
+  //ltitleBase << "pp #rightarrow gg";
     //<< " Event #" << event[ievt]
     //	     << ", E_{1#times1 cm^{2}} > "
     //	     << mipThresh << " Mips";
 
 
-  const unsigned nLayers = 64;
-  const unsigned nEcalLayers = 31;
+  const unsigned nLayers = 52;
+  const unsigned nEcalLayers = 28;
 
   //VBFH
-  //const unsigned nEvts = 7;//1000;
-  //unsigned event[nEvts]={4,5,6,7,9,11,12};//,6,12};//103,659,875};
+  const unsigned nEvts = 7;//1000;
+  unsigned event[nEvts]={4,5,6,7,9,11,12};//,6,12};//103,659,875};
   //Htautau 1000
   //const unsigned nEvts = 7;//1000;
   //unsigned event[nEvts]={1,2,5,8,10,11,12};//,6,12};//103,659,875};
@@ -99,8 +159,8 @@ int EvtDisplay(){//main
   //const unsigned nEvts = 5;//1000;
   //unsigned event[nEvts]={0,1,2,10,14};//,6,12};//103,659,875};
   //gluons
-  const unsigned nEvts = 3;//1000;
-  unsigned event[nEvts]={7,16,22};//,2,3,4};//,6,12};//103,659,875};
+  //const unsigned nEvts = 3;//1000;
+  //unsigned event[nEvts]={7,16,22};//,2,3,4};//,6,12};//103,659,875};
 
   //  const unsigned nEvts = 13;//1000;
   //unsigned event[nEvts];//={1,6,12};//103,659,875};
@@ -112,10 +172,10 @@ int EvtDisplay(){//main
 
 
   //VBFH
-  //double minX[nEvts] = {-700,-600,-400,-400,0,0,0};
-  //double maxX[nEvts] = {-100,0,200,100,700,700,500};
-  //double minY[nEvts] = {100,-600,-1100,-800,-100,-200,-700};
-  //double maxY[nEvts] = {480,0,0,0,400,300,0};
+  double minX[nEvts] = {-700,-600,-400,-400,0,0,0};
+  double maxX[nEvts] = {-100,0,200,100,700,700,500};
+  double minY[nEvts] = {100,-600,-1100,-800,-100,-200,-700};
+  double maxY[nEvts] = {480,0,0,0,400,300,0};
 
   //Htautau 1000
   /*double minX[nEvts] = {0,-500,0,-400,0,-500,-700};
@@ -130,10 +190,10 @@ int EvtDisplay(){//main
   double maxY[nEvts] = {-500,150,650,-550,-400};*/
 
   //pp to gg
-  double minX[nEvts] = {100,100,-200};
-  double maxX[nEvts] = {700,700,500};
-  double minY[nEvts] = {100,100,200};
-  double maxY[nEvts] = {700,700,900};
+  //double minX[nEvts] = {100,100,-200};
+  //double maxX[nEvts] = {700,700,500};
+  //double minY[nEvts] = {100,100,200};
+  //double maxY[nEvts] = {700,700,900};
 
   if (doAll){
     for (unsigned ievt(0); ievt<nEvts; ++ievt){//loop on events
@@ -141,6 +201,12 @@ int EvtDisplay(){//main
       minY[ievt]=-1700;maxY[ievt]=1700;
     }
   }
+
+  //if (nLayers == nEcalLayers) {
+  //maxZ = 3500;
+  //}
+  unsigned nZ=(maxZ-minZ)/10.;
+
 
   //if (doAll){
   //minX=-1700,maxX=1700;
@@ -162,43 +228,61 @@ int EvtDisplay(){//main
 
   std::ostringstream saveName;
   
-  TString inputDir = "../PLOTS/version_"+version+"/"+scenario+"/";
-  if (doAll) inputDir += "Overview/";
+  std::ostringstream inputDir;
+  inputDir << "/afs/cern.ch/work/a/amagnan/public/HGCalGeant4/git_V00-03-06/version_33/model_2/";
+  inputDir << scenario ;
+  inputDir << "/BON/DigiPFcal.root" ;
 
-  for (unsigned ievt(0); ievt<nEvts; ++ievt){//loop on events
-    lName.str("");
-    lName << inputDir ;
-    lName << "CalibHistos_E200_evt" << event[ievt] << ".root";
-    TFile *inputFile = TFile::Open(lName.str().c_str());
-    if (!inputFile) {
-      std::cout << " -- Error, input file " << lName.str() << " cannot be opened. Going to next..." << std::endl;
-      continue;
-      //return 1;
-    }
+  TString outputDir = "../PLOTS/version_"+version+"/"+scenario+"/";
+  if (doAll) outputDir += "Overview/";
+
+  TFile *inputFile = TFile::Open(inputDir.str().c_str());
+  if (!inputFile) {
+    std::cout << " -- Error, input file " << inputDir.str() << " cannot be opened." << std::endl;
+    return 1;
+  }
+  inputFile->cd();
+  TTree *tree = (TTree*)gDirectory->Get("RecoTree");
+  TH3F *p_xyz[nEvts];
+
+  //for (unsigned ievt(0); ievt<nEvts; ++ievt){//loop on events
+  for (unsigned ievt(0); ievt<2; ++ievt){//loop on events
 
 
-    TString plotDir = inputDir;
+    TString plotDir = outputDir;
     //if (doAll) plotDir += "Overview/";
 
-    inputFile->cd();
-    TH3F *p_xyz = 0;
-    p_xyz = (TH3F*)gDirectory->Get("p_xyz")->Clone();
-      
-    if (!p_xyz) {
-      std::cout << " -- ERROR, pointer for XYZ histogram is null. Exiting..." << std::endl;
-      return 1;
-    }
-    p_xyz->Sumw2();
-    p_xyz->RebinY(2);
-    p_xyz->RebinZ(2);
+    unsigned nX=(maxX[ievt]-minX[ievt])/10.,nY=(maxY[ievt]-minY[ievt])/10.;
+    lName.str("");
+    lName << "xyz_" << ievt ; 
 
-    std::cout << " --bins, min and max of hist = " 
-	      << p_xyz->GetNbinsY() << " " 
-	      << p_xyz->GetMinimum() << " " 
-	      << p_xyz->GetMaximum() 
-	      << std::endl;
+    p_xyz[ievt] = new TH3F(lName.str().c_str(),";z(mm);x(mm);y(mm)",
+			   nZ,minZ,maxZ,
+			   nX,minX[ievt],maxX[ievt],
+			   nY,minY[ievt],maxY[ievt]);
+      
+    p_xyz[ievt]->Sumw2();
+    //p_xyz->RebinY(2);
+    //p_xyz->RebinZ(2);
+
 
     set_plot_style();
+    gStyle->SetOptStat(1111111);
+
+    myc[ievt]->cd();
+    std::ostringstream lvar;
+    lvar << "HGCSSRecoHitVec.ypos_:HGCSSRecoHitVec.xpos_:HGCSSRecoHitVec.zpos_>>" << lName.str();
+    std::ostringstream lcut;
+    lcut << "event_==" << event[ievt];
+    tree->Draw(lvar.str().c_str(),lcut.str().c_str());
+
+    std::cout << " --bins, min and max of hist = " 
+	      << p_xyz[ievt]->GetNbinsY() << " " 
+	      << p_xyz[ievt]->GetMinimum() << " " 
+	      << p_xyz[ievt]->GetMaximum() 
+	      << std::endl;
+
+    //continue;
 
     std::ostringstream ltitle;
     ltitle << ltitleBase.str();
@@ -212,9 +296,9 @@ int EvtDisplay(){//main
       lName.str("");
       lName << "slice_" << iS ; 
       p_slice[iS] = new TH3F(lName.str().c_str(),";z(mm);x(mm);y(mm)",
-			     p_xyz->GetNbinsX(),p_xyz->GetXaxis()->GetBinLowEdge(1),p_xyz->GetXaxis()->GetBinLowEdge(p_xyz->GetNbinsX()+1),
-			     p_xyz->GetNbinsY(),p_xyz->GetYaxis()->GetBinLowEdge(1),p_xyz->GetYaxis()->GetBinLowEdge(p_xyz->GetNbinsY()+1),
-			     p_xyz->GetNbinsZ(),p_xyz->GetZaxis()->GetBinLowEdge(1),p_xyz->GetZaxis()->GetBinLowEdge(p_xyz->GetNbinsZ()+1)
+			     p_xyz[ievt]->GetNbinsX(),p_xyz[ievt]->GetXaxis()->GetBinLowEdge(1),p_xyz[ievt]->GetXaxis()->GetBinLowEdge(p_xyz[ievt]->GetNbinsX()+1),
+			     p_xyz[ievt]->GetNbinsY(),p_xyz[ievt]->GetYaxis()->GetBinLowEdge(1),p_xyz[ievt]->GetYaxis()->GetBinLowEdge(p_xyz[ievt]->GetNbinsY()+1),
+			     p_xyz[ievt]->GetNbinsZ(),p_xyz[ievt]->GetZaxis()->GetBinLowEdge(1),p_xyz[ievt]->GetZaxis()->GetBinLowEdge(p_xyz[ievt]->GetNbinsZ()+1)
 			     );
       p_slice[iS]->SetMarkerColor(lColor[iS]);
       //p_slice[iS]->SetLineColor(iS+1);
@@ -232,36 +316,36 @@ int EvtDisplay(){//main
       p_slice[iS]->GetZaxis()->SetTitleSize(0.05);
       p_slice[iS]->SetTitle(ltitle.str().c_str());
 
-      //val[iS]= exp(iS*log(p_xyz->GetMaximum())/nSlices);
+      //val[iS]= exp(iS*log(p_xyz[ievt]->GetMaximum())/nSlices);
     }
 
-    //val[nSlices] = p_xyz->GetMaximum();
+    //val[nSlices] = p_xyz[ievt]->GetMaximum();
 
     double lmin = 10;
-    double lmax = p_xyz->GetBinContent(1,1,1);
+    double lmax = p_xyz[ievt]->GetBinContent(1,1,1);
 
-    for (int xb(1); xb<p_xyz->GetNbinsX()+1;++xb){
+    for (int xb(1); xb<p_xyz[ievt]->GetNbinsX()+1;++xb){
       //std::cout << "--- xb=" << xb << "" << std::endl;
-      for (int yb(1); yb<p_xyz->GetNbinsY()+1;++yb){
-	double xTmp = p_xyz->GetYaxis()->GetBinCenter(yb);
-	for (int zb(1); zb<p_xyz->GetNbinsZ()+1;++zb){
-	  double yTmp = p_xyz->GetZaxis()->GetBinCenter(zb);
+      for (int yb(1); yb<p_xyz[ievt]->GetNbinsY()+1;++yb){
+	double xTmp = p_xyz[ievt]->GetYaxis()->GetBinCenter(yb);
+	for (int zb(1); zb<p_xyz[ievt]->GetNbinsZ()+1;++zb){
+	  double yTmp = p_xyz[ievt]->GetZaxis()->GetBinCenter(zb);
 	  double radius = sqrt(yTmp*yTmp+xTmp*xTmp);
 	  if (radius < minRadius){
-	    p_xyz->SetBinContent(xb,yb,zb,0);
+	    p_xyz[ievt]->SetBinContent(xb,yb,zb,0);
 	    continue;
 	  }
-	  double ltmp = p_xyz->GetBinContent(xb,yb,zb);
+	  double ltmp = p_xyz[ievt]->GetBinContent(xb,yb,zb);
 	  if (ltmp<lmin && ltmp>0) lmin=ltmp;
 	  if (ltmp>lmax) lmax=ltmp;
 
 	  if (ltmp<1) continue;
-	  //std::cout << xb << " " << yb << " " << zb << " " << p_xyz->GetBinContent(xb,yb,zb) << std::endl;
+	  //std::cout << xb << " " << yb << " " << zb << " " << p_xyz[ievt]->GetBinContent(xb,yb,zb) << std::endl;
 	  if (ltmp < mipThresh) {
-		  p_xyz->SetBinContent(xb,yb,zb,0);
+		  p_xyz[ievt]->SetBinContent(xb,yb,zb,0);
 	  }
 	  else {
-	    p_xyz->SetBinContent(xb,yb,zb,ltmp);
+	    p_xyz[ievt]->SetBinContent(xb,yb,zb,ltmp);
 	    for (unsigned iS(0); iS<nSlices; ++iS){
 	      if (ltmp<=val[iS+1] && ltmp>val[iS])
 		p_slice[iS]->SetBinContent(xb,yb,zb,ltmp);
@@ -276,7 +360,6 @@ int EvtDisplay(){//main
 	      << lmax 
 	      << std::endl;
 
-    gStyle->SetOptStat(0);
 
     myc[ievt]->cd();
     //TPad *pad1 = new TPad("pad1","This is pad1",0.01,0.01,0.83,0.99);

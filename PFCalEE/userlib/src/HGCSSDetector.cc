@@ -25,6 +25,8 @@ void HGCSSDetector::buildDetector(const unsigned versionNumber,
   FECAL.gevWeight = 1.0;
   FECAL.gevOffset = 0.0;
   FECAL.isSi = true;
+  //if (versionNumber>=30) 
+  FECAL.radiusLim = 750;
   if (FECAL.nLayers()>0) theDetector().addSubdetector(FECAL);
   
   HGCSSSubDetector MECAL;
@@ -37,6 +39,8 @@ void HGCSSDetector::buildDetector(const unsigned versionNumber,
   MECAL.gevWeight = 1.0;
   MECAL.gevOffset = 0.0;
   MECAL.isSi = true;
+  //if (versionNumber>=30) 
+  MECAL.radiusLim = 750;
   if (MECAL.nLayers()>0) theDetector().addSubdetector(MECAL);
   
   HGCSSSubDetector BECAL;
@@ -49,6 +53,8 @@ void HGCSSDetector::buildDetector(const unsigned versionNumber,
   BECAL.gevWeight = 1.0;
   BECAL.gevOffset = 0.0;
   BECAL.isSi = true;
+  //if (versionNumber>=30) 
+  BECAL.radiusLim = 750;
   if (BECAL.nLayers()>0) theDetector().addSubdetector(BECAL);
   
   HGCSSSubDetector FHCAL;
@@ -62,6 +68,8 @@ void HGCSSDetector::buildDetector(const unsigned versionNumber,
   FHCAL.gevWeight = 1.;
   FHCAL.gevOffset = 0.;
   FHCAL.isSi = true;
+  //if (versionNumber>=30) 
+  FHCAL.radiusLim = 600;
   if (isCaliceHcal) {
     FHCAL.mipWeight = 1./0.816;
     FHCAL.absWeight = 1.;

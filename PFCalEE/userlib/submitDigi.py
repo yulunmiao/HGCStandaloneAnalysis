@@ -78,7 +78,7 @@ elif (opt.version>24 and opt.version<30):
     threshold='0-53:2,54-65:4'
 else:
     granularity='0-51:4'
-    noise='0-51:0.2'
+    noise='0-51:0.15'
     threshold='0-51:5'
 
 for nPuVtx in nPuVtxlist:

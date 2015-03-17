@@ -64,6 +64,121 @@ void extractParameterFromStr(std::string aStr,T & vec){
   }//loop on elements
 }
 
+void processHist(const unsigned iL,
+		 const bool doSmall,
+		 const TH2D* histE,
+		 HGCSSDigitisation & myDigitiser,
+		 TH1F* & p_noise,
+		 const TH2D* histZ,
+		 const double & meanZpos,
+		 const bool isTBsetup,
+		 const HGCSSSubDetector & subdet,
+		 const std::vector<unsigned> & pThreshInADC,
+		 const bool pSaveDigis,
+		 HGCSSRecoHitVec & lDigiHits,
+		 HGCSSRecoHitVec & lRecoHits,
+		 const bool pMakeJets,
+		 std::vector<PseudoJet> & lParticles
+		 ){
+
+  DetectorEnum adet = subdet.type;
+  bool isScint = subdet.isScint;
+  bool isSi = subdet.isSi;
+
+  double rLim = subdet.radiusLim;
+
+  for (int iX(1); iX<histE->GetNbinsX()+1;++iX){
+    for (int iY(1); iY<histE->GetNbinsY()+1;++iY){
+
+      double x = histE->GetXaxis()->GetBinCenter(iX);
+      double y = histE->GetYaxis()->GetBinCenter(iY);
+      double radius = sqrt(pow(x,2)+pow(y,2));
+
+      if ( (doSmall && radius >= rLim) ||
+	   (!doSmall && radius < rLim && !isScint) ) continue;
+
+      double digiE = 0;
+      double simE = histE->GetBinContent(iX,iY);
+      //double time = 0;
+      //if (simE>0) time = histTime->GetBinContent(iX,iY)/simE;
+      
+      //fill vector with neighbours and calculate cross-talk
+      double xtalkE = simE;
+      if (isScint){
+	std::vector<double> simEvec;
+	simEvec.push_back(simE);
+	if (iX>1) simEvec.push_back(histE->GetBinContent(iX-1,iY));
+	if (iX<histE->GetNbinsX()) simEvec.push_back(histE->GetBinContent(iX+1,iY));
+	if (iY>1) simEvec.push_back(histE->GetBinContent(iX,iY-1));
+	if (iY<histE->GetNbinsY()) simEvec.push_back(histE->GetBinContent(iX,iY+1));
+	xtalkE = myDigitiser.ipXtalk(simEvec);
+      }
+      
+      //bool passTime = myDigitiser.passTimeCut(adet,time);
+      //if (!passTime) continue;
+      
+      double posz = meanZpos;
+      //for noise only hits
+      //if (simE>0) posz = histZ->GetBinContent(iX,iY)/simE;
+      //else posz = meanZpos;
+
+      
+      //if (fabs(x) > 500 || fabs(y)>500) std::cout << " x=" << x << ", y=" << y << std::endl;
+      
+
+      //correct for particle angle in conversion to MIP
+      double simEcor = isTBsetup ? xtalkE : myDigitiser.mipCor(xtalkE,x,y,posz);
+      digiE = simEcor;
+      
+      if (isScint && simEcor>0) {
+	digiE = myDigitiser.digiE(simEcor);
+      }
+      myDigitiser.addNoise(digiE,iL,p_noise);
+      
+      double noiseFrac = 1.0;
+      if (simEcor>0) noiseFrac = (digiE-simEcor)/simEcor;
+      
+      //for silicon-based Calo
+      unsigned adc = 0;
+      if (isSi){
+	adc = myDigitiser.adcConverter(digiE,adet);
+	digiE = myDigitiser.adcToMIP(adc,adet);
+      }
+      bool aboveThresh = //digiE > 0.5;
+	(isSi && adc > pThreshInADC[iL]) ||
+	(isScint && digiE > pThreshInADC[iL]*myDigitiser.adcToMIP(1,adet,false));
+      //histE->SetBinContent(iX,iY,digiE);
+      if ((!pSaveDigis && aboveThresh) ||
+	  pSaveDigis)
+	{//save hits
+	  //double calibE = myDigitiser.MIPtoGeV(subdet,digiE);
+	  HGCSSRecoHit lRecHit;
+	  lRecHit.layer(iL);
+	  lRecHit.energy(digiE);
+	  lRecHit.adcCounts(adc);
+	  lRecHit.x(x);
+	  lRecHit.y(y);
+	  lRecHit.z(posz);
+	  lRecHit.noiseFraction(noiseFrac);
+	  //unsigned x_cell = static_cast<unsigned>(fabs(x)/(cellSize*granularity[iL]));
+	  //unsigned y_cell = static_cast<unsigned>(fabs(y)/(cellSize*granularity[iL]));
+	  //lRecHit.encodeCellId(x>0,y>0,x_cell,y_cell,granularity[iL]);
+	  
+	  if (pSaveDigis) lDigiHits.push_back(lRecHit);
+	  
+	  lRecoHits.push_back(lRecHit);
+	  
+	  if (pMakeJets){
+	    if (posz>0) lParticles.push_back( PseudoJet(lRecHit.px(),lRecHit.py(),lRecHit.pz(),lRecHit.E()));
+	  }
+	  
+	}//save hits
+    }//loop on y
+  }//loop on x
+     
+}//processHist
+
+
 
 int main(int argc, char** argv){//main  
 
@@ -492,16 +607,17 @@ int main(int argc, char** argv){//main
     unsigned nTotBins = 0;
     for (unsigned iL(0); iL<nLayers; ++iL){//loop on layers
       TH2D *histE = geomConv.get2DHist(iL,"E");
+      TH2D *histEs = geomConv.get2DHist(iL,"ESmall");
       TH2D *histTime = geomConv.get2DHist(iL,"Time");
       TH2D *histZ = geomConv.get2DHist(iL,"Z");
       const HGCSSSubDetector & subdet = myDetector.subDetectorByLayer(iL);
-      DetectorEnum adet = subdet.type;
       bool isScint = subdet.isScint;
-      bool isSi = subdet.isSi;
       nTotBins += histE->GetNbinsX()*histE->GetNbinsY();
       if (pSaveDigis) lDigiHits.reserve(nTotBins);
 
       double meanZpos = geomConv.getAverageZ(iL);
+      
+      //std::cout << iL << " " << meanZpos << std::endl;
 
       if (debug>1){
 	std::cout << " -- Layer " << iL << " " << subdet.name << " z=" << meanZpos
@@ -517,87 +633,9 @@ int main(int argc, char** argv){//main
 	myDigitiser.setIPCrossTalk(0);
       }
 
-      for (int iX(1); iX<histE->GetNbinsX()+1;++iX){
-	for (int iY(1); iY<histE->GetNbinsY()+1;++iY){
-	  double digiE = 0;
-	  double simE = histE->GetBinContent(iX,iY);
-	  //double time = 0;
-	  //if (simE>0) time = histTime->GetBinContent(iX,iY)/simE;
-
-	  //fill vector with neighbours and calculate cross-talk
-	  double xtalkE = simE;
-	  if (isScint){
-	    std::vector<double> simEvec;
-	    simEvec.push_back(simE);
-	    if (iX>1) simEvec.push_back(histE->GetBinContent(iX-1,iY));
-	    if (iX<histE->GetNbinsX()) simEvec.push_back(histE->GetBinContent(iX+1,iY));
-	    if (iY>1) simEvec.push_back(histE->GetBinContent(iX,iY-1));
-	    if (iY<histE->GetNbinsY()) simEvec.push_back(histE->GetBinContent(iX,iY+1));
-	    xtalkE = myDigitiser.ipXtalk(simEvec);
-	  }
-
-	  //bool passTime = myDigitiser.passTimeCut(adet,time);
-	  //if (!passTime) continue;
-
-	  double posz = 0;
-	  //for noise only hits
-	  if (simE>0) posz = histZ->GetBinContent(iX,iY)/simE;
-	  else posz = meanZpos;
-
-	  double x = histE->GetXaxis()->GetBinCenter(iX);
-	  double y = histE->GetYaxis()->GetBinCenter(iY);
-
-	  //if (fabs(x) > 500 || fabs(y)>500) std::cout << " x=" << x << ", y=" << y << std::endl;
-
-	  //correct for particle angle in conversion to MIP
-	  double simEcor = isTBsetup ? xtalkE : myDigitiser.mipCor(xtalkE,x,y,posz);
-	  digiE = simEcor;
-
-	  if (isScint && simEcor>0) {
-	    digiE = myDigitiser.digiE(simEcor);
-	  }
-	  myDigitiser.addNoise(digiE,iL,p_noise);
-
-	  double noiseFrac = 1.0;
-	  if (simEcor>0) noiseFrac = (digiE-simEcor)/simEcor;
-
-	  //for silicon-based Calo
-	  unsigned adc = 0;
-	  if (isSi){
-	    adc = myDigitiser.adcConverter(digiE,adet);
-	    digiE = myDigitiser.adcToMIP(adc,adet);
-	  }
-	  bool aboveThresh = //digiE > 0.5;
-	    (isSi && adc > pThreshInADC[iL]) ||
-	    (isScint && digiE > pThreshInADC[iL]*myDigitiser.adcToMIP(1,adet,false));
-	  //histE->SetBinContent(iX,iY,digiE);
-	  if ((!pSaveDigis && aboveThresh) ||
-	      pSaveDigis)
-	    {//save hits
-	      //double calibE = myDigitiser.MIPtoGeV(subdet,digiE);
-	      HGCSSRecoHit lRecHit;
-	      lRecHit.layer(iL);
-	      lRecHit.energy(digiE);
-	      lRecHit.adcCounts(adc);
-	      lRecHit.x(x);
-	      lRecHit.y(y);
-	      lRecHit.z(posz);
-	      lRecHit.noiseFraction(noiseFrac);
-	      //unsigned x_cell = static_cast<unsigned>(fabs(x)/(cellSize*granularity[iL]));
-	      //unsigned y_cell = static_cast<unsigned>(fabs(y)/(cellSize*granularity[iL]));
-	      //lRecHit.encodeCellId(x>0,y>0,x_cell,y_cell,granularity[iL]);
-
-	      if (pSaveDigis) lDigiHits.push_back(lRecHit);
-
-	      lRecoHits.push_back(lRecHit);
-
-	      if (pMakeJets){
-		if (posz>0) lParticles.push_back( PseudoJet(lRecHit.px(),lRecHit.py(),lRecHit.pz(),lRecHit.E()));
-	      }
-
-	    }//save hits
-	}//loop on y
-      }//loop on x
+      processHist(iL,false,histE,myDigitiser,p_noise,histZ,meanZpos,isTBsetup,subdet,pThreshInADC,pSaveDigis,lDigiHits,lRecoHits,pMakeJets,lParticles);
+      if (!isScint) processHist(iL,true,histEs,myDigitiser,p_noise,histZ,meanZpos,isTBsetup,subdet,pThreshInADC,pSaveDigis,lDigiHits,lRecoHits,pMakeJets,lParticles);
+ 
     }//loop on layers
 
     if (debug) {

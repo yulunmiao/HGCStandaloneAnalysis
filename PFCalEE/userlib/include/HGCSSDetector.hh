@@ -28,7 +28,8 @@ public:
     gevWeight(1),
     gevOffset(0),
     isSi(false),
-    isScint(false)
+    isScint(false),
+    radiusLim(0)
   {};
   ~HGCSSSubDetector(){};
 
@@ -42,6 +43,7 @@ public:
   double gevOffset;
   bool isSi;
   bool isScint;
+  double radiusLim;
 
   inline unsigned nLayers() const{
     return (layerIdMax-layerIdMin);
