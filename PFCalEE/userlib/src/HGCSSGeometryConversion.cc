@@ -41,9 +41,10 @@ unsigned HGCSSGeometryConversion::getNumberOfSiLayers(const DetectorEnum type,
 						      const double & radius) const
 {
   if (model_ != 2) return 3;
+  if (theDetector().subDetectorByEnum(type).isScint) return 3;
 
   double r1 = 1200;
-  double r2 = theDetector().subDetectorByEnum(type).radiusLim;;
+  double r2 = theDetector().subDetectorByEnum(type).radiusLim;
   if (type == DetectorEnum::FHCAL) {
     r1 = 1000;
   }
@@ -82,8 +83,10 @@ HGCSSGeometryConversion::~HGCSSGeometryConversion(){
 void HGCSSGeometryConversion::deleteHistos(std::vector<TH2D *> & aVec){
   if (aVec.size()!=0){
     for (unsigned iL(0); iL<aVec.size();++iL){
-      aVec[iL]->Delete();
+      //if (aVec[iL]) aVec[iL]->Delete();
+      delete aVec[iL]; aVec[iL]=0;
     }
+    aVec.clear();
   }
 }
 
@@ -94,6 +97,16 @@ void HGCSSGeometryConversion::setGranularity(const std::vector<unsigned> & granu
   }
 }
 
+double HGCSSGeometryConversion::cellSize(const unsigned aLayer, const double aR) const{
+  if (theDetector().subDetectorByLayer(aLayer).isScint) return cellSize_*granularity_[aLayer];
+  double r1 = theDetector().subDetectorByLayer(aLayer).radiusLim;
+  if (aR<r1) return cellSize_*3;
+  else return cellSize_*4;
+}
+
+double HGCSSGeometryConversion::cellSizeInCm(const unsigned aLayer, const double aR) const{
+  return cellSize(aLayer, aR)/10.;
+}
 
 void HGCSSGeometryConversion::initialiseHistos(const bool recreate,
 					       std::string uniqStr,
@@ -131,8 +144,10 @@ void HGCSSGeometryConversion::fill(const DetectorEnum type,
   double radius = sqrt(posx*posx+posy*posy);
   double r1 = theDetector().subDetectorByEnum(type).radiusLim;
 
-  if (radius >= r1) HistMapE_[type][newlayer]->Fill(posx,posy,weightedE);
-  else HistMapESmall_[type][newlayer]->Fill(posx,posy,weightedE);
+  HistMapE_[type][newlayer]->Fill(posx,posy,weightedE);
+  //if (radius >= r1) HistMapE_[type][newlayer]->Fill(posx,posy,weightedE);
+  //else 
+  if (theDetector().subDetectorByEnum(type).isSi && radius<r1) HistMapESmall_[type][newlayer]->Fill(posx,posy,weightedE);
   HistMapTime_[type][newlayer]->Fill(posx,posy,weightedE*aTime);
   HistMapZ_[type][newlayer]->Fill(posx,posy,weightedE*posz);
   avgMapZ_[type][newlayer] += weightedE*posz;

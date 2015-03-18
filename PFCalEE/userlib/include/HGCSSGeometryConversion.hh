@@ -34,15 +34,17 @@ public:
   };
 
   //hardcode fine granularity at high eta ?
-  inline double cellSize(const unsigned aLayer, const double aEta) const{
-    if (fabs(aEta)<10) 
-      return cellSize_*granularity_[aLayer];
-    return cellSize_*3;
-  };
+  //  inline double cellSize(const unsigned aLayer, const double aEta) const{
+  //  if (fabs(aEta)<10) 
+  //    return cellSize_*granularity_[aLayer];
+  //  return cellSize_*3;
+  //};
+  //  inline double cellSizeInCm(const unsigned aLayer, const double aEta) const{
+  // return cellSize(aLayer, aEta)/10.;
+  //};
+  double cellSize(const unsigned aLayer, const double aR) const;
 
-  inline double cellSizeInCm(const unsigned aLayer, const double aEta) const{
-    return cellSize(aLayer, aEta)/10.;
-  };
+  double cellSizeInCm(const unsigned aLayer, const double aR) const;
 
   //unsigned getNumberOfSiLayers(const DetectorEnum type,
   //const double & eta=0) const;

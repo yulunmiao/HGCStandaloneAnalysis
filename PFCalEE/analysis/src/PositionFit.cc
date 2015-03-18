@@ -390,7 +390,7 @@ void PositionFit::initialiseClusterHistograms(){
      if (fixForPuMixBug_) posx-=1.25;
      double posy = lHit.get_y();
      if (fixForPuMixBug_) posy-=1.25;
-     double posz = lHit.get_z();
+     double posz = avgZ_[lHit.layer()];
      //double radius = sqrt(posx*posx+posy*posy);
      double energy = lHit.energy();
      //unsigned layer = lHit.layer();
@@ -968,7 +968,8 @@ bool PositionFit::getInitialPosition(const unsigned ievt,
     //use cell size at etamax...
     for (unsigned iL(0);iL<nLayers_;++iL){//loop on layers
       if (debug_) std::cout << "layer " << iL ;
-      unsigned nCells = nRandomCones*pow(nSR_*geomConv_.cellSize()/geomConv_.cellSize(iL,etamax),2);
+      double radius = sqrt(pow(xmax[iL],2)+pow(ymax[iL],2));
+      unsigned nCells = nRandomCones*pow(nSR_*geomConv_.cellSize()/geomConv_.cellSize(iL,radius),2);
       puE[iL] = puE[iL]/nCells;
       if (debug_) std::cout << " Epu=" << puE[iL] << std::endl;	
     }
@@ -1116,14 +1117,14 @@ void PositionFit::getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec
     if (fixForPuMixBug_) posx-=1.25;
     double posy = lHit.get_y();
     if (fixForPuMixBug_) posy-=1.25;
-
+    double lR = sqrt(pow(posx,2)+pow(posy,2));
 
     if (fabs(posx-xmax[layer]) < step && 
 	fabs(posy-ymax[layer]) < step){
       if (puSubtracted) {
 	double leta = lHit.eta();
 	if (debug_>1) std::cout << " -- Hit " << iH << ", eta=" << leta << ", energy before PU subtraction: " << energy << " after: " ;
-	double lCorMean =  puDensity_.getDensity(leta,layer,geomConv_.cellSizeInCm(layer,leta),nPU);
+	double lCorMean =  puDensity_.getDensity(leta,layer,geomConv_.cellSizeInCm(layer,lR),nPU);
 	eSum_puMean += lCorMean;
 	p_hitMeanPuContrib->Fill(layer,lCorMean);
 	double lCorEvent = puE[layer];

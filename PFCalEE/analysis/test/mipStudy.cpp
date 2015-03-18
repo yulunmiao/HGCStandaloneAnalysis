@@ -137,7 +137,8 @@ int main(int argc, char** argv){//main
   bool first = true;
   for (unsigned idx(start); idx<end+1;++idx){
     std::ostringstream puInput;
-    puInput << inFilePath << "/pile_" << idx << "/gitV00-03-00/e-/HGcal_version12_model2_BOFF.root";
+    puInput << inFilePath << "HGcal_version12_model2_BOFF_MinBias_" << idx << ".root";
+      //"/pile_" << idx << "/gitV00-03-00/e-/HGcal_version12_model2_BOFF.root";
     puTree->AddFile(puInput.str().c_str());
     std::cout << "Adding MinBias file:" << puInput.str().c_str() << std::endl;
     if (first){
@@ -274,7 +275,7 @@ int main(int argc, char** argv){//main
       HGCSSSimHit lHit = (*hitvec)[iH];
       unsigned layer = lHit.layer();
       double leta = lHit.eta();
-      double energy = lHit.energy()*mycalib.MeVToMip(layer,leta);
+      double energy = lHit.energy()*mycalib.MeVToMip(layer);//,leta);
 
       //select specific eta bands:
       bool passeta = fabs(leta-etamean)<deta;

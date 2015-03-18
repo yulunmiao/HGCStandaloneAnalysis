@@ -75,10 +75,9 @@ double HGCSSCalibration::MeVToMip(const unsigned layer, const double aRadius, co
 
   if (theDetector().subDetectorByLayer(layer).isSi == false) return res;
   double r1 = 1200;
-  double r2 = 750;
+  double r2 = theDetector().subDetectorByLayer(layer).radiusLim;
   if (theDetector().subDetectorByLayer(layer).type == DetectorEnum::FHCAL) {
     r1 = 1000;
-    r2 = 600;
   }
   if (aRadius>r1) return res*2./3.;//300um
   else if (aRadius < r2) return res*2.;//100um

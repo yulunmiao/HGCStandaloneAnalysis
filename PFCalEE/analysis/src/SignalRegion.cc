@@ -236,24 +236,25 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
     if (layer >= nLayers_) {
       continue;
     }
+    double leta = lHit.eta();
+    //not interested in hits outside of acceptance...
+    if (leta<1.4 || leta>3.0) continue;
+
     double posx = lHit.get_x();
     if (fixForPuMixBug_) posx-=1.25;
     double posy = lHit.get_y();
     if (fixForPuMixBug_) posy-=1.25;
     double energy = lHit.energy();
-    double leta = lHit.eta();
-
-    //not interested in hits outside of acceptance...
-    if (leta<1.4 || leta>3.0) continue;
 
     double etacor = fabs(1./tanh(leta));
 
     totalE_ += energy;
     wgttotalE_ += energy*absweight_[layer]*etacor;    
     
-    double puE = puDensity_.getDensity(leta,layer,geomConv_.cellSizeInCm(layer,leta),nPuVtx);
+    double lradius = sqrt(pow(posx,2)+pow(posy,2));
+    double puE = puDensity_.getDensity(leta,layer,geomConv_.cellSizeInCm(layer,lradius),nPuVtx);
     double subtractedenergy = std::max(0.,energy - puE);
-    double halfCell = 0.5*geomConv_.cellSize(layer,leta);
+    double halfCell = 0.5*geomConv_.cellSize(layer,lradius);
     
     double dx = eventPos[layer].x()-posx;
     double dy = eventPos[layer].y()-posy;
