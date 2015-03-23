@@ -89,19 +89,41 @@ double absWeight(const unsigned layer){
   return 1;
 };
 
-double getEtotal(const std::vector<double> & Evec){
+double getSlope(const unsigned region){
+  //return 73.4;
+  if (region==3) return 80.4;//79.6;
+  else if (region==2) return 81.1;
+  else return 75.3;
+};
+
+double getOffset(const unsigned region){
+  //return 1219;
+  if (region==3) return 757;
+  else if (region==2) return 727;
+  else return 660;
+};
+
+double getEtotal(const std::vector<double> & Evec,
+		 //const std::vector<unsigned> & region,
+		 const double & eta){
   double Etot = 0;
   unsigned nL = Evec.size();
   for (unsigned iL(0); iL<nL;++iL){
-    Etot += Evec[iL]*absWeight(iL);
+    Etot += Evec[iL]*absWeight(iL);///getSlope(region[iL]);
   }
-  return Etot;
+  double etacor = fabs(1./tanh(eta)); 
+  return Etot*etacor;
 }
 
-double getCalibratedE(const std::vector<double> & Evec, const double eta){
-  double Etot = getEtotal(Evec);
+double getCalibratedE(const std::vector<double> & Evec,
+		      const std::vector<unsigned> & region,
+		      const double eta){
+  double Etot = getEtotal(Evec,eta);//region);
+  double offset = getOffset(region[0]);//-77;//   +/-   86.7909     
+  double slope = getSlope(region[0]);//79.6;//   +/-   0.455393
+  return (Etot-offset)/slope;
   //calibration for signal region 2: 3*3 cm^2
-  return calibratedE(Etot,eta);
+  //return calibratedE(Etot,eta);
 };
 
 double radius(const double & aEta, const double & aZ){
@@ -222,6 +244,23 @@ void findNeighbours(const double & cell_size_mm,
 
 };
 
+double getFactor(const double & radius){
+  if (radius<750) return 2;
+  else if (radius > 1200) return 2./3;
+  return 1;
+};
+
+unsigned getRegion(const double & radius){
+  if (radius<750) return 1;
+  else if (radius > 1200) return 3;
+  return 2;
+};
+
+double getCellSize(const double & radius){
+  if (radius<750) return 7.5;
+  return 10;
+};
+
 int main(int argc, char** argv){//main  
 
   //Input output and config options
@@ -232,6 +271,7 @@ int main(int argc, char** argv){//main
   std::string outFilePath;
   unsigned debug;
   unsigned nPu;
+  unsigned run;
 
   po::options_description preconfig("Configuration"); 
   preconfig.add_options()("cfg,c",po::value<std::string>(&cfg)->required());
@@ -247,6 +287,7 @@ int main(int argc, char** argv){//main
     ("outFilePath,o",  po::value<std::string>(&outFilePath)->required())
     ("debug,d",        po::value<unsigned>(&debug)->default_value(0))
     ("nPu,p",          po::value<unsigned>(&nPu)->default_value(140))
+    ("run,r",          po::value<unsigned>(&run)->default_value(0))
     ;
 
   po::store(po::command_line_parser(argc, argv).options(config).allow_unregistered().run(), vm);
@@ -267,10 +308,8 @@ int main(int argc, char** argv){//main
   //hardcoded
   /////////////////////////////////////////////////////////////
 
-  const double Ethresh = 106;//106;
   const double mipE = 2.35;//fC/mip
-  const double cell_size = 10;//mm
-  //const double Ethresh = 0.6;
+  //const double cell_size = 10;//mm
 
   bool doHgg = true;
 
@@ -338,13 +377,18 @@ int main(int argc, char** argv){//main
   std::cout << " -- Random number seed: " << lRndm.GetSeed() << std::endl;
 
   TFile *inputSig = 0;
-  if (doHgg) inputSig = TFile::Open("/afs/cern.ch/work/a/amagnan/PFCalEEAna/PLOTS/gitV00-02-14/version12/Hgg/200um/E3by3pu0.root");
+  std::ostringstream input;
+  input << "/afs/cern.ch/work/a/amagnan/PFCalEEAna/gitV00-02-14/version12/Hgg/pu0/run" << run <<".root";
+  if (doHgg) inputSig = TFile::Open(input.str().c_str());
   else inputSig = TFile::Open("PLOTS/gitV00-02-12/version12/gamma/200um/eta19_et60_pu0_new_logw3.root");
-  if (!inputSig) std::cout << " Signal file not found." << std::endl;
+  if (!inputSig) {
+    std::cout << " Signal file not found." << std::endl;
+    return 1;
+  }
   if (doHgg) inputSig->cd("Gamma1Fit");
   TTree *sigTree1 = (TTree*)gDirectory->Get("EcellsSR2");
   std::vector<double> init;
-  init.resize(9,0);
+  init.resize(25,0);
   std::vector<double> truthPosXg1;
   std::vector<double> truthPosYg1;
   std::vector<std::vector<double> > Exyg1;
@@ -412,7 +456,7 @@ int main(int argc, char** argv){//main
 
 
   std::ostringstream output;
-  output << outFilePath << "_pu" << nPu << ".root";
+  output << outFilePath << "_pu" << nPu << "_run" << run << ".root";
   TFile *outputFile = TFile::Open(output.str().c_str(),"RECREATE");
   
   if (!outputFile) {
@@ -426,12 +470,30 @@ int main(int argc, char** argv){//main
 
   TH1F *hphi = new TH1F("hphi",";#phi;showers",100,-3.1416,3.1416);
   TH1F *heta = new TH1F("heta",";#eta;showers",100,1.5,3.0);
+  TH1F *hpt = new TH1F("hpt",";p_{T} (GeV);showers",180,20,200);
+  TH1F *hE = new TH1F("hE",";E (GeV);showers",100,0,1000);
+
+  TH1F *hphi1 = new TH1F("hphi1",";#phi;showers",100,-3.1416,3.1416);
+  TH1F *heta1 = new TH1F("heta1",";#eta;showers",100,1.5,3.0);
+  TH1F *hpt1 = new TH1F("hpt1",";p_{T} (GeV);showers",180,20,200);
+  TH1F *hE1 = new TH1F("hE1",";E (GeV);showers",100,0,1000);
+
+  TH1F *hphi2 = new TH1F("hphi2",";#phi;showers",100,-3.1416,3.1416);
+  TH1F *heta2 = new TH1F("heta2",";#eta;showers",100,1.5,3.0);
+  TH1F *hpt2 = new TH1F("hpt2",";p_{T} (GeV);showers",180,20,200);
+  TH1F *hE2 = new TH1F("hE2",";E (GeV);showers",100,0,1000);
 
   TH1F *E_noOOTPU = new TH1F("E_noOOT",";E_{#gamma}-E_{truth} (GeV);showers",1000,-100,100);
   TH1F *E_mips = new TH1F("E_mips",";E_{#gamma} (mips);showers",10000,0,100000);
   TH1F *E_OOTPU = new TH1F("E_OOT",";E_{#gamma}-E_{truth} (GeV);showers",1000,-100,100);
   TH1F *E_OOTpastPU = new TH1F("E_OOTpast",";E_{#gamma}-E_{truth} (GeV);showers",1000,-100,100);
   TH2F *EcalibvsTruth = new TH2F("EcalibvsTruth",";E_{truth} (GeV);E_{#gamma} (GeV);showers",5000,0,5000,5000,0,5000);
+  TH2F *ErawvsTruth = new TH2F("ErawvsTruth",";E_{truth} (GeV);E_{#gamma} (Mips);showers",1000,0,1000,10000,0,50000);
+  TH2F *ErawvsTruth1 = new TH2F("ErawvsTruth1",";E_{truth} (GeV);E_{#gamma} (Mips);showers",1000,0,1000,10000,0,50000);
+  TH2F *ErawvsTruth2 = new TH2F("ErawvsTruth2",";E_{truth} (GeV);E_{#gamma} (Mips);showers",1000,0,1000,10000,0,50000);
+  TH2F *ErawvsTruth3 = new TH2F("ErawvsTruth3",";E_{truth} (GeV);E_{#gamma} (Mips);showers",1000,0,1000,10000,0,50000);
+  TH2F *EratiovsEta = new TH2F("EratiovsEta",";#eta;E_{#gamma}/E_{truth};showers",100,1.5,3.0,400,0,1.5);
+
 
 
   TH1F *ErecooverEtrue = new TH1F("ErecooverEtrue",";E_{#gamma}/E_{truth};showers",400,0,1.5);
@@ -450,7 +512,7 @@ int main(int argc, char** argv){//main
   TH1F *Epu_perbx[nbx];
   TH1F *nAbove_perbx[nbx];
 
-  double bxthresh[nbx] = {0,250,1000,1930,2910,3870,4870,5880,6930,7990,9080};
+  double bxthresh[nbx] = {250,250,1000,1930,2910,3870,4870,5880,6930,7990,9080};
 
   for (unsigned ibx(0); ibx<nbx;++ibx){
     bxthresh[ibx] = bxthresh[ibx]/mipE;
@@ -504,22 +566,82 @@ int main(int argc, char** argv){//main
     nCellsAbove1.resize(nbx,0);
     std::vector<unsigned> nCellsAbove2;
     nCellsAbove2.resize(nbx,0);
+    Direction dir1(truthPosXg1[0]/posz[0],truthPosYg1[0]/posz[0]);
+    Direction dir2(truthPosXg2[0]/posz[0],truthPosYg2[0]/posz[0]);
+
+    std::vector<double> xmax1;
+    xmax1.resize(nLayers,0);
+    std::vector<double> ymax1;
+    ymax1.resize(nLayers,0);
+    double phi1 = dir1.phi();
+    double eta1 = dir1.eta();
+    double theta1 = 2*atan(exp(-1.*eta1));
+    hphi1->Fill(phi1);
+    heta1->Fill(eta1);
+    hpt1->Fill(Etruth1/cosh(eta1));
+    hE1->Fill(Etruth1);
+
+    if (debug) std::cout << " Truth photon: x=" << truthPosXg1[0] << " y=" << truthPosYg1[0] << " E=" << Etruth1 << " eta=" << eta1 << " phi=" << phi1 << std::endl;
+
+    getMaximumCellFromGeom(phi1,eta1,xmax1,ymax1,posz);
+
+    std::vector<double> xmax2;
+    xmax2.resize(nLayers,0);
+    std::vector<double> ymax2;
+    ymax2.resize(nLayers,0);
+    double phi2 = dir2.phi();
+    double eta2 = dir2.eta();
+    double theta2 = 2*atan(exp(-1.*eta2));
+    getMaximumCellFromGeom(phi2,eta2,xmax2,ymax2,posz);
+    hphi2->Fill(phi2);
+    heta2->Fill(eta2);
+    hpt2->Fill(Etruth2/cosh(eta2));
+    hE2->Fill(Etruth2);
+
+    bool fid1 = eta1>1.5 && eta1<2.9;
+    fid1 = fid1 && (Etruth1/cosh(eta1))>40;
+    bool fid2 = eta2>1.5 && eta2<2.9;
+    fid2 = fid2 && (Etruth2/cosh(eta2))>40;
+
+    if (!fid1 && !fid2) continue;
+
+    bool region1[3] = {false,false,false};
+    bool region2[3] = {false,false,false};
+    std::vector<unsigned> regiong1;
+    regiong1.resize(nLayers,0);
+    std::vector<unsigned> regiong2;
+    regiong2.resize(nLayers,0);
 
     for (unsigned iL(0);iL<nLayers;++iL){
+      double r1 = sqrt(pow(xmax1[iL],2)+pow(ymax1[iL],2));
+      double f1 = getFactor(r1);
+      double r2 = sqrt(pow(xmax2[iL],2)+pow(ymax2[iL],2));
+      double f2 = getFactor(r2);
+      region1[getRegion(r1)-1] = true;
+      region2[getRegion(r2)-1] = true;
+      regiong1[iL] = getRegion(r1);
+      regiong2[iL] = getRegion(r2);
+      //double cs1 = getCellSize(r1);
+      //double cs2 = getCellSize(r2);
+
       for (unsigned iy(0);iy<3;++iy){
 	for (unsigned ix(0);ix<3;++ix){
 	  unsigned idx = 3*iy+ix;
 	  if (debug>1) std::cout << iL << " " << idx << " " << Exyg1[iL][idx] << std::endl;
+
+	  //if (fabs(ix-1)<1.5 && fabs(iy-2)<1.5) {
 	  EperLayer1[iL] += Exyg1[iL][idx];
 	  EperLayer2[iL] += Exyg2[iL][idx];
+	    //}
 
 	  //fill ids of cells above thresh
 	  for (unsigned ibx(1); ibx<nbx;++ibx){//loop on bx
-	    if (Exyg1[iL][idx]>bxthresh[ibx]) {
+	    
+	    if (Exyg1[iL][idx]>(bxthresh[ibx]*f1)) {
 	      xyid1[ibx][iL].insert(idx);
 	      nCellsAbove1[ibx]++;
 	    }
-	    if (Exyg2[iL][idx]>bxthresh[ibx]) {
+	    if (Exyg2[iL][idx]>(bxthresh[ibx]*f2)) {
 	      xyid2[ibx][iL].insert(idx);
 	      nCellsAbove2[ibx]++;
 	    }
@@ -531,30 +653,32 @@ int main(int argc, char** argv){//main
       EperLayer2OOT[iL] = EperLayer2[iL];
     }
 
-    Direction dir1(truthPosXg1[0]/posz[0],truthPosYg1[0]/posz[0]);
-    Direction dir2(truthPosXg2[0]/posz[0],truthPosYg2[0]/posz[0]);
 
-    std::vector<double> xmax1;
-    xmax1.resize(nLayers,0);
-    std::vector<double> ymax1;
-    ymax1.resize(nLayers,0);
-    double phi1 = dir1.phi();
-    double eta1 = dir1.eta();
+    fid1 = fid1 && (
+    		    (region1[0] && !region1[1] && !region1[2]) ||
+		    (!region1[0] && region1[1] && !region1[2]) ||
+    		    (!region1[0] && !region1[1] && region1[2])
+		    );
+    fid2 = fid2 && (
+    		    (region2[0] && !region2[1] && !region2[2]) ||
+		    (!region2[0] && region2[1] && !region2[2]) ||
+    		    (!region2[0] && !region2[1] && region2[2])
+		    );
 
-    if (debug) std::cout << " Truth photon: x=" << truthPosXg1[0] << " y=" << truthPosYg1[0] << " E=" << Etruth1 << " eta=" << eta1 << " phi=" << phi1 << std::endl;
+    if (!fid1 && !fid2) continue;
 
-    hphi->Fill(phi1);
-    heta->Fill(eta1);
-
-    getMaximumCellFromGeom(phi1,eta1,xmax1,ymax1,posz);
-
-    std::vector<double> xmax2;
-    xmax2.resize(nLayers,0);
-    std::vector<double> ymax2;
-    ymax2.resize(nLayers,0);
-    double phi2 = dir2.phi();
-    double eta2 = dir2.eta();
-    getMaximumCellFromGeom(phi2,eta2,xmax2,ymax2,posz);
+    if (fid1){
+      hphi->Fill(phi1);
+      heta->Fill(eta1);
+      hpt->Fill(Etruth1/cosh(eta1));
+      hE->Fill(Etruth1);
+    }
+    if (fid2){
+      hphi->Fill(phi2);
+      heta->Fill(eta2);
+      hpt->Fill(Etruth2/cosh(eta2));
+      hE->Fill(Etruth2);
+    }
 
     std::set<unsigned> lidxSet;
 
@@ -589,16 +713,18 @@ int main(int argc, char** argv){//main
 	
 	double posx = lHit.get_x();
 	double posy = lHit.get_y();
+	double lR = sqrt(pow(posx,2)+pow(posy,2));
 	unsigned layer = lHit.layer();
 	//double leta = lHit.eta();
 	double energy = lHit.energy();
 	if (fabs(posx-xmax1[layer]) < 15.1 && 
 	    fabs(posy-ymax1[layer]) < 15.1){
-	  int ix = (posx-xmax1[layer])/10.;
-	  int iy = (posy-ymax1[layer])/10.;
+	  int ix = (posx-xmax1[layer])/getCellSize(lR);
+	  int iy = (posy-ymax1[layer])/getCellSize(lR);
 	  unsigned idx = 3*(iy+1)+(ix+1);
-
-	  if ((ibx==0 && energy>Ethresh) || 
+	  double r1 = sqrt(pow(xmax1[layer],2)+pow(ymax1[layer],2));
+	  double f1 = getFactor(r1);
+	  if ((ibx==0 && energy>(bxthresh[0]*f1)) || 
 	      (ibx>0 && xyid1[ibx][layer].find(idx)!=xyid1[ibx][layer].end())){
 	    EperLayer1OOT[layer] += energy;
 	    nover1++;
@@ -608,11 +734,13 @@ int main(int argc, char** argv){//main
 	}
 	if (doHgg && fabs(posx-xmax2[layer]) < 15.1 && 
 	    fabs(posy-ymax2[layer]) < 15.1){
-	  int ix = (posx-xmax2[layer])/10.;
-	  int iy = (posy-ymax2[layer])/10.;
+	  int ix = (posx-xmax2[layer])/getCellSize(lR);
+	  int iy = (posy-ymax2[layer])/getCellSize(lR);
 	  unsigned idx = 3*(iy+1)+(ix+1);
+	  double r2 = sqrt(pow(xmax2[layer],2)+pow(ymax2[layer],2));
+	  double f2 = getFactor(r2);
 
-	  if ((ibx==0 && energy>Ethresh) ||
+	  if ((ibx==0 && energy>(bxthresh[0]*f2)) ||
 	      (ibx>0 && xyid2[ibx][layer].find(idx)!=xyid2[ibx][layer].end())
 	      ){
 	    EperLayer2OOT[layer] += energy;
@@ -630,45 +758,56 @@ int main(int argc, char** argv){//main
 	EtotPu2 += Ebx2;
       }
       if (ibx==0){
-	E_OOTpastPU->Fill(getCalibratedE(EperLayer1OOT,eta1)-Etruth1);
-	ErecooverEtrueOOTpast->Fill(getCalibratedE(EperLayer1OOT,eta1)/Etruth1);
-	EpuoverErecoPast->Fill(Ebx1/getEtotal(EperLayer1));
-	EpuPast->Fill(Ebx1);
-
-	if (doHgg){
-	  E_OOTpastPU->Fill(getCalibratedE(EperLayer2OOT,eta2)-Etruth2);
-	  ErecooverEtrueOOTpast->Fill(getCalibratedE(EperLayer2OOT,eta2)/Etruth2);
-	  EpuoverErecoPast->Fill(Ebx2/getEtotal(EperLayer2));
+	if (fid1){
+	  E_OOTpastPU->Fill(getCalibratedE(EperLayer1OOT,regiong1,eta1)-Etruth1);
+	  ErecooverEtrueOOTpast->Fill(getCalibratedE(EperLayer1OOT,regiong1,eta1)/Etruth1);
+	  EpuoverErecoPast->Fill(Ebx1/getEtotal(EperLayer1,eta1));
+	  EpuPast->Fill(Ebx1);
+	}
+	if (doHgg && fid2){
+	  E_OOTpastPU->Fill(getCalibratedE(EperLayer2OOT,regiong2,eta2)-Etruth2);
+	  ErecooverEtrueOOTpast->Fill(getCalibratedE(EperLayer2OOT,regiong2,eta2)/Etruth2);
+	  EpuoverErecoPast->Fill(Ebx2/getEtotal(EperLayer2,eta2));
 	  EpuPast->Fill(Ebx2);
 	}
       } else {
 	EtotPuFutur1 += Ebx1;
 	if (doHgg) EtotPuFutur2 += Ebx2;
       }
-
     }//loop on bx
-    EpuoverErecoFutur->Fill(EtotPuFutur1/getEtotal(EperLayer1));
-    EpuoverErecoAll->Fill(EtotPu1/getEtotal(EperLayer1));
-    EpuFutur->Fill(EtotPuFutur1);
-    EpuAll->Fill(EtotPu1);
-    E_noOOTPU->Fill(getCalibratedE(EperLayer1,eta1)-Etruth1);
-    E_mips->Fill(getEtotal(EperLayer1));
-    EcalibvsTruth->Fill(Etruth1,getCalibratedE(EperLayer1,eta1));
-    E_OOTPU->Fill(getCalibratedE(EperLayer1OOT,eta1)-Etruth1);
-    ErecooverEtrue->Fill(getCalibratedE(EperLayer1,eta1)/Etruth1);
-    ErecooverEtrueOOT->Fill(getCalibratedE(EperLayer1OOT,eta1)/Etruth1);
-    if (doHgg) {
-      EpuoverErecoFutur->Fill(EtotPuFutur2/getEtotal(EperLayer2));
-      EpuoverErecoAll->Fill(EtotPu2/getEtotal(EperLayer2));
+    if (fid1){
+      EpuoverErecoFutur->Fill(EtotPuFutur1/getEtotal(EperLayer1,eta1));
+      EpuoverErecoAll->Fill(EtotPu1/getEtotal(EperLayer1,eta1));
+      EpuFutur->Fill(EtotPuFutur1);
+      EpuAll->Fill(EtotPu1);
+      E_noOOTPU->Fill(getCalibratedE(EperLayer1,regiong1,eta1)-Etruth1);
+      E_mips->Fill(getEtotal(EperLayer1,eta1));
+      EcalibvsTruth->Fill(Etruth1,getCalibratedE(EperLayer1,regiong1,eta1));
+      ErawvsTruth->Fill(Etruth1,getEtotal(EperLayer1,eta1));
+      if (region1[0] && !region1[1] && !region1[2]) ErawvsTruth1->Fill(Etruth1,getEtotal(EperLayer1,eta1));
+      if (!region1[0] && region1[1] && !region1[2]) ErawvsTruth2->Fill(Etruth1,getEtotal(EperLayer1,eta1));
+      if (!region1[0] && !region1[1] && region1[2]) ErawvsTruth3->Fill(Etruth1,getEtotal(EperLayer1,eta1));
+      E_OOTPU->Fill(getCalibratedE(EperLayer1OOT,regiong1,eta1)-Etruth1);
+      ErecooverEtrue->Fill(getCalibratedE(EperLayer1,regiong1,eta1)/Etruth1);
+      EratiovsEta->Fill(eta1,getCalibratedE(EperLayer1,regiong1,eta1)/Etruth1);
+      ErecooverEtrueOOT->Fill(getCalibratedE(EperLayer1OOT,regiong1,eta1)/Etruth1);
+    }
+    if (doHgg && fid2) {
+      EpuoverErecoFutur->Fill(EtotPuFutur2/getEtotal(EperLayer2,eta2));
+      EpuoverErecoAll->Fill(EtotPu2/getEtotal(EperLayer2,eta2));
       EpuFutur->Fill(EtotPuFutur2);
       EpuAll->Fill(EtotPu2);
-      E_noOOTPU->Fill(getCalibratedE(EperLayer2,eta2)-Etruth2);
-      EcalibvsTruth->Fill(Etruth2,getCalibratedE(EperLayer2,eta2));
-      E_OOTPU->Fill(getCalibratedE(EperLayer2OOT,eta2)-Etruth2);
-      ErecooverEtrue->Fill(getCalibratedE(EperLayer2,eta2)/Etruth2);
-      ErecooverEtrueOOT->Fill(getCalibratedE(EperLayer2OOT,eta2)/Etruth2);
+      E_noOOTPU->Fill(getCalibratedE(EperLayer2,regiong2,eta2)-Etruth2);
+      EcalibvsTruth->Fill(Etruth2,getCalibratedE(EperLayer2,regiong2,eta2));
+      ErawvsTruth->Fill(Etruth2,getEtotal(EperLayer2,eta2));
+      if (region2[0] && !region2[1] && !region2[2]) ErawvsTruth1->Fill(Etruth2,getEtotal(EperLayer2,eta2));
+      if (!region2[0] && region2[1] && !region2[2]) ErawvsTruth2->Fill(Etruth2,getEtotal(EperLayer2,eta2));
+      if (!region2[0] && !region2[1] && region2[2]) ErawvsTruth3->Fill(Etruth2,getEtotal(EperLayer2,eta2));
+      EratiovsEta->Fill(eta2,getCalibratedE(EperLayer2,regiong2,eta2)/Etruth2);
+      E_OOTPU->Fill(getCalibratedE(EperLayer2OOT,regiong2,eta2)-Etruth2);
+      ErecooverEtrue->Fill(getCalibratedE(EperLayer2,regiong2,eta2)/Etruth2);
+      ErecooverEtrueOOT->Fill(getCalibratedE(EperLayer2OOT,regiong2,eta2)/Etruth2);
     }
-
   }//loop on entries
 
   outputFile->cd();

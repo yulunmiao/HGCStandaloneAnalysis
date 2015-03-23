@@ -36,6 +36,8 @@ void HiggsMass::initialiseHistograms(TFile *fout,
   p_position_vtxsmear_trueE = new TH1F("p_position_vtxsmear_trueE",";M_{H} (GeV) [P_{pos,vtx smeared},E_{true}]",400,0,200);
   p_position_vtxsmear_recoE = new TH1F("p_position_vtxsmear_recoE",";M_{H} (GeV) [P_{pos,vtx smeared},E_{reco}]",400,0,200);
 
+  p_ErecooverEtrue = new TH1F("p_ErecooverEtrue",";E_{#gamma}/E_{truth};showers",400,0,1.5);
+
   p_vtx_x = new TH1F("p_vtx_x",";vtx x (mm)",100,-1,1);
   p_vtx_y = new TH1F("p_vtx_y",";vtx y (mm)",100,-1,1);
   p_vtx_z = new TH1F("p_vtx_z",";vtx z (mm)",100,-50,50);
@@ -97,6 +99,9 @@ void HiggsMass::fillHistograms(){
   p_pTvseta[0]->Fill(rh.Eta(),rh.Pt());
   p_MvspT[0]->Fill(rh.Pt(),rh.M());
 
+
+  p_ErecooverEtrue->Fill(g1_.E()/tg1_.E());
+  p_ErecooverEtrue->Fill(g2_.E()/tg2_.E());
 
   TLorentzVector tg1 = tg1_.Pt()>tg2_.Pt() ? tg1_ : tg2_;
   TLorentzVector tg2 = tg1_.Pt()>tg2_.Pt() ? tg2_ : tg1_;

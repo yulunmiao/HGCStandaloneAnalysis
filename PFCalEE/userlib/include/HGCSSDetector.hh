@@ -132,7 +132,8 @@ public:
 
   void buildDetector(const unsigned versionNumber,
 		     bool concept=true,
-		     bool isCaliceHcal=false);
+		     bool isCaliceHcal=false,
+		     bool bypassR=false);
 
   const HGCSSSubDetector & subDetectorByLayer(const unsigned aLayer);
 
@@ -186,7 +187,9 @@ public:
   void printDetector(std::ostream & aOs) const ;
 
 private:
-  HGCSSDetector(){};
+  HGCSSDetector(){
+    bypassRadius_ = false;
+  };
 
   ~HGCSSDetector(){
     reset();
@@ -199,6 +202,7 @@ private:
 
   unsigned nLayers_;
   unsigned nSections_;
+  bool bypassRadius_;
 };
 
 HGCSSDetector & theDetector();

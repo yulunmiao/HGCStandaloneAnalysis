@@ -35,9 +35,10 @@ redofit=1
 workdir='/afs/cern.ch/work/a/amagnan/PFCalEEAna/'
 
 #nPuVtxset=[0,140]
-nPuVtxset=[0]
+nPuVtxset=[0,140]
 
 runlist=[0,1,2,3,4,5,6,7,8,9]
+#runlist=[0,1,3,6,8,9]
 #runlist=[0,1,5,6,7]
 
 for nPuVtx in nPuVtxset :
@@ -50,7 +51,9 @@ for nPuVtx in nPuVtxset :
         
     #too many files produced: make local output then copy back to afs
     #outDir='%s/%s/git%s/version%d/%s/200um/eta%s_et%s_pu%s'%(os.getcwd(),opt.out,opt.gittag,opt.version,opt.datatype,eta,et,nPuVtx)
-        outDir='%s/git%s/version%d/%s/pu%s/run%s'%(opt.out,opt.gittag,opt.version,opt.datatype,nPuVtx,run)
+        #outDir='%s/git%s/version%d/%s/pu%s/run%s'%(opt.out,opt.gittag,opt.version,opt.datatype,nPuVtx,run)
+        outDir='%s/git%s/version%d/%s/dec14/pu%s/run%s'%(opt.out,opt.gittag,opt.version,opt.datatype,nPuVtx,run)
+        #outDir='%s/git%s/version%d/%s/run%s'%(opt.out,opt.gittag,opt.version,opt.datatype,nPuVtx,run)
         eosDir='%s/git%s/%s'%(opt.eos,opt.gittag,opt.datatype)
 
         outlog='hreso.log'
@@ -76,9 +79,9 @@ for nPuVtx in nPuVtxset :
         scriptFile.write('cp %s/%s/*.dat %s/.\n'%(workdir,outDir,outDir))
         if (nPuVtx==0) :
             if (opt.nRuns==0) :
-                scriptFile.write('%s/bin/higgsResolution -c scripts/DefaultConfigHiggs.cfg -n %s --nRuns=0 -i root://eoscms//eos/cms%s/ -s HGcal_%s.root -r DigiIC2_%s.root -o %s.root --redoStep=%s | tee %s\n'%(os.getcwd(),opt.nevts,eosDir,outTag,outTag,outDir,redofit,outlog))
+                scriptFile.write('%s/bin/higgsResolution -c scripts/DefaultConfigHiggs.cfg -n %s --nRuns=0 -i root://eoscms//eos/cms%s/ -s HGcal_%s.root -r Digi_%s.root -o %s.root --redoStep=%s | tee %s\n'%(os.getcwd(),opt.nevts,eosDir,outTag,outTag,outDir,redofit,outlog))
             else:
-                scriptFile.write('%s/bin/higgsResolution -c scripts/DefaultConfigHiggs.cfg -n %s --nRuns=%s -i root://eoscms//eos/cms%s/ -s HGcal_%s -r DigiIC2_%s -o %s.root --redoStep=%s | tee %s\n'%(os.getcwd(),opt.nevts,opt.nRuns,eosDir,outTag,outTag,outDir,redofit,outlog))
+                scriptFile.write('%s/bin/higgsResolution -c scripts/DefaultConfigHiggs.cfg -n %s --nRuns=%s -i root://eoscms//eos/cms%s/ -s HGcal_%s -r Digi_%s -o %s.root --redoStep=%s | tee %s\n'%(os.getcwd(),opt.nevts,opt.nRuns,eosDir,outTag,outTag,outDir,redofit,outlog))
         else:
             if (opt.nRuns==0) :
                 scriptFile.write('%s/bin/higgsResolution -c scripts/DefaultConfigHiggs.cfg -n %s --nRuns=0 -i root://eoscms//eos/cms%s/ -s HGcal_%s.root -r DigiPu%s_%s.root -o %s.root --redoStep=%s | tee %s\n'%(os.getcwd(),opt.nevts,eosDir,outTag,nPuVtx,outTag,outDir,redofit,outlog)) 

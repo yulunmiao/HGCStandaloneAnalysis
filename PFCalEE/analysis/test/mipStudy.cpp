@@ -135,22 +135,32 @@ int main(int argc, char** argv){//main
   pclose(script);  
   system("rm ./eosls.sh");*/
   bool first = true;
-  for (unsigned idx(start); idx<end+1;++idx){
-    std::ostringstream puInput;
-    puInput << inFilePath << "HGcal_version12_model2_BOFF_MinBias_" << idx << ".root";
-      //"/pile_" << idx << "/gitV00-03-00/e-/HGcal_version12_model2_BOFF.root";
+  std::ostringstream puInput;
+  if (inFilePath.find(".root") != inFilePath.npos){
+    puInput << inFilePath;
     puTree->AddFile(puInput.str().c_str());
-    std::cout << "Adding MinBias file:" << puInput.str().c_str() << std::endl;
-    if (first){
-      TFile *simFile = TFile::Open(puInput.str().c_str());
-      if (simFile) {
-	info =(HGCSSInfo*)simFile->Get("Info");
-	first=false;
+    std::cout << "Adding file:" << puInput.str().c_str() << std::endl;
+    TFile *simFile = TFile::Open(puInput.str().c_str());
+    if (simFile) {
+      info =(HGCSSInfo*)simFile->Get("Info");
+    }
+  }
+  else {
+    for (unsigned idx(start); idx<end+1;++idx){
+      puInput.str("");
+      puInput << inFilePath << "HGcal_version12_model2_BOFF_MinBias_" << idx << ".root";
+      //"/pile_" << idx << "/gitV00-03-00/e-/HGcal_version12_model2_BOFF.root";
+      puTree->AddFile(puInput.str().c_str());
+      std::cout << "Adding MinBias file:" << puInput.str().c_str() << std::endl;
+      if (first){
+	TFile *simFile = TFile::Open(puInput.str().c_str());
+	if (simFile) {
+	  info =(HGCSSInfo*)simFile->Get("Info");
+	  if (info) first=false;
+	}
       }
     }
   }
-
-
 
   nPuEvts = puTree->GetEntries();
   std::cout << "- Number of PU events available: " << nPuEvts  << std::endl;
@@ -298,9 +308,9 @@ int main(int argc, char** argv){//main
       double realtime = mycalib.correctTime(lHit.time(),posx,posy,posz);
       bool passTime = myDigitiser.passTimeCut(type,realtime);
       if (!passTime) continue;
-
+      double lR = 0;//sqrt(pow(posx,2)+pow(posy,2));
       if (energy>0 && passeta &&
-	  lHit.silayer() < geomConv.getNumberOfSiLayers(type,leta) 
+	  lHit.silayer() < geomConv.getNumberOfSiLayers(type,lR) 
 	  ){
 	if (debug > 1) std::cout << " hit " << iH 
 				 << " lay " << layer  

@@ -29,7 +29,7 @@ int plotOOTpu(){//main
   gStyle->SetPadTopMargin(0.07);
 
   //TFile *input = TFile::Open("../PLOTS/pT60eta19Photons_MB_pu140.root");
-  TFile *input = TFile::Open("../PLOTS/HiggsPhotons_MB_pu140.root");
+  TFile *input = TFile::Open("../PLOTS/HiggsPhotons_MBFixed_pu140.root");
   input->cd();
   TCanvas *myc = new TCanvas("myc","myc",1500,1000);
   TCanvas *myc2 = new TCanvas("myc2","myc2",1500,1000);
@@ -54,7 +54,7 @@ int plotOOTpu(){//main
     "PU BX -1+1-10"
   };
 
-  gStyle->SetOptStat("MR");
+  gStyle->SetOptStat("eMRo");
   gStyle->SetOptFit(11);
   TPaveStats *st[nH];
 
@@ -71,7 +71,7 @@ int plotOOTpu(){//main
     h[ih]->SetMarkerColor(ih+1);
     if (ih>0) h[ih]->SetMarkerStyle(20+ih);
     h[ih]->Draw(ih==0?"":"PEsames");
-    h[ih]->Fit("gaus","","sames",0.95,1.02);
+    h[ih]->Fit("gaus","","sames",0.9,1.02);
     f[ih] = (TF1*)h[ih]->GetFunction("gaus");
     f[ih]->SetLineColor(ih+1);
     f[ih]->Draw("same");
@@ -90,7 +90,7 @@ int plotOOTpu(){//main
 
   TLatex lat;
   //lat.DrawLatexNDC(0.3,0.96,"Single #gamma p_{T}=60 GeV, #eta=1.9");
-  lat.DrawLatexNDC(0.3,0.94,"Pythia H#rightarrow#gamma#gamma, 1.5 < #eta^{#gamma} < 2.7");
+  lat.DrawLatexNDC(0.3,0.94,"Pythia H#rightarrow#gamma#gamma, 1.5 < #eta^{#gamma} < 2.9");
   lat.DrawLatexNDC(0.02,0.02,"HGCAL Standalone Simulation");
 
   leg->Draw("same");
@@ -114,7 +114,7 @@ int plotOOTpu(){//main
     if (!h[ih]) continue;
     h[ih]->Rebin(10);
     h[ih]->GetXaxis()->SetRangeUser(0,1000);
-    h[ih]->GetYaxis()->SetRangeUser(0.3,10000);
+    h[ih]->GetYaxis()->SetRangeUser(0.3,50000);
     h[ih]->SetLineColor(ih+1);
     h[ih]->SetMarkerColor(ih+1);
     h[ih]->SetMarkerStyle(20+ih);
@@ -133,7 +133,7 @@ int plotOOTpu(){//main
   }
 
   //lat.DrawLatexNDC(0.3,0.96,"Single #gamma p_{T}=60 GeV, #eta=1.9");
-  lat.DrawLatexNDC(0.3,0.94,"Pythia H#rightarrow#gamma#gamma, 1.5 < #eta^{#gamma} < 2.7");
+  lat.DrawLatexNDC(0.3,0.94,"Pythia H#rightarrow#gamma#gamma, 1.5 < #eta^{#gamma} < 2.9");
   lat.DrawLatexNDC(0.02,0.02,"HGCAL Standalone Simulation");
 
   leg2->Draw("same");
@@ -167,7 +167,7 @@ int plotOOTpu(){//main
   }
 
   //lat.DrawLatexNDC(0.3,0.96,"Single #gamma p_{T}=60 GeV, #eta=1.9");
-  lat.DrawLatexNDC(0.3,0.94,"Pythia H#rightarrow#gamma#gamma, 1.5 < #eta^{#gamma} < 2.7");
+  lat.DrawLatexNDC(0.3,0.94,"Pythia H#rightarrow#gamma#gamma, 1.5 < #eta^{#gamma} < 2.9");
   lat.DrawLatexNDC(0.02,0.02,"HGCAL Standalone Simulation");
 
   leg2->Draw("same");

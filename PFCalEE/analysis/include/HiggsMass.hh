@@ -93,7 +93,7 @@ private:
   TH1F *p_position_vtxsmear_trueE;
   TH1F *p_position_vtxsmear_recoE;
 
-
+  TH1F *p_ErecooverEtrue;
 
   TH1F *p_vtx_x;
   TH1F *p_vtx_y;

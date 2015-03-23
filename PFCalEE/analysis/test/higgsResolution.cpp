@@ -100,6 +100,7 @@ double calibratedE(const double Etot, const double eta){
   //calibration for signal region 2: 3*3 cm^2
   double pars[3] = {77,3.4,-0.50};
   double paro[3] = {-11.6,-7.7,-8.8};
+  //double paro[3] = {-5.3,-12.8,-6.9};  
   double offset = paro[0] + paro[1]*eta + paro[2]*eta*eta;
   double slope = pars[0] + pars[1]*eta + pars[2]*eta*eta;
   return (Etot-offset)/slope;
@@ -186,7 +187,7 @@ int main(int argc, char** argv){//main
   config.add_options()
     //Input output and config options //->required()
     ("concept",        po::value<bool>(&concept)->default_value(true))
-    ("nSR",            po::value<unsigned>(&nSR)->default_value(12))
+    ("nSR",            po::value<unsigned>(&nSR)->default_value(3))
     ("residualMax",    po::value<double>(&residualMax)->default_value(25))
     ("pNevts,n",       po::value<unsigned>(&pNevts)->default_value(0))
     ("filePath,i",     po::value<std::string>(&filePath)->required())
@@ -222,7 +223,7 @@ int main(int argc, char** argv){//main
 	    << " -- Output file path: " << outPath << std::endl
 	    << " -- Output folders: " << outFolder1 << " " << outFolder2 << std::endl
 	    << " -- Requiring " << nSiLayers << " si layers." << std::endl
-	    << " -- Number cells in signal region for fit: " << nSR << " *2.5*2.5 mm^2 cells" << std::endl
+	    << " -- Number cells in signal region for fit: " << nSR << " cells" << std::endl
 	    << " -- Residual max considered for filling matrix and fitting: " << residualMax << " mm" << std::endl
 	    << " -- Apply PUMix fix? " << applyPuMixFix << std::endl
 	    << " -- Processing ";
@@ -320,7 +321,8 @@ int main(int argc, char** argv){//main
   //initialise detector
   HGCSSDetector & myDetector = theDetector();
  
-  myDetector.buildDetector(versionNumber,concept,isCaliceHcal);
+  //bypass radius
+  myDetector.buildDetector(versionNumber,concept,isCaliceHcal,true);
 
   const unsigned nLayers = myDetector.nLayers();
   const unsigned nSections = myDetector.nSections();
@@ -484,11 +486,13 @@ int main(int argc, char** argv){//main
 
     if (doFit1 || doFit2){
       //get initial position
-      lGamma1.getInitialPosition(ievt,nPuVtx,rechitvec,nTooFar1);
-      lGamma2.getInitialPosition(ievt,nPuVtx,rechitvec,nTooFar2);
+      bool good1 = lGamma1.getInitialPosition(ievt,nPuVtx,rechitvec,nTooFar1);
+      bool good2 = lGamma2.getInitialPosition(ievt,nPuVtx,rechitvec,nTooFar2);
 
-      lGamma1.getOutTree()->Fill();
-      lGamma2.getOutTree()->Fill();
+      if (good1) lGamma1.getOutTree()->Fill();
+      if (good2) lGamma2.getOutTree()->Fill();
+      
+      if (!good1 || !good2) continue;
 
       //get first guess at energy
       std::vector<unsigned> layerId;
@@ -595,11 +599,6 @@ int main(int argc, char** argv){//main
       std::cout << " Reco = "; recoDir2.Print();
     }
 
-    //cut outside acceptance
-    if (recoDir1.dir().Eta()<1.5 || recoDir1.dir().Eta()>2.7 || 
-	recoDir2.dir().Eta()<1.5 || recoDir2.dir().Eta()>2.7 ) continue;
-
-    nTwoPhotons++;
 
     TLorentzVector l1;
     double E1 = calibratedE(Signal1.getEtotalSR(2,true),recoDir1.dir().Eta());
@@ -610,6 +609,17 @@ int main(int argc, char** argv){//main
     //std::cout << " Photon 2: TrueE = " << truthE2 << " recoE = " << Signal2.getEtotalSR(2,true)<< " calibE = " << E2 << std::endl;
     l2.SetPtEtaPhiE(recoDir2.dir().Pt()*E2,recoDir2.dir().Eta(),recoDir2.dir().Phi(),E2);
 
+
+    //cut outside acceptance
+    if (recoDir1.dir().Eta()<1.5 || recoDir1.dir().Eta()>2.8 || 
+	recoDir2.dir().Eta()<1.5 || recoDir2.dir().Eta()>2.8 ||
+	((E1/cosh(recoDir1.dir().Eta()))<40) || 
+	((E2/cosh(recoDir2.dir().Eta())<40)) ) continue;
+
+    nTwoPhotons++;
+
+
+ 
     hM.setRecoInfo(l1,l2,posFF1,posFF2);
 
     TLorentzVector t1;

@@ -912,7 +912,7 @@ bool PositionFit::getInitialPosition(const unsigned ievt,
   
   p_mindRtruth->Fill(dRmin);
   
-  if (dRmin > 0.1) {
+  if (dRmin > 0.01) {
     nTooFar++;
     return false;
   }
@@ -968,8 +968,8 @@ bool PositionFit::getInitialPosition(const unsigned ievt,
     //use cell size at etamax...
     for (unsigned iL(0);iL<nLayers_;++iL){//loop on layers
       if (debug_) std::cout << "layer " << iL ;
-      double radius = sqrt(pow(xmax[iL],2)+pow(ymax[iL],2));
-      unsigned nCells = nRandomCones*pow(nSR_*geomConv_.cellSize()/geomConv_.cellSize(iL,radius),2);
+      //double radius = sqrt(pow(xmax[iL],2)+pow(ymax[iL],2));
+      unsigned nCells = nRandomCones*pow(nSR_,2);
       puE[iL] = puE[iL]/nCells;
       if (debug_) std::cout << " Epu=" << puE[iL] << std::endl;	
     }
@@ -1019,11 +1019,12 @@ void PositionFit::getMaximumCellFromGeom(const double & phimax,const double & et
     double rho = avgZ_[iL]/cos(theta);
     xmax[iL] = rho*sin(theta)*cos(phimax);
     ymax[iL] = rho*sin(theta)*sin(phimax);
-
-    if (xmax[iL]>0) xmax[iL]=static_cast<int>((xmax[iL]+4.999999)/10.)*10;
-    else xmax[iL]=static_cast<int>((xmax[iL]-4.999999)/10.)*10;
-    if (ymax[iL]>0) ymax[iL]=static_cast<int>((ymax[iL]+4.999999)/10.)*10;
-    else ymax[iL]=static_cast<int>((ymax[iL]-4.999999)/10.)*10;
+    double lR = sqrt(pow(xmax[iL],2)+pow(ymax[iL],2));
+    double cs = geomConv_.cellSize(iL,lR);
+    if (xmax[iL]>0) xmax[iL]=static_cast<int>((xmax[iL]+cs*0.5)/cs)*cs;
+    else xmax[iL]=static_cast<int>((xmax[iL]-cs*0.5)/cs)*cs;
+    if (ymax[iL]>0) ymax[iL]=static_cast<int>((ymax[iL]+cs*0.5)/cs)*cs;
+    else ymax[iL]=static_cast<int>((ymax[iL]-cs*0.5)/cs)*cs;
 
   }//loop on layers
 
@@ -1031,17 +1032,17 @@ void PositionFit::getMaximumCellFromGeom(const double & phimax,const double & et
 
 void PositionFit::getMaximumCell(std::vector<HGCSSRecoHit> *rechitvec,const double & phimax,const double & etamax,std::vector<double> & xmax,std::vector<double> & ymax){
   
-  //std::vector<double> dRmin;
-  //dRmin.resize(nLayers_,10);
-  std::vector<double> xmaxgeom;
-  xmaxgeom.resize(nLayers_,0);
-  std::vector<double> ymaxgeom;
-  ymaxgeom.resize(nLayers_,0);
-  getMaximumCellFromGeom(phimax,etamax,xmaxgeom,ymaxgeom);
+  std::vector<double> dRmin;
+  dRmin.resize(nLayers_,10);
+  //std::vector<double> xmaxgeom;
+  //xmaxgeom.resize(nLayers_,0);
+  //std::vector<double> ymaxgeom;
+  //ymaxgeom.resize(nLayers_,0);
+  //getMaximumCellFromGeom(phimax,etamax,xmaxgeom,ymaxgeom);
 
   //choose cell with maximum energy from 3*3 array around geom pos of max.
-  std::vector<double> Emax;
-  Emax.resize(nLayers_,0);
+  //std::vector<double> Emax;
+  //Emax.resize(nLayers_,0);
 
   for (unsigned iH(0); iH<(*rechitvec).size(); ++iH){//loop on rechits
     const HGCSSRecoHit & lHit = (*rechitvec)[iH];
@@ -1055,7 +1056,7 @@ void PositionFit::getMaximumCell(std::vector<HGCSSRecoHit> *rechitvec,const doub
     if (fixForPuMixBug_) posx-=1.25;
     double posy = lHit.get_y();
     if (fixForPuMixBug_) posy-=1.25;
-    //double posz = avgZ_[layer];//lHit.get_z();
+    double posz = avgZ_[layer];//lHit.get_z();
     if (debug_>1) {
       std::cout << " --  RecoHit " << iH << "/" << (*rechitvec).size() << " --" << std::endl
 		<< " --  position x,y " << posx << "," << posy << std::endl;
@@ -1063,7 +1064,7 @@ void PositionFit::getMaximumCell(std::vector<HGCSSRecoHit> *rechitvec,const doub
     }
     double energy = lHit.energy();
 
-    if (fabs(posx-xmaxgeom[layer]) <= 15 && 
+    /*if (fabs(posx-xmaxgeom[layer]) <= 15 && 
 	fabs(posy-ymaxgeom[layer]) <= 15){
 
       if (energy>Emax[layer]){
@@ -1071,25 +1072,26 @@ void PositionFit::getMaximumCell(std::vector<HGCSSRecoHit> *rechitvec,const doub
 	xmax[layer] = posx;
 	ymax[layer] = posy;
       }
-    }
-      //ROOT::Math::XYZVector pos(posx,posy,posz);
-      //double deta = fabs(pos.eta()-etamax);
-      //double dphi = DeltaPhi(pos.phi(),phimax);
+      }*/
+
+    ROOT::Math::XYZVector pos(posx,posy,posz);
+    double deta = fabs(pos.eta()-etamax);
+    double dphi = DeltaPhi(pos.phi(),phimax);
     
-      //double dR = sqrt(pow(deta,2)+pow(dphi,2));
-      //if (dR<dRmin[layer]) {
-      //dRmin[layer] = dR;
-      //xmax[layer] = posx;
-      //ymax[layer] = posy;
-      //}
+    double dR = sqrt(pow(deta,2)+pow(dphi,2));
+    if (dR<dRmin[layer]) {
+      dRmin[layer] = dR;
+      xmax[layer] = posx;
+      ymax[layer] = posy;
+    }
     
     p_recoxy[layer]->Fill(posx,posy,energy);
     
   }//loop on rechits
     
-  //for (unsigned iL(0);iL<nLayers_;++iL){//loop on layers
-  //p_dRmin[iL]->Fill(dRmin[iL]);
-  //}
+  for (unsigned iL(0);iL<nLayers_;++iL){//loop on layers
+    p_dRmin[iL]->Fill(dRmin[iL]);
+  }
 }
 
 void PositionFit::getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec,
@@ -1106,8 +1108,6 @@ void PositionFit::getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec
   double eSum_puEvt = 0;
 
   //double steplarge = geomConv_.cellSize()*20/2.+0.1;//+0.1 to accomodate double precision
-  double step = geomConv_.cellSize()*nSR_/2.+0.1;//+0.1 to accomodate double precision
-  if (debug_) std::cout << "step = " << step << std::endl;
 
   for (unsigned iH(0); iH<(*rechitvec).size(); ++iH){//loop on rechits
     const HGCSSRecoHit & lHit = (*rechitvec)[iH];
@@ -1118,6 +1118,8 @@ void PositionFit::getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec
     double posy = lHit.get_y();
     if (fixForPuMixBug_) posy-=1.25;
     double lR = sqrt(pow(posx,2)+pow(posy,2));
+    double step = geomConv_.cellSize(layer,lR)*nSR_/2.+0.1;//+0.1 to accomodate double precision
+    if (debug_>1) std::cout << "step = " << step << std::endl;
 
     if (fabs(posx-xmax[layer]) < step && 
 	fabs(posy-ymax[layer]) < step){
@@ -1146,8 +1148,8 @@ void PositionFit::getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec
       }
       
       if (doLogWeight_){
-	int ix = (posx-xmax[layer])/10.;
-	int iy = (posy-ymax[layer])/10.;
+	int ix = (posx-xmax[layer])/geomConv_.cellSize(layer,lR);
+	int iy = (posy-ymax[layer])/geomConv_.cellSize(layer,lR);
 	unsigned idx = 0;
 	if ((ix > 1 || ix < -1) || (iy>1 || iy<-1)) {
 	  std::cout << " error, check ix=" << ix << " iy=" << iy << " posx,y-max=" << posx-xmax[layer] << " " << posy-ymax[layer] << " step " << step << std::endl;
@@ -1274,7 +1276,7 @@ void PositionFit::getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec
 
 void PositionFit::getPuContribution(std::vector<HGCSSRecoHit> *rechitvec, const std::vector<double> & xmax,const std::vector<double> & ymax,std::vector<double> & puE){
 
-  double step = geomConv_.cellSize()*nSR_/2.+0.1;
+  //double step = geomConv_.cellSize()*nSR_/2.+0.1;
 
   for (unsigned iH(0); iH<(*rechitvec).size(); ++iH){//loop on rechits
     const HGCSSRecoHit & lHit = (*rechitvec)[iH];
@@ -1284,6 +1286,9 @@ void PositionFit::getPuContribution(std::vector<HGCSSRecoHit> *rechitvec, const 
     if (fixForPuMixBug_) posx-=1.25;
     double posy = lHit.get_y();
     if (fixForPuMixBug_) posy-=1.25;
+    double lR = sqrt(pow(posx,2)+pow(posy,2));
+    double step = geomConv_.cellSize(layer,lR)*nSR_/2.+0.1;//+0.1 to accomodate double precision
+    if (debug_>1) std::cout << "step = " << step << std::endl;
 
     //std::cout << "- iH " << iH << " x=" << posx << " xmax=" << xmax[layer] << " y=" << posy << " ymax=" << ymax[layer] << " step " << step << std::endl;
     if (fabs(posx-xmax[layer]) < step && 

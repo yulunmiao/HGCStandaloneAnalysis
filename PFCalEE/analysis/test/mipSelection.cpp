@@ -166,6 +166,7 @@ int main(int argc, char** argv){//main
   unsigned debug;
   unsigned layerRange;
   unsigned start;
+  double etamean;
 
   po::options_description preconfig("Configuration"); 
   preconfig.add_options()("cfg,c",po::value<std::string>(&cfg)->required());
@@ -184,6 +185,7 @@ int main(int argc, char** argv){//main
     ("debug,d",        po::value<unsigned>(&debug)->default_value(0))
     ("layerRange,l",   po::value<unsigned>(&layerRange)->default_value(1))
     ("start",        po::value<unsigned>(&start)->default_value(0))
+    ("etamean",      po::value<double>(&etamean)->default_value(2.85))
 
     ;
   po::store(po::command_line_parser(argc, argv).options(config).allow_unregistered().run(), vm);
@@ -202,13 +204,13 @@ int main(int argc, char** argv){//main
   //hardcoded
   /////////////////////////////////////////////////////////////
 
-  const double cell_size = 5;//mm
+  const double cell_size = 10;//mm
 
   const unsigned nEta = 1;
-  const unsigned nNoise = 10;
+  const unsigned nNoise = 1;//0;
 
-  const double noise[nNoise] = {0,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5};
-  const double eta[nEta] = {2.85};//1.7,2.0,2.5};
+  const double noise[nNoise] = {0};//,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5};
+  const double eta[nEta] = {etamean};//1.7,2.0,2.5};
 
   const double deta = 0.05;
 
@@ -229,7 +231,7 @@ int main(int argc, char** argv){//main
   else {
     inputbase << inFilePath //<< "/MipStudy.root";
 	      << "_run";
-    nTrees = 20;
+    nTrees = 21;
   }
   for (unsigned i(0); i<nTrees;++i){
     if (nTrees>1){
@@ -351,7 +353,7 @@ int main(int argc, char** argv){//main
       for (unsigned in(0); in<nNoise;++in){
 	for (unsigned ih(0);ih<(*cellIdsZ[ie][in]).size();++ih){
 	  MyHit lHit;
-	  lHit.e = (*energies[ie][in])[ih];
+	  lHit.e = (*energies[ie][in])[ih]*2;//bug fix for using only 100um Si
 	  if (lHit.e==0) continue;
 	  unsigned iL = (*cellIdsZ[ie][in])[ih];  
 	  lHit.layer = iL;

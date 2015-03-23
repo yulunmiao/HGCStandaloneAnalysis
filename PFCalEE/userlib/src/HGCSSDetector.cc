@@ -11,8 +11,10 @@ HGCSSDetector & theDetector(){
 
 void HGCSSDetector::buildDetector(const unsigned versionNumber,
 				  bool concept,
-				  bool isCaliceHcal){
+				  bool isCaliceHcal,
+				  bool bypassR){
   
+  bypassRadius_ = bypassR;
   reset();
   initialiseIndices(versionNumber);
   HGCSSSubDetector FECAL;
@@ -26,7 +28,8 @@ void HGCSSDetector::buildDetector(const unsigned versionNumber,
   FECAL.gevOffset = 0.0;
   FECAL.isSi = true;
   //if (versionNumber>=30) 
-  FECAL.radiusLim = 750;
+  if (!bypassRadius_) FECAL.radiusLim = 750;
+  else FECAL.radiusLim = 0;
   if (FECAL.nLayers()>0) theDetector().addSubdetector(FECAL);
   
   HGCSSSubDetector MECAL;
@@ -40,7 +43,8 @@ void HGCSSDetector::buildDetector(const unsigned versionNumber,
   MECAL.gevOffset = 0.0;
   MECAL.isSi = true;
   //if (versionNumber>=30) 
-  MECAL.radiusLim = 750;
+  if (!bypassRadius_) MECAL.radiusLim = 750;
+  else MECAL.radiusLim = 0;
   if (MECAL.nLayers()>0) theDetector().addSubdetector(MECAL);
   
   HGCSSSubDetector BECAL;
@@ -54,7 +58,8 @@ void HGCSSDetector::buildDetector(const unsigned versionNumber,
   BECAL.gevOffset = 0.0;
   BECAL.isSi = true;
   //if (versionNumber>=30) 
-  BECAL.radiusLim = 750;
+  if (!bypassRadius_) BECAL.radiusLim = 750;
+  else BECAL.radiusLim = 0;
   if (BECAL.nLayers()>0) theDetector().addSubdetector(BECAL);
   
   HGCSSSubDetector FHCAL;
@@ -69,7 +74,8 @@ void HGCSSDetector::buildDetector(const unsigned versionNumber,
   FHCAL.gevOffset = 0.;
   FHCAL.isSi = true;
   //if (versionNumber>=30) 
-  FHCAL.radiusLim = 600;
+  if (!bypassRadius_) FHCAL.radiusLim = 600;
+  else FHCAL.radiusLim = 0;
   if (isCaliceHcal) {
     FHCAL.mipWeight = 1./0.816;
     FHCAL.absWeight = 1.;

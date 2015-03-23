@@ -59,6 +59,7 @@ int main(int argc, char** argv){//main
   std::string outFilePath;
   unsigned debug;
   unsigned nPu;
+  double etamean;
 
   po::options_description preconfig("Configuration"); 
   preconfig.add_options()("cfg,c",po::value<std::string>(&cfg)->required());
@@ -74,6 +75,7 @@ int main(int argc, char** argv){//main
     ("outFilePath,o",  po::value<std::string>(&outFilePath)->required())
     ("debug,d",        po::value<unsigned>(&debug)->default_value(0))
     ("nPu,p",          po::value<unsigned>(&nPu)->default_value(140))
+    ("etamean,e",      po::value<double>(&etamean)->default_value(2.85))
     ;
 
   po::store(po::command_line_parser(argc, argv).options(config).allow_unregistered().run(), vm);
@@ -95,11 +97,13 @@ int main(int argc, char** argv){//main
   /////////////////////////////////////////////////////////////
 
   const unsigned nEta = 1;
-  const unsigned nNoise = 5;//10;
+  const unsigned nNoise = 1;//5;//10;
 
   //const double noise[nNoise] = {0,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5};
-  const double noise[nNoise] = {0.6,0.7,0.8,0.9,1.0};
-  const double eta[nEta] = {2.85};//1.7,2.0,2.5};
+  const double noise[nNoise] = {0.0};//0.6,0.7,0.8,0.9,1.0};
+  double eta[nEta];// = {2.85};//1.7,2.0,2.5};
+
+  eta[0] = etamean;
 
   const double deta = 0.05;
 
@@ -108,7 +112,6 @@ int main(int argc, char** argv){//main
   /////////////////////////////////////////////////////////////
   //input
   /////////////////////////////////////////////////////////////
-
 
   std::ostringstream inputbase;
   inputbase << inFilePath //<< "/MipStudy.root";
@@ -131,7 +134,7 @@ int main(int argc, char** argv){//main
       TFile *simFile = TFile::Open(input.str().c_str());
       if (simFile) {
 	info =(HGCSSInfo*)simFile->Get("Info");
-	first=false;
+	if (info) first=false;
       }
     }
   }
@@ -143,6 +146,8 @@ int main(int argc, char** argv){//main
     std::cout << " -- Error, tree RecoTree cannot be opened. Exiting..." << std::endl;
     return 1;
   }
+
+  std::cout << " Trees added." << std::endl;
 
   /////////////////////////////////////////////////////////////
   //Info
@@ -182,7 +187,7 @@ int main(int argc, char** argv){//main
   HGCSSGeometryConversion geomConv(inFilePath,model,cellSize);
   //set granularity to get cellsize for PU subtraction
   std::vector<unsigned> granularity;
-  granularity.resize(nLayers,2);//0.5*0.5 cells
+  granularity.resize(nLayers,4);//0.5*0.5 cells
   geomConv.setGranularity(granularity);
   geomConv.initialiseHistos();
 
@@ -286,24 +291,22 @@ int main(int argc, char** argv){//main
       for (unsigned iH(0); iH<(*rechitvec).size(); ++iH){//loop on hits
 	HGCSSRecoHit lHit = (*rechitvec)[iH];
 	//double posz = lHit.get_z();
-	//double eta = lHit.eta();
-	bool inFid = true;//fabs(eta) > etamin && fabs(eta) < etamax;
+	double leta = lHit.eta();
+	if (fabs(leta-eta[0])>= deta) continue;
 	// && posz>minZ && posz<maxZ;
-	if (inFid){
-	  unsigned layer = lHit.layer();
-	  if (layer != prevLayer){
-	    const HGCSSSubDetector & subdet = myDetector.subDetectorByLayer(layer);
-	    type = subdet.type;
-	    subdetLayer = layer-subdet.layerIdMin;
-	    prevLayer = layer;
-	    //std::cout << " - layer " << layer << " " << subdet.name << " " << subdetLayer << std::endl;
-	  }      
-	  double energy = lHit.energy();
-	  double posx = lHit.get_x();
-	  double posy = lHit.get_y();
-	  double posz = lHit.get_z();
-	  geomConv.fill(type,subdetLayer,energy,0,posx,posy,posz);
-	}
+	unsigned layer = lHit.layer();
+	if (layer != prevLayer){
+	  const HGCSSSubDetector & subdet = myDetector.subDetectorByLayer(layer);
+	  type = subdet.type;
+	  subdetLayer = layer-subdet.layerIdMin;
+	  prevLayer = layer;
+	  //std::cout << " - layer " << layer << " " << subdet.name << " " << subdetLayer << std::endl;
+	}      
+	double energy = lHit.energy();
+	double posx = lHit.get_x();
+	double posy = lHit.get_y();
+	double posz = lHit.get_z();
+	geomConv.fill(type,subdetLayer,energy,0,posx,posy,posz);
 	
       }//loop on hits
     }//loop on interactions

@@ -41,6 +41,8 @@ if opt.version==13:
     INPATHPU="root://eoscms//eos/cms/store/cmst3/group/hgcal/Standalone/V13/MinBias/"
 elif opt.version==25:
     INPATHPU="root://eoscms//eos/cms/store/cmst3/group/hgcal/Standalone/V25/MinBias/"
+elif opt.version==33:
+    INPATHPU="root://eoscms//eos/cms/store/cmst3/group/hgcal/Standalone/V33/MinBias/pile/gitV00-03-07/e-/"
 
 #nPuVtxlist=[0,140,200]
 nPuVtxlist=[0]

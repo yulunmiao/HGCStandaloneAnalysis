@@ -91,7 +91,7 @@ int main(int argc, char** argv){//main
   config.add_options()
     //Input output and config options //->required()
     ("concept",        po::value<bool>(&concept)->default_value(true))
-    ("nSR",            po::value<unsigned>(&nSR)->default_value(12))
+    ("nSR",            po::value<unsigned>(&nSR)->default_value(3))
     ("residualMax",    po::value<double>(&residualMax)->default_value(25))
     ("pNevts,n",       po::value<unsigned>(&pNevts)->default_value(0))
     ("filePath,i",     po::value<std::string>(&filePath)->required())
@@ -126,7 +126,7 @@ int main(int argc, char** argv){//main
 	    << " -- Output file path: " << outPath << std::endl
 	    << " -- Output folder: " << outFolder << std::endl
 	    << " -- Requiring " << nSiLayers << " si layers." << std::endl
-	    << " -- Number cells in signal region for fit: " << nSR << " *2.5*2.5 mm^2 cells" << std::endl
+	    << " -- Number cells in signal region for fit: " << nSR << " cells" << std::endl
 	    << " -- Residual max considered for filling matrix and fitting: " << residualMax << " mm" << std::endl
 	    << " -- Apply PUMix fix? " << applyPuMixFix << std::endl
 	    << " -- Processing ";
