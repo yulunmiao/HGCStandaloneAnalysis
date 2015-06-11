@@ -83,12 +83,45 @@ void SteppingAction::UserSteppingAction(const G4Step* aStep)
   HGCSSGenParticle genPart;
   //record truth particles
   //time cut: we don't want neutrons re-entering the front-face a long time after...
-  //std::cout << "-- debug: " << thePrePVname << " " << thePostPVname << " " << eventAction_->GetFirstVolumeName() << " " << globalTime << std::endl;
+  //bit for particles study
+  /*
+  if (abs(pdgId)==11 && 
+      ((thePrePVname=="Si11_0phys" || thePrePVname=="Si11_1phys" || thePrePVname=="Si11_2phys" || thePrePVname=="PCB12phys") && 
+      (thePostPVname=="WCu11phys" || thePostPVname=="Si11_0phys"|| thePostPVname=="Si11_1phys"|| thePostPVname=="Si11_2phys" || (thePostPVname=="PCB12phys" && thePrePVname=="Si11_2phys"))) ||
+      ((thePrePVname=="Si18_0phys" || thePrePVname=="Si18_1phys" || thePrePVname=="Si18_2phys" || thePrePVname=="WCu19phys") && 
+       (thePostPVname=="PCB18phys" || thePostPVname=="Si18_0phys"|| thePostPVname=="Si18_1phys"|| thePostPVname=="Si18_2phys" || (thePostPVname=="WCu18phys" && thePrePVname=="Si18_2phys")))
+      )
+    {
+      eventAction_->fout() << thePrePVname
+			   << " " << thePostPVname
+			   << " " << pdgId
+			   << " " << globalTime  
+			   << " " << lTrack->GetMomentum().mag();
+      if (abs(pdgId)>1000000000) eventAction_->fout() << " " << lTrack->GetTrackStatus()
+						      << " " << stepl
+						      << " " << aStep->GetTotalEnergyDeposit()
+						      << " " << aStep->GetNonIonizingEnergyDeposit()
+						      << " " << lTrack->GetCreatorProcess()->GetProcessName()
+						      << " " << lTrack->GetKineticEnergy()
+				   ;
+      eventAction_->fout() << std::endl;
+    }
+  
+  return;
+  */
 
+  //std::cout << "-- debug: " << thePrePVname << " " << thePostPVname << " " << eventAction_->GetFirstVolumeName() << " " << globalTime << std::endl;
+  //if (abs(pdgId)==11 && 
+  //((thePrePVname=="Si11_0phys" && thePostPVname=="Si11_1phys") || 
+  //(thePrePVname=="Si11_1phys" && thePostPVname=="Si11_0phys")) || 
+  //((thePrePVname=="Si18_0phys" && thePostPVname=="Si18_1phys") || 
+  //(thePrePVname=="Si18_1phys" && thePostPVname=="Si18_0phys"))
+//)
   if (globalTime < timeLimit_ && 
       thePrePVname=="Wphys"
       && (thePostPVname==eventAction_->GetFirstVolumeName())
-      ){
+      )
+    {
     //if (pdgId == 2112) 
     //std::cout << "-- found incoming: " << thePrePVname << " " << thePostPVname << " " << globalTime << std::endl;
     //const G4ThreeVector & preposition = thePreStepPoint->GetPosition();

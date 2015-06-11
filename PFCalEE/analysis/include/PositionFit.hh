@@ -22,6 +22,7 @@
 #include "HGCSSGenParticle.hh"
 #include "HGCSSPUenergy.hh"
 #include "HGCSSGeometryConversion.hh"
+#include "HGCSSCalibration.hh"
 
 #include "Math/Vector3D.h"
 #include "Math/Vector3Dfwd.h"
@@ -237,6 +238,16 @@ public:
 			       truthDir_.GetY(avgZ_[iL],truthVtx_.y(),truthVtx_.z()));
 
   };
+  inline std::vector<std::vector<double> > getEnergyArray() const{
+    return Exy_;
+  };
+  inline std::vector<std::vector<double> > getTimeArray() const{
+    return txy_;
+  };
+
+  inline std::vector<double> getZpositions() const{
+    return avgZ_;
+  };
 
 private:
   PositionFit(){};
@@ -255,8 +266,11 @@ private:
   bool doMatrix_;
   bool saveEtree_;
   bool doLogWeight_;
+  double xvtx_;
+  double yvtx_;
 
   HGCSSGeometryConversion geomConv_;
+  HGCSSCalibration calib_;
   HGCSSPUenergy puDensity_;
 
   std::vector<double> avgZ_;
@@ -289,7 +303,7 @@ private:
   std::vector<double> truthPosX_;
   std::vector<double> truthPosY_;
   std::vector<std::vector<double> > Exy_;
-
+  std::vector<std::vector<double> > txy_;
   //cluster histos
   TH1F *p_nClusters;
 
@@ -311,10 +325,13 @@ private:
 
   //position histos
   TH1F *p_nGenParticles;
+  TH1F *p_genvtx_z;
 
   std::vector<TH2F *> p_genxy;
   std::vector<TH2F *> p_recoxy;
   std::vector<TH1F *> p_dRmin;
+  std::vector<TH1F *> p_diffXpos;
+  std::vector<TH1F *> p_diffYpos;
 
   //TH1F *p_numberOfMaxTried;
   //TH1F *p_dRMaxTruth;

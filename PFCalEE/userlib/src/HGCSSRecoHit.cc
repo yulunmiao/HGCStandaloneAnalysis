@@ -15,6 +15,9 @@ HGCSSRecoHit::HGCSSRecoHit(const HGCSSSimHit & aSimHit, const unsigned granulari
 
   xpos_ = aSimHit.get_x();
   ypos_ = aSimHit.get_y();
+
+  time_ = aSimHit.time();
+
   //cellid encoding:
   //bool x_side = x>0 ? true : false;
   //bool y_side = y>0 ? true : false;
@@ -53,7 +56,10 @@ double HGCSSRecoHit::phi() const {
 // }
 
 void HGCSSRecoHit::Add(const HGCSSSimHit & aSimHit){
+  time_ = time_*energy_;
   energy_ += aSimHit.energy();
+  time_ += aSimHit.energy()*aSimHit.time();
+  if (energy_>0) time_ = time_/energy_;
 }
 
 void HGCSSRecoHit::Print(std::ostream & aOs) const{
@@ -62,6 +68,7 @@ void HGCSSRecoHit::Print(std::ostream & aOs) const{
       << std::endl
       << " = Energy " << energy_ << " noiseFrac " << noiseFrac_ << std::endl
       << " = Digi E " << adcCounts_ << " adcCounts." << std::endl
+      << " = time " << time_ << std::endl
       << "====================================" << std::endl;
 
 }

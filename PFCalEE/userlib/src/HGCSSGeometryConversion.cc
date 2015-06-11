@@ -72,6 +72,12 @@ HGCSSGeometryConversion::~HGCSSGeometryConversion(){
     deleteHistos(liter->second);
   }
   HistMapTime_.clear();
+  liter = HistMapTimeSmall_.begin();
+  for (; liter !=HistMapTimeSmall_.end();++liter){
+    deleteHistos(liter->second);
+  }
+  HistMapTimeSmall_.clear();
+
   liter = HistMapZ_.begin();
   for (; liter !=HistMapZ_.end();++liter){
     deleteHistos(liter->second);
@@ -122,6 +128,7 @@ void HGCSSGeometryConversion::initialiseHistos(const bool recreate,
      avgMapE_[theDetector().detType(iS)]=avgvecE;
      
      resetVector(HistMapTime_[theDetector().detType(iS)],"TimeHits"+uniqStr,theDetector().detName(iS),theDetector().subDetectorBySection(iS),theDetector().nLayers(iS),recreate,print);
+     resetVector(HistMapTimeSmall_[theDetector().detType(iS)],"TimeHitsSmall"+uniqStr,theDetector().detName(iS),theDetector().subDetectorBySection(iS),theDetector().nLayers(iS),recreate,print);
      //std::cout << " check: " << HistMapTime_[theDetector().detType(iS)].size() << std::endl;
 
      resetVector(HistMapZ_[theDetector().detType(iS)],"zHits"+uniqStr,theDetector().detName(iS),theDetector().subDetectorBySection(iS),theDetector().nLayers(iS),recreate,print);
@@ -147,7 +154,10 @@ void HGCSSGeometryConversion::fill(const DetectorEnum type,
   HistMapE_[type][newlayer]->Fill(posx,posy,weightedE);
   //if (radius >= r1) HistMapE_[type][newlayer]->Fill(posx,posy,weightedE);
   //else 
-  if (theDetector().subDetectorByEnum(type).isSi && radius<r1) HistMapESmall_[type][newlayer]->Fill(posx,posy,weightedE);
+  if (theDetector().subDetectorByEnum(type).isSi && radius<r1) {
+    HistMapESmall_[type][newlayer]->Fill(posx,posy,weightedE);
+    HistMapTimeSmall_[type][newlayer]->Fill(posx,posy,weightedE*aTime);
+  }
   HistMapTime_[type][newlayer]->Fill(posx,posy,weightedE*aTime);
   HistMapZ_[type][newlayer]->Fill(posx,posy,weightedE*posz);
   avgMapZ_[type][newlayer] += weightedE*posz;
@@ -169,6 +179,7 @@ TH2D * HGCSSGeometryConversion::get2DHist(const unsigned layer,std::string name)
   if (name == "E") return HistMapE_[subdet.type][newlayer];
   else if (name == "ESmall") return HistMapESmall_[subdet.type][newlayer];
   else if (name == "Time") return HistMapTime_[subdet.type][newlayer];
+  else if (name == "TimeSmall") return HistMapTimeSmall_[subdet.type][newlayer];
   else if (name == "Z") return HistMapZ_[subdet.type][newlayer];
   else {
     std::cerr << " ERROR !! Unknown histogram name. Exiting..." << std::endl;
@@ -245,7 +256,7 @@ void HGCSSGeometryConversion::resetVector(std::vector<TH2D *> & aVec,
 	// //take smallest pair integer to be sure to fit in the geometry
 	// //even if small dead area introduced at the edge
 	// //take 0,0,0 as center of new cell.
-	unsigned nBins = (aVar == "EmipHitsSmall") ? 452 : 339;
+	unsigned nBins = (aVar.find("Small")!=aVar.npos) ? 452 : 339;
 	double min=-1695;
 	double max=1695;
 	// if (getGranularity(iL,aDet) == 1) {

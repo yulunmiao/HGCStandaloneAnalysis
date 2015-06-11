@@ -55,13 +55,17 @@ EXES=$(wildcard $(BASEDIR)/test/*.cpp)
 OBJS=$(subst $(SRCDIR), $(OBJDIR),$(subst cc,$(OBJ_EXT),$(SRCS)))
 #BINS=$(subst $(TESTDIR), $(EXEDIR),$(subst .$(TEST_EXT),,$(EXES)))
 
-#BINS=$(EXEDIR)/MixPUSignal $(EXEDIR)/egammaResolution $(EXEDIR)/higgsResolution
+#BINS=$(EXEDIR)/MixPUSignal $(EXEDIR)/egammaResolution $(EXEDIR)/higgsResolution $(EXEDIR)/timeResolution $(EXEDIR)/plotMomentum $(EXEDIR)/plotTime
 
-BINS=$(EXEDIR)/mipStudy $(EXEDIR)/mipProfile $(EXEDIR)/mipSelection $(EXEDIR)/ootpuOnHiggsPhotons $(EXEDIR)/higgsResolution
+#BINS=$(EXEDIR)/plotParticleDensity $(EXEDIR)/validation $(EXEDIR)/timeResolution $(EXEDIR)/hepmcHggChargedTracks
+
+#BINS=$(EXEDIR)/mipStudy $(EXEDIR)/mipProfile $(EXEDIR)/mipSelection $(EXEDIR)/ootpuOnHiggsPhotons $(EXEDIR)/higgsResolution $(EXEDIR)/plotNabove100fC
 
 #BINS=$(EXEDIR)/vbfResolution $(EXEDIR)/calibration
 
 #BINS=$(EXEDIR)/maxChargeStudy $(EXEDIR)/plotMomentum $(EXEDIR)/egammaResolution $(EXEDIR)/higgsResolution $(EXEDIR)/ootpuOnHiggsPhotons $(EXEDIR)/getAbsorberWeight
+
+BINS=$(EXEDIR)/egammaResolution $(EXEDIR)/higgsResolution
 
 SUBDIRS = ../userlib
 
@@ -80,7 +84,19 @@ $(SUBDIRS):
 $(EXEDIR)/plotMomentum:  $(TESTDIR)/plotMomentum.cpp $(wildcard $(BASEDIR)/include/*.h*)
 	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(HEPMC_DIR)lib -lHepMC #-lHepMCfio
 
+$(EXEDIR)/hepmcHggChargedTracks:  $(TESTDIR)/hepmcHggChargedTracks.cpp $(wildcard $(BASEDIR)/include/*.h*)
+	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(HEPMC_DIR)lib -lHepMC #-lHepMCfio
+
 $(EXEDIR)/maxChargeStudy:  $(TESTDIR)/maxChargeStudy.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
+	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
+
+$(EXEDIR)/plotNabove100fC:  $(TESTDIR)/plotNabove100fC.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
+	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
+
+$(EXEDIR)/plotTime:  $(TESTDIR)/plotTime.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
+	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
+
+$(EXEDIR)/plotParticleDensity:  $(TESTDIR)/plotParticleDensity.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
 	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
 
 $(EXEDIR)/ootpuOnHiggsPhotons:  $(TESTDIR)/ootpuOnHiggsPhotons.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
@@ -101,6 +117,9 @@ $(EXEDIR)/calibration:  $(TESTDIR)/calibration.cpp $(LIBDIR)/lib$(LIBNAME).so $(
 $(EXEDIR)/higgsResolution:  $(TESTDIR)/higgsResolution.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
 	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
 
+$(EXEDIR)/timeResolution:  $(TESTDIR)/timeResolution.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
+	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
+
 $(EXEDIR)/getAbsorberWeight:  $(TESTDIR)/getAbsorberWeight.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
 	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
 
@@ -111,6 +130,9 @@ $(EXEDIR)/mipProfile:  $(TESTDIR)/mipProfile.cpp $(LIBDIR)/lib$(LIBNAME).so $(wi
 	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
 
 $(EXEDIR)/mipSelection:  $(TESTDIR)/mipSelection.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
+	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
+
+$(EXEDIR)/validation:  $(TESTDIR)/validation.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
 	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
 
 $(OBJDIR)/%.$(OBJ_EXT):  $(SRCDIR)/%.cc $(BASEDIR)/include/%.h*

@@ -17,13 +17,14 @@ int main(int argc, char ** argv) {
   const unsigned z0 = 100;
   const unsigned step = 2;
 
-  //TFile *fout = TFile::Open("PLOTS/output_hepmc_vtxorig.root","RECREATE");
-  TFile *fout = TFile::Open("PLOTS/output_hepmc_vtxmodif.root","RECREATE");
+  //TFile *fout = TFile::Open("PLOTS/output_hepmc_vtxorig_MB.root","RECREATE");
+  //TFile *fout = TFile::Open("PLOTS/output_hepmc_vtxmodif.root","RECREATE");
+  TFile *fout = TFile::Open("PLOTS/output_hepmc_hggmodif.root","RECREATE");
   fout->cd();
   TH1F *hvtx_x = new TH1F("hvtx_x",";x (mm);vertices",1000,-10,10);
   TH1F *hvtx_y = new TH1F("hvtx_y",";y (mm);vertices",1000,-10,10);
   TH1F *hvtx_z = new TH1F("hvtx_z",";z (mm);vertices",1000,-500,500);
-  TH1F *hvtx_t = new TH1F("hvtx_t",";t (ns);vertices",20000,-10,10);
+  TH1F *hvtx_t = new TH1F("hvtx_t",";t (ns);vertices",20000,-100,100);
   TH2F *hvtx_tvsz = new TH2F("hvtx_tvsz",";z (mm); t (ps);vertices",1000,-200,200,1200,-600,600);
   TH1F *hvtx_t_z[nZ];
   for (unsigned i(0);i<nZ;++i){
@@ -57,7 +58,9 @@ int main(int argc, char ** argv) {
     //lname << ".dat";
     //lname << "/afs/cern.ch/work/a/amagnan/public/HepMCFiles/ggHgg_origVtx.dat";
     //lname << "/afs/cern.ch/work/a/amagnan/public/HepMCFiles/ggHgg_modifyVtx.dat";
-    lname << "/afs/cern.ch/work/a/amagnan/public/HepMCFiles/vertexHLLHC.dat";
+    //lname << "/afs/cern.ch/work/a/amagnan/public/HepMCFiles/vertexHLLHC.dat";
+    //lname << "/afs/cern.ch/work/p/pdauncey/public/Pythia140305_000000.dat";
+    lname << "/afs/cern.ch/work/a/amagnan/public/HepMCFiles/ggHgg_1428658356.dat";
     HepMC::IO_GenEvent ascii_in(lname.str().c_str(),std::ios::in);
     
     // get the first event
@@ -83,7 +86,8 @@ int main(int argc, char ** argv) {
       hvtx_y->Fill((*q)->position().y());
       hvtx_z->Fill(z);
       hvtx_t->Fill(t);
-      hvtx_tvsz->Fill(z,t*1000);
+      //hvtx_tvsz->Fill(z,t*1000);
+      hvtx_tvsz->Fill(z,t);
 
       if (fabs(z)<z0){
 	unsigned idx = static_cast<unsigned>((z+z0)*1./step);

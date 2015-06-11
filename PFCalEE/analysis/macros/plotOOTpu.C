@@ -29,7 +29,7 @@ int plotOOTpu(){//main
   gStyle->SetPadTopMargin(0.07);
 
   //TFile *input = TFile::Open("../PLOTS/pT60eta19Photons_MB_pu140.root");
-  TFile *input = TFile::Open("../PLOTS/HiggsPhotons_MBFixed_pu140.root");
+  TFile *input = TFile::Open("../PLOTS/HiggsPhotons_MBtest_pu140.root");
   input->cd();
   TCanvas *myc = new TCanvas("myc","myc",1500,1000);
   TCanvas *myc2 = new TCanvas("myc2","myc2",1500,1000);
@@ -54,38 +54,40 @@ int plotOOTpu(){//main
     "PU BX -1+1-10"
   };
 
-  gStyle->SetOptStat("eMRo");
-  gStyle->SetOptFit(11);
+  gStyle->SetOptStat(0);//"eMRo");
+  gStyle->SetOptFit(0);//11);
   TPaveStats *st[nH];
 
   TF1 *f[nH];
-  TLegend *leg = new TLegend(0.13,0.72,0.43,0.92);
+  TLegend *leg = new TLegend(0.63,0.7,0.93,0.9);
   leg->SetFillStyle(0);
+
+  unsigned lcolor[nH] = {1,4,2};
 
   for (unsigned ih(0);ih<nH;++ih){
     h[ih] = (TH1F*)gDirectory->Get(histname[ih].c_str());
     if (!h[ih]) continue;
     h[ih]->Rebin(2);
-    h[ih]->GetXaxis()->SetRangeUser(0.8,1.2);
-    h[ih]->SetLineColor(ih+1);
-    h[ih]->SetMarkerColor(ih+1);
+    h[ih]->GetXaxis()->SetRangeUser(0.9,1.2);
+    h[ih]->SetLineColor(lcolor[ih]);
+    h[ih]->SetMarkerColor(lcolor[ih]);
     if (ih>0) h[ih]->SetMarkerStyle(20+ih);
-    h[ih]->Draw(ih==0?"":"PEsames");
-    h[ih]->Fit("gaus","","sames",0.9,1.02);
-    f[ih] = (TF1*)h[ih]->GetFunction("gaus");
-    f[ih]->SetLineColor(ih+1);
-    f[ih]->Draw("same");
+    h[ih]->Draw(ih==0?"":"PEsame");
+    //h[ih]->Fit("gaus","","same",0.9,1.02);
+    //f[ih] = (TF1*)h[ih]->GetFunction("gaus");
+    //f[ih]->SetLineColor(lcolor[ih]);
+    //f[ih]->Draw("same");
     gPad->Update();
-    st[ih] = (TPaveStats*)h[ih]->FindObject("stats");
-    if (!st[ih]) continue;
-    st[ih]->SetLineColor(ih+1);
-    st[ih]->SetTextColor(ih+1);
-    st[ih]->SetX1NDC(0.63);
-    st[ih]->SetX2NDC(0.93);
-    st[ih]->SetY1NDC(0.72-0.23*ih);
-    st[ih]->SetY2NDC(0.92-0.23*ih);
+    //st[ih] = (TPaveStats*)h[ih]->FindObject("stats");
+    //if (!st[ih]) continue;
+    //st[ih]->SetLineColor(lcolor[ih]);
+    //st[ih]->SetTextColor(lcolor[ih]);
+    //st[ih]->SetX1NDC(0.63);
+    //st[ih]->SetX2NDC(0.93);
+    //st[ih]->SetY1NDC(0.72-0.23*ih);
+    //st[ih]->SetY2NDC(0.92-0.23*ih);
     //st[ih]->SetLabel(labelStr[ih].c_str());
-    leg->AddEntry(h[ih],labelStr[ih].c_str(),"PL");
+    leg->AddEntry(h[ih],labelStr[ih].c_str(),ih==0?"L":"PL");
   }
 
   TLatex lat;
@@ -115,15 +117,15 @@ int plotOOTpu(){//main
     h[ih]->Rebin(10);
     h[ih]->GetXaxis()->SetRangeUser(0,1000);
     h[ih]->GetYaxis()->SetRangeUser(0.3,50000);
-    h[ih]->SetLineColor(ih+1);
-    h[ih]->SetMarkerColor(ih+1);
+    h[ih]->SetLineColor(lcolor[ih]);
+    h[ih]->SetMarkerColor(lcolor[ih]);
     h[ih]->SetMarkerStyle(20+ih);
     h[ih]->Draw(ih==0?"PE":"PEsames");
     gPad->Update();
     st[ih] = (TPaveStats*)h[ih]->FindObject("stats");
     if (!st[ih]) continue;
-    st[ih]->SetLineColor(ih+1);
-    st[ih]->SetTextColor(ih+1);
+    st[ih]->SetLineColor(lcolor[ih]);
+    st[ih]->SetTextColor(lcolor[ih]);
     st[ih]->SetX1NDC(0.63);
     st[ih]->SetX2NDC(0.93);
     st[ih]->SetY1NDC(0.72-0.21*ih);
@@ -151,15 +153,15 @@ int plotOOTpu(){//main
     if (!h[ih]) continue;
     h[ih]->Rebin(5);
     h[ih]->GetXaxis()->SetRangeUser(0.,0.05);
-    h[ih]->SetLineColor(ih+1);
-    h[ih]->SetMarkerColor(ih+1);
+    h[ih]->SetLineColor(lcolor[ih]);
+    h[ih]->SetMarkerColor(lcolor[ih]);
     h[ih]->SetMarkerStyle(20+ih);
     h[ih]->Draw(ih==0?"PE":"PEsames");
     gPad->Update();
     st[ih] = (TPaveStats*)h[ih]->FindObject("stats");
     if (!st[ih]) continue;
-    st[ih]->SetLineColor(ih+1);
-    st[ih]->SetTextColor(ih+1);
+    st[ih]->SetLineColor(lcolor[ih]);
+    st[ih]->SetTextColor(lcolor[ih]);
     st[ih]->SetX1NDC(0.63);
     st[ih]->SetX2NDC(0.93);
     st[ih]->SetY1NDC(0.72-0.21*ih);
@@ -207,6 +209,9 @@ int plotOOTpu(){//main
 
     myc3->cd(ibx);
     gPad->SetLogy(1);
+    nAbove_perbx[ibx]->GetXaxis()->SetRangeUser(0,200);
+    if (ibx>3) nAbove_perbx[ibx]->GetXaxis()->SetRangeUser(0,50);
+    if (ibx>8) nAbove_perbx[ibx]->GetXaxis()->SetRangeUser(0,20);
     nAbove_perbx[ibx]->Draw();
     lat.DrawLatexNDC(0.5,0.96,label.str().c_str());
 

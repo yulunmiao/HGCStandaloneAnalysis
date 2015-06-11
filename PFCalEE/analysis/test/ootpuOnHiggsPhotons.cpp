@@ -511,6 +511,9 @@ int main(int argc, char** argv){//main
   const unsigned nbx = 11;
   TH1F *Epu_perbx[nbx];
   TH1F *nAbove_perbx[nbx];
+  TH2F *nAbovevsEta = new TH2F("nAbovevsEta",";#eta;n_{cells}(E>100 fC);showers",
+			       14,1.5,2.9,
+			       200,0,200);
 
   double bxthresh[nbx] = {250,250,1000,1930,2910,3870,4870,5880,6930,7990,9080};
 
@@ -522,7 +525,7 @@ int main(int argc, char** argv){//main
     Epu_perbx[ibx] = new TH1F(label.str().c_str(),";E_{PU} (mips);showers",500,0,500);
     label.str("");
     label << "nAbove_bx_" << ibx;
-    nAbove_perbx[ibx] = new TH1F(label.str().c_str(),";n(E>thresh);showers",50,0,50);
+    nAbove_perbx[ibx] = new TH1F(label.str().c_str(),";n(E>thresh);showers",271,0,271);
   }
 
 
@@ -566,6 +569,8 @@ int main(int argc, char** argv){//main
     nCellsAbove1.resize(nbx,0);
     std::vector<unsigned> nCellsAbove2;
     nCellsAbove2.resize(nbx,0);
+    unsigned nover100_1 = 0;
+    unsigned nover100_2 = 0;
     Direction dir1(truthPosXg1[0]/posz[0],truthPosYg1[0]/posz[0]);
     Direction dir2(truthPosXg2[0]/posz[0],truthPosYg2[0]/posz[0]);
 
@@ -634,9 +639,10 @@ int main(int argc, char** argv){//main
 	  EperLayer2[iL] += Exyg2[iL][idx];
 	    //}
 
+	  if (Exyg1[iL][idx]>(100./mipE*f1)) nover100_1++;	    
+	  if (Exyg2[iL][idx]>(100./mipE*f2)) nover100_2++;	    
 	  //fill ids of cells above thresh
 	  for (unsigned ibx(1); ibx<nbx;++ibx){//loop on bx
-	    
 	    if (Exyg1[iL][idx]>(bxthresh[ibx]*f1)) {
 	      xyid1[ibx][iL].insert(idx);
 	      nCellsAbove1[ibx]++;
@@ -651,7 +657,7 @@ int main(int argc, char** argv){//main
       }
       EperLayer1OOT[iL] = EperLayer1[iL];
       EperLayer2OOT[iL] = EperLayer2[iL];
-    }
+    }//loop on layers
 
 
     fid1 = fid1 && (
@@ -667,17 +673,24 @@ int main(int argc, char** argv){//main
 
     if (!fid1 && !fid2) continue;
 
+    for (unsigned ibx(1); ibx<nbx;++ibx){//loop on bx
+      if (fid1) nAbove_perbx[ibx]->Fill(nCellsAbove1[ibx]);
+      if (fid2) nAbove_perbx[ibx]->Fill(nCellsAbove2[ibx]);
+    }
+
     if (fid1){
       hphi->Fill(phi1);
       heta->Fill(eta1);
       hpt->Fill(Etruth1/cosh(eta1));
       hE->Fill(Etruth1);
+      nAbovevsEta->Fill(eta1,nover100_1);
     }
     if (fid2){
       hphi->Fill(phi2);
       heta->Fill(eta2);
       hpt->Fill(Etruth2/cosh(eta2));
       hE->Fill(Etruth2);
+      nAbovevsEta->Fill(eta2,nover100_2);
     }
 
     std::set<unsigned> lidxSet;
@@ -749,12 +762,14 @@ int main(int argc, char** argv){//main
 	  }
 	}
       }//loop on hits
-      nAbove_perbx[ibx]->Fill(nover1);
-      Epu_perbx[ibx]->Fill(Ebx1);
+      if (fid1) {
+	Epu_perbx[ibx]->Fill(Ebx1);
+      }
       EtotPu1 += Ebx1;
       if (doHgg){
-	nAbove_perbx[ibx]->Fill(nover2);
-	Epu_perbx[ibx]->Fill(Ebx2);
+	if (fid2){
+	  Epu_perbx[ibx]->Fill(Ebx2);
+	}
 	EtotPu2 += Ebx2;
       }
       if (ibx==0){

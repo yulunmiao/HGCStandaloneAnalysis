@@ -4,6 +4,7 @@
 #include "HGCSSSimHit.hh"
 #include "HGCSSRecoHit.hh"
 #include "HGCSSGenParticle.hh"
+#include "utilities.h"
 
 SignalRegion::SignalRegion(const std::string inputFolder,
 			   const unsigned nLayers,
@@ -141,6 +142,31 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
 				const std::vector<HGCSSRecoHit> & rechitvec,
 				const unsigned nPuVtx,
 				const FitResult & fit){
+
+  if(!fit.found) {
+    //std::cout << " -- Event " << ievt << " skipped, accurate position not found." << std::endl;
+    nSkipped_++;
+    //fill tree to find correspondance between noPu and PU...
+    outtree_->Fill();
+    return false;
+  }
+  //initialise accuratepos per layer
+  std::vector<ROOT::Math::XYZPoint> eventPos;
+  eventPos.resize(nLayers_,ROOT::Math::XYZPoint(0,0,0));
+  for (unsigned iL(0); iL<nLayers_;++iL){
+    eventPos[iL] = getAccuratePos(fit,iL);
+  }
+
+  return fillEnergies(ievt,ssvec,simhitvec,rechitvec,nPuVtx,eventPos);
+
+}
+
+bool SignalRegion::fillEnergies(const unsigned ievt,
+				const std::vector<HGCSSSamplingSection> & ssvec,
+				const std::vector<HGCSSSimHit> & simhitvec,
+				const std::vector<HGCSSRecoHit> & rechitvec,
+				const unsigned nPuVtx,
+				const std::vector<ROOT::Math::XYZPoint> & eventPos){
   
  
   //fill weights for first event only: same in all events
@@ -149,7 +175,8 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
     absweight_.reserve(nLayers_);
     std::cout << " -- Absorber weights used for total energy:" << std::endl;
     for(unsigned iL(0); iL<nLayers_; iL++){
-      double w = ssvec[iL].volX0trans()/ssvec[1].volX0trans();
+      double w = absWeight(iL);
+      //double w = ssvec[iL].volX0trans()/ssvec[1].volX0trans();
       std::cout << " - Layer " << iL << " w=" << w << std::endl;
       absweight_.push_back(w);
     }
@@ -173,23 +200,9 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
     }
   }
 
-  if(!fit.found) {
-    //std::cout << " -- Event " << ievt << " skipped, accurate position not found." << std::endl;
-    nSkipped_++;
-    //fill tree to find correspondance between noPu and PU...
-    outtree_->Fill();
-    return false;
-  }
-  
+
   //std::cout << " -- Accurate direction for evt " << ievt << ": " << std::endl;
   //getAccurateDirection(ievt).Print();
-
-  //initialise accuratepos per layer
-  std::vector<ROOT::Math::XYZPoint> eventPos;
-  eventPos.resize(nLayers_,ROOT::Math::XYZPoint(0,0,0));
-  for (unsigned iL(0); iL<nLayers_;++iL){
-    eventPos[iL] = getAccuratePos(fit,iL);
-  }
 
   //double etacor = 1./tanh(getAccurateDirection(ievt).eta());
 

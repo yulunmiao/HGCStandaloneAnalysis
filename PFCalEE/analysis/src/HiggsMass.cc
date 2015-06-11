@@ -102,6 +102,9 @@ void HiggsMass::fillHistograms(){
 
   p_ErecooverEtrue->Fill(g1_.E()/tg1_.E());
   p_ErecooverEtrue->Fill(g2_.E()/tg2_.E());
+  //std::cout << "DD reco1 " << g1_.E() << " t1 " << tg1_.E() << " reco2 " << g2_.E() << " t2 " << tg2_.E() << std::endl;
+
+
 
   TLorentzVector tg1 = tg1_.Pt()>tg2_.Pt() ? tg1_ : tg2_;
   TLorentzVector tg2 = tg1_.Pt()>tg2_.Pt() ? tg2_ : tg1_;

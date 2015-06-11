@@ -23,7 +23,7 @@ int plotMomentumShowerMax(){
 
 
   const unsigned nFiles = 30;
-  unsigned siLayer = 2;
+  unsigned siLayer = 0;
 
   std::ostringstream lstr;
   lstr << "PLOTS/output_layer30_";
@@ -87,7 +87,9 @@ int plotMomentumShowerMax(){
   TH1F *p_time_Si  = new TH1F("p_time_Si",";time (ns);particles",1000,0,1000);
   TH2F *p_timevslogp_Si = new TH2F("p_timevslogp_Si",";log(p) (log(GeV));time (ns);particles",100,-5,2,1000,0,1000);
   TH2F *p_timevsp_Si = new TH2F("p_timevsp_Si",";p (GeV);time (ns);particles",1000,0,1,1000,0,1000);
-  TH1F *p_ionisingE = new TH1F("p_ionisingE",";E ionising (MeV);ions",1000,0,1);
+  TH1F *p_ionisingE = new TH1F("p_ionisingE",";E ionising (MeV);ions",2000,0,2);
+  TH2F *p_ionisingEvspid = new TH2F("p_ionisingEvspid",";Z+(A-2Z)*0.1;E ionising (MeV);ions",300,0,30,5000,0,5);
+  TH2F *p_ionAvsZ = new TH2F("p_ionAvsZ",";Z;A;ions",100,0,100,200,0,200);
   TH2F *p_trkStatus = new TH2F("p_trkStatus",";process name;trk status;ions",21,0,21,6,0,6);
   p_trkStatus->GetXaxis()->SetBinLabel(1,"hadElastic");
   p_trkStatus->GetXaxis()->SetBinLabel(2,"NeutronInelastic");
@@ -168,6 +170,10 @@ int plotMomentumShowerMax(){
 	if (p==0) {
 	  if (abs(pdgid)>1000000000){
 	    p_ionisingE->Fill(totE-nonIoE);
+	    unsigned A = (abs(pdgid)-static_cast<unsigned>(abs(pdgid)/1000.)*1000)/10.;
+	    unsigned Z = (abs(pdgid)/1000.-static_cast<unsigned>(abs(pdgid)/1000000.)*1000)/10.;
+	    p_ionisingEvspid->Fill(Z+(A-2.*Z)*0.1,totE-nonIoE);
+	    p_ionAvsZ->Fill(Z,A);
 	    int binx = p_trkStatus->GetXaxis()->FindBin(proc.c_str());
 	    int biny = p_trkStatus->GetYaxis()->FindBin(trkS);
 	    p_trkStatus->SetBinContent(binx,biny,p_trkStatus->GetBinContent(binx,biny)+1);
@@ -218,6 +224,11 @@ int plotMomentumShowerMax(){
 	  p_timevslogp_Si->Fill(log10(p/1000.),time);
 	  p_timevsp_Si->Fill((p/1000.),time);
 	  p_ionisingE->Fill(totE-nonIoE);
+	  unsigned A = (abs(pdgid)-static_cast<unsigned>(abs(pdgid)/1000.)*1000)/10.;
+	  unsigned Z = (abs(pdgid)/1000.-static_cast<unsigned>(abs(pdgid)/1000000.)*1000)/10.;
+	  p_ionisingEvspid->Fill(Z+(A-2.*Z)*0.1,totE-nonIoE);
+	  //std::cout << " ion " << pdgid << " A=" << A << " Z=" << Z << std::endl;
+	  p_ionAvsZ->Fill(Z,A);
 	  binx = p_trkStatus->GetXaxis()->FindBin(proc.c_str());
 	  biny = p_trkStatus->GetYaxis()->FindBin(trkS);
 	  p_trkStatus->SetBinContent(binx,biny,p_trkStatus->GetBinContent(binx,biny)+1);

@@ -29,8 +29,8 @@ int plotMomentumMinbias(){
   TH1F *hN = 0;
   TH1F *hSi = 0;
 
-  unsigned siLayer=2;
-  std::string silabel = "_si2";
+  unsigned siLayer=0;
+  std::string silabel = "_si0";
 
   const unsigned nF = 2;
   TFile *f[nF];
@@ -39,7 +39,7 @@ int plotMomentumMinbias(){
   //f[1] = TFile::Open("../PLOTS/hadronMomentumAtShowerMax_all.root");
 
   std::ostringstream lstr;
-  lstr << "PLOTS/output_layer30_";
+  lstr << "PLOTS/ParticlesAtShowerMax/output_layer30_";
   if (siLayer==3) lstr << "siAll";
   else lstr << "si" << siLayer;
   lstr << ".root";
@@ -136,8 +136,8 @@ int plotMomentumMinbias(){
       if (iF==1){
 	//hSi->SetMarkerStyle(23);
 	//hSi->SetMarkerColor(5);
-      hSi->SetLineColor(5);
-      hSi->SetFillColor(5);
+      hSi->SetLineColor(6);
+      hSi->SetFillColor(6);
       hSi->SetFillStyle(3004);
       hSi->Draw("histsame");
       //hSi->Draw("PEsame");

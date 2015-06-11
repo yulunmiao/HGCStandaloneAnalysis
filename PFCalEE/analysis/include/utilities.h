@@ -114,6 +114,7 @@ double calibratedE(const double Etot, const double eta){
   //calibration for signal region 2: 3*3 cm^2
   double pars[3] = {77,3.4,-0.50};
   double paro[3] = {-11.6,-7.7,-8.8};
+  //double paro[3] = {-5.3,-12.8,-6.9};  
   double offset = paro[0] + paro[1]*eta + paro[2]*eta*eta;
   double slope = pars[0] + pars[1]*eta + pars[2]*eta*eta;
   return (Etot-offset)/slope;
@@ -124,4 +125,80 @@ double DeltaPhi(const double & phi1, const double & phi2){
   if (dphi< (-1.*TMath::Pi())) dphi += 2*TMath::Pi();
   if (dphi>TMath::Pi()) dphi -= 2*TMath::Pi();
   return dphi;
-}
+};
+
+double E(const unsigned pT, const unsigned eta){
+  return pT*cosh(eta/10.);
+};
+
+double pT(const unsigned E, const unsigned eta){
+  return E/cosh(eta/10.);
+};
+
+double absWeight(const unsigned layer, const bool dedx=false){
+  if (dedx==false){
+    if (layer == 0) return 0.0378011;//6.285/95.4=0.06588;
+    if (layer == 1) return 1;//95.4/95.4=1
+    if (layer == 2) return 0.646989;//88.16/95.4=0.92
+    if (layer == 3) return 0.617619;//51.245/95.4=0.537
+    if (layer == 4) return 0.646989;
+    if (layer == 5) return 0.617619;
+    if (layer == 6) return 0.646989;
+    if (layer == 7) return 0.617619;
+    if (layer == 8) return 0.646989;
+    if (layer == 9) return 0.617619;
+    if (layer == 10) return 0.646989;
+    if (layer == 11) return 0.942829;//74.45/95.4=0.78
+    if (layer == 12) return 0.859702;//102.174/95.4=1.071
+    if (layer == 13) return 0.942829;
+    if (layer == 14) return 0.859702;
+    if (layer == 15) return 0.942829;
+    if (layer == 16) return 0.859702;
+    if (layer == 17) return 0.942829;
+    if (layer == 18) return 0.859702;
+    if (layer == 19) return 0.942829;
+    if (layer == 20) return 0.859702;
+    if (layer == 21) return 1.37644;//105.39/95.4=1.1047
+    if (layer == 22) return 1.30447;//131.476/95.4=1.378
+    if (layer == 23) return 1.37644;
+    if (layer == 24) return 1.30447;
+    if (layer == 25) return 1.37644;
+    if (layer == 26) return 1.30447;
+    if (layer == 27) return 1.37644;
+    if (layer == 28) return 1.30447;
+    if (layer == 29) return 1.37644;//1.79662;//
+  }
+  else {
+    if (layer == 0) return 0.06588;
+    if (layer == 1) return 1;//95.4/95.4=1
+    if (layer == 2) return 0.92;//88.16/95.4=0.92
+    if (layer == 3) return 0.537;//51.245/95.4=0.537
+    if (layer == 4) return 0.92;
+    if (layer == 5) return 0.537;
+    if (layer == 6) return 0.92;
+    if (layer == 7) return 0.537;
+    if (layer == 8) return 0.92;
+    if (layer == 9) return 0.537;
+    if (layer == 10) return 0.92;
+    if (layer == 11) return 0.78;//74.45/95.4=0.78
+    if (layer == 12) return 1.071;//102.174/95.4=1.071
+    if (layer == 13) return 0.78;
+    if (layer == 14) return 1.071;
+    if (layer == 15) return 0.78;
+    if (layer == 16) return 1.071;
+    if (layer == 17) return 0.78;
+    if (layer == 18) return 1.071;
+    if (layer == 19) return 0.78;
+    if (layer == 20) return 1.071;
+    if (layer == 21) return 1.1047;//105.39/95.4=1.1047
+    if (layer == 22) return 1.378;//131.476/95.4=1.378
+    if (layer == 23) return 1.1047;
+    if (layer == 24) return 1.378;
+    if (layer == 25) return 1.1047;
+    if (layer == 26) return 1.378;
+    if (layer == 27) return 1.1047;
+    if (layer == 28) return 1.378;
+    if (layer == 29) return 1.1047;
+  }
+  return 1;
+};

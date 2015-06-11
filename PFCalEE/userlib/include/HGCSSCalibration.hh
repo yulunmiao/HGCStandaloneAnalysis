@@ -11,13 +11,30 @@
 class HGCSSCalibration {
 
 public:
+  HGCSSCalibration(){
+    vtx_x_ = 0;
+    vtx_y_ = 0;
+    vtx_z_ = 0;
+  };
+
   HGCSSCalibration(std::string filePath);
   ~HGCSSCalibration();
+
+  double addTimeOfFlight(const double & aTime,
+			 const double & posx,
+			 const double & posy,
+			 const double & posz,
+			 const double & vtxx=0,
+			 const double & vtxy=0,
+			 const double & vtxz=0);
 
   double correctTime(const double & aTime,
 		     const double & posx,
 		     const double & posy,
-		     const double & posz);
+		     const double & posz,
+		     const double & vtxx=0,
+		     const double & vtxy=0,
+		     const double & vtxz=0);
 
   double MeVToMip(const unsigned layer,
 		  const bool absWeight=false) const;
@@ -29,7 +46,6 @@ public:
 		  const bool absWeight=false) const;
 
 private:
-  HGCSSCalibration(){};
 
   double vtx_x_;
   double vtx_y_;

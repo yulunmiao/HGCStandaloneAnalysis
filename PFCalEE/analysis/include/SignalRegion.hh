@@ -62,6 +62,14 @@ public:
 		    const std::vector<HGCSSRecoHit> & rechitvec,
 		    const unsigned nPuVtx,
 		    const FitResult & fit);
+
+  bool fillEnergies(const unsigned ievt,
+		    const std::vector<HGCSSSamplingSection> & ssvec,
+		    const std::vector<HGCSSSimHit> & simhitvec,
+		    const std::vector<HGCSSRecoHit> & rechitvec,
+		    const unsigned nPuVtx,
+		    const std::vector<ROOT::Math::XYZPoint> & eventPos);
+
   void finalise();
    
   void initialiseHistograms();
@@ -131,6 +139,7 @@ private:
   std::vector<TH1F*> p_wgtESR;
   //std::vector<TH1F*> p_rawSubtractESR;
   std::vector<TH1F*> p_wgtSubtractESR;
+
 
 };
 

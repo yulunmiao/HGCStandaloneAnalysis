@@ -29,13 +29,37 @@ HGCSSCalibration::HGCSSCalibration(std::string filePath){
 HGCSSCalibration::~HGCSSCalibration(){
 }
 
+double HGCSSCalibration::addTimeOfFlight(const double & aTime,
+					 const double & posx,
+					 const double & posy,
+					 const double & posz,
+					 const double & vtxx,
+					 const double & vtxy,
+					 const double & vtxz){
+  double distance = sqrt(pow(posx-vtxx-vtx_x_,2)+
+			 pow(posy-vtxy-vtx_y_,2)+
+			 pow(posz-vtxz-vtx_z_,2)
+			 );
+  double c = 299.792458;//3.e8*1000./1.e9;//in mm / ns...
+  double cor = distance/c;
+  // if (aTime>0 && cor > aTime) std::cout << " -- Problem ! Time correction is too large ";
+  // if (aTime>0) std::cout << " -- hit time,x,y,z,cor = " 
+  // 			 << aTime << " " << posx << " " << posy << " " << posz << " " 
+  // 			 << cor << std::endl;
+  double result = aTime+cor;
+  return result;
+}
+
 double HGCSSCalibration::correctTime(const double & aTime,
 				     const double & posx,
 				     const double & posy,
-				     const double & posz){
-  double distance = sqrt(pow(posx-vtx_x_,2)+
-			 pow(posy-vtx_y_,2)+
-			 pow(posz-vtx_z_,2)
+				     const double & posz,
+				     const double & vtxx,
+				     const double & vtxy,
+				     const double & vtxz){
+  double distance = sqrt(pow(posx-vtxx-vtx_x_,2)+
+			 pow(posy-vtxy-vtx_y_,2)+
+			 pow(posz-vtxz-vtx_z_,2)
 			 );
   double c = 299.792458;//3.e8*1000./1.e9;//in mm / ns...
   double cor = distance/c;
@@ -44,7 +68,7 @@ double HGCSSCalibration::correctTime(const double & aTime,
   // 			 << aTime << " " << posx << " " << posy << " " << posz << " " 
   // 			 << cor << std::endl;
   double result = aTime-cor;
-  if (result<0) result = 0;
+  //if (result<0) result = 0;
   return result;
 }
 

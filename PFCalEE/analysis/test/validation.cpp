@@ -470,13 +470,13 @@ int main(int argc, char** argv){//main
       if (type == DetectorEnum::FECAL ||
 	  type == DetectorEnum::MECAL ||
 	  type == DetectorEnum::BECAL){
-	//correct for si thickness
+	//correct for si thickness 100um
 	//default for 200um
-	energy *= 2./nSiLayers;
+	energy *= 2.;
       }
 
       geomConv2d5.fill(type,subdetLayer,energy,lRealTime,posx,posy,posz);
-      geomConv5.fill(type,subdetLayer,energy,lRealTime,posx,posy,posz);
+      if (layer==11 || layer==18) geomConv5.fill(type,subdetLayer,energy,lRealTime,posx,posy,posz);
       geomConv10.fill(type,subdetLayer,energy,lRealTime,posx,posy,posz);
       geomConv15.fill(type,subdetLayer,energy,lRealTime,posx,posy,posz);
 

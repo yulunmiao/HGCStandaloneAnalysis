@@ -10,6 +10,9 @@ HGCSSCluster::HGCSSCluster(const HGCSSRecoHit & aRecHit){
   pos_ = aRecHit.position();
 
   layer_ = aRecHit.layer();
+
+  vtx_=ROOT::Math::XYZPoint(0,0,0);
+
 }
 
 void HGCSSCluster::addRecHitFraction(std::pair<HGCSSRecoHit*,double> aHit){
@@ -50,23 +53,32 @@ void HGCSSCluster::calculatePosition(){
 }
 
 double HGCSSCluster::theta() const {
+
   return 2*atan(exp(-1.*eta()));
 }
 
 double HGCSSCluster::eta() const {
-  return pos_.eta();
+  double tanx = (pos_.x()-vtx_.x())/(pos_.z()-vtx_.z());
+  double tany = (pos_.y()-vtx_.y())/(pos_.z()-vtx_.z());
+  return asinh(1.0/sqrt(tanx*tanx+tany*tany));
 }
 
 double HGCSSCluster::getSeedEta() const {
-  return seedPos_.eta();
+  double tanx = (seedPos_.x()-vtx_.x())/(seedPos_.z()-vtx_.z());
+  double tany = (seedPos_.y()-vtx_.y())/(seedPos_.z()-vtx_.z());
+  return asinh(1.0/sqrt(tanx*tanx+tany*tany));
 }
 
 double HGCSSCluster::phi() const {
-  return pos_.phi();
+  double tanx = (pos_.x()-vtx_.x())/(pos_.z()-vtx_.z());
+  double tany = (pos_.y()-vtx_.y())/(pos_.z()-vtx_.z());
+  return atan2(tany,tanx);
 }
 
 double HGCSSCluster::getSeedPhi() const {
-  return seedPos_.phi();
+  double tanx = (seedPos_.x()-vtx_.x())/(seedPos_.z()-vtx_.z());
+  double tany = (seedPos_.y()-vtx_.y())/(seedPos_.z()-vtx_.z());
+  return atan2(tany,tanx);
 }
 
 void HGCSSCluster::Print(std::ostream & aOs) const{

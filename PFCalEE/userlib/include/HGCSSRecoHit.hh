@@ -23,7 +23,8 @@ public:
     zpos_(0),
     layer_(0),
     //cellid_(0),
-    noiseFrac_(0)
+    noiseFrac_(0),
+    time_(0)
   {};
 
   HGCSSRecoHit(const HGCSSSimHit & aSimHit, const unsigned granularity=1);
@@ -32,6 +33,10 @@ public:
 
   inline double energy() const {
     return energy_;
+  };
+
+  inline double time() const {
+    return time_;
   };
 
   double eta() const;
@@ -64,6 +69,10 @@ public:
 
   inline void energy(const double & energy) {
     energy_ = energy;
+  };
+
+  inline void time(const double & time) {
+    time_ = time;
   };
 
   inline void x(const double & pos){
@@ -166,6 +175,7 @@ private:
   unsigned layer_;
   //unsigned cellid_;
   double noiseFrac_;
+  double time_;
 
   ClassDef(HGCSSRecoHit,1);
 

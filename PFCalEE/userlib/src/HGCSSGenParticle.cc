@@ -7,7 +7,7 @@
 
 void HGCSSGenParticle::Print(std::ostream & aOs) const{
   aOs << std::setprecision(6)
-      << "=========== GenParticle ============" << std::endl
+      << "====================================" << std::endl
       << " = time " << time_<< " ns" << std::endl
       << " = position " << xpos_ << " " << ypos_ << " " << zpos_<< " mm" << std::endl
       << " = Mass " << mass_<< " MeV" << std::endl
@@ -16,6 +16,13 @@ void HGCSSGenParticle::Print(std::ostream & aOs) const{
       << " = charge " << charge_<< std::endl
       << " = G4trackID " << trackID_<< std::endl
       << "====================================" << std::endl;
+
+}
+void HGCSSGenParticle::Print(const unsigned idx,
+			     std::ostream & aOs) const{
+  aOs << std::setprecision(6)
+      << "========= GenParticle " << idx << " =========" << std::endl;
+  Print(aOs);
 
 }
 

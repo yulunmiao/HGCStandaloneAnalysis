@@ -87,7 +87,7 @@ double absWeight(const unsigned layer, const double eta){
   else if (layer == 26) weight = 1.30447;
   else if (layer == 27) weight = 1.37644;
   else if (layer == 28) weight = 1.30447;
-  else if (layer == 29) weight = 1.79662;
+  else if (layer == 29) weight = 1.37644;
   else weight = 1;
   return weight/tanh(eta);
 };

@@ -97,6 +97,10 @@ public:
     seedPos_ = pos;
   };
 
+  inline void setVertex(const ROOT::Math::XYZPoint & vtx){
+    vtx_ = vtx;
+  };
+
   void addRecHitFraction(std::pair<HGCSSRecoHit*,double> aHit);
   std::map<HGCSSRecoHit*,double> recHitFractions() const;
 
@@ -113,6 +117,7 @@ private:
 
   double energy_;
   ROOT::Math::XYZPoint pos_;
+  ROOT::Math::XYZPoint vtx_;
   unsigned layer_;
   ROOT::Math::XYZPoint seedPos_;
   double seedE_;

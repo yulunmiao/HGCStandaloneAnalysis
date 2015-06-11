@@ -93,6 +93,10 @@ public:
     return HistMapTime_[aDet];
   };
 
+  inline std::vector<TH2D *> & get2DTimeVecSmall(const DetectorEnum aDet){
+    return HistMapTimeSmall_[aDet];
+  };
+
   inline std::vector<TH2D *> & get2DZposVec(const DetectorEnum aDet){
     return HistMapZ_[aDet];
   };
@@ -107,6 +111,7 @@ private:
   std::map<DetectorEnum,std::vector<TH2D *> > HistMapE_;
   std::map<DetectorEnum,std::vector<TH2D *> > HistMapESmall_;
   std::map<DetectorEnum,std::vector<TH2D *> > HistMapTime_;
+  std::map<DetectorEnum,std::vector<TH2D *> > HistMapTimeSmall_;
   std::map<DetectorEnum,std::vector<TH2D *> > HistMapZ_;
   std::map<DetectorEnum,std::vector<double> > avgMapZ_;
   std::map<DetectorEnum,std::vector<double> > avgMapE_;

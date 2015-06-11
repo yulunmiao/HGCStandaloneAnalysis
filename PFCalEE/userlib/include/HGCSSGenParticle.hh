@@ -131,6 +131,7 @@ public:
   };
 
   void Print(std::ostream & aOs) const ;
+  void Print(const unsigned idx, std::ostream & aOs) const ;
 
 private:
 

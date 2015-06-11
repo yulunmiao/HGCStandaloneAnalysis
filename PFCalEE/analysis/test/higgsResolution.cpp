@@ -47,64 +47,10 @@
 #include "Math/Point2Dfwd.h"
 #include "Math/VectorUtil.h"
 #include "TLorentzVector.h"
+#include "utilities.h"
 
 using boost::lexical_cast;
 namespace po=boost::program_options;
-
-bool testInputFile(std::string input, TFile* & file){
-  file = TFile::Open(input.c_str());
-  
-  if (!file) {
-    std::cout << " -- Error, input file " << input.c_str() << " cannot be opened. Skipping..." << std::endl;
-    return false;
-  }
-  else std::cout << " -- input file " << file->GetName() << " successfully opened." << std::endl;
-  return true;
-};
-
-double absWeight(const unsigned layer){
-  if (layer == 0) return 0.0378011;
-  if (layer == 1) return 1;
-  if (layer == 2) return 0.646989;
-  if (layer == 3) return 0.617619;
-  if (layer == 4) return 0.646989;
-  if (layer == 5) return 0.617619;
-  if (layer == 6) return 0.646989;
-  if (layer == 7) return 0.617619;
-  if (layer == 8) return 0.646989;
-  if (layer == 9) return 0.617619;
-  if (layer == 10) return 0.646989;
-  if (layer == 11) return 0.942829;
-  if (layer == 12) return 0.859702;
-  if (layer == 13) return 0.942829;
-  if (layer == 14) return 0.859702;
-  if (layer == 15) return 0.942829;
-  if (layer == 16) return 0.859702;
-  if (layer == 17) return 0.942829;
-  if (layer == 18) return 0.859702;
-  if (layer == 19) return 0.942829;
-  if (layer == 20) return 0.859702;
-  if (layer == 21) return 1.37644;
-  if (layer == 22) return 1.30447;
-  if (layer == 23) return 1.37644;
-  if (layer == 24) return 1.30447;
-  if (layer == 25) return 1.37644;
-  if (layer == 26) return 1.30447;
-  if (layer == 27) return 1.37644;
-  if (layer == 28) return 1.30447;
-  if (layer == 29) return 1.79662;
-  return 1;
-};
-
-double calibratedE(const double Etot, const double eta){
-  //calibration for signal region 2: 3*3 cm^2
-  double pars[3] = {77,3.4,-0.50};
-  double paro[3] = {-11.6,-7.7,-8.8};
-  //double paro[3] = {-5.3,-12.8,-6.9};  
-  double offset = paro[0] + paro[1]*eta + paro[2]*eta*eta;
-  double slope = pars[0] + pars[1]*eta + pars[2]*eta*eta;
-  return (Etot-offset)/slope;
-};
 
 double getCalibratedE(const std::vector<double> & Evec, const double eta){
   double Etot = 0;
@@ -114,14 +60,6 @@ double getCalibratedE(const std::vector<double> & Evec, const double eta){
   }
   //calibration for signal region 2: 3*3 cm^2
   return calibratedE(Etot,eta);
-};
-
-double E(const unsigned pT, const unsigned eta){
-  return pT*cosh(eta/10.);
-};
-
-double pT(const unsigned E, const unsigned eta){
-  return E/cosh(eta/10.);
 };
 
 std::string getMatrixFolder(const double & Erec, const double & aEta){
@@ -142,6 +80,8 @@ std::string getMatrixFolder(const double & Erec, const double & aEta){
     }
   }
   for (unsigned ipt(0);ipt<17;++ipt){
+    if ((etapoint==17 && pt[ipt]==20) || 
+	(etapoint==19 && pt[ipt]==60)) continue;
     double Egen = E(pt[ipt],leta);
     if (fabs(Erec-Egen)<min){
       min = fabs(Erec-Egen);
@@ -230,7 +170,7 @@ int main(int argc, char** argv){//main
   if (pNevts == 0) std::cout << "all events." << std::endl;
   else std::cout << pNevts << " events." << std::endl;
 
-  TRandom3 lRndm(1);
+  TRandom3 lRndm(0);
   std::cout << " -- Random number seed: " << lRndm.GetSeed() << std::endl;
 
   /////////////////////////////////////////////////////////////
@@ -372,6 +312,8 @@ int main(int argc, char** argv){//main
   
   HiggsMass hM;
   hM.initialiseHistograms(outputFile,"HiggsMass");
+  HiggsMass hMnofit;
+  hMnofit.initialiseHistograms(outputFile,"HiggsMassNoFit");
   //Photon 1
   PositionFit lGamma1(nSR,residualMax,nLayers,nSiLayers,applyPuMixFix,debug,false);
   lGamma1.initialise(outputFile,"Gamma1Fit",outFolder1,geomConv,puDensity);
@@ -386,7 +328,10 @@ int main(int argc, char** argv){//main
 
   if (!lGamma2.getZpositions(versionNumber))
     lGamma2.getZpositions(versionNumber,lSimTree,nEvts);
-  
+
+  std::vector<double> zPos = lGamma1.getZpositions();
+
+
   bool doFit1 = false;
   bool doFit2 = false;
   //initialise
@@ -411,6 +356,8 @@ int main(int argc, char** argv){//main
   }
   SignalRegion Signal1(outFolder1, nLayers, nEvts, geomConv, puDensity,applyPuMixFix,versionNumber);
   Signal1.initialise(outputFile,"Gamma1E");
+  SignalRegion Signal1nofit(outFolder1, nLayers, nEvts, geomConv, puDensity,applyPuMixFix,versionNumber);
+  Signal1nofit.initialise(outputFile,"Gamma1Enofit");
   if (!doOld && !Signal1.initialiseFitPositions()) {
     std::cout << " -- Redo fit for photon 1" << std::endl;
     doFit1 = true;
@@ -423,6 +370,8 @@ int main(int argc, char** argv){//main
 
   SignalRegion Signal2(outFolder2, nLayers, nEvts, geomConv, puDensity,applyPuMixFix,versionNumber);
   Signal2.initialise(outputFile,"Gamma2E");
+  SignalRegion Signal2nofit(outFolder2, nLayers, nEvts, geomConv, puDensity,applyPuMixFix,versionNumber);
+  Signal2nofit.initialise(outputFile,"Gamma2Enofit");
   if (!doOld && !Signal2.initialiseFitPositions()) {
     std::cout << " -- Redo fit for photon 2" << std::endl;
     doFit2 = true;
@@ -479,6 +428,10 @@ int main(int argc, char** argv){//main
     bool found2 = false;
     Direction recoDir1;
     Direction recoDir2;
+    Direction recoDir1nofit;
+    Direction recoDir2nofit;
+    ROOT::Math::XYZPoint posFF1nofit;
+    ROOT::Math::XYZPoint posFF2nofit;
     FitResult fit1;
     FitResult fit2;
 
@@ -495,30 +448,42 @@ int main(int argc, char** argv){//main
       if (!good1 || !good2) continue;
 
       //get first guess at energy
-      std::vector<unsigned> layerId;
-      std::vector<double> posx;
-      std::vector<double> posy;
-      std::vector<double> posz;
-      std::vector<double> posxtruth;
-      std::vector<double> posytruth;
+      std::vector<unsigned> layerId1;
+      std::vector<double> posx1;
+      std::vector<double> posy1;
+      std::vector<double> posz1;
+      std::vector<double> posxtruth1;
+      std::vector<double> posytruth1;
+      std::vector<unsigned> layerId2;
+      std::vector<double> posx2;
+      std::vector<double> posy2;
+      std::vector<double> posz2;
+      std::vector<double> posxtruth2;
+      std::vector<double> posytruth2;
       std::vector<double> Ereco1;
       std::vector<double> Ereco2;
-      layerId.reserve(nLayers);
-      posx.reserve(nLayers);
-      posy.reserve(nLayers);
-      posz.reserve(nLayers);
-      posxtruth.reserve(nLayers);
-      posytruth.reserve(nLayers);
+      layerId1.reserve(nLayers);
+      posx1.reserve(nLayers);
+      posy1.reserve(nLayers);
+      posz1.reserve(nLayers);
+      posxtruth1.reserve(nLayers);
+      posytruth1.reserve(nLayers);
+      layerId2.reserve(nLayers);
+      posx2.reserve(nLayers);
+      posy2.reserve(nLayers);
+      posz2.reserve(nLayers);
+      posxtruth2.reserve(nLayers);
+      posytruth2.reserve(nLayers);
       Ereco1.reserve(nLayers);
       Ereco2.reserve(nLayers);
       if (!lGamma1.getPositionFromFile(ievt,
-				      layerId,posx,posy,posz,
-				      posxtruth,posytruth,
+				      layerId1,posx1,posy1,posz1,
+				      posxtruth1,posytruth1,
 				      Ereco1,
 				      true,false) ||
 	  !lGamma2.getPositionFromFile(ievt,
-				      layerId,posx,posy,posz,
-				      posxtruth,posytruth,
+				      layerId2,posx2,posy2,posz2,
+				      posxtruth2,posytruth2,
 				      Ereco2,
 				       true,false)) continue;
       
@@ -526,6 +491,51 @@ int main(int argc, char** argv){//main
 	std::cout << " Error! Not all layers are found... Fix code..." << std::endl;
 	return 1;
       }
+
+      FitResult recposfit1;
+      //take layers around shower max
+      unsigned minid = 0;
+      unsigned maxid = nLayers-1;
+      for (unsigned iL(0); iL<posx1.size();++iL){
+	if (layerId1[iL]==10) minid = iL;
+	if (layerId1[iL]==20) maxid = iL;
+      }
+      recposfit1.tanangle_x = (posx1[maxid]-posx1[minid])/(posz1[maxid]-posz1[minid]);
+      recposfit1.tanangle_y = (posy1[maxid]-posy1[minid])/(posz1[maxid]-posz1[minid]);
+      recposfit1.pos_x = posx1[0]-recposfit1.tanangle_x*posz1[0];
+      recposfit1.pos_y = posy1[0]-recposfit1.tanangle_y*posz1[0];
+      recposfit1.found=true;
+      std::vector<ROOT::Math::XYZPoint> eventPos;
+      eventPos.resize(nLayers,ROOT::Math::XYZPoint(0,0,0));
+      for (unsigned iL(0); iL<posx1.size();++iL){
+	eventPos[layerId1[iL]] = ROOT::Math::XYZPoint(posx1[iL],posy1[iL],posz1[iL]);
+      }
+
+      Signal1nofit.fillEnergies(ievt,(*ssvec),(*simhitvec),(*rechitvec),nPuVtx,eventPos);
+      posFF1nofit = Signal1nofit.getAccuratePos(recposfit1,0);
+      recoDir1nofit = Direction(recposfit1.tanangle_x,recposfit1.tanangle_y);
+
+      FitResult recposfit2;
+      minid = 0;
+      maxid = nLayers-1;
+      for (unsigned iL(0); iL<posx2.size();++iL){
+	if (layerId2[iL]==10) minid = iL;
+	if (layerId2[iL]==20) maxid = iL;
+      }
+      recposfit2.tanangle_x = (posx2[maxid]-posx2[minid])/(posz2[maxid]-posz2[minid]);
+      recposfit2.tanangle_y = (posy2[maxid]-posy2[minid])/(posz2[maxid]-posz2[minid]);
+      recposfit2.pos_x = posx2[0]-recposfit2.tanangle_x*posz2[0];
+      recposfit2.pos_y = posy2[0]-recposfit2.tanangle_y*posz2[0];
+      recposfit2.found=true;
+      eventPos.resize(nLayers,ROOT::Math::XYZPoint(0,0,0));
+      for (unsigned iL(0); iL<posx2.size();++iL){
+	eventPos[layerId2[iL]] = ROOT::Math::XYZPoint(posx2[iL],posy2[iL],posz2[iL]);
+      }
+
+      Signal2nofit.fillEnergies(ievt,(*ssvec),(*simhitvec),(*rechitvec),nPuVtx,eventPos);
+      posFF2nofit = Signal2nofit.getAccuratePos(recposfit2,0);
+      recoDir2nofit = Direction(recposfit2.tanangle_x,recposfit2.tanangle_y);
+
       if (doFit1){
 	//CAMM - Fix with using recoinfo...
 	double eta1 = truthDir1.dir().Eta();
@@ -549,7 +559,7 @@ int main(int argc, char** argv){//main
 	found1 = Signal1.fillEnergies(ievt,(*ssvec),(*simhitvec),(*rechitvec),nPuVtx);
 	fit1 = Signal1.getAccurateFit(ievt);
       }
-      
+
       if (doFit2){
 	//fix with using reco info
 	double eta2 = truthDir2.dir().Eta();
@@ -589,7 +599,7 @@ int main(int argc, char** argv){//main
 
     ROOT::Math::XYZPoint posFF2 = Signal2.getAccuratePos(fit2,0);
     recoDir2 = Direction(fit2.tanangle_x,fit2.tanangle_y);
- 
+
     if (debug) {
       std::cout << " - Photon 1 direction:" << std::endl;
       std::cout << " Truth= "; truthDir1.Print();
@@ -602,25 +612,45 @@ int main(int argc, char** argv){//main
 
     TLorentzVector l1;
     double E1 = calibratedE(Signal1.getEtotalSR(2,true),recoDir1.dir().Eta());
+    //additional smearing from constant term
+    //E1 += lRndm.Gaus(0,0.01*E1);
     //std::cout << " Photon1: TrueE = " << truthE1 << " recoE = " << Signal1.getEtotalSR(2,true) << " calibE = " << E1 << std::endl;
     l1.SetPtEtaPhiE(recoDir1.dir().Pt()*E1,recoDir1.dir().Eta(),recoDir1.dir().Phi(),E1);
     TLorentzVector l2;
     double E2 = calibratedE(Signal2.getEtotalSR(2,true),recoDir2.dir().Eta());
+    //E2 += lRndm.Gaus(0,0.01*E2);
     //std::cout << " Photon 2: TrueE = " << truthE2 << " recoE = " << Signal2.getEtotalSR(2,true)<< " calibE = " << E2 << std::endl;
     l2.SetPtEtaPhiE(recoDir2.dir().Pt()*E2,recoDir2.dir().Eta(),recoDir2.dir().Phi(),E2);
 
 
-    //cut outside acceptance
-    if (recoDir1.dir().Eta()<1.5 || recoDir1.dir().Eta()>2.8 || 
-	recoDir2.dir().Eta()<1.5 || recoDir2.dir().Eta()>2.8 ||
-	((E1/cosh(recoDir1.dir().Eta()))<40) || 
-	((E2/cosh(recoDir2.dir().Eta())<40)) ) continue;
+    //cut outside gen acceptance
+    if (truthDir1.dir().Eta()<1.6 || truthDir1.dir().Eta()>2.7 || (truthE1/cosh(truthDir1.dir().Eta()))<=20 ||
+	truthDir2.dir().Eta()<1.6 || truthDir2.dir().Eta()>2.7 || (truthE2/cosh(truthDir2.dir().Eta()))<=20) continue;
+
+    //if (recoDir1.dir().Eta()<1.5 || recoDir1.dir().Eta()>2.8 || 
+    //	recoDir2.dir().Eta()<1.5 || recoDir2.dir().Eta()>2.8 ||
+    //	((E1/cosh(recoDir1.dir().Eta()))<40) || 
+    //	((E2/cosh(recoDir2.dir().Eta())<40)) ) continue;
 
     nTwoPhotons++;
 
-
- 
     hM.setRecoInfo(l1,l2,posFF1,posFF2);
+
+    TLorentzVector l1nofit;
+    double E1nofit = calibratedE(Signal1nofit.getEtotalSR(2,true),recoDir1nofit.dir().Eta());
+    l1nofit.SetPtEtaPhiE(recoDir1nofit.dir().Pt()*E1nofit,recoDir1nofit.dir().Eta(),recoDir1nofit.dir().Phi(),E1nofit);
+    TLorentzVector l2nofit;
+    double E2nofit = calibratedE(Signal2nofit.getEtotalSR(2,true),recoDir2nofit.dir().Eta());
+    l2nofit.SetPtEtaPhiE(recoDir2nofit.dir().Pt()*E2nofit,recoDir2nofit.dir().Eta(),recoDir2nofit.dir().Phi(),E2nofit);
+
+    hMnofit.setRecoInfo(l1nofit,l2nofit,posFF1nofit,posFF2nofit);
+
+    std::cout << " Check1: " << E1nofit << " " << truthE1 
+	      << " (Enofit-Efit)/Efit " << (Signal1nofit.getEtotalSR(2,true)- Signal1.getEtotalSR(2,true))/Signal1.getEtotalSR(2,true)
+	      << std::endl;
+    std::cout << " Check2: " << E2nofit << " " << truthE2 
+	      << " (Enofit-Efit)/Efit " << (Signal2nofit.getEtotalSR(2,true) - Signal2.getEtotalSR(2,true))/Signal2.getEtotalSR(2,true)
+	      << std::endl;
 
     TLorentzVector t1;
     t1.SetPtEtaPhiE(truthDir1.dir().Pt()*truthE1,truthDir1.dir().Eta(),truthDir1.dir().Phi(),truthE1);
@@ -630,7 +660,11 @@ int main(int argc, char** argv){//main
     hM.setTruthInfo(t1,t2,
 		    truthVtx1,truthVtx2);
 
+    hMnofit.setTruthInfo(t1,t2,
+			 truthVtx1,truthVtx2);
+
     hM.fillHistograms();
+    hMnofit.fillHistograms();
 
 
     /*
@@ -664,6 +698,8 @@ int main(int argc, char** argv){//main
   if (doFit2) lGamma2.finaliseFit();
   Signal1.finalise();
   Signal2.finalise();
+  Signal1nofit.finalise();
+  Signal2nofit.finalise();
 
   outputFile->Write();
   //outputFile->Close();

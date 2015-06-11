@@ -629,6 +629,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 	  m_caloStruct[i].ele_X0[ie] = m_materials[eleName]->GetRadlen();
 	  m_caloStruct[i].ele_L0[ie] = m_materials[eleName]->GetNuclearInterLength();
 	  G4cout << "************ " << eleName << " layer " << i << " X0=" << m_caloStruct[i].ele_X0[ie] << " L0=" << m_caloStruct[i].ele_L0[ie] << " w=" << m_caloStruct[i].ele_thick[ie] << "mm, d=" << m_materials[eleName]->GetDensity();
+	  //G4cout << G4endl;
+	  //G4cout << *(m_materials[eleName]->GetMaterialTable()) << G4endl;
 
 	  totalLengthX0 += m_caloStruct[i].ele_thick[ie]/m_caloStruct[i].ele_X0[ie];
 	  G4cout << " TotX0=" << totalLengthX0;// << G4endl;
