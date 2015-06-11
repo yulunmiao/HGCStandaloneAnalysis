@@ -530,9 +530,12 @@ void DetectorConstruction::UpdateCalorSize(){
   else if (model_ == DetectorConstruction::m_SIMPLE_100)
     m_CalorSizeXY=1000;
   else if (model_ == DetectorConstruction::m_FULLSECTION){
-    m_CalorSizeXY=1700;
+    m_CalorSizeXY=2800;//1700;
     m_minRadius = 150;
     m_maxRadius = m_CalorSizeXY;
+    m_minEta = 1.4;
+    m_maxEta = 3.7;
+    m_z0pos = 3170;
   }
   else m_CalorSizeXY=200;
 
@@ -544,7 +547,10 @@ void DetectorConstruction::UpdateCalorSize(){
 	   << m_CalorSizeZ << " x " 
 	   << m_minRadius << " x " 
 	   << m_maxRadius 
-	   << " mm " <<  G4endl;
+	   << " mm, eta range "
+	   << m_minEta << " - " 
+	   << m_maxEta
+	   << G4endl;
   else G4cout << "[DetectorConstruction][UpdateCalorSize] Z x XY = " 
 	      << m_CalorSizeZ << " x " 
 	      << m_CalorSizeXY << " mm " <<  G4endl;
@@ -563,8 +569,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 
   //world
   G4double expHall_z = 6*m;
-  G4double expHall_x = 2*m;
-  G4double expHall_y = 2*m;
+  G4double expHall_x = 3*m;
+  G4double expHall_y = 3*m;
 
   G4Box* experimentalHall_box = new G4Box("expHall_box",expHall_x,expHall_y,expHall_z);
 
@@ -585,7 +591,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   if (model_ == DetectorConstruction::m_FULLSECTION){
     pos_x = 0.;
     pos_y = 0.;
-    pos_z = 3170+m_CalorSizeZ/2;
+    pos_z = m_z0pos+m_CalorSizeZ/2;
   }
 
   if (model_ == DetectorConstruction::m_FULLSECTION){
@@ -624,7 +630,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 	std::string baseName(nameBuf);
 	G4double thick = m_caloStruct[i].ele_thick[ie];
 	if(thick>0){
-	  solid = constructSolid(baseName,thick);
+	  solid = constructSolid(baseName,thick,zOffset+zOverburden);
 	  G4LogicalVolume *logi = new G4LogicalVolume(solid, m_materials[eleName], baseName+"log");
 	  m_caloStruct[i].ele_X0[ie] = m_materials[eleName]->GetRadlen();
 	  m_caloStruct[i].ele_L0[ie] = m_materials[eleName]->GetNuclearInterLength();
@@ -690,11 +696,14 @@ void DetectorConstruction::SetDetModel(G4int model)
   model_ = model;
 }
 
-G4CSGSolid *DetectorConstruction::constructSolid (std::string baseName, G4double thick){
+G4CSGSolid *DetectorConstruction::constructSolid (std::string baseName, G4double thick, G4double zpos){
   
   G4CSGSolid *solid;
   if (model_ == DetectorConstruction::m_FULLSECTION){
-    solid = new G4Tubs(baseName+"box",m_minRadius,m_maxRadius,thick/2,0,2*pi);
+    double minR = tan(2*atan(exp(-m_maxEta)))*(zpos+m_z0pos+m_CalorSizeZ/2);
+    double maxR = tan(2*atan(exp(-m_minEta)))*(zpos+m_z0pos+m_CalorSizeZ/2);
+    std::cout << " zpos = " << zpos+m_z0pos+m_CalorSizeZ/2 << " radius range " << minR << " " << maxR << std::endl;
+    solid = new G4Tubs(baseName+"box",minR,maxR,thick/2,0,2*pi);
   }
   else{
     solid = new G4Box(baseName+"box", m_CalorSizeXY/2, m_CalorSizeXY/2, thick/2 );

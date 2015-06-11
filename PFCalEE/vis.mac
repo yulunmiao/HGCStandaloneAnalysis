@@ -31,11 +31,11 @@
 /vis/drawVolume
 #
 # Specify view angle:
-/vis/viewer/set/viewpointThetaPhi 130. 20.
+/vis/viewer/set/viewpointThetaPhi 35. 30.
 #/vis/viewer/set/viewpointThetaPhi 0. 0.
 #
 # Specify zoom value:
-/vis/viewer/zoom 6
+/vis/viewer/zoom 3
 #
 # Specify style (surface or wireframe):
 /vis/viewer/set/style wireframe

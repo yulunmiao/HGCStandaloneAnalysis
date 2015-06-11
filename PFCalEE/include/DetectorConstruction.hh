@@ -140,12 +140,14 @@ private:
    */
   G4VPhysicalVolume* ConstructCalorimeter();     
 
-  G4CSGSolid *constructSolid (std::string baseName, G4double thick);
+  G4CSGSolid *constructSolid (std::string baseName, G4double thick, G4double zpos);
  
   std::vector<G4Material* > m_SensitiveMaterial;
   
   G4double           m_CalorSizeXY, m_CalorSizeZ;
   G4double           m_minRadius,m_maxRadius;
+  G4double           m_minEta,m_maxEta;
+  G4double           m_z0pos;
   G4double           m_WorldSizeXY, m_WorldSizeZ;
 
             
