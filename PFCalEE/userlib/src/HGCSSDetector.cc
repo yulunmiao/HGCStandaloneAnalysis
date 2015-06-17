@@ -67,7 +67,7 @@ void HGCSSDetector::buildDetector(const unsigned versionNumber,
   FHCAL.name = "FHCAL";
   FHCAL.layerIdMin = indices_[3];
   FHCAL.layerIdMax = indices_[4];
-  FHCAL.mipWeight = 1./0.0849;//mip for 300um si
+  FHCAL.mipWeight = 1./0.0548;//mip for 200um si
   FHCAL.absWeight = 65.235/5.848;//ratio of abs dedx
   if (!concept) FHCAL.absWeight = 0.5*65.235/5.848;
   FHCAL.gevWeight = 1.;
