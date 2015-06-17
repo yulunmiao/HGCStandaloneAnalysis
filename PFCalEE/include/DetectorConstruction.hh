@@ -64,7 +64,11 @@ public:
   /**
      @short CTOR
    */
-  DetectorConstruction(G4int ver=DetectorConstruction::v_CALICE, G4int mod=DetectorConstruction::m_SIMPLE_20);
+  DetectorConstruction(G4int ver=DetectorConstruction::v_CALICE, 
+		       G4int mod=DetectorConstruction::m_SIMPLE_20,
+		       std::string absThickW="1.75,1.75,1.75,1.75,1.75,2.8,2.8,2.8,2.8,2.8,4.2,4.2,4.2,4.2,4.2",
+		       std::string absThickPb="1,1,1,1,1,2.1,2.1,2.1,2.1,2.1,4.4,4.4,4.4,4.4",
+		       std::string dropLayer="");
 
   void buildHGCALFHE(const unsigned aVersion);
   void buildHGCALBHE(const unsigned aVersion);
@@ -100,6 +104,10 @@ public:
 
   void SetDetModel(G4int model);
 
+  void SetWThick(std::string thick);
+  void SetPbThick(std::string thick);
+  void SetDropLayers(std::string layers);
+
   /**
      @short DTOR
    */
@@ -129,6 +137,10 @@ private:
 
   //add a pre PCB plate
   bool addPrePCB_;
+
+  std::vector<G4double> absThickW_;
+  std::vector<G4double> absThickPb_;
+  std::vector<G4bool> dropLayer_;
 
   /**
      @short compute the calor dimensions
