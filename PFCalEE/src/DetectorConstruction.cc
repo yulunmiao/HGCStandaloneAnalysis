@@ -1,6 +1,8 @@
 #include "DetectorConstruction.hh"
 #include "DetectorMessenger.hh"
 
+#include <boost/algorithm/string.hpp>
+
 #include "G4Material.hh"
 #include "G4NistManager.hh"
 #include "G4CSGSolid.hh"
@@ -25,8 +27,16 @@
 using namespace std;
 
 //
-DetectorConstruction::DetectorConstruction(G4int ver, G4int mod) : version_(ver), model_(mod), addPrePCB_(false)
+DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
+					   std::string absThickW,
+					   std::string absThickPb,
+					   std::string dropLayer) : 
+  version_(ver), model_(mod), addPrePCB_(false)
 {
+  SetWThick(absThickW);
+  SetPbThick(absThickPb);
+  SetDropLayers(dropLayer);
+
   //radiation lengths: cf. http://pdg.lbl.gov/2012/AtomicNuclearProperties/
   //W 3.504 mm
   //Pb 5.612 mm
@@ -141,6 +151,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod) : version_(ver)
 	//first and last layers
 	std::vector<G4double> lThick1;
 	std::vector<std::string> lEle1;
+	lThick1.push_back(180.*mm);lEle1.push_back("NeutMod");
 	lThick1.push_back(0*mm);lEle1.push_back("Cu");
 	lThick1.push_back(0*mm);lEle1.push_back("W");
 	lThick1.push_back(0.5*mm);lEle1.push_back("Cu");
@@ -153,37 +164,75 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod) : version_(ver)
 
 	std::vector<G4double> lThickL;
 	std::vector<std::string> lEleL;
-	lThickL.push_back(3*mm);lEleL.push_back("Cu");
-	lThickL.push_back(1*mm);lEleL.push_back("Pb");
-	lThickL.push_back(1.75*mm);lEleL.push_back("W");
-	lThickL.push_back(0.5*mm);lEleL.push_back("Cu");
-	lThickL.push_back(airThick);lEleL.push_back("Air");
-	lThickL.push_back(pcbThick);lEleL.push_back("PCB");
-	lThickL.push_back(0.1*mm);lEleL.push_back("Si");
-	lThickL.push_back(0.1*mm);lEleL.push_back("Si");
-	lThickL.push_back(0.1*mm);lEleL.push_back("Si");
-
 	std::vector<G4double> lThickR;
 	std::vector<std::string> lEleR;
-	lThickR.push_back(3*mm);lEleR.push_back("Cu");
-	lThickR.push_back(1*mm);lEleR.push_back("Pb");
-	lThickR.push_back(3*mm);lEleR.push_back("Cu");
-	lThickR.push_back(0.1*mm);lEleR.push_back("Si");
-	lThickR.push_back(0.1*mm);lEleR.push_back("Si");
-	lThickR.push_back(0.1*mm);lEleR.push_back("Si");
-	lThickR.push_back(pcbThick);lEleR.push_back("PCB");
-	lThickR.push_back(airThick);lEleR.push_back("Air");
+	for (unsigned i=0;i<14;i++){
+	  if (dropLayer_[2*i]) {
+	    lThickR.clear();lEleR.clear();
+	    lThickR.push_back(3*mm);lEleR.push_back("Cu");
+	    lThickR.push_back(1*mm);lEleR.push_back("Pb");
+	    //reset to 0.5 Cu and no lead for following layers
+	    if (i>0) {
+	      lThickR[0] = 0.5;
+	      lThickR[1] = 0;
+	    }
+	    lThickR.push_back(absThickW_[i]);lEleR.push_back("W");
+	    lThickR.push_back(0.5*mm);lEleR.push_back("Cu");
+	    lThickR.push_back(airThick);lEleR.push_back("Air");
+	    lThickR.push_back(absThickPb_[i]);lEleR.push_back("Pb");
+	    lThickR.push_back(3*mm);lEleR.push_back("Cu");
+	    lThickR.push_back(0.1*mm);lEleR.push_back("Si");
+	    lThickR.push_back(0.1*mm);lEleR.push_back("Si");
+	    lThickR.push_back(0.1*mm);lEleR.push_back("Si");
+	    lThickR.push_back(pcbThick);lEleR.push_back("PCB");
+	    lThickR.push_back(airThick);lEleR.push_back("Air");
+	    m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
+	  }
+	  else {
+	    lThickL.push_back(3*mm);lEleL.push_back("Cu");
+	    lThickL.push_back(1*mm);lEleL.push_back("Pb");
+	    //reset to 0.5 Cu and no lead for following layers
+	    if (i>0) {
+	      if (lThickL.size()==2){
+		lThickL[0] = 0.5;
+		lThickL[1] = 0;
+	      }
+	      else {
+		lThickL[3] = 0.5;
+		lThickL[4] = 0;
+	      }
+	    }
+	    lThickL.push_back(absThickW_[i]);lEleL.push_back("W");
+	    lThickL.push_back(0.5*mm);lEleL.push_back("Cu");
+	    lThickL.push_back(airThick);lEleL.push_back("Air");
+	    lThickL.push_back(pcbThick);lEleL.push_back("PCB");
+	    lThickL.push_back(0.1*mm);lEleL.push_back("Si");
+	    lThickL.push_back(0.1*mm);lEleL.push_back("Si");
+	    lThickL.push_back(0.1*mm);lEleL.push_back("Si");
+	    m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
+	    lThickL.clear();lEleL.clear();
+	    if (dropLayer_[2*i+1]) {
+	      lThickL.clear();lEleL.clear();
+	      lThickL.push_back(3*mm);lEleL.push_back("Cu");
+	      lThickL.push_back(absThickPb_[i]);lEleL.push_back("Pb");
+	      lThickL.push_back(airThick);lEleL.push_back("Air");
+	    }
+	    else {
+	      lThickR.clear();lEleR.clear();
+	      lThickR.push_back(3*mm);lEleR.push_back("Cu");
+	      lThickR.push_back(absThickPb_[i]);lEleR.push_back("Pb");
+	      lThickR.push_back(3*mm);lEleR.push_back("Cu");
+	      lThickR.push_back(0.1*mm);lEleR.push_back("Si");
+	      lThickR.push_back(0.1*mm);lEleR.push_back("Si");
+	      lThickR.push_back(0.1*mm);lEleR.push_back("Si");
+	      lThickR.push_back(pcbThick);lEleR.push_back("PCB");
+	      lThickR.push_back(airThick);lEleR.push_back("Air");
+	      m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
+	    }
+	  }
+	}
 
-	//second layer with Cu/Pb in front
-	m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
-	m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
-
-	//reset to 0.5 Cu and no lead for following layers
-	lThickL[0] = 0.5;
-	lThickL[1] = 0;
-
-
-	//lThickR.push_back(0.5*mm);lEleR.push_back("Cu");
+	/*	//lThickR.push_back(0.5*mm);lEleR.push_back("Cu");
 	for(unsigned i=0; i<4; i++) {
 	  m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
 	  m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
@@ -200,9 +249,12 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod) : version_(ver)
 	  m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
 	  m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
 	}
+	*/
+
 	//last layer: add Cu+W+Cu...
-	lThick1[0] = 0.5*mm;
-	lThick1[1] = 4.2*mm;
+	lThick1[0] = 0.*mm;
+	lThick1[1] = 0.5*mm;
+	lThick1[2] = absThickW_[14];
 	//add last structure layers
 	lThick1.push_back(3*mm);lEle1.push_back("Cu");
 	lThick1.push_back(1*mm);lEle1.push_back("Pb");
@@ -514,6 +566,10 @@ void DetectorConstruction::DefineMaterials()
   m_materials["WCu"]->AddMaterial(m_materials["W"]  , 75*perCent);
   m_materials["WCu"]->AddMaterial(m_materials["Cu"]  , 25*perCent);
 
+  m_materials["NeutMod"]= new G4Material("NeutMod",0.950*g/cm3,2);
+  m_materials["NeutMod"]->AddMaterial(m_materials["C"]  , 0.85628);
+  m_materials["NeutMod"]->AddMaterial(m_materials["H"]  , 0.14372);
+
 }
 
 //
@@ -535,7 +591,7 @@ void DetectorConstruction::UpdateCalorSize(){
     m_maxRadius = m_CalorSizeXY;
     m_minEta = 1.4;
     m_maxEta = 3.7;
-    m_z0pos = 3170;
+    m_z0pos = 2990;//3170;
   }
   else m_CalorSizeXY=200;
 
@@ -696,13 +752,60 @@ void DetectorConstruction::SetDetModel(G4int model)
   model_ = model;
 }
 
+void DetectorConstruction::SetWThick(std::string thick)
+{
+  if (thick.size() <= 0) return;
+  std::cout << " -- Setting W thick to " << thick << std::endl;
+  std::vector<std::string> vec;
+  boost::split(vec, thick, boost::is_any_of(","));
+  absThickW_.resize(vec.size(),0);
+  for (unsigned iE(0); iE<vec.size(); ++iE){//loop on elements
+    std::istringstream(vec[iE])>>absThickW_[iE];
+    std::cout << absThickW_[iE] << " ";
+  }
+  std::cout << std::endl;
+}
+
+void DetectorConstruction::SetPbThick(std::string thick)
+{
+  if (thick.size() <= 0) return;
+  std::cout << " -- Setting Pb thick to " << thick << std::endl;
+  std::vector<std::string> vec;
+  boost::split(vec, thick, boost::is_any_of(","));
+  absThickPb_.resize(vec.size(),0);
+  for (unsigned iE(0); iE<vec.size(); ++iE){//loop on elements
+    std::istringstream(vec[iE])>>absThickPb_[iE];
+    std::cout << absThickPb_[iE] << " ";
+  }
+  std::cout << std::endl;
+}
+
+void DetectorConstruction::SetDropLayers(std::string layers)
+{
+  dropLayer_.resize(28,false);
+  if (layers.size() <= 0) return;
+  std::cout << " -- Dropping layers " << layers << std::endl;
+  std::vector<std::string> vec;
+  boost::split(vec, layers, boost::is_any_of(","));
+  for (unsigned iE(0); iE<vec.size(); ++iE){//loop on elements
+    unsigned layerId = 0;
+    std::istringstream(vec[iE])>>layerId;
+    if (layerId>0 && layerId<29) dropLayer_[layerId-1] = true;
+    else std::cout << " -- invalid layer to drop, ignoring..." << std::endl;
+  }
+  for (unsigned iE(0); iE<dropLayer_.size(); ++iE){//loop on elements
+    std::cout << dropLayer_[iE] << " ";
+  }
+  std::cout << std::endl;
+}
+
 G4CSGSolid *DetectorConstruction::constructSolid (std::string baseName, G4double thick, G4double zpos){
   
   G4CSGSolid *solid;
   if (model_ == DetectorConstruction::m_FULLSECTION){
     double minR = tan(2*atan(exp(-m_maxEta)))*(zpos+m_z0pos+m_CalorSizeZ/2);
     double maxR = tan(2*atan(exp(-m_minEta)))*(zpos+m_z0pos+m_CalorSizeZ/2);
-    std::cout << " zpos = " << zpos+m_z0pos+m_CalorSizeZ/2 << " radius range " << minR << " " << maxR << std::endl;
+    //std::cout << " zpos = " << zpos+m_z0pos+m_CalorSizeZ/2 << " radius range " << minR << " " << maxR << std::endl;
     solid = new G4Tubs(baseName+"box",minR,maxR,thick/2,0,2*pi);
   }
   else{
