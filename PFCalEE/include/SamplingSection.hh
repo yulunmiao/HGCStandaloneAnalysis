@@ -102,7 +102,7 @@ public:
 	 ele_name[aEle] == "W" || ele_name[aEle] == "Brass" ||
 	 ele_name[aEle] == "Fe" || ele_name[aEle] == "Steel" || 
 	 ele_name[aEle] == "SSteel" || ele_name[aEle] == "Al" ||
-	 ele_name[aEle] == "WCu"
+	 ele_name[aEle] == "WCu" || ele_name[aEle] == "NeutMod"
 	 )
 	) return true;
     return false;
