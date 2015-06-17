@@ -51,7 +51,14 @@ int main(int argc,char** argv)
 
   std::cout << "-- Running version " << version << " model " << model << std::endl;
 
-  runManager->SetUserInitialization(new DetectorConstruction(version,model));
+  std::string absThickW="1.75,1.75,1.75,1.75,1.75,2.8,2.8,2.8,2.8,2.8,4.2,4.2,4.2,4.2,4.2";
+  std::string absThickPb="1,1,1,1,1,2.1,2.1,2.1,2.1,2.1,4.4,4.4,4.4,4.4";
+  std::string dropLayers="";
+  if(argc>5) absThickW = argv[5];
+  if(argc>6) absThickPb = argv[6];
+  if(argc>7) dropLayers = argv[7];
+
+  runManager->SetUserInitialization(new DetectorConstruction(version,model,absThickW,absThickPb,dropLayers));
   runManager->SetUserInitialization(new PhysicsList);
 
   // Set user action classes
