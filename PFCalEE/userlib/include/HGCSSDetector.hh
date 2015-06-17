@@ -118,6 +118,24 @@ public:
       indices_[5] = 52;
       indices_[6] = 52;
     }
+    else if (versionNumber == 34){
+      indices_[0] = 0;
+      indices_[1] = 8;
+      indices_[2] = 16;
+      indices_[3] = 24;
+      indices_[4] = indices_[3];
+      indices_[5] = indices_[3];
+      indices_[6] = indices_[3];
+    }
+    else if (versionNumber == 35){
+      indices_[0] = 0;
+      indices_[1] = 6;
+      indices_[2] = 12;
+      indices_[3] = 18;
+      indices_[4] = indices_[3];
+      indices_[5] = indices_[3];
+      indices_[6] = indices_[3];
+    }
     else {
       indices_[0] = 0;
       indices_[1] = versionNumber==24?11:10;
