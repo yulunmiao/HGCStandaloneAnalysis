@@ -31,7 +31,8 @@ enlist=[0]
 if opt.dogun : 
     #enlist=[3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200]
     #enlist=[2,5,10,20,40,60,80,100,150,200]
-    enlist=[16,82,160]
+    enlist=[3,5,10,30,50,70,100,200]
+    #enlist=[16,82,160]
 
 #hgg seeds
 #for seed in 1417791355 1417791400 1417791462 1417791488 1417791672 1417791741 1417791747 1417791766 1417791846
@@ -42,6 +43,28 @@ if opt.dogun :
 
 #nvtxlist=[0,140]
 #INPATHPU="root://eoscms//eos/cms/store/user/msun/V25/MinBias/"
+
+##30
+#wthick='1.75,1.75,1.75,1.75,1.75,2.8,2.8,2.8,2.8,2.8,4.2,4.2,4.2,4.2,4.2'
+#pbthick='1,1,1,1,1,2.1,2.1,2.1,2.1,2.1,4.4,4.4,4.4,4.4'
+#droplayers=''
+#label='v5_30'
+##28
+#wthick='1.75,1.75,1.75,1.75,1.75,2.8,2.8,2.8,2.8,2.8,4.2,4.2,4.2,4.2,4.2'
+#pbthick='1,1,1,1,1,2.1,2.1,2.1,2.1,2.1,4.4,4.4,5.6,5.6'
+#droplayers='25,27'
+#label='v5_28'
+##24
+#wthick='1.75,1.75,1.75,1.75,1.75,2.8,2.8,2.8,2.8,2.8,4.2,4.2,4.2,4.2,4.2'
+#pbthick='2.2,2.2,1,1,2.2,2.1,2.1,3.3,2.1,2.1,4.4,4.4,5.6,5.6'
+#droplayers='1,3,10,15,25,27'
+#label='v5_24'
+##18
+wthick='1.75,1.75,1.75,1.75,1.75,2.8,2.8,2.8,2.8,2.8,4.2,4.2,4.2,4.2,4.2'
+pbthick='2.2,2.2,2.2,2.2,2.2,2.2,2.1,3.3,3.3,3.3,4.4,5.6,5.6,5.6'
+droplayers='1,3,5,7,10,12,15,18,20,23,25,27'
+label='v5_18'
+
 
 granularity='0-20:4,21-63:6'
 noise='0-63:0.12'
@@ -84,9 +107,10 @@ for et in enlist :
     if opt.Bfield>0 : bval="BON" 
     
     outDir='%s/git_%s/version_%d/model_%d/%s/%s'%(opt.out,opt.gittag,opt.version,opt.model,opt.datatype,bval)
+    outDir='%s/%s'%(outDir,label) 
     if et>0 : outDir='%s/et_%d'%(outDir,et)
     eosDir='%s/git%s/%s'%(opt.eos,opt.gittag,opt.datatype)
-    if opt.eta>0 : outDir='%s/eta_%3.3f/'%(outDir,opt.eta) 
+    if opt.eta>0 : outDir='%s/eta_%3.3f/'%(outDir,opt.eta)
     if (opt.run>=0) : outDir='%s/run_%d/'%(outDir,opt.run)
 
     outlog='%s/digitizer.log'%(outDir)
@@ -99,8 +123,8 @@ for et in enlist :
     scriptFile.write('source %s/g4env.sh\n'%(os.getcwd()))
     #scriptFile.write('cd %s\n'%(outDir))
     scriptFile.write('cp %s/g4steer.mac .\n'%(outDir))
-    scriptFile.write('PFCalEE g4steer.mac %d %d %f | tee g4.log\n'%(opt.version,opt.model,opt.eta))
-    outTag='version%d_model%d_%s'%(opt.version,opt.model,bval)
+    scriptFile.write('PFCalEE g4steer.mac %d %d %f %s %s %s | tee g4.log\n'%(opt.version,opt.model,opt.eta,wthick,pbthick,droplayers))
+    outTag='%s_version%d_model%d_%s'%(label,opt.version,opt.model,bval)
     if et>0 : outTag='%s_et%d'%(outTag,et)
     if opt.eta>0 : outTag='%s_eta%3.3f'%(outTag,opt.eta) 
     if (opt.run>=0) : outTag='%s_run%d'%(outTag,opt.run)
