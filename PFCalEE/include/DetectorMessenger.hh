@@ -61,6 +61,7 @@ class DetectorMessenger: public G4UImessenger
     G4UIdirectory*             detDir;
     G4UIcmdWithADoubleAndUnit* MagFieldCmd;
     G4UIcmdWithAnInteger* SetModelCmd;
+
 };
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
