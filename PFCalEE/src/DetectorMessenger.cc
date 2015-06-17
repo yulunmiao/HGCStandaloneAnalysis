@@ -65,7 +65,6 @@ DetectorMessenger::DetectorMessenger(
   SetModelCmd->SetDefaultValue(0);
   SetModelCmd->AvailableForStates(G4State_PreInit,G4State_Idle);  
 
-
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
