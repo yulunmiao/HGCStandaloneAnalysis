@@ -62,14 +62,17 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 	break;
       }
 
-    case v_HGCALEE_v6: case v_HGCAL_v6:
+    case v_HGCALEE_v6: case v_HGCAL_v6: case v_HGCALEE_v624: case v_HGCALEE_v618:
       {
 	G4cout << "[DetectorConstruction] starting v_HCALEE_v6"<< G4endl;
 	G4double airThick = 3*mm;
 	G4double pcbThick = 2*mm;
-
+        G4double scaleFactor=1.0;
+        unsigned Nmodule=4;
+ 
 	std::vector<G4double> lThickL;
 	std::vector<std::string> lEleL;
+        lThickL.push_back(100.*mm);lEleL.push_back("NeutMod");
 	lThickL.push_back(2.*mm);lEleL.push_back("Al");
 	lThickL.push_back(26.*mm);lEleL.push_back("Foam");
 	lThickL.push_back(2.*mm);lEleL.push_back("Al");
@@ -94,6 +97,22 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 	lThickR.push_back(pcbThick);lEleR.push_back("PCB");
 	lThickR.push_back(airThick);lEleR.push_back("Air");
 
+        Nmodule = 4;
+        if(version_ == v_HGCALEE_v624){
+             Nmodule = 3;
+             scaleFactor = 1.2578/8;
+             lThickL[5] = (2.0 + scaleFactor*3.50)*mm; 
+             lThickR[0]=  (0.6 + 0.5*scaleFactor*5.12)*mm;
+             lThickR[2]=  (0.6 + 0.5*scaleFactor*5.12)*mm;
+        }
+        else if(version_ == v_HGCALEE_v618){
+             Nmodule =2;
+             scaleFactor = 2.53/6;
+             lThickL[5] = (2.0 + scaleFactor*3.50)*mm; 
+             lThickR[0]=  (0.6 + 0.5*scaleFactor*5.12)*mm;
+             lThickR[2]=  (0.6 + 0.5*scaleFactor*5.12)*mm;
+        }
+
 	m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
 	m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
 
@@ -109,23 +128,46 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 	lThickL.push_back(0.1*mm);lEleL.push_back("Si");
 	lThickL.push_back(0.1*mm);lEleL.push_back("Si");
 	lThickL.push_back(0.1*mm);lEleL.push_back("Si");
-	for(unsigned i=0; i<4; i++) {
+	for(unsigned i=0; i<Nmodule; i++) {
 	  m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
 	  m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
 	}
 
+        Nmodule=5;
 	lThickL[2] = 2.8*mm;
 	lThickR[0] = 1.2*mm;
 	lThickR[2] = 1.2*mm;
-	for(unsigned i=0; i<5; i++) {
+        if(version_ == v_HGCALEE_v624){
+            Nmodule=4;
+            scaleFactor = 1.7213/8; 
+            lThickL[2] = (2.8 + scaleFactor*3.50)*mm;
+            lThickR[0] = (1.2 + 0.5*scaleFactor*5.12)*mm;
+            lThickR[2] = (1.2 + 0.5*scaleFactor*5.12)*mm;
+        }
+        else if(version_ == v_HGCALEE_v618){
+            Nmodule=3;
+            scaleFactor = 3.45/6;
+            lThickL[2] = (2.9 + scaleFactor*3.50)*mm;
+            lThickR[0] = (1.2 + 0.5*scaleFactor*5.12)*mm;
+            lThickR[2] = (1.2 + 0.5*scaleFactor*5.12)*mm;
+        }
+	for(unsigned i=0; i<Nmodule; i++) {
 	  m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
 	  m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
 	}
 
+        Nmodule=4;
 	lThickL[2] = 4.2*mm;
 	lThickR[0] = 2.2*mm;
 	lThickR[2] = 2.2*mm;
-	for(unsigned i=0; i<4; i++) {
+        if(version_ == v_HGCALEE_v618){
+            Nmodule=3;
+            scaleFactor = 2.5117/6;
+            lThickL[2] = (4.3 + scaleFactor*3.50)*mm;
+            lThickR[0] = (2.2 + 0.5*scaleFactor*5.12)*mm;
+            lThickR[2] = (2.2 + 0.5*scaleFactor*5.12)*mm;
+        }
+	for(unsigned i=0; i<Nmodule; i++) {
 	  m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
 	  if (i==3) {lThickR.push_back(0.5*mm);lEleR.push_back("Cu");}
 	  m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
@@ -592,6 +634,7 @@ void DetectorConstruction::UpdateCalorSize(){
     m_minEta = 1.4;
     m_maxEta = 3.7;
     m_z0pos = 2990;//3170;
+    if(version_ == v_HGCALEE_v6 || version_ == v_HGCAL_v6 || version_ == v_HGCALEE_v624 || version_ == v_HGCALEE_v618)m_z0pos = 3070;
   }
   else m_CalorSizeXY=200;
 
