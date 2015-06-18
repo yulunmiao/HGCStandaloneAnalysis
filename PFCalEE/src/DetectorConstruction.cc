@@ -368,12 +368,16 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 	}
 	break;
       }
-    case v_HGCALHE: case v_HGCALHE_CMSSWv4: case v_HGCALHE_v6:
+    case v_HGCALHE: case v_HGCALHE_CMSSWv4: case v_HGCALHE_v5: case v_HGCALHE_v6:
       {
 	//add HCAL
 	if (version_== v_HGCALHE_CMSSWv4) {
 	  buildHGCALFHE(41);
 	  buildHGCALBHE(4);
+	}
+	else if (version_== v_HGCALHE_v5) {
+	  buildHGCALFHE(5);
+	  buildHGCALBHE(5);
 	}
 	else if (version_== v_HGCALHE_v6) {
 	  buildHGCALFHE(6);
@@ -388,6 +392,11 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
     case v_HGCALHEScint:
       {
 	buildHGCALBHE(4);
+	break;
+      }
+    case v_HGCALBE_v5:
+      {
+	buildHGCALBHE(5);
 	break;
       }
     case v_HGCALBE_v6:
