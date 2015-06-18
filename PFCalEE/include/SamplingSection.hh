@@ -36,6 +36,7 @@ public:
 	ele_thick.push_back(aThicknessVec[ie]);
 	ele_name.push_back(aMaterialVec[ie]);
 	ele_X0.push_back(0);
+	ele_dEdx.push_back(0);
 	ele_L0.push_back(0);
 	ele_vol.push_back(0);
 	Total_thick+=aThicknessVec[ie];
@@ -135,6 +136,7 @@ public:
   G4double getAbsorbedEnergy();
   G4double getTotalEnergy();
   G4double getAbsorberX0();  
+  G4double getAbsorberdEdx();  
   G4double getAbsorberLambda();
   G4double getHadronicFraction();
   G4double getNeutronFraction();
@@ -157,6 +159,7 @@ public:
   std::vector<G4double>           ele_thick;
   std::vector<std::string>        ele_name;
   std::vector<G4double>           ele_X0;
+  std::vector<G4double>           ele_dEdx;
   std::vector<G4double>           ele_L0;
   std::vector<G4double>           ele_den;
   std::vector<G4double>           ele_dl;

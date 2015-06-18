@@ -92,6 +92,7 @@ public:
    */
   void DefineMaterials(); 
   std::map<std::string, G4Material *> m_materials;
+  std::map<std::string, G4double > m_dEdx;
   std::map<std::string, G4Colour > m_colours;
   
   /**

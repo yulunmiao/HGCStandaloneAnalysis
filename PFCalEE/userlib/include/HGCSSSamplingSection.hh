@@ -13,6 +13,7 @@ public:
   HGCSSSamplingSection():
     volNb_(0),
     volX0trans_(0),
+    voldEdx_(0),
     volLambdatrans_(0),
     measuredE_(0),
     absorberE_(0),
@@ -37,6 +38,11 @@ public:
   inline double volX0trans() const{
     return volX0trans_;
   };
+
+  inline double voldEdx() const{
+    return voldEdx_;
+  };
+
   inline double volLambdatrans() const{
     return volLambdatrans_;
   };
@@ -78,6 +84,9 @@ public:
   inline void volX0trans(const double & aVal){
     volX0trans_ = aVal;
   };
+  inline void voldEdx(const double & aVal){
+    voldEdx_ = aVal;
+  };
   inline void volLambdatrans(const double & aVal){
     volLambdatrans_ = aVal;
   };
@@ -115,6 +124,7 @@ public:
 private:
   unsigned volNb_;
   double volX0trans_;
+  double voldEdx_;
   double volLambdatrans_;
   double measuredE_;
   double absorberE_;

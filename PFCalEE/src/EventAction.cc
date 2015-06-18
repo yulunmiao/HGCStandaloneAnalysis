@@ -100,6 +100,7 @@ void EventAction::EndOfEventAction(const G4Event*)
       HGCSSSamplingSection lSec;
       lSec.volNb(i);
       lSec.volX0trans((*detector_)[i].getAbsorberX0());
+      lSec.voldEdx((*detector_)[i].getAbsorberdEdx());
       lSec.volLambdatrans((*detector_)[i].getAbsorberLambda());
       lSec.absorberE((*detector_)[i].getAbsorbedEnergy());
       lSec.measuredE((*detector_)[i].getMeasuredEnergy(false));
@@ -112,7 +113,9 @@ void EventAction::EndOfEventAction(const G4Event*)
       lSec.avgTime((*detector_)[i].getAverageTime());
       lSec.nSiHits((*detector_)[i].getTotalSensHits());
       ssvec_.push_back(lSec);
-
+      if (evtNb_==1) std::cout << "if (layer==" << i << ") return " 
+			       <<  lSec.voldEdx() << ";"
+			       << std::endl;
       //std::cout << " n_sens_ele = " << (*detector_)[i].n_sens_elements << std::endl;
 
       for (unsigned idx(0); idx<(*detector_)[i].n_sens_elements; ++idx){

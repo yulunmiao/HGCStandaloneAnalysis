@@ -160,6 +160,17 @@ G4double SamplingSection::getAbsorberX0()
   }
   return val;
 }
+//
+G4double SamplingSection::getAbsorberdEdx()
+{
+  // G4cout << Pb_thick << " " << Pb_X0 << G4endl;
+  double val=0;  
+  for (unsigned ie(0); ie<n_elements;++ie){
+    if (isAbsorberElement(ie))
+      val += ele_thick[ie]*ele_dEdx[ie];
+  }
+  return val;
+}
 
 //
 G4double SamplingSection::getAbsorberLambda()
