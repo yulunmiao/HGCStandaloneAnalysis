@@ -135,7 +135,7 @@ double pT(const unsigned E, const unsigned eta){
   return E/cosh(eta/10.);
 };
 
-double absWeight(const unsigned layer, const bool dedx=false){
+double absWeight(const unsigned layer, const bool dedx=true){
   if (dedx==false){
     if (layer == 0) return 0.0378011;//6.285/95.4=0.06588;
     if (layer == 1) return 1;//95.4/95.4=1
@@ -169,7 +169,7 @@ double absWeight(const unsigned layer, const bool dedx=false){
     if (layer == 29) return 1.37644;//1.79662;//
   }
   else {
-    if (layer == 0) return 0.06588;
+    if (layer == 0) return 0.248;
     if (layer == 1) return 1;//95.4/95.4=1
     if (layer == 2) return 0.92;//88.16/95.4=0.92
     if (layer == 3) return 0.537;//51.245/95.4=0.537

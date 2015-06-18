@@ -83,6 +83,7 @@ bool SignalRegion::initialiseFitPositions(){
     if (eventIndex<nevt_) {
       accurateFit_[eventIndex].pos_x = xpos;
       accurateFit_[eventIndex].pos_y = ypos;
+      accurateFit_[eventIndex].pos_z = 0;
       accurateFit_[eventIndex].tanangle_x = xangle;
       accurateFit_[eventIndex].tanangle_y = yangle;
       accurateFit_[eventIndex].found=true;
@@ -120,11 +121,41 @@ ROOT::Math::XYZPoint SignalRegion::getAccuratePos(const unsigned ievt, const uns
 }
 
 ROOT::Math::XYZPoint SignalRegion::getAccuratePos(const FitResult& fit, const unsigned iL) const{
-  return ROOT::Math::XYZPoint(fit.pos_x + fit.tanangle_x*zPos_[iL], fit.pos_y + fit.tanangle_y*zPos_[iL], zPos_[iL]);
+  return ROOT::Math::XYZPoint(fit.pos_x + fit.tanangle_x*(zPos_[iL]-fit.pos_z), fit.pos_y + fit.tanangle_y*(zPos_[iL]-fit.pos_z), zPos_[iL]);
 }
 
 Direction SignalRegion::getAccurateDirection(const unsigned ievt) const{
   return Direction(accurateFit_[ievt].tanangle_x,accurateFit_[ievt].tanangle_y);
+}
+
+bool SignalRegion::fillEnergies(const unsigned ievt,
+				const std::vector<HGCSSGenParticle> & genvec,
+				const std::vector<HGCSSSamplingSection> & ssvec,
+				const std::vector<HGCSSSimHit> & simhitvec,
+				const std::vector<HGCSSRecoHit> & rechitvec,
+				const unsigned nPuVtx){
+   bool found = false;
+   FitResult fit;
+   for (unsigned iP(0); iP<genvec.size(); ++iP){//loop on gen particles    
+     if (genvec[iP].trackID()==1){
+       found = true;
+       //set direction
+       trueE_ = genvec[iP].E()/1000.;
+       fit.pos_x = genvec[iP].x();
+       fit.pos_y = genvec[iP].y();
+       fit.pos_z = genvec[iP].z();
+       fit.tanangle_x = genvec[iP].px()/genvec[iP].pz();
+       fit.tanangle_y = genvec[iP].py()/genvec[iP].pz();
+       fit.found = true;
+       //std::cout << genvec[iP].z() << " " << genvec[iP].eta() << " " << genvec[iP].phi() << std::endl;
+     }
+   }
+   if (!found){
+     std::cout << " - Info: no photon G4trackID=1 found, already converted or outside of acceptance ..." << std::endl;
+     fit.found = false;
+   }
+ 
+   return fillEnergies(ievt,ssvec,simhitvec,rechitvec,nPuVtx,fit);
 }
 
 bool SignalRegion::fillEnergies(const unsigned ievt,
@@ -276,7 +307,7 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
     //SR0-4
     for (unsigned isr(0); isr<nSR_;++isr){
       if ( (fabs(dx) <= ((isr+1)*halfCell)) && (fabs(dy) <= ((isr+1)*halfCell))){
-	energySR_[layer][isr] += energy*absweight_[layer]*etacor;
+	energySR_[layer][isr] += energy;//*absweight_[layer]*etacor;
 	subtractedenergySR_[layer][isr] += subtractedenergy*absweight_[layer]*etacor;
       }
     }
@@ -305,6 +336,7 @@ void SignalRegion::initialiseHistograms(){
     outtree_->Branch("eventIndex",&evtIdx_);
     outtree_->Branch("rawEtotal",&totalE_);
     outtree_->Branch("wgtEtotal",&wgttotalE_);
+    outtree_->Branch("trueE",&trueE_);
 
     std::vector<double> emptyvec;
     emptyvec.resize(nSR_,0);

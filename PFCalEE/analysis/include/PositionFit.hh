@@ -34,10 +34,11 @@
 struct FitResult{
   double pos_x;
   double pos_y;
+  double pos_z;
   double tanangle_x;
   double tanangle_y;
   bool found;
-  FitResult():pos_x(0),pos_y(0),tanangle_x(0),tanangle_y(0),found(false)
+  FitResult():pos_x(0),pos_y(0),pos_z(0),tanangle_x(0),tanangle_y(0),found(false)
   {};
 };
 

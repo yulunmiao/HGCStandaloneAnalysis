@@ -57,6 +57,13 @@ public:
 		    const unsigned nPuVtx);
 
   bool fillEnergies(const unsigned ievt,
+		    const std::vector<HGCSSGenParticle> & genvec,
+		    const std::vector<HGCSSSamplingSection> & ssvec,
+		    const std::vector<HGCSSSimHit> & simhitvec,
+		    const std::vector<HGCSSRecoHit> & rechitvec,
+		    const unsigned nPuVtx);
+
+  bool fillEnergies(const unsigned ievt,
 		    const std::vector<HGCSSSamplingSection> & ssvec,
 		    const std::vector<HGCSSSimHit> & simhitvec,
 		    const std::vector<HGCSSRecoHit> & rechitvec,
@@ -130,6 +137,7 @@ private:
   unsigned evtIdx_;
   double totalE_;
   double wgttotalE_;
+  double trueE_;
   std::vector<std::vector<double> > energySR_;
   std::vector<std::vector<double> > subtractedenergySR_;
   
