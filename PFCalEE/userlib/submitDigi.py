@@ -36,10 +36,10 @@ if opt.dogun :
     enlist=[3,5,10,30,50,70,100,200]
 #if opt.dogun : enlist=[2,5,10,20,40,60,80,100,150,200]#,300,400,500]
 
-#label='v5_30'
+label='v5_30'
 #label='v5_28'
 #label='v5_24'
-label='v5_18'
+#label='v5_18'
 
 #INPATHPU="root://eoscms//eos/cms/store/user/msun/V12/MinBias/"
 INPATHPU="root://eoscms//eos/cms/store/cmst3/group/hgcal/Standalone/V12/MinBias/"
@@ -81,10 +81,18 @@ elif opt.version==23:
     granularity='0-53:12'
     noise='0-53:0.14'
     threshold='0-53:2'
-elif (opt.version>24 and opt.version<30):
-    granularity='0-29:4,30-53:4,54-65:8'
-    noise='0-53:0.14,54-65:0.2'
-    threshold='0-53:2,54-65:4'
+elif (opt.version>24 and opt.version<27):
+    granularity='0-29:4,30-41:4,42-53:8'
+    noise='0-41:0.14,42-53:0.2'
+    threshold='0-53:5'
+elif (opt.version==27):
+    granularity='0-11:4,12-23:8'
+    noise='0-11:0.14,12-23:0.2'
+    threshold='0-23:5'
+elif (opt.version==28):
+    granularity='0-11:8'
+    noise='0-11:0.2'
+    threshold='0-11:5'
 else:
     granularity='0-51:4'
     noise='0-51:0.15'
@@ -111,7 +119,7 @@ for nPuVtx in nPuVtxlist:
             eosDir='%s/git%s/%s'%(opt.eos,opt.gittag,opt.datatype)
             eosDirIn='%s/git%s/%s'%(opt.eosin,opt.gittag,opt.datatype)
             #eosDirIn='%s'%(opt.eosin)
-            if opt.alpha>0 : outDir='%s/a_%3.3f/'%(outDir,opt.alpha) 
+            if opt.alpha>0 : outDir='%s/eta_%3.3f/'%(outDir,opt.alpha) 
             if opt.phi!=0.5 : outDir='%s/phi_%3.3fpi/'%(outDir,opt.phi) 
             if (opt.run>=0) : outDir='%s/run_%d/'%(outDir,opt.run)
         

@@ -68,7 +68,7 @@ public:
       indices_[5] = 10;
       indices_[6] = 10;
     }
-    else if (versionNumber==32) {
+    else if (versionNumber==28 || versionNumber==32) {
       indices_[4] = 0;
       indices_[5] = 12;
       indices_[6] = 12;
@@ -85,7 +85,7 @@ public:
       indices_[5] = 34;
       indices_[6] = 34;
     }
-    else if (versionNumber==31) {
+    else if (versionNumber==27 || versionNumber==31) {
       indices_[3] = 0;
       indices_[4] = 12;
       indices_[5] = 24;
@@ -141,9 +141,9 @@ public:
       indices_[1] = versionNumber==24?11:10;
       indices_[2] = versionNumber==24?21:20;
       indices_[3] = versionNumber==24?31:30;
-      indices_[4] = versionNumber==24?55:54;
-      indices_[5] = versionNumber==24?65:66;
-      indices_[6] = versionNumber==24?65:66;
+      indices_[4] = versionNumber==24?55:42;
+      indices_[5] = versionNumber==24?65:54;
+      indices_[6] = versionNumber==24?65:54;
     }
     
   };

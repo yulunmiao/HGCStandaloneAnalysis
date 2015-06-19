@@ -307,6 +307,9 @@ int main(int argc, char** argv){//main
 
   lRecTree->SetBranchAddress("HGCSSRecoHitVec",&rechitvec);
   if (lRecTree->GetBranch("nPuVtx")) lRecTree->SetBranchAddress("nPuVtx",&nPuVtx);
+  const unsigned nRemove = 12;
+  std::vector<unsigned> lToRemove;
+  unsigned list[nRemove] = {25,27,15,1,10,3,18,5,12,7,23,20};
 
   for (unsigned ievt(0); ievt<nEvts; ++ievt){//loop on entries
     if (debug) std::cout << "... Processing entry: " << ievt << std::endl;
@@ -315,11 +318,19 @@ int main(int argc, char** argv){//main
     lSimTree->GetEntry(ievt);
     lRecTree->GetEntry(ievt);
     if (dofit) {
-      FitResult fit;
-      if ( lChi2Fit.performLeastSquareFit(ievt,fit)==0 ){
-	SignalEnergy.fillEnergies(ievt,(*ssvec),(*simhitvec),(*rechitvec),nPuVtx,fit);
+      bool found = lChi2Fit.setTruthInfo(genvec,1);
+      if (!found) continue;
+      //mask layers in turn
+      lToRemove.clear();
+      for (unsigned r(0); r<nRemove+1;++r){
+	FitResult fit;
+	if ( lChi2Fit.performLeastSquareFit(ievt,fit,lToRemove)==0 ){
+	  //SignalEnergy.fillEnergies(ievt,(*ssvec),(*simhitvec),(*rechitvec),nPuVtx,fit);
+	}
+	else std::cout << " -- remove " << r << " Fit failed." << std::endl;
+	if (r<nRemove) lToRemove.push_back(list[r]);
       }
-      else std::cout << " -- Fit failed." << std::endl;
+
     }
     else SignalEnergy.fillEnergies(ievt,(*ssvec),(*simhitvec),(*rechitvec),nPuVtx);
 

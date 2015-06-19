@@ -88,7 +88,9 @@ public:
 	      const unsigned nSiLayers,
 	      const bool applyPuMixFix,
 	      const unsigned debug=0,
-	      const bool doMatrix=true);
+	      const bool doMatrix=true,
+	      const double& vtxx=0,
+	      const double& vtxy=0);
 
   ~PositionFit(){};
 
@@ -125,7 +127,8 @@ public:
   bool getInitialPosition(const unsigned ievt,
 			  const unsigned nVtx, 
 			  std::vector<HGCSSRecoHit> *rechitvec,
-			  unsigned & nTooFar);
+			  unsigned & nTooFar,
+			  unsigned & nNoCluster);
 
   bool getGlobalMaximum(const unsigned ievt, 
 			const unsigned nVtx, 
@@ -143,9 +146,9 @@ public:
 
   //bool getTruthPosition(std::vector<HGCSSGenParticle> *genvec,std::vector<ROOT::Math::XYPoint> & truthPos, const int trackID=1);
 
-  void getMaximumCellFromGeom(const double & phimax,const double & etamax,std::vector<double> & xmax,std::vector<double> & ymax);
+  void getMaximumCellFromGeom(const double & phimax,const double & etamax,const ROOT::Math::XYZPoint & cluspos,std::vector<double> & xmax,std::vector<double> & ymax);
 
-  void getMaximumCell(std::vector<HGCSSRecoHit> *rechitvec,const double & phimax,const double & etamax,std::vector<double> & xmax,std::vector<double> & ymax);
+  void getMaximumCell(std::vector<HGCSSRecoHit> *rechitvec,const double & phimax,const double & etamax,const ROOT::Math::XYZPoint & cluspos,std::vector<double> & xmax,std::vector<double> & ymax);
 
   void getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec,
 				 const unsigned nPU, 
@@ -175,6 +178,7 @@ public:
 			   std::vector<double> & posxtruth,
 			   std::vector<double> & posytruth,
 			   std::vector<double> & E,
+			   const std::vector<unsigned> & lToRemove,
 			   bool cutOutliers=false,
 			   bool print=true);
 
@@ -183,7 +187,8 @@ public:
   //return 2 if chi2/ndf>chi2ndfmax_
   //return 0 if success
   unsigned performLeastSquareFit(const unsigned ievt,
-				 FitResult & fit);
+				 FitResult & fit,
+				 const std::vector<unsigned> & lToRemove);
   void finaliseFit();
 
   //return 1 if no input file or <3 layers
@@ -191,6 +196,7 @@ public:
   //return 0 if success
   unsigned fitEvent(const unsigned ievt,
 		    FitResult & fit,
+		    const std::vector<unsigned> & lToRemove,
 		    const bool cutOutliers=false);
 
   inline void setOutputFile(TFile * outputFile){
@@ -200,6 +206,10 @@ public:
 
   inline TTree* getOutTree(){
     return outtree_;
+  };
+
+  inline TTree* getFitOutTree(){
+    return outtreeFit_;
   };
 
   inline unsigned nSR() const{
@@ -287,7 +297,6 @@ private:
   Direction recoDir_;
   Direction truthDir_;
   ROOT::Math::XYZPoint truthVtx_;
-  double truthE_;
 
   unsigned nInvalidFits_;
   unsigned nFailedFitsAfterCut_;
@@ -300,11 +309,28 @@ private:
   TFile *outputFile_;
 
   TTree *outtree_;
+  TTree *outtreeFit_;
   //output tree
+  unsigned nRemove_;
+  double truthE_;
+  double truthX0_;
+  double truthY0_;
+  double truthEta_;
+  double truthPhi_;
+  double recoEta_;
+  double recoPhi_;
+  double showerX14_;
+  double showerY14_;
+  double pcaEta_;
+  double pcaPhi_;
+  double pcaX_;
+  double pcaY_;
+  double pcaZ_;
   std::vector<double> truthPosX_;
   std::vector<double> truthPosY_;
   std::vector<std::vector<double> > Exy_;
   std::vector<std::vector<double> > txy_;
+
   //cluster histos
   TH1F *p_nClusters;
 

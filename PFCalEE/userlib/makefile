@@ -11,7 +11,7 @@ USERINCLUDES += -I$(ROOFITSYS)/include/
 USERINCLUDES += -Iinclude/ -I../userlib/include/ -I$(FASTJET_INSTALL)/include/
 
 # Define libraries to link
-USERLIBS += $(shell root-config --glibs) #-lGenVector -lTreePlayer -lTMVA
+USERLIBS += $(shell root-config --glibs) -lGenVector # -lTreePlayer -lTMVA
 #USERLIBS += -L$(CMS_PATH)/$(SCRAM_ARCH)/external/boost/1.47.0/lib/ -lboost_regex -lboost_program_options -lboost_filesystem
 USERLIBS += -Wl,-rpath,$(FASTJET_INSTALL)/lib -lm  -L$(FASTJET_INSTALL)/lib -lfastjettools -lfastjet -lfastjetplugins -lsiscone_spherical -lsiscone -lgfortran
 

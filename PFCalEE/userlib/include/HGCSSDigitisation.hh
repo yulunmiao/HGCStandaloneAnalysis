@@ -41,7 +41,7 @@ public:
     timeCut_[DetectorEnum::FECAL] = 25;//ns
     timeCut_[DetectorEnum::MECAL] = 25;//ns
     timeCut_[DetectorEnum::BECAL] = 25;//ns
-    timeCut_[DetectorEnum::FHCAL] = 150;//ns
+    timeCut_[DetectorEnum::FHCAL] = 25;//ns
     timeCut_[DetectorEnum::BHCAL1] = 150;//ns
     timeCut_[DetectorEnum::BHCAL2] = 150;//ns
     gainSmearing_[DetectorEnum::FECAL] = 0.02;//2% intercalibration
