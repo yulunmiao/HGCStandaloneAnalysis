@@ -113,7 +113,7 @@ void getTotalEnergy(TTree* & tree, std::ostringstream& inputsim, std::ostringstr
     const unsigned nEvts = lSimTree->GetEntries(); 
 
     for (unsigned ievt(0); ievt<nEvts; ++ievt){//loop on entries
-
+      if (ievt%100==0) std::cout << " -- Processing event " << ievt << std::endl;
       lSimTree->GetEntry(ievt);
       lRecTree->GetEntry(ievt);
       for(unsigned iS(0); iS <nSec; iS++){
@@ -278,7 +278,7 @@ void setCalibFactor(const std::vector<int> & genEn,
       getTotalEnergy(treeBH[iP], inputsim, inputrec,nRunsEM);
       //for(unsigned iE(0); iE < Etotal[1].size(); iE++)p_Energy3->Fill(Etotal[2][iE]);
       var.str("");
-      var << "E_BH_" << E[iP];
+      var << "E_BH";
       treeBH[iP]->Draw(var.str().c_str());
       p_Energy3 = (TH1F*)(gPad->GetPrimitive("htemp"))->Clone("p_Energy3");
 
@@ -458,13 +458,12 @@ int main(int argc, char** argv){//main
   //////////////////////////////////////////////////////////
   //// Hardcoded factor ////////////////////////////////////
   //////////////////////////////////////////////////////////
-  double FHtoEslope = 11.085; 
-  double FHtoEoffset = -4.34;
-  double BHtoEslope = 4.079;
-  //double BHtoEoffset = 293.55;
-  double BHtoEoffset = 0;
-  double ECALslope = 116.897;
-  double ECALoffset = -101.775;
+  double FHtoEslope = 142.862;
+  double FHtoEoffset = 27.2112;
+  double BHtoEslope = 42.7448;
+  double BHtoEoffset = 1323.7;
+  double ECALslope = 246.012;
+  double ECALoffset = 34.941;
 
   double FHtoBHslope  = 1;//0.2; 
  
@@ -536,7 +535,13 @@ int main(int argc, char** argv){//main
 		<< " ECAL : slope = " << ECALslope << " offset = " << ECALoffset << std::endl
 		<< " FHCAL: slope = " << FHtoEslope << " offset = " << FHtoEoffset << std::endl
 		<< " BHCAL: slope = " << BHtoEslope << " offset = " << BHtoEoffset << std::endl;
-      outputFileEM->Write();
+      outputFileEM->cd();
+      for (unsigned iE(0); iE<genEn.size();++iE){
+	treeEE[iE]->Write();
+	treeFH[iE]->Write();
+	treeBH[iE]->Write();
+      }
+      outputFileEM->Close();
     }
  }
   /*  if(doBHEMcalib){
