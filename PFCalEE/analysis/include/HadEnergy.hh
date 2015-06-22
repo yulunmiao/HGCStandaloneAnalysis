@@ -30,12 +30,12 @@ public:
             TChain* lSimTree,
             TChain* lRecTree,
             TFile *outputFile,
-            unsigned pNevts);
+            const unsigned pNevts);
   ~HadEnergy();
 
-  inline void addLimMIP(double lim){
+  inline void addLimMIP(const double lim){
     if(lim >0)LimMIP_.push_back(lim);
-  }
+  };
 
   void bookHist(TFile *outputFile);
 
@@ -48,26 +48,30 @@ public:
   inline void setFHtoE(const double FHtoEslope,const double FHtoEoffset){
        FHtoEslope_ = FHtoEslope;
        FHtoEoffset_ = FHtoEoffset;
-  }
+  };
 
   inline void setBHtoE(const double BHtoEslope,const double BHtoEoffset){
        BHtoEslope_ = BHtoEslope;
        BHtoEoffset_ = BHtoEoffset;
-  }
-  
+  };
+
+  inline void setFHtoBH(const double FHtoBHslope){
+    FHtoBHslope_ = FHtoBHslope;
+  };
+
   inline void setEEcalib(const double ECALslope,const double ECALoffset){
        ECALslope_ = ECALslope;
        ECALoffset_ = ECALoffset;
-  }
+  };
 
   bool fillEnergies();
  
-  double calcGlobalC(double LimMIP, double EmipMean, TH1F* spectrum); 
+  double calcGlobalC(const double LimMIP, const double EmipMean, TH1F* spectrum); 
   
-  inline double getGlobalC(unsigned iLim) { 
+  inline double getGlobalC(const unsigned iLim) { 
       if(iLim < Cglobal_.size()) return Cglobal_[iLim];
       else return 0;
-  }
+  };
 
 private:
 
@@ -93,6 +97,9 @@ private:
 
   std::vector<double> LimMIP_;
   std::vector<double> Cglobal_; 
+  double EE_, EFHCAL_, EBHCAL_;
+  double EmipMeanFH_;
+  unsigned nhitsFH_; 
 
   TH1F *p_spectrum;
   TH1F *p_spectrum_hightail;
