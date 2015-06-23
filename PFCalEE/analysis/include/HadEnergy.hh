@@ -59,6 +59,10 @@ public:
     FHtoBHslope_ = FHtoBHslope;
   };
 
+  inline void setEEtoH(const double EEtoHslope){
+    EEtoHslope_ = EEtoHslope;
+  };
+
   inline void setEEcalib(const double ECALslope,const double ECALoffset){
        ECALslope_ = ECALslope;
        ECALoffset_ = ECALoffset;
@@ -114,6 +118,7 @@ private:
   double ECALslope_;
   double ECALoffset_;
   double FHtoBHslope_;
+  double EEtoHslope_;
 };
 
 #endif

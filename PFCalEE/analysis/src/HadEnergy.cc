@@ -18,6 +18,7 @@ HadEnergy::HadEnergy(HGCSSDetector & myDetector, TChain* lSimTree, TChain* lRecT
   ECALoffset_ = 0.;
 
   FHtoBHslope_ = 1.;
+  EEtoHslope_ = 1.;
   
   outputFile_ = outputFile;
   debug_ = false;
@@ -163,7 +164,7 @@ bool HadEnergy::fillEnergies(){
        }
     }
 
-    wgttotalE_ = (EE_-ECALoffset_)/ECALslope_ + (EFHCAL_-FHtoEoffset_)/FHtoEslope_ + ((EBHCAL_-BHtoEoffset_)/BHtoEslope_)/FHtoBHslope_;
+    wgttotalE_ = (EE_-ECALoffset_)/ECALslope_ + ((EFHCAL_-FHtoEoffset_)/FHtoEslope_ + (EBHCAL_-BHtoEoffset_)/(BHtoEslope_*FHtoBHslope_))/EEtoHslope_;
     Etotal.push_back(wgttotalE_);
     p_Etotal->Fill(wgttotalE_);
     if(nhitsFH_!=0)EmipMeanFH_ = EmipMeanFH_/nhitsFH_; 

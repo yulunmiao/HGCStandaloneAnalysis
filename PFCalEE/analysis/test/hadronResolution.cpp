@@ -458,14 +458,15 @@ int main(int argc, char** argv){//main
   //////////////////////////////////////////////////////////
   //// Hardcoded factor ////////////////////////////////////
   //////////////////////////////////////////////////////////
-  double FHtoEslope = 142.862;
-  double FHtoEoffset = 27.2112;
-  double BHtoEslope = 42.7448;
-  double BHtoEoffset = 1323.7;
-  double ECALslope = 246.012;
-  double ECALoffset = 34.941;
+  double FHtoEslope = 23.51;
+  double FHtoEoffset = 17;
+  double BHtoEslope = 9.89;
+  double BHtoEoffset = 11700;
+  double ECALslope = 95.74;
+  double ECALoffset = 29;
 
-  double FHtoBHslope  = 1;//0.2; 
+  double FHtoBHslope  = 1.49;//0.2; 
+  double EEtoHslope  = 4.86;//0.2; 
  
   //double HcalPionOffset = 0.; 
   //double HcalPionCalib = 0.92;
@@ -723,6 +724,7 @@ int main(int argc, char** argv){//main
      myhadReso.setBHtoE(BHtoEslope, BHtoEoffset);
      myhadReso.setEEcalib(ECALslope, ECALoffset);
      myhadReso.setFHtoBH(FHtoBHslope);
+     myhadReso.setEEtoH(EEtoHslope);
  
      myhadReso.fillEnergies(); 
 
