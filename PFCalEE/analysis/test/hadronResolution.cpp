@@ -28,6 +28,7 @@
 #include "HGCSSParameters.hh"
 #include "HGCSSCalibration.hh"
 #include "HGCSSDigitisation.hh"
+#include "HGCSSGenParticle.hh"
 
 #include "HadEnergy.hh"
 #include "utilities.h"
@@ -47,7 +48,7 @@ void getValueFromString(std::vector<int>& outputNumber, std::string& sourceStrin
      for(unsigned i(0); i < outputString.size(); i++) outputNumber.push_back(atoi(outputString[i].c_str()));
 };
 
-void getTotalEnergy(TTree* & tree, std::ostringstream& inputsim, std::ostringstream& inputrec, const unsigned nRunsEM=0){
+void getTotalEnergy(TTree* & tree, double & sumEE, double & sumFH, double & sumBH, std::ostringstream& inputsim, std::ostringstream& inputrec, const unsigned nRunsEM=0){
 
     TFile * simFile = 0;
     TFile * recFile = 0;
@@ -66,34 +67,24 @@ void getTotalEnergy(TTree* & tree, std::ostringstream& inputsim, std::ostringstr
       for (unsigned i(0);i<nRunsEM;++i){
 	std::ostringstream tmpsim,tmprec;	
 	tmpsim << inputsim.str() << "_run" << i<< ".root";
-	if (!testInputFile(tmpsim.str(),simFile)) return;
+	if (!testInputFile(tmpsim.str(),simFile)) continue;
 	lSimTree->AddFile(tmpsim.str().c_str());
 	tmprec << inputrec.str() << "_run" << i<< ".root";
-	if (!testInputFile(tmprec.str(),recFile)) return;
+	if (!testInputFile(tmprec.str(),recFile)) continue;
 	lRecTree->AddFile(tmprec.str().c_str());
       }
     }
-    bool hasDeDxIn = false;
+    bool hasDeDxIn = true;
 
     HGCSSInfo * info=(HGCSSInfo*)simFile->Get("Info");
     const unsigned versionNumber = info->version();
-
-    if (versionNumber==25 || versionNumber==27 || versionNumber==28) hasDeDxIn=true;
+    std::cout << " -- version number = " << versionNumber << std::endl;
+    //if (versionNumber==25 || versionNumber==27 || versionNumber==28) hasDeDxIn=true;
 
     HGCSSDetector & myDetector = theDetector();
     myDetector.buildDetector(versionNumber,false,false);
     const unsigned nSec = myDetector.nSections();    
     double recSum[nSec];
-    double sumEE(0), sumFH(0), sumBH(0);   
-    std::ostringstream var;
-    var << "E_EE";
-    tree->Branch(var.str().c_str(),&sumEE);
-    var.str("");
-    var << "E_FH";
-    tree->Branch(var.str().c_str(),&sumFH);
-    var.str("");
-    var << "E_BH";
-    tree->Branch(var.str().c_str(),&sumBH);
 
     for(unsigned iS(0); iS <nSec; iS++){
        recSum[iS] = 0;
@@ -103,22 +94,65 @@ void getTotalEnergy(TTree* & tree, std::ostringstream& inputsim, std::ostringstr
     std::vector<HGCSSSamplingSection> * ssvec = 0;
     std::vector<HGCSSSimHit> * simhitvec = 0;
     std::vector<HGCSSRecoHit> * rechitvec = 0;
-    
+    std::vector<HGCSSGenParticle> * genvec = 0;
+
     lSimTree->SetBranchAddress("HGCSSEvent",&event);
     lSimTree->SetBranchAddress("HGCSSSamplingSectionVec",&ssvec);
     lSimTree->SetBranchAddress("HGCSSSimHitVec",&simhitvec);
-    
+    lSimTree->SetBranchAddress("HGCSSGenParticleVec",&genvec);
+
     lRecTree->SetBranchAddress("HGCSSRecoHitVec",&rechitvec);
   
     const unsigned nEvts = lSimTree->GetEntries(); 
 
+    std::vector<double> absW;
+    bool firstEvent = true;
     for (unsigned ievt(0); ievt<nEvts; ++ievt){//loop on entries
       if (ievt%100==0) std::cout << " -- Processing event " << ievt << std::endl;
       lSimTree->GetEntry(ievt);
+
+      if (firstEvent){
+	for (unsigned iL(0); iL<(*ssvec).size();++iL){
+	  //double absweight = (*ssvec)[layer].volX0trans()/(*ssvec)[0].volX0trans();
+	  double absweight = hasDeDxIn?(*ssvec)[iL].voldEdx()/(*ssvec)[1].voldEdx() : absWeight(iL,true);
+	  absW.push_back(absweight);
+	}
+      }
+
+      //get truth info
+      bool found = false;
+      double truthTanx = 0;
+      double truthTany = 0;
+      //double truthE = 0;
+      ROOT::Math::XYZPoint truthPos;
+      for (unsigned iP(0); iP<(*genvec).size(); ++iP){//loop on gen particles    
+	//if (debug>1 && (*genvec).size()!= 1) 
+	//(*genvec)[iP].Print(std::cout);
+	if ((*genvec)[iP].trackID()==1){
+	  found = true;
+	  //set direction
+	  truthPos = ROOT::Math::XYZPoint((*genvec)[iP].x(),(*genvec)[iP].y(),(*genvec)[iP].z());
+	  truthTanx = (*genvec)[iP].px()/(*genvec)[iP].pz();
+	  truthTany = (*genvec)[iP].py()/(*genvec)[iP].pz();
+	  //in GeV
+	  //truthE = (*genvec)[iP].E()/1000.;
+	  //std::cout << " -- true pdgid " << (*genvec)[iP].pdgid()
+	  //<< " pos=" << truthPos.x() << " "
+	  //<< truthPos.y() << " "
+	  //<< truthPos.z() << std::endl;
+	  break;
+	}
+	
+      }
+      if (!found){
+	std::cout << " - Info: no particle G4trackID=1 found, already converted or outside of acceptance ..." << std::endl;
+	continue;
+      }
+
       lRecTree->GetEntry(ievt);
       for(unsigned iS(0); iS <nSec; iS++){
         recSum[iS] = 0;
-      }        
+      }
       sumEE = 0;
       sumFH = 0;
       sumBH = 0;
@@ -126,27 +160,37 @@ void getTotalEnergy(TTree* & tree, std::ostringstream& inputsim, std::ostringstr
       for (unsigned iH(0); iH<(*rechitvec).size(); ++iH){//loop over rechits
         const HGCSSRecoHit lHit = (*rechitvec)[iH];
     
-        unsigned layer = lHit.layer();
-        unsigned sec =  myDetector.getSection(layer);
-        //double absweight = (*ssvec)[layer].volX0trans()/(*ssvec)[0].volX0trans();
-	double absweight = hasDeDxIn?(*ssvec)[layer].voldEdx()/(*ssvec)[1].voldEdx() : absWeight(layer,true);
-        double energy = lHit.energy();
-
-        recSum[sec] += energy*absweight;
-    }
+	double posx = lHit.get_x();
+	double posy = lHit.get_y();
+	double posz = lHit.get_z();
+	double truthposx = truthTanx*(posz-truthPos.z())+truthPos.x();
+	double truthposy = truthTany*(posz-truthPos.z())+truthPos.y();
+	//consider 5*5 cm^2 section
+	if (fabs(posx-truthposx) <= 25 && 
+	    fabs(posy-truthposy) <= 25){
+	  unsigned layer = lHit.layer();
+	  unsigned sec =  myDetector.getSection(layer);
+	  double energy = lHit.energy();
+	  //std::cout << " -- hit pass: " << energy << " " << absweight << std::endl;
+	  
+	  recSum[sec] += energy*absW[layer];
+	}
+      }//loop on hits
     
-    for(unsigned iS(0); iS < nSec; iS++){
-      //get total energy for each sub-detector
-      DetectorEnum type = myDetector.detType(iS); 
-      if(type == DetectorEnum::FECAL || type == DetectorEnum::MECAL || type == DetectorEnum::BECAL)
-         sumEE += recSum[iS];
-      else if(type == DetectorEnum::FHCAL){
-         sumFH += recSum[iS];
+      for(unsigned iS(0); iS < nSec; iS++){
+	//get total energy for each sub-detector
+	DetectorEnum type = myDetector.detType(iS); 
+	if(type == DetectorEnum::FECAL || type == DetectorEnum::MECAL || type == DetectorEnum::BECAL)
+	  sumEE += recSum[iS];
+	else if(type == DetectorEnum::FHCAL){
+	  sumFH += recSum[iS];
+	}
+	else if(type == DetectorEnum::BHCAL1 || type == DetectorEnum::BHCAL2)
+	  sumBH += recSum[iS];
       }
-      else if(type == DetectorEnum::BHCAL1 || type == DetectorEnum::BHCAL2)
-         sumBH += recSum[iS];
-    }
-    tree->Fill();
+      //std::cout << " Total E = " << sumEE << " " << sumFH << " " << sumBH << std::endl;
+      tree->Fill();
+      firstEvent = false;
     }//loop on events
 }
 
@@ -158,13 +202,16 @@ void setCalibFactor(const std::vector<int> & genEn,
 		    const std::vector<std::pair<std::string, std::string>> & fileName1, 
 		    const std::vector<std::pair<std::string, std::string>> & fileName2, 
 		    const std::vector<std::pair<std::string, std::string>> & fileName3, 
-		    TTree** treeEE, TTree** treeFH, TTree** treeBH,
+		    TFile* outputFileEM,
 		    TCanvas *c1, TCanvas *c2, TCanvas *c3,
 		    TGraphErrors * slopesummaryEE,TGraphErrors * slopesummaryFH,TGraphErrors * slopesummaryBH){
 
-    c1->cd();
-    const unsigned nP = fileName1.size();
-    if(fileName1.size() != genEn.size() || fileName1.size() != fileName2.size() || fileName1.size() != fileName3.size()){std::cout << "Got different number of EE/FH/BH files when set calibration factor" << std::endl; return;}
+  const unsigned nP = fileName1.size();
+  if(fileName1.size() != genEn.size() || fileName1.size() != fileName2.size() || fileName1.size() != fileName3.size()){std::cout << "Got different number of EE/FH/BH files when set calibration factor" << std::endl; return;}
+  outputFileEM->cd();
+  TTree *treeEE[nP];
+  TTree *treeFH[nP];
+  TTree *treeBH[nP];
 
     double E[nP], Energy1[nP], Energy2[nP], Energy3[nP];
     double Energy1err[nP], Energy2err[nP], Energy3err[nP];
@@ -172,6 +219,7 @@ void setCalibFactor(const std::vector<int> & genEn,
     TH1F * p_Energy2=0;
     TH1F * p_Energy3=0;
 
+    c1->cd();
     c1->Print("EnergyFitsEE.pdf[");
     gStyle->SetOptFit(1111);
     gStyle->SetOptStat("eMRuo");
@@ -189,9 +237,26 @@ void setCalibFactor(const std::vector<int> & genEn,
       E[iP] = genEn[iP];
       std::ostringstream var;
       var << "treeEE_" << E[iP];
+      outputFileEM->cd();
       treeEE[iP] = new TTree(var.str().c_str(),"EE energies");
-      getTotalEnergy(treeEE[iP], inputsim, inputrec,nRunsEM);
+      double sumEE(0), sumFH(0), sumBH(0);   
+      var.str("");
+      var << "E_EE";
+      treeEE[iP]->Branch(var.str().c_str(),&sumEE);
+      var.str("");
+      var << "E_FH";
+      treeEE[iP]->Branch(var.str().c_str(),&sumFH);
+      var.str("");
+      var << "E_BH";
+      treeEE[iP]->Branch(var.str().c_str(),&sumBH);
+
+      getTotalEnergy(treeEE[iP], sumEE, sumFH, sumBH, inputsim, inputrec,nRunsEM);
       //for(unsigned iE(0); iE < Etotal[0].size(); iE++)p_Energy1->Fill(Etotal[0][iE]);
+      outputFileEM->cd();
+      treeEE[iP]->Write();
+      //std::cout << " -- Entries in tree after fill: " << treeEE[iP]->GetEntries() << std::endl;
+
+      //treeEE[iP]->Show(0);
       var.str("");
       var << "E_EE";
       treeEE[iP]->Draw(var.str().c_str());
@@ -200,13 +265,13 @@ void setCalibFactor(const std::vector<int> & genEn,
       TF1 *fitResult = new TF1("fitResult","[0]*TMath::Gaus(x,[1],[2],0)",p_Energy1->GetXaxis()->GetXmin(),p_Energy1->GetXaxis()->GetXmax());
       fitResult->SetParameters(p_Energy1->Integral(),
 			       p_Energy1->GetXaxis()->GetBinCenter(p_Energy1->GetMaximumBin()),
-			       p_Energy1->GetRMS());
+			       fabs(p_Energy1->GetRMS()));
       p_Energy1->Fit("fitResult","L0QEMI","",
 		     fitResult->GetParameter(1)-2*fitResult->GetParameter(2),
 		     fitResult->GetParameter(1)+2*fitResult->GetParameter(2));
       fitResult->SetLineColor(2);
       fitResult->Draw("same");
-
+      //c1->Print("checkE3.png");
       c1->Print("EnergyFitsEE.pdf");
 
       Energy1[iP] = fitResult->GetParameter(1);//p_Energy1->GetMean();
@@ -231,9 +296,22 @@ void setCalibFactor(const std::vector<int> & genEn,
      
       std::ostringstream var;
       var << "treeFH_" << E[iP];
+      outputFileEM->cd();
       treeFH[iP] = new TTree(var.str().c_str(),"FH+BH energies");
-      getTotalEnergy(treeFH[iP], inputsim, inputrec,nRunsEM);
+      double sumEE(0), sumFH(0), sumBH(0);   
+      var.str("");
+      var << "E_EE";
+      treeFH[iP]->Branch(var.str().c_str(),&sumEE);
+      var.str("");
+      var << "E_FH";
+      treeFH[iP]->Branch(var.str().c_str(),&sumFH);
+      var.str("");
+      var << "E_BH";
+      treeFH[iP]->Branch(var.str().c_str(),&sumBH);
+      getTotalEnergy(treeFH[iP], sumEE, sumFH, sumBH, inputsim, inputrec,nRunsEM);
       //for(unsigned iE(0); iE < Etotal[1].size(); iE++)p_Energy2->Fill(Etotal[1][iE]);
+      outputFileEM->cd();
+      treeFH[iP]->Write();
       var.str("");
       var << "E_FH";
       treeFH[iP]->Draw(var.str().c_str());
@@ -274,9 +352,22 @@ void setCalibFactor(const std::vector<int> & genEn,
      
       std::ostringstream var;
       var << "treeBH_" << E[iP];
+      outputFileEM->cd();
       treeBH[iP] = new TTree(var.str().c_str(),"BH energies");
-      getTotalEnergy(treeBH[iP], inputsim, inputrec,nRunsEM);
-      //for(unsigned iE(0); iE < Etotal[1].size(); iE++)p_Energy3->Fill(Etotal[2][iE]);
+      double sumEE(0), sumFH(0), sumBH(0);   
+      var.str("");
+      var << "E_EE";
+      treeBH[iP]->Branch(var.str().c_str(),&sumEE);
+      var.str("");
+      var << "E_FH";
+      treeBH[iP]->Branch(var.str().c_str(),&sumFH);
+      var.str("");
+      var << "E_BH";
+      treeBH[iP]->Branch(var.str().c_str(),&sumBH);
+      getTotalEnergy(treeBH[iP], sumEE, sumFH, sumBH, inputsim, inputrec,nRunsEM);
+      outputFileEM->cd();
+      treeBH[iP]->Write();
+     //for(unsigned iE(0); iE < Etotal[1].size(); iE++)p_Energy3->Fill(Etotal[2][iE]);
       var.str("");
       var << "E_BH";
       treeBH[iP]->Draw(var.str().c_str());
@@ -312,7 +403,7 @@ void setCalibFactor(const std::vector<int> & genEn,
       slopesummaryBH->SetPoint(iP,E[iP],Energy3[iP]);
       slopesummaryBH->SetPointError(iP,0,Energy3err[iP]);
     }
-    c1->cd();
+    /*    c1->cd();
     slopesummaryEE->SetMarkerSize(1);
     slopesummaryEE->SetMarkerStyle(20);
     slopesummaryEE->SetMarkerColor(1);
@@ -344,7 +435,9 @@ void setCalibFactor(const std::vector<int> & genEn,
    // fit->Draw("same");
     calibOffsetBH = fitBH->GetParameter(0);
     calibSlopeBH = fitBH->GetParameter(1);
-   return;
+    */
+
+    return;
 }
 
 /*void setCalibFactor(double & calibFactor, const std::vector<std::pair<std::string, std::string>>& fileName,const double & FHtoEslope,const double & FHtoEoffset,const double & BHtoEslope,const double & BHtoEoffset,  TCanvas *c){
@@ -409,9 +502,12 @@ int main(int argc, char** argv){//main
   std::string simFileName;
   std::string recoFileName;
   std::string outPath;
+  std::string outFileEM;
+  std::string outFilePi;
   unsigned nSiLayers;
   //0:do just the energies, 1:do fit+energies, 2: do zpos+fit+energies
   unsigned debug;
+  std::string dropLayers;
 
   po::options_description preconfig("Configuration"); 
   preconfig.add_options()("cfg,c",po::value<std::string>(&cfg)->required());
@@ -440,8 +536,11 @@ int main(int argc, char** argv){//main
     ("simFileName,s",  po::value<std::string>(&simFileName)->required())
     ("recoFileName,r", po::value<std::string>(&recoFileName)->required())
     ("outPath,o",      po::value<std::string>(&outPath)->required())
+    ("outFileEM,o",      po::value<std::string>(&outFileEM)->required())
+    ("outFilePi,o",      po::value<std::string>(&outFilePi)->required())
     ("nSiLayers",      po::value<unsigned>(&nSiLayers)->default_value(2))
     ("debug,d",        po::value<unsigned>(&debug)->default_value(0))
+    ("dropLayers",    po::value<std::string>(&dropLayers)->required()) 
     ;
 
   // ("output_name,o",            po::value<std::string>(&outputname)->default_value("tmp.root"))
@@ -458,41 +557,28 @@ int main(int argc, char** argv){//main
   //////////////////////////////////////////////////////////
   //// Hardcoded factor ////////////////////////////////////
   //////////////////////////////////////////////////////////
-  double FHtoEslope = 23.51;
-  double FHtoEoffset = 17;
-  double BHtoEslope = 9.89;
-  double BHtoEoffset = 11700;
-  double ECALslope = 95.74;
-  double ECALoffset = 29;
+  double FHtoEslope = 21.02;
+  double FHtoEoffset = 4;
+  double BHtoEslope = 8.62;
+  double BHtoEoffset = 3.7;
+  double ECALslope = 85.84;
+  double ECALoffset = 4;
 
-  double FHtoBHslope  = 1.49;//0.2; 
-  double EEtoHslope  = 4.86;//0.2; 
- 
+  double FHtoBHslope = 1.49;
+  double EEtoHslope = 4.86; 
   //double HcalPionOffset = 0.; 
   //double HcalPionCalib = 0.92;
 ////////////////////////////////////
 //
+
+
+  std::vector<unsigned> dropLay;
+  getValueFromString(dropLay, dropLayers);
+
+  const unsigned nDrop = dropLay.size();
+  std::cout << " -- Dropping " << nDrop << " layers: " << dropLayers << std::endl;
+
   if(doFHEMcalib && doBHEMcalib){
-
-    /////////////////////////////////////////////////////////////
-    //output
-    ///////////////////////////////////////////////////////////////
-    std::ostringstream outFile;
-    outFile.str("");
-    outFile << outPath << "EMcalibration.root";
-    TFile *outputFileEM = TFile::Open(outFile.str().c_str(),"RECREATE");
-
-    if (!outputFileEM) {
-      std::cout << " -- Error, output file " << outFile.str() << " cannot be opened. Please create output directory. Exiting..." << std::endl;
-      return 1;
-    }
-     else {
-       std::cout << " -- output file " << outputFileEM->GetName() << " successfully opened." << std::endl;
-     }
-    outputFileEM->cd();
-    TGraphErrors * slopesummaryEE = new TGraphErrors();
-    TGraphErrors * slopesummaryFH = new TGraphErrors();
-    TGraphErrors * slopesummaryBH = new TGraphErrors();
 
     if(eeSimFiles == ""|| eeRecoFiles == "" || fhSimFiles == "" || fhRecoFiles == ""|| bhSimFiles == "" || bhRecoFiles == "") {std::cout << "EE/FH/BH files cannot be empty for FHvsEE and BHvsEE calibration" << std::endl;}
     else{
@@ -516,35 +602,54 @@ int main(int argc, char** argv){//main
       std::vector<int> genEn;
       getValueFromString(genEn, genEnergyEM);
 
-      TTree *treeEE[genEn.size()];
-      TTree *treeFH[genEn.size()];
-      TTree *treeBH[genEn.size()];
+    /////////////////////////////////////////////////////////////
+    //output
+    ///////////////////////////////////////////////////////////////
+    std::ostringstream outFile;
+    outFile.str("");
+    if (outFileEM.find(".root") == outFileEM.npos)
+      outFile << outPath << "/" << outFileEM << "_" << genEn[0] << ".root";
+    else 
+      outFile << outPath << "/" << outFileEM;
+    TFile *outputFileEM = TFile::Open(outFile.str().c_str(),"RECREATE");
+
+    if (!outputFileEM) {
+      std::cout << " -- Error, output file " << outFile.str() << " cannot be opened. Please create output directory. Exiting..." << std::endl;
+      return 1;
+    }
+     else {
+       std::cout << " -- output file " << outputFileEM->GetName() << " successfully opened." << std::endl;
+     }
+    outputFileEM->cd();
+    TGraphErrors * slopesummaryEE = new TGraphErrors();
+    TGraphErrors * slopesummaryFH = new TGraphErrors();
+    TGraphErrors * slopesummaryBH = new TGraphErrors();
+
 
       setCalibFactor(genEn,nRunsEM,
 		     ECALslope,ECALoffset,
 		     FHtoEslope,FHtoEoffset,
 		     BHtoEslope,BHtoEoffset,
 		     eeFileName, fhFileName, bhFileName,
-		     treeEE,treeFH,treeBH,
+		     outputFileEM,
 		     c1,c2,c3,
 		     slopesummaryEE,slopesummaryFH,slopesummaryBH); 
-      c1->SaveAs("EEcalibtoEM.png");
-      c2->SaveAs("FHcalibtoEM.png");
-      c3->SaveAs("BHcalibtoEM.png");
+      //c1->SaveAs("EEcalibtoEM.png");
+      //c2->SaveAs("FHcalibtoEM.png");
+      //c3->SaveAs("BHcalibtoEM.png");
 
-      std::cout << " SUmmary of calibration constant to EM scale: " << std::endl
-		<< " ECAL : slope = " << ECALslope << " offset = " << ECALoffset << std::endl
-		<< " FHCAL: slope = " << FHtoEslope << " offset = " << FHtoEoffset << std::endl
-		<< " BHCAL: slope = " << BHtoEslope << " offset = " << BHtoEoffset << std::endl;
-      outputFileEM->cd();
-      for (unsigned iE(0); iE<genEn.size();++iE){
-	treeEE[iE]->Write();
-	treeFH[iE]->Write();
-	treeBH[iE]->Write();
-      }
+      //std::cout << " Summary of calibration constant to EM scale: " << std::endl
+      //<< " ECAL : slope = " << ECALslope << " offset = " << ECALoffset << std::endl
+      //<< " FHCAL: slope = " << FHtoEslope << " offset = " << FHtoEoffset << std::endl
+      //<< " BHCAL: slope = " << BHtoEslope << " offset = " << BHtoEoffset << std::endl;
+      //outputFileEM->cd();
+      //slopesummaryEE->Write();
+      //slopesummaryFH->Write();
+      //slopesummaryBH->Write();
       outputFileEM->Close();
     }
- }
+    return 0;
+  }
   /*  if(doBHEMcalib){
     if(eeSimFiles == ""|| eeRecoFiles == "" || bhSimFiles == "" || bhRecoFiles == "") {std::cout << "EE/FH files cannot be empty for FHvsEE calibration" << std::endl;}
     else{
@@ -671,7 +776,7 @@ int main(int argc, char** argv){//main
      ///////////////////////////////////////////////////////////////
      std::ostringstream outFile;
      outFile.str("");
-     outFile << outPath << "pion_reso_et" << genEn[iGen] << ".root";
+     outFile << outPath << outFilePi << "_et" << genEn[iGen] << ".root";
      TFile *outputFile = TFile::Open(outFile.str().c_str(),"RECREATE");
 
      if (!outputFile) {
@@ -710,15 +815,15 @@ int main(int argc, char** argv){//main
      
      HadEnergy myhadReso(myDetector, lSimTree, lRecTree, outputFile, pNevts);
      myhadReso.addLimMIP(3);
-     myhadReso.addLimMIP(4);
      myhadReso.addLimMIP(5);
-     myhadReso.addLimMIP(6);
-     myhadReso.addLimMIP(7);
-     myhadReso.addLimMIP(8);
      myhadReso.addLimMIP(10);
-     myhadReso.addLimMIP(12);
      myhadReso.addLimMIP(15);
      myhadReso.addLimMIP(20);
+     myhadReso.addLimMIP(25);
+     myhadReso.addLimMIP(30);
+     myhadReso.addLimMIP(35);
+     myhadReso.addLimMIP(40);
+     myhadReso.addLimMIP(50);
      myhadReso.bookHist(outputFile);
      myhadReso.setFHtoE(FHtoEslope, FHtoEoffset);
      myhadReso.setBHtoE(BHtoEslope, BHtoEoffset);

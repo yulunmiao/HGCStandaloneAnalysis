@@ -77,9 +77,9 @@ public:
   };
 
   inline double eta() const {
-    double theta = acos(fabs(zpos_)/sqrt(zpos_*zpos_+xpos_*xpos_+ypos_*ypos_));
+    double theta = acos(fabs(pz_)/sqrt(pz_*pz_+px_*px_+py_*py_));
     double leta = -1.*log(tan(theta/2.));
-    if (zpos_>0) return leta;
+    if (pz_>0) return leta;
     else return -1.*leta;
   };
 
@@ -88,8 +88,8 @@ public:
   };
 
   inline double phi() const {
-    double x = xpos_;
-    double y = ypos_;
+    double x = px_;
+    double y = py_;
     if (x==0) return 0;
     if (x>0) return atan(y/x);
     else if (y>0) return TMath::Pi()+atan(y/x);

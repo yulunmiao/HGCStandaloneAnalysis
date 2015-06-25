@@ -86,23 +86,54 @@ bool HadEnergy::fillEnergies(){
   std::vector<HGCSSSamplingSection> * ssvec = 0;
   std::vector<HGCSSSimHit> * simhitvec = 0;
   std::vector<HGCSSRecoHit> * rechitvec = 0;
-     
+  std::vector<HGCSSGenParticle> * genvec = 0;
+
   lSimTree_->SetBranchAddress("HGCSSEvent",&event);
   lSimTree_->SetBranchAddress("HGCSSSamplingSectionVec",&ssvec);
   lSimTree_->SetBranchAddress("HGCSSSimHitVec",&simhitvec);
-     
+  lSimTree_->SetBranchAddress("HGCSSGenParticleVec",&genvec);
+
   lRecTree_->SetBranchAddress("HGCSSRecoHitVec",&rechitvec);
    
   const unsigned nEvts = ((pNevts_ > lRecTree_->GetEntries() || pNevts_==0) ? static_cast<unsigned>(lRecTree_->GetEntries()) : pNevts_) ;
      
   std::cout << "- Processing = " << nEvts  << " events out of " << lRecTree_->GetEntries() << std::endl;
   
-  spectrumCollection.reserve(nEvts);
+  spectrumCollection.resize(nEvts,0);
   for (unsigned ievt(0); ievt<nEvts; ++ievt){// loop on entries
     if (debug_) std::cout << "... Processing entry: " << ievt << std::endl;
     else if (ievt%50 == 0) std::cout << "... Processing entry: " << ievt << std::endl;
       
     lSimTree_->GetEntry(ievt);
+
+    //get truth info
+    bool found = false;
+    double truthTanx = 0;
+    double truthTany = 0;
+    //double truthE = 0;
+    ROOT::Math::XYZPoint truthPos;
+    for (unsigned iP(0); iP<(*genvec).size(); ++iP){//loop on gen particles    
+      if (debug_>1 && (*genvec).size()!= 1) (*genvec)[iP].Print(std::cout);
+      if ((*genvec)[iP].trackID()==1){
+	found = true;
+	//set direction
+	truthPos = ROOT::Math::XYZPoint((*genvec)[iP].x(),(*genvec)[iP].y(),(*genvec)[iP].z());
+	truthTanx = (*genvec)[iP].px()/(*genvec)[iP].pz();
+	truthTany = (*genvec)[iP].py()/(*genvec)[iP].pz();
+	//in GeV
+	//truthE = (*genvec)[iP].E()/1000.;
+	
+	break;
+      }
+      
+    }
+    if (!found){
+      std::cout << " - Info: no particle G4trackID=1 found, already converted or outside of acceptance ..." << std::endl;
+      continue;
+    }
+
+
+
     lRecTree_->GetEntry(ievt);
    
      if (debug_){
@@ -120,30 +151,39 @@ bool HadEnergy::fillEnergies(){
 
     for (unsigned iH(0); iH<(*rechitvec).size(); ++iH){//loop over rechits
       const HGCSSRecoHit lHit = (*rechitvec)[iH];
-    
-      unsigned layer = lHit.layer();
-      if (layer >= nLayers_) {
-         std::cout << " WARNING! RecoHits with layer " << layer << " outside of detector's definition range ! Please fix the digitiser or the detector definition used here. Ignoring..." << std::endl;
-       continue;
-      }
-     
-      //double absweight = (*ssvec)[layer].volX0trans()/(*ssvec)[0].volX0trans();
-      double absweight = (*ssvec)[layer].voldEdx()/(*ssvec)[1].voldEdx();
-      unsigned sec =  myDetector_.getSection(layer); 
-
-      double energy = lHit.energy();
-
-      p_spectrumByLayer->Fill(layer,energy);
-
-      energy_[layer] += energy;//*absweight; 
-      recSum[sec] += energy*absweight;
-
-      DetectorEnum type = myDetector_.detType(sec);
-      if(type == DetectorEnum::FHCAL){
-         spectrumCollection[ievt]->Fill(energy);
-         EmipMeanFH_ += energy;
-         nhitsFH_ += 1;
-      }
+      double posx = lHit.get_x();
+      double posy = lHit.get_y();
+      double posz = lHit.get_z();
+      double truthposx = truthTanx*(posz-truthPos.z())+truthPos.x();
+      double truthposy = truthTany*(posz-truthPos.z())+truthPos.y();
+      //consider 1*1 m^2 section
+      if (fabs(posx-truthposx) <= 500 && 
+	  fabs(posy-truthposy) <= 500){
+	 
+	unsigned layer = lHit.layer();
+	if (layer >= nLayers_) {
+	  std::cout << " WARNING! RecoHits with layer " << layer << " outside of detector's definition range ! Please fix the digitiser or the detector definition used here. Ignoring..." << std::endl;
+	  continue;
+	}
+	
+	//double absweight = (*ssvec)[layer].volX0trans()/(*ssvec)[0].volX0trans();
+	double absweight = (*ssvec)[layer].voldEdx()/(*ssvec)[1].voldEdx();
+	unsigned sec =  myDetector_.getSection(layer); 
+	
+	double energy = lHit.energy();
+	
+	p_spectrumByLayer->Fill(layer,energy);
+	
+	energy_[layer] += energy;//*absweight; 
+	recSum[sec] += energy*absweight;
+	
+	DetectorEnum type = myDetector_.detType(sec);
+	if(type == DetectorEnum::FHCAL){
+	  spectrumCollection[ievt]->Fill(energy);
+	  EmipMeanFH_ += energy;
+	  nhitsFH_ += 1;
+	}
+      }//if in fid region
     }//loop on hits
 
     EE_ = 0;
@@ -179,12 +219,13 @@ bool HadEnergy::fillEnergies(){
     }
 
     outtree_->Fill();
-  }
+  }//loop on events
   p_Etotal->Fit("gaus");
   TF1 *fit = (TF1*)p_Etotal->GetFunction("gaus");
   double EMean = fit?fit->GetParameter(1):p_Etotal->GetMean();
   double ERMS = fit?fit->GetParameter(2):p_Etotal->GetRMS();
   for (unsigned ievt(0); ievt<nEvts; ++ievt){
+    if (!spectrumCollection[ievt]) continue;
     p_spectrum->Add(spectrumCollection[ievt]);
     if(Etotal[ievt] < EMean-ERMS)p_spectrum_lowtail->Add(spectrumCollection[ievt]);
     else if(Etotal[ievt] > EMean+ERMS)p_spectrum_hightail->Add(spectrumCollection[ievt]);
