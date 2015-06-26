@@ -26,7 +26,8 @@
 class HadEnergy{
 
 public:
-  HadEnergy(HGCSSDetector & myDetector, 
+  HadEnergy(const std::vector<unsigned> & dropLay,
+	    HGCSSDetector & myDetector, 
             TChain* lSimTree,
             TChain* lRecTree,
             TFile *outputFile,
@@ -63,6 +64,11 @@ public:
     EEtoHslope_ = EEtoHslope;
   };
 
+  inline void setEEtoHPar(const double EEtoHslopePar0,const double EEtoHslopePar1){
+    EEtoHslopePar0_ = EEtoHslopePar0;
+    EEtoHslopePar1_ = EEtoHslopePar1;
+  };
+
   inline void setEEcalib(const double ECALslope,const double ECALoffset){
        ECALslope_ = ECALslope;
        ECALoffset_ = ECALoffset;
@@ -86,6 +92,7 @@ private:
   TChain* lSimTree_;
   TChain* lRecTree_;
   unsigned pNevts_; 
+  std::vector<unsigned> dropLay_;
 
   unsigned debug_; 
   //for tree
@@ -119,6 +126,8 @@ private:
   double ECALoffset_;
   double FHtoBHslope_;
   double EEtoHslope_;
+  double EEtoHslopePar0_;
+  double EEtoHslopePar1_;
 };
 
 #endif

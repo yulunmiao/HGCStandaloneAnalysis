@@ -62,14 +62,26 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 	break;
       }
 
-    case v_HGCALEE_v6: case v_HGCAL_v6: case v_HGCALEE_v624: case v_HGCALEE_v618:
+    case v_HGCALEE_v6: case v_HGCAL_v6: case v_HGCALEE_v624: case v_HGCALEE_v618: case v_HGCAL_v624: case v_HGCAL_v618:
       {
 	G4cout << "[DetectorConstruction] starting v_HCALEE_v6"<< G4endl;
 	G4double airThick = 3*mm;
 	G4double pcbThick = 2*mm;
-        G4double scaleFactor=1.0;
         unsigned Nmodule=4;
- 
+	G4double wThick = 2.*mm;
+	G4double wcuThick = 0.6*mm;
+
+        if(version_ == v_HGCALEE_v624 || version_ == v_HGCAL_v624){
+             Nmodule = 3;
+	     wThick = 2.6*mm;
+	     wcuThick = 1.*mm;
+	}
+        else if(version_ == v_HGCALEE_v618 || version_ == v_HGCAL_v618){
+             Nmodule =2;
+	     wThick = 3.5*mm;
+	     wcuThick = 1.7*mm;
+	}
+
 	std::vector<G4double> lThickL;
 	std::vector<std::string> lEleL;
         lThickL.push_back(100.*mm);lEleL.push_back("NeutMod");
@@ -77,7 +89,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 	lThickL.push_back(26.*mm);lEleL.push_back("Foam");
 	lThickL.push_back(2.*mm);lEleL.push_back("Al");
 	lThickL.push_back(0.5*mm);lEleL.push_back("CFMix");
-	lThickL.push_back(2.0*mm);lEleL.push_back("W");
+	lThickL.push_back(wThick);lEleL.push_back("W");
 	lThickL.push_back(0.5*mm);lEleL.push_back("CFMix");
 	lThickL.push_back(0.5*mm);lEleL.push_back("Cu");
 	lThickL.push_back(airThick);lEleL.push_back("Air");
@@ -88,30 +100,14 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 
 	std::vector<G4double> lThickR;
 	std::vector<std::string> lEleR;
-	lThickR.push_back(0.6*mm);lEleR.push_back("WCu");
+	lThickR.push_back(wcuThick);lEleR.push_back("WCu");
 	lThickR.push_back(6*mm);lEleR.push_back("Cu");
-	lThickR.push_back(0.6*mm);lEleR.push_back("WCu");
+	lThickR.push_back(wcuThick);lEleR.push_back("WCu");
 	lThickR.push_back(0.1*mm);lEleR.push_back("Si");
 	lThickR.push_back(0.1*mm);lEleR.push_back("Si");
 	lThickR.push_back(0.1*mm);lEleR.push_back("Si");
 	lThickR.push_back(pcbThick);lEleR.push_back("PCB");
 	lThickR.push_back(airThick);lEleR.push_back("Air");
-
-        Nmodule = 4;
-        if(version_ == v_HGCALEE_v624){
-             Nmodule = 3;
-             scaleFactor = 1.2578/8;
-             lThickL[5] = (2.0 + scaleFactor*3.50)*mm; 
-             lThickR[0]=  (0.6 + 0.5*scaleFactor*5.12)*mm;
-             lThickR[2]=  (0.6 + 0.5*scaleFactor*5.12)*mm;
-        }
-        else if(version_ == v_HGCALEE_v618){
-             Nmodule =2;
-             scaleFactor = 2.53/6;
-             lThickL[5] = (2.0 + scaleFactor*3.50)*mm; 
-             lThickR[0]=  (0.6 + 0.5*scaleFactor*5.12)*mm;
-             lThickR[2]=  (0.6 + 0.5*scaleFactor*5.12)*mm;
-        }
 
 	m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
 	m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
@@ -120,7 +116,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 	lEleL.clear();
 	lThickL.push_back(0.5*mm);lEleL.push_back("Cu");
 	lThickL.push_back(0.5*mm);lEleL.push_back("CFMix");
-	lThickL.push_back(2.0*mm);lEleL.push_back("W");
+	lThickL.push_back(wThick);lEleL.push_back("W");
 	lThickL.push_back(0.5*mm);lEleL.push_back("CFMix");
 	lThickL.push_back(0.5*mm);lEleL.push_back("Cu");
 	lThickL.push_back(airThick);lEleL.push_back("Air");
@@ -137,19 +133,17 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 	lThickL[2] = 2.8*mm;
 	lThickR[0] = 1.2*mm;
 	lThickR[2] = 1.2*mm;
-        if(version_ == v_HGCALEE_v624){
+        if(version_ == v_HGCALEE_v624 || version_ == v_HGCAL_v624){
             Nmodule=4;
-            scaleFactor = 1.7213/8; 
-            lThickL[2] = (2.8 + scaleFactor*3.50)*mm;
-            lThickR[0] = (1.2 + 0.5*scaleFactor*5.12)*mm;
-            lThickR[2] = (1.2 + 0.5*scaleFactor*5.12)*mm;
+            lThickL[2] = 3.6*mm;
+            lThickR[0] = 1.75*mm;
+            lThickR[2] = 1.75*mm;
         }
-        else if(version_ == v_HGCALEE_v618){
+        else if(version_ == v_HGCALEE_v618 || version_ == v_HGCAL_v618){
             Nmodule=3;
-            scaleFactor = 3.45/6;
-            lThickL[2] = (2.9 + scaleFactor*3.50)*mm;
-            lThickR[0] = (1.2 + 0.5*scaleFactor*5.12)*mm;
-            lThickR[2] = (1.2 + 0.5*scaleFactor*5.12)*mm;
+            lThickL[2] = 4.9*mm;
+            lThickR[0] = 2.7*mm;
+            lThickR[2] = 2.7*mm;
         }
 	for(unsigned i=0; i<Nmodule; i++) {
 	  m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
@@ -160,22 +154,32 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 	lThickL[2] = 4.2*mm;
 	lThickR[0] = 2.2*mm;
 	lThickR[2] = 2.2*mm;
-        if(version_ == v_HGCALEE_v618){
+        if(version_ == v_HGCALEE_v618 || version_ == v_HGCAL_v618){
             Nmodule=3;
-            scaleFactor = 2.5117/6;
-            lThickL[2] = (4.3 + scaleFactor*3.50)*mm;
-            lThickR[0] = (2.2 + 0.5*scaleFactor*5.12)*mm;
-            lThickR[2] = (2.2 + 0.5*scaleFactor*5.12)*mm;
+            lThickL[2] = 5.8*mm;
+            lThickR[0] = 3.3*mm;
+            lThickR[2] = 3.3*mm;
         }
 	for(unsigned i=0; i<Nmodule; i++) {
 	  m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
-	  if (i==3) {lThickR.push_back(0.5*mm);lEleR.push_back("Cu");}
+	  //next line moved to HCAL to get proper sampling...
+	  //if (i==3) {lThickR.push_back(0.5*mm);lEleR.push_back("Cu");}
 	  m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
 	}
 	
 	if(version_==v_HGCAL_v6){
 	  //add HCAL
 	  buildHGCALFHE(6);
+	  buildHGCALBHE(6);
+	}
+	else if(version_==v_HGCAL_v624){
+	  //add HCAL
+	  buildHGCALFHE(624);
+	  buildHGCALBHE(6);
+	}
+	else if(version_==v_HGCAL_v618){
+	  //add HCAL
+	  buildHGCALFHE(618);
 	  buildHGCALBHE(6);
 	}
 
@@ -368,7 +372,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 	}
 	break;
       }
-    case v_HGCALHE: case v_HGCALHE_CMSSWv4: case v_HGCALHE_v5: case v_HGCALHE_v6:
+    case v_HGCALHE: case v_HGCALHE_CMSSWv4: case v_HGCALHE_v5: case v_HGCALHE_v6: case v_HGCALHE_v624: case v_HGCALHE_v618:
       {
 	//add HCAL
 	if (version_== v_HGCALHE_CMSSWv4) {
@@ -381,6 +385,14 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 	}
 	else if (version_== v_HGCALHE_v6) {
 	  buildHGCALFHE(6);
+	  buildHGCALBHE(6);
+	}
+	else if (version_== v_HGCALHE_v624) {
+	  buildHGCALFHE(624);
+	  buildHGCALBHE(6);
+	}
+	else if (version_== v_HGCALHE_v618) {
+	  buildHGCALFHE(618);
 	  buildHGCALBHE(6);
 	}
 	else {
@@ -449,12 +461,14 @@ void DetectorConstruction::buildHGCALFHE(const unsigned aVersion){
   if(version_==v_HGCAL_v5_gap4) airThick = 4*mm;
   std::vector<G4double> lThick;
   std::vector<std::string> lEle;
-  if(aVersion==6) {
+  if(aVersion==6 || aVersion==624 || aVersion==618) {
     airThick = 3*mm;
     G4double pcbthick = 2*mm;
-    //putting all absorber in front of each Si layer to have correct reweighting 
+    G4double brassthick = aVersion==618? 62*mm : 45*mm;
+    //putting all absorber in front of each Si layer to have correct reweighting
+    lThick.push_back(0.5*mm); lEle.push_back("Cu");
     lThick.push_back(15.*mm);lEle.push_back("SSteel");
-    lThick.push_back(45.*mm);lEle.push_back("Brass");
+    lThick.push_back(brassthick);lEle.push_back("Brass");
     lThick.push_back(0.5*mm); lEle.push_back("Cu");
     lThick.push_back(airThick);lEle.push_back("Air");
     lThick.push_back(pcbthick);lEle.push_back("PCB");
@@ -467,16 +481,23 @@ void DetectorConstruction::buildHGCALFHE(const unsigned aVersion){
     lEle.clear();
     lThick.push_back(1.);lEle.push_back("CFMix");
     lThick.push_back(6.); lEle.push_back("Cu");
-    lThick.push_back(45.*mm);lEle.push_back("Brass");
+    lThick.push_back(brassthick);lEle.push_back("Brass");
     lThick.push_back(0.5*mm); lEle.push_back("Cu");
     lThick.push_back(airThick);lEle.push_back("Air");
     lThick.push_back(pcbthick);lEle.push_back("PCB");
     lThick.push_back(0.1*mm);lEle.push_back("Si");
     lThick.push_back(0.1*mm);lEle.push_back("Si");
     lThick.push_back(0.1*mm);lEle.push_back("Si");
-    for(unsigned i=0; i<11; i++) {
+    for(unsigned i=0; i<5; i++) {
       m_caloStruct.push_back( SamplingSection(lThick,lEle) );
     }
+    unsigned nLay = aVersion==618? 3 : aVersion==624 ? 5 : 6;
+    lThick[2] = aVersion==624 ? 55*mm : brassthick;
+    for(unsigned i=0; i<nLay; i++) {
+      m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+    }
+
+
   }
   else {
     G4double pcbthick = (aVersion==4)? 2*mm : 1.2*mm;

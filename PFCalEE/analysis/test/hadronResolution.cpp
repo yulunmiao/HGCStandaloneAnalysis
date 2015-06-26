@@ -48,7 +48,14 @@ void getValueFromString(std::vector<int>& outputNumber, std::string& sourceStrin
      for(unsigned i(0); i < outputString.size(); i++) outputNumber.push_back(atoi(outputString[i].c_str()));
 };
 
-void getTotalEnergy(TTree* & tree, double & sumEE, double & sumFH, double & sumBH, std::ostringstream& inputsim, std::ostringstream& inputrec, const unsigned nRunsEM=0){
+void getValueFromString(std::vector<unsigned>& outputNumber, std::string& sourceString){
+     std::vector<std::string> outputString;
+     boost::split( outputString, sourceString, boost::is_any_of(","));
+     for(unsigned i(0); i < outputString.size(); i++) outputNumber.push_back(atoi(outputString[i].c_str()));
+};
+
+void getTotalEnergy(const std::vector<unsigned> & dropLay,
+		    TTree* & tree, double & sumEE, double & sumFH, double & sumBH, std::ostringstream& inputsim, std::ostringstream& inputrec, const unsigned nRunsEM=0){
 
     TFile * simFile = 0;
     TFile * recFile = 0;
@@ -112,11 +119,27 @@ void getTotalEnergy(TTree* & tree, double & sumEE, double & sumFH, double & sumB
       lSimTree->GetEntry(ievt);
 
       if (firstEvent){
+	double absweight = 0;
 	for (unsigned iL(0); iL<(*ssvec).size();++iL){
 	  //double absweight = (*ssvec)[layer].volX0trans()/(*ssvec)[0].volX0trans();
-	  double absweight = hasDeDxIn?(*ssvec)[iL].voldEdx()/(*ssvec)[1].voldEdx() : absWeight(iL,true);
+	  bool skipLayer = false;
+	  for (unsigned r(0); r<dropLay.size(); r++){
+	    if (iL==dropLay[r]) {
+	      skipLayer = true;
+	      absweight+=hasDeDxIn?(*ssvec)[iL].voldEdx()/(*ssvec)[1].voldEdx() : absWeight(iL,true);
+	      break;
+	    }
+	  }
+	  if (skipLayer) {
+	    absW.push_back(0);
+	    continue;
+	  }
+	  absweight+=hasDeDxIn?(*ssvec)[iL].voldEdx()/(*ssvec)[1].voldEdx() : absWeight(iL,true);
 	  absW.push_back(absweight);
+	  absweight = 0;
 	}
+
+	std::cout << " -- AbsWeight size: " << absW.size() << std::endl;
       }
 
       //get truth info
@@ -194,7 +217,8 @@ void getTotalEnergy(TTree* & tree, double & sumEE, double & sumFH, double & sumB
     }//loop on events
 }
 
-void setCalibFactor(const std::vector<int> & genEn,
+void setCalibFactor(const std::vector<unsigned> & dropLay,
+		    const std::vector<int> & genEn,
 		    const unsigned nRunsEM,
 		    double & calibSlopeEE, double & calibOffsetEE,
 		    double & calibSlopeFH, double & calibOffsetFH,
@@ -250,7 +274,7 @@ void setCalibFactor(const std::vector<int> & genEn,
       var << "E_BH";
       treeEE[iP]->Branch(var.str().c_str(),&sumBH);
 
-      getTotalEnergy(treeEE[iP], sumEE, sumFH, sumBH, inputsim, inputrec,nRunsEM);
+      getTotalEnergy(dropLay,treeEE[iP], sumEE, sumFH, sumBH, inputsim, inputrec,nRunsEM);
       //for(unsigned iE(0); iE < Etotal[0].size(); iE++)p_Energy1->Fill(Etotal[0][iE]);
       outputFileEM->cd();
       treeEE[iP]->Write();
@@ -308,7 +332,7 @@ void setCalibFactor(const std::vector<int> & genEn,
       var.str("");
       var << "E_BH";
       treeFH[iP]->Branch(var.str().c_str(),&sumBH);
-      getTotalEnergy(treeFH[iP], sumEE, sumFH, sumBH, inputsim, inputrec,nRunsEM);
+      getTotalEnergy(dropLay,treeFH[iP], sumEE, sumFH, sumBH, inputsim, inputrec,nRunsEM);
       //for(unsigned iE(0); iE < Etotal[1].size(); iE++)p_Energy2->Fill(Etotal[1][iE]);
       outputFileEM->cd();
       treeFH[iP]->Write();
@@ -364,7 +388,7 @@ void setCalibFactor(const std::vector<int> & genEn,
       var.str("");
       var << "E_BH";
       treeBH[iP]->Branch(var.str().c_str(),&sumBH);
-      getTotalEnergy(treeBH[iP], sumEE, sumFH, sumBH, inputsim, inputrec,nRunsEM);
+      getTotalEnergy(dropLay,treeBH[iP], sumEE, sumFH, sumBH, inputsim, inputrec,nRunsEM);
       outputFileEM->cd();
       treeBH[iP]->Write();
      //for(unsigned iE(0); iE < Etotal[1].size(); iE++)p_Energy3->Fill(Etotal[2][iE]);
@@ -561,11 +585,15 @@ int main(int argc, char** argv){//main
   double FHtoEoffset = 4;
   double BHtoEslope = 8.62;
   double BHtoEoffset = 3.7;
-  double ECALslope = 85.84;
-  double ECALoffset = 4;
+  double ECALslope = 92.83;
+  double ECALoffset = 13;
 
   double FHtoBHslope = 1.49;
-  double EEtoHslope = 4.86; 
+  double EEtoHslope = 5.28;
+  double EEtoHslopePar0 = 30.;
+  double EEtoHslopePar1 = 5.31;
+
+
   //double HcalPionOffset = 0.; 
   //double HcalPionCalib = 0.92;
 ////////////////////////////////////
@@ -626,7 +654,7 @@ int main(int argc, char** argv){//main
     TGraphErrors * slopesummaryBH = new TGraphErrors();
 
 
-      setCalibFactor(genEn,nRunsEM,
+    setCalibFactor(dropLay,genEn,nRunsEM,
 		     ECALslope,ECALoffset,
 		     FHtoEslope,FHtoEoffset,
 		     BHtoEslope,BHtoEoffset,
@@ -813,7 +841,7 @@ int main(int argc, char** argv){//main
      std::cout << " -- N layers = " << nLayers << std::endl
       	       << " -- N sections = " << nSections << std::endl;
      
-     HadEnergy myhadReso(myDetector, lSimTree, lRecTree, outputFile, pNevts);
+     HadEnergy myhadReso(dropLay,myDetector, lSimTree, lRecTree, outputFile, pNevts);
      myhadReso.addLimMIP(3);
      myhadReso.addLimMIP(5);
      myhadReso.addLimMIP(10);
@@ -830,6 +858,7 @@ int main(int argc, char** argv){//main
      myhadReso.setEEcalib(ECALslope, ECALoffset);
      myhadReso.setFHtoBH(FHtoBHslope);
      myhadReso.setEEtoH(EEtoHslope);
+     myhadReso.setEEtoHPar(EEtoHslopePar0,EEtoHslopePar1);
  
      myhadReso.fillEnergies(); 
 

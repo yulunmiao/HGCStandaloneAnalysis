@@ -579,22 +579,22 @@ int plotEGReso(){//main
   bool dovsE = true;
   bool processNoFitFiles = false;
 
-  const unsigned nIC = 10;
-  const unsigned ICval[nIC] = {0,1,2,3,4,5,10,15,20,50};
+  const unsigned nIC = 1;
+  const unsigned ICval[nIC] = {3};//0,1,2,3,4,5,10,15,20,50};
 
   const unsigned nPu = 2;//4;
   unsigned pu[nPu] = {0,0};//,140,200};
 
   const unsigned nS = 1;
   std::string scenario[nS] = {
-    "gamma/200um/"
+    "gamma/"
   };
 
   std::string foutname = "PLOTS/PuSubtraction.root";
   TFile *fout = TFile::Open(foutname.c_str(),"RECREATE");
 
   const unsigned neta = 1;
-  unsigned eta[neta]={21};
+  unsigned eta[neta]={16};
   //const unsigned neta = 7;
   //unsigned eta[neta]={17,19,21,23,25,27,29};
 
@@ -607,9 +607,9 @@ int plotEGReso(){//main
 
   
   const unsigned nV = 1;
-  TString version[nV] = {"12"};//,"0"};
+  TString version[nV] = {"30"};//,"0"};
   
-  const unsigned nLayers = 30;
+  const unsigned nLayers = 28;
 
   const unsigned nSR = 8;
   double fitQual[nSR];
@@ -637,7 +637,8 @@ int plotEGReso(){//main
   
   std::ostringstream saveName;
 
-  unsigned genEnAll[]={3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200};
+  //unsigned genEnAll[]={3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200};
+  unsigned genEnAll[]={3,5,10,30,50,70,100,200};
   //unsigned genEnAll[]={7,10,20,30,40};
   const unsigned nGenEnAll=sizeof(genEnAll)/sizeof(unsigned);
 
@@ -694,7 +695,7 @@ int plotEGReso(){//main
     for (unsigned iV(0); iV<nV;++iV){//loop on versions
       for (unsigned iS(0); iS<nS;++iS){//loop on scenarios
 	
-	TString plotDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/PLOTS/gitV00-02-12/version"+version[iV]+"/"+scenario[iS]+"/";
+	TString plotDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalDescop/gitV03-02-02/version"+version[iV]+"/"+scenario[iS]+"/";
 	TTree *ltree[neta][nPu][nGenEnAll];
 	TGraphErrors *resoRecoFit[nPu][neta][nSR];
 	

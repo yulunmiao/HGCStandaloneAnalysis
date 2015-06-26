@@ -31,10 +31,11 @@ parser.add_option('-S', '--no-submit'   ,    action="store_true",  dest='nosubmi
 (opt, args) = parser.parse_args()
 
 redofit=1
-label='v5_30'
-#label='v5_28'
-#label='v5_24'
-#label='v5_18'
+#label='v5_30_'
+label=''
+#label='v5_28_'
+#label='v5_24_'
+#label='v5_18_'
 
 workdir='/afs/cern.ch/work/a/amagnan/PFCalEEAna/'
 
@@ -91,7 +92,7 @@ for nPuVtx in nPuVtxset :
                 scriptFile.write('#!/bin/bash\n')
                 scriptFile.write('source %s/../g4env.sh\n'%(os.getcwd()))
             #scriptFile.write('cd %s\n'%(outDir))
-                outTag='%s_version%d_model%d_%s'%(label,opt.version,opt.model,bval)
+                outTag='%sversion%d_model%d_%s'%(label,opt.version,opt.model,bval)
                 if et>0 : outTag='%s_et%d'%(outTag,et)
                 if alpha>0 : outTag='%s_eta%3.3f'%(outTag,alpha) 
                 if opt.phi!=0.5 : outTag='%s_phi%3.3fpi'%(outTag,opt.phi) 
@@ -103,14 +104,15 @@ for nPuVtx in nPuVtxset :
                 scriptFile.write('cp %s/%s/*.dat %s/.\n'%(workdir,outDir,outDir))
                 if (nPuVtx==0) :
                     if (opt.nRuns==0) :
-                        scriptFile.write('%s/bin/egammaResolution -c scripts/DefaultConfig.cfg -n %s -i root://eoscms//eos/cms%s/ --digifilePath=root://eoscms//eos/cms%s/ -s HGcal_%s.root -r DigiIC%d_%s.root -o %s.root --redoStep=%s | tee %s\n'%(os.getcwd(),opt.nevts,eosDirIn,eosDir,outTag,interCalib,outTag,outDir,redofit,outlog))
+                        scriptFile.write('%s/bin/egammaResoWithTruth -c scripts/DefaultConfig.cfg -n %s -i root://eoscms//eos/cms%s/ --digifilePath=root://eoscms//eos/cms%s/ -s HGcal_%s.root -r Digi_%s.root -o %s.root --redoStep=%s | tee %s\n'%(os.getcwd(),opt.nevts,eosDirIn,eosDir,outTag,outTag,outDir,redofit,outlog))
+                        #scriptFile.write('%s/bin/egammaResoWithTruth -c scripts/DefaultConfig.cfg -n %s -i root://eoscms//eos/cms%s/ --digifilePath=root://eoscms//eos/cms%s/ -s HGcal_%s.root -r DigiIC%d_%s.root -o %s.root --redoStep=%s | tee %s\n'%(os.getcwd(),opt.nevts,eosDirIn,eosDir,outTag,interCalib,outTag,outDir,redofit,outlog))
                     else:
-                        scriptFile.write('%s/bin/egammaResolution -c scripts/DefaultConfig.cfg -n %s --nRuns=%s -i root://eoscms//eos/cms%s/ --digifilePath=root://eoscms//eos/cms%s/ -s HGcal_%s -r DigiIC%d_%s -o %s.root --redoStep=%s | tee %s\n'%(os.getcwd(),opt.nevts,opt.nRuns,eosDirIn,eosDir,outTag,interCalib,outTag,outDir,redofit,outlog))
+                        scriptFile.write('%s/bin/egammaResoWithTruth -c scripts/DefaultConfig.cfg -n %s --nRuns=%s -i root://eoscms//eos/cms%s/ --digifilePath=root://eoscms//eos/cms%s/ -s HGcal_%s -r DigiIC%d_%s -o %s.root --redoStep=%s | tee %s\n'%(os.getcwd(),opt.nevts,opt.nRuns,eosDirIn,eosDir,outTag,interCalib,outTag,outDir,redofit,outlog))
                 else:
                     if (opt.nRuns==0) :
-                        scriptFile.write('%s/bin/egammaResolution -c scripts/DefaultConfig.cfg -n %s -i root://eoscms//eos/cms%s/ --digifilePath=root://eoscms//eos/cms%s/ -s HGcal_%s.root -r PuMix%s_%s.root -o %s.root --redoStep=%s | tee %s\n'%(os.getcwd(),opt.nevts,eosDirIn,eosDir,outTag,nPuVtx,outTag,outDir,redofit,outlog)) 
+                        scriptFile.write('%s/bin/egammaResoWithTruth -c scripts/DefaultConfig.cfg -n %s -i root://eoscms//eos/cms%s/ --digifilePath=root://eoscms//eos/cms%s/ -s HGcal_%s.root -r PuMix%s_%s.root -o %s.root --redoStep=%s | tee %s\n'%(os.getcwd(),opt.nevts,eosDirIn,eosDir,outTag,nPuVtx,outTag,outDir,redofit,outlog)) 
                     else:
-                        scriptFile.write('%s/bin/egammaResolution -c scripts/DefaultConfig.cfg -n %s --nRuns=%s -i root://eoscms//eos/cms%s/ --digifilePath=root://eoscms//eos/cms%s/ -s HGcal_%s -r PuMix%s_%s -o %s.root --redoStep=%s | tee %s\n'%(os.getcwd(),opt.nevts,opt.nRuns,eosDirIn,eosDir,outTag,nPuVtx,outTag,outDir,redofit,outlog)) 
+                        scriptFile.write('%s/bin/egammaResoWithTruth -c scripts/DefaultConfig.cfg -n %s --nRuns=%s -i root://eoscms//eos/cms%s/ --digifilePath=root://eoscms//eos/cms%s/ -s HGcal_%s -r PuMix%s_%s -o %s.root --redoStep=%s | tee %s\n'%(os.getcwd(),opt.nevts,opt.nRuns,eosDirIn,eosDir,outTag,nPuVtx,outTag,outDir,redofit,outlog)) 
                         
                 scriptFile.write('echo "--Local directory is " $localdir >> %s\n'%(g4log))
                 scriptFile.write('ls * >> %s\n'%(g4log))

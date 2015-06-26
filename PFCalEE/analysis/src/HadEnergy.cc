@@ -5,8 +5,9 @@
 #include "HGCSSRecoHit.hh"
 #include "HGCSSGenParticle.hh"
 
-HadEnergy::HadEnergy(HGCSSDetector & myDetector, TChain* lSimTree, TChain* lRecTree, TFile *outputFile, const unsigned pNevts): myDetector_(myDetector),lSimTree_(lSimTree),lRecTree_(lRecTree), pNevts_(pNevts)
+HadEnergy::HadEnergy(const std::vector<unsigned> & dropLay, HGCSSDetector & myDetector, TChain* lSimTree, TChain* lRecTree, TFile *outputFile, const unsigned pNevts): myDetector_(myDetector),lSimTree_(lSimTree),lRecTree_(lRecTree), pNevts_(pNevts)
 { 
+  dropLay_ = dropLay;
   nLayers_ = myDetector_.nLayers();
   nSections_ = myDetector_.nSections();
 
@@ -19,7 +20,9 @@ HadEnergy::HadEnergy(HGCSSDetector & myDetector, TChain* lSimTree, TChain* lRecT
 
   FHtoBHslope_ = 1.;
   EEtoHslope_ = 1.;
-  
+  EEtoHslopePar0_ = 0.;
+  EEtoHslopePar1_ = EEtoHslope_;
+
   outputFile_ = outputFile;
   debug_ = false;
 
@@ -100,6 +103,8 @@ bool HadEnergy::fillEnergies(){
   std::cout << "- Processing = " << nEvts  << " events out of " << lRecTree_->GetEntries() << std::endl;
   
   spectrumCollection.resize(nEvts,0);
+  std::vector<double> absW;
+  bool firstEvent = true;
   for (unsigned ievt(0); ievt<nEvts; ++ievt){// loop on entries
     if (debug_) std::cout << "... Processing entry: " << ievt << std::endl;
     else if (ievt%50 == 0) std::cout << "... Processing entry: " << ievt << std::endl;
@@ -132,7 +137,30 @@ bool HadEnergy::fillEnergies(){
       continue;
     }
 
+    if (firstEvent){
+      double absweight = 0;
+      for (unsigned iL(0); iL<(*ssvec).size();++iL){
+	//double absweight = (*ssvec)[layer].volX0trans()/(*ssvec)[0].volX0trans();
+	std::cout << "Lay " << iL << " w=" << (*ssvec)[iL].voldEdx()/(*ssvec)[1].voldEdx() << std::endl;
+	bool skipLayer = false;
+	for (unsigned r(0); r<dropLay_.size(); r++){
+	  if (iL==dropLay_[r]) {
+	    skipLayer = true;
+	    absweight+=(*ssvec)[iL].voldEdx()/(*ssvec)[1].voldEdx();
+	    break;
+	  }
+	}
+	if (skipLayer) {
+	  absW.push_back(0);
+	  continue;
+	}
+	absweight+=(*ssvec)[iL].voldEdx()/(*ssvec)[1].voldEdx();
+	absW.push_back(absweight);
+	absweight = 0;
+      }
 
+      std::cout << " -- AbsWeight size: " << absW.size() << std::endl;
+    }
 
     lRecTree_->GetEntry(ievt);
    
@@ -148,6 +176,7 @@ bool HadEnergy::fillEnergies(){
     for(unsigned iS(0); iS < nSec; iS++){
       recSum[iS] = 0;
     }
+
 
     for (unsigned iH(0); iH<(*rechitvec).size(); ++iH){//loop over rechits
       const HGCSSRecoHit lHit = (*rechitvec)[iH];
@@ -167,18 +196,18 @@ bool HadEnergy::fillEnergies(){
 	}
 	
 	//double absweight = (*ssvec)[layer].volX0trans()/(*ssvec)[0].volX0trans();
-	double absweight = (*ssvec)[layer].voldEdx()/(*ssvec)[1].voldEdx();
+	//double absweight = (*ssvec)[layer].voldEdx()/(*ssvec)[1].voldEdx();
 	unsigned sec =  myDetector_.getSection(layer); 
 	
 	double energy = lHit.energy();
 	
-	p_spectrumByLayer->Fill(layer,energy);
+	if (absW[layer]!= 0) p_spectrumByLayer->Fill(layer,energy);
 	
 	energy_[layer] += energy;//*absweight; 
-	recSum[sec] += energy*absweight;
+	recSum[sec] += energy*absW[layer];
 	
 	DetectorEnum type = myDetector_.detType(sec);
-	if(type == DetectorEnum::FHCAL){
+	if(type == DetectorEnum::FHCAL && absW[layer]!= 0){
 	  spectrumCollection[ievt]->Fill(energy);
 	  EmipMeanFH_ += energy;
 	  nhitsFH_ += 1;
@@ -215,10 +244,11 @@ bool HadEnergy::fillEnergies(){
 
     for(unsigned iLim(0); iLim < LimMIP_.size(); iLim++){
       Cglobal_[iLim] = calcGlobalC(LimMIP_[iLim], EmipMeanFH_, spectrumCollection[ievt]);
-      correctedtotalE_[iLim] = wgttotalE_*Cglobal_[iLim];
+      correctedtotalE_[iLim] = (EE_-ECALoffset_)/ECALslope_ + ((EFHCAL_-FHtoEoffset_)/FHtoEslope_*Cglobal_[iLim] + (EBHCAL_-BHtoEoffset_)/(BHtoEslope_*FHtoBHslope_))/(EEtoHslopePar0_/wgttotalE_+EEtoHslopePar1_);//wgttotalE_*Cglobal_[iLim];
     }
 
     outtree_->Fill();
+    firstEvent = false;
   }//loop on events
   p_Etotal->Fit("gaus");
   TF1 *fit = (TF1*)p_Etotal->GetFunction("gaus");
