@@ -37,7 +37,8 @@ if opt.dogun :
 
 #if opt.dogun : enlist=[2,5,10,20,40,60,80,100,150,200]#,300,400,500]
 
-label='v5_30'
+label=''
+#label='v5_30'
 #label='v5_28'
 #label='v5_24'
 #label='v5_18'
@@ -82,18 +83,50 @@ elif opt.version==23:
     granularity='0-53:12'
     noise='0-53:0.14'
     threshold='0-53:2'
-elif (opt.version>24 and opt.version<27):
+elif (opt.version==25 or opt.version==26):
     granularity='0-29:4,30-41:4,42-53:8'
     noise='0-41:0.14,42-53:0.2'
     threshold='0-53:5'
-elif (opt.version==27):
+elif (opt.version==30):
+    granularity='0-27:4'
+    noise='0-27:0.14'
+    threshold='0-27:5'
+elif (opt.version==33):
+    granularity='0-27:4,28-39:4,40-51:8'
+    noise='0-39:0.14,40-51:0.2'
+    threshold='0-51:5'
+elif (opt.version==27 or opt.version==31):
     granularity='0-11:4,12-23:8'
     noise='0-11:0.14,12-23:0.2'
     threshold='0-23:5'
-elif (opt.version==28):
+elif (opt.version==28 or opt.version==32):
     granularity='0-11:8'
     noise='0-11:0.2'
     threshold='0-11:5'
+elif (opt.version==34):
+    granularity='0-23:4'
+    noise='0-23:0.14'
+    threshold='0-23:5'
+elif (opt.version==36):
+    granularity='0-23:4,24-34:4,35-46:8'
+    noise='0-34:0.14,35-46:0.2'
+    threshold='0-46:5'
+elif (opt.version==38):
+    granularity='0-10:4,11-22:8'
+    noise='0-10:0.14,11-22:0.2'
+    threshold='0-22:5'
+elif (opt.version==35):
+    granularity='0-17:4'
+    noise='0-17:0.14'
+    threshold='0-17:5'
+elif (opt.version==37):
+    granularity='0-17:4,18-26:4,27-38:8'
+    noise='0-26:0.14,27-38:0.2'
+    threshold='0-38:5'
+elif (opt.version==39):
+    granularity='0-8:4,9-20:8'
+    noise='0-8:0.14,9-20:0.2'
+    threshold='0-20:5'
 else:
     granularity='0-51:4'
     noise='0-51:0.15'

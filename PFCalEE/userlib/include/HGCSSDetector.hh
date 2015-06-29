@@ -91,6 +91,18 @@ public:
       indices_[5] = 24;
       indices_[6] = 24;
     }
+    else if (versionNumber==38) {
+      indices_[3] = 0;
+      indices_[4] = 11;
+      indices_[5] = 23;
+      indices_[6] = 23;
+    }
+    else if (versionNumber==39) {
+      indices_[3] = 0;
+      indices_[4] = 9;
+      indices_[5] = 21;
+      indices_[6] = 21;
+    }
     else if (versionNumber < 20){
       indices_[0] = 0;
       indices_[1] = versionNumber==8?11:10;
@@ -135,6 +147,24 @@ public:
       indices_[4] = indices_[3];
       indices_[5] = indices_[3];
       indices_[6] = indices_[3];
+    }
+    else if (versionNumber == 36){
+      indices_[0] = 0;
+      indices_[1] = 8;
+      indices_[2] = 16;
+      indices_[3] = 24;
+      indices_[4] = 35;
+      indices_[5] = 47;
+      indices_[6] = 47;
+    }
+    else if (versionNumber == 37){
+      indices_[0] = 0;
+      indices_[1] = 6;
+      indices_[2] = 12;
+      indices_[3] = 18;
+      indices_[4] = 27;
+      indices_[5] = 39;
+      indices_[6] = 39;
     }
     else {
       indices_[0] = 0;
