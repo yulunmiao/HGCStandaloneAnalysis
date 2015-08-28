@@ -41,9 +41,6 @@ if opt.dogun :
 #vbfHgg seeds
 #for seed in 1420833683 1420833689 1420833693 1420833695 1420833696 1420833717
 
-#nvtxlist=[0,140]
-#INPATHPU="root://eoscms//eos/cms/store/user/msun/V25/MinBias/"
-
 ##30
 wthick='1.75,1.75,1.75,1.75,1.75,2.8,2.8,2.8,2.8,2.8,4.2,4.2,4.2,4.2,4.2'
 pbthick='1,1,1,1,1,2.1,2.1,2.1,2.1,2.1,4.4,4.4,4.4,4.4'
@@ -67,35 +64,6 @@ label=''
 #label='v5_18'
 
 
-granularity='0-20:4,21-63:6'
-noise='0-63:0.12'
-threshold='0-63:2'
-
-if (opt.version==8) :
-    granularity='0-20:4,21-30:6'
-    noise='0-30:0.14'
-    threshold='0-30:2'
-elif opt.version<20 :
-    granularity='0-19:4,20-29:4'
-    noise='0-29:0.14'
-    threshold='0-29:2'
-elif (opt.version==21 or opt.version==24):
-    granularity='0-23:6,24-33:8'
-    noise='0-33:0.14'
-    threshold='0-33:2'
-elif opt.version==22:
-    granularity='0-9:8'
-    noise='0-9:0.14'
-    threshold='0-9:2'
-elif opt.version==23:
-    granularity='0-53:12'
-    noise='0-53:0.12'
-    threshold='0-53:2'
-elif opt.version>24:
-    granularity='0-29:4,30-53:4,54-65:8'
-    noise='0-53:0.14,54-65:0.2'
-    threshold='0-53:2,54-65:4'
-
 for et in enlist :
 
     nevents=opt.nevts
@@ -114,8 +82,6 @@ for et in enlist :
     if opt.eta>0 : outDir='%s/eta_%3.3f/'%(outDir,opt.eta)
     if (opt.run>=0) : outDir='%s/run_%d/'%(outDir,opt.run)
 
-    outlog='%s/digitizer.log'%(outDir)
-
     os.system('mkdir -p %s'%outDir)
 
     #wrapper
@@ -131,7 +97,6 @@ for et in enlist :
     if (opt.run>=0) : outTag='%s_run%d'%(outTag,opt.run)
     scriptFile.write('mv PFcal.root HGcal_%s.root\n'%(outTag))
     scriptFile.write('localdir=`pwd`\n')
-    #scriptFile.write('%s/userlib/bin/digitizer 0 $localdir/HGcal_%s.root $localdir/ %s %s %s 0 | tee %s\n'%(os.getcwd(),outTag,granularity,noise,threshold,outlog))
     scriptFile.write('echo "--Local directory is " $localdir >> g4.log\n')
     scriptFile.write('ls * >> g4.log\n')
     if len(opt.eos)>0:
@@ -152,45 +117,6 @@ for et in enlist :
         scriptFile.write('rm HGcal_%s.root\n'%(outTag))
         scriptFile.write('fi\n')
         scriptFile.write('fi\n')
-        #scriptFile.write('cmsStage -f DigiPFcal.root %s/Digi_%s.root\n'%(eosDir,outTag))
-        #scriptFile.write('if (( "$?" != "0" )); then\n')
-        #scriptFile.write('echo " --- Problem with copy of file DigiPFcal.root to EOS. Keeping locally." >> g4.log\n')
-        #scriptFile.write('else\n')
-        #scriptFile.write('eossize=`$myeos ls -l %s/Digi_%s.root | awk \'{print $5}\'`\n'%(eosDir,outTag))
-        #scriptFile.write('localsize=`ls -l DigiPFcal.root | awk \'{print $5}\'`\n')
-        #scriptFile.write('if (( "$eossize" != "$localsize" )); then\n')
-        #scriptFile.write('echo " --- Copy of digi file to eos failed. Localsize = $localsize, eossize = $eossize. Keeping locally..." >> g4.log\n')
-        #scriptFile.write('else\n')
-        #scriptFile.write('echo " --- Size check done: Localsize = $localsize, eossize = $eossize" >> g4.log\n')
-        #scriptFile.write('echo " --- File DigiPFcal.root successfully copied to EOS: %s/Digi_%s.root" >> g4.log\n'%(eosDir,outTag))
-        #scriptFile.write('rm DigiPFcal.root\n')
-        #scriptFile.write('fi\n')
-        #scriptFile.write('fi\n')
-    #else:
-        #scriptFile.write('mv DigiPFcal.root Digi_%s.root\n'%(nvtx,outTag))
-
-    #for nvtx in nvtxlist:
-        #scriptFile.write('%s/userlib/bin/digitizer 0 $localdir/HGcal_%s.root $localdir/ %s %s %s %d %s | tee %s\n'%(os.getcwd(),outTag,granularity,noise,threshold,nvtx,INPATHPU,outlog))
-        #if len(opt.eos)>0:
-            #scriptFile.write('cmsStage -f DigiPFcal.root %s/DigiPu%d_%s.root\n'%(eosDir,nvtx,outTag))
-            #scriptFile.write('if (( "$?" != "0" )); then\n')
-            #scriptFile.write('echo " --- Problem with copy of file DigiPFcal.root to EOS." >> g4.log\n')
-            #scriptFile.write('else\n')
-            #scriptFile.write('eossize=`$myeos ls -l %s/DigiPu%d_%s.root | awk \'{print $5}\'`\n'%(eosDir,nvtx,outTag))
-            #scriptFile.write('localsize=`ls -l DigiPFcal.root | awk \'{print $5}\'`\n')
-            #scriptFile.write('if (( "$eossize" != "$localsize" )); then\n')
-            #scriptFile.write('echo " --- Copy of digi file to eos failed. Localsize = $localsize, eossize = $eossize...." >> g4.log\n')
-            #scriptFile.write('else\n')
-            #scriptFile.write('echo " --- Size check done: Localsize = $localsize, eossize = $eossize" >> g4.log\n')
-            #scriptFile.write('echo " --- File DigiPFcal.root successfully copied to EOS: %s/DigiPu%d_%s.root" >> g4.log\n'%(eosDir,nvtx,outTag))
-            #scriptFile.write('fi\n')
-            #scriptFile.write('fi\n')
-        #else:
-            #scriptFile.write('mv DigiPFcal.root DigiPu%d_%s.root\n'%(nvtx,outTag))
-
-    #if len(opt.eos)>0:
-        #scriptFile.write('rm DigiPFcal.root\n')
-        #scriptFile.write('rm HGcal_%s.root\n'%(outTag))
 
     scriptFile.write('echo "--deleting core files: too heavy!!"\n')
     scriptFile.write('rm core.*\n')
