@@ -139,6 +139,8 @@ for et in enlist :
         g4Macro.write('/gun/particle %s\n'%(opt.datatype))
         en=et*math.cosh(opt.eta)
         g4Macro.write('/gun/energy %f GeV\n'%(en))
+        #alpha = 2*atan(exp(-1*opt.eta));
+        #g4Macro.write('/gun/direction %f %f %f\n'%(math.cos(math.pi*opt.phi)*math.sin(alpha),math.sin(math.pi*opt.phi)*math.sin(alpha),math.cos(alpha)))
         #g4Macro.write('/gun/direction %f %f %f\n'%(math.cos(math.pi*opt.phi)*math.sin(opt.alpha),math.sin(math.pi*opt.phi)*math.sin(opt.alpha),math.cos(opt.alpha)))
         #g4Macro.write('/gun/direction %f %f %f\n'%(random.uniform(0,1000)/100.-5.,math.sin(opt.alpha),math.cos(opt.alpha)))
     else :

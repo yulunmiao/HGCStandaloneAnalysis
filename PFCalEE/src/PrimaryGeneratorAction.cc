@@ -114,7 +114,7 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
   if (model_ == 2) z0 = 0;
   G4double x0 = 0.*cm, y0 = 0.*cm;
   //smear within 1cm...
-  z0 = (G4RandGauss::shoot(0.,5.))*cm;
+  if (model_ == 2) z0 = (G4RandGauss::shoot(0.,5.))*cm;
   //x0 = (G4RandFlat::shoot(0.,10.)-5)*mm;
   //y0 = (G4RandFlat::shoot(0.,10.)-5)*mm;
 
@@ -124,8 +124,8 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 
   G4double theta0 = 2*atan(exp(-1*eta_));
   G4double phi0 = (G4RandFlat::shoot(0.,2*PI));
-  particleGun->SetParticleMomentumDirection(G4ThreeVector(cos(phi0)*sin(theta0), sin(phi0)*sin(theta0), cos(theta0)));
-
+  if (model_ == 2) particleGun->SetParticleMomentumDirection(G4ThreeVector(cos(phi0)*sin(theta0), sin(phi0)*sin(theta0), cos(theta0)));
+  
   if(currentGenerator){
     currentGenerator->GeneratePrimaryVertex(anEvent);
   }
