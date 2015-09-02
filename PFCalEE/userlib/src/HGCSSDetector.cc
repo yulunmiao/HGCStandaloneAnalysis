@@ -91,7 +91,7 @@ void HGCSSDetector::buildDetector(const unsigned versionNumber,
   BHCAL.name = "BHCAL";
   BHCAL.layerIdMin = indices_[4];
   BHCAL.layerIdMax = indices_[5];
-  BHCAL.mipWeight = 1./1.49;
+  BHCAL.mipWeight = 1./0.63;//was 1.49 for 9mm scint
   BHCAL.absWeight = 92.196/5.848;
   BHCAL.gevWeight = 1.0;
   BHCAL.gevOffset = 0.0;

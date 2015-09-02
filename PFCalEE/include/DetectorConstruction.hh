@@ -60,7 +60,7 @@ public:
     v_HGCAL_v618=37,
     v_HGCALHE_v624=38,
     v_HGCALHE_v618=39,
-    v_HGCALEE_TB=100,
+    v_HGCALEE_TB=100
   };
 
   enum DetectorModel {
@@ -102,7 +102,7 @@ public:
   std::map<std::string, G4Material *> m_materials;
   std::map<std::string, G4double > m_dEdx;
   std::map<std::string, G4Colour > m_colours;
-  
+
   /**
      @short set magnetic field
    */
@@ -163,8 +163,20 @@ private:
    */
   G4VPhysicalVolume* ConstructCalorimeter();     
 
-  G4CSGSolid *constructSolid (std::string baseName, G4double thick, G4double zpos);
- 
+  void buildSectorStack(const unsigned sectorNum,
+			const G4double & minL, 
+			const G4double & width);
+
+  void fillInterSectorSpace(const unsigned sectorNum,
+			    const G4double & minL, 
+			    const G4double & width);
+
+  G4double getCrackOffset(size_t layer);
+  G4double getAngOffset(size_t layer);
+
+  G4CSGSolid *constructSolid (std::string baseName, G4double thick, G4double zpos,const G4double & minL, const G4double & width);
+  
+
   std::vector<G4Material* > m_SensitiveMaterial;
   
   G4double           m_CalorSizeXY, m_CalorSizeZ;
@@ -172,7 +184,7 @@ private:
   G4double           m_minEta,m_maxEta;
   G4double           m_z0pos;
   G4double           m_WorldSizeXY, m_WorldSizeZ;
-
+  G4double m_nSectors,m_sectorWidth,m_interSectorWidth;
             
   G4CSGSolid*        m_solidWorld;    //pointer to the solid World 
   G4LogicalVolume*   m_logicWorld;    //pointer to the logical World

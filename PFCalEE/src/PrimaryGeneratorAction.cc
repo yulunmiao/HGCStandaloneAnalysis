@@ -115,9 +115,10 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
   G4double x0 = 0.*cm, y0 = 0.*cm;
   //smear within 1cm...
   if (model_ == 2) z0 = (G4RandGauss::shoot(0.,5.))*cm;
-  //x0 = (G4RandFlat::shoot(0.,10.)-5)*mm;
-  //y0 = (G4RandFlat::shoot(0.,10.)-5)*mm;
-
+  if (model_ == 4) {
+    x0 = (G4RandFlat::shoot(0.,310)-100)*mm;
+    //y0 = (G4RandFlat::shoot(0.,10.)-5)*mm;
+  }
 
   particleGun->SetParticlePosition(G4ThreeVector(x0,y0,z0));
   G4cout << " -- Gun position set to: " << x0 << "," << y0 << "," << z0 << G4endl;
