@@ -913,7 +913,10 @@ void DetectorConstruction::buildSectorStack(const unsigned sectorNum,
 	  m_caloStruct[i].ele_dEdx[ie] = m_dEdx[eleName];
 	  m_caloStruct[i].ele_L0[ie] = m_materials[eleName]->GetNuclearInterLength();
 	  if (sectorNum==0 || sectorNum==m_nSectors-1) {
-	    G4cout << "************ " << eleName << " sector " << sectorNum << " layer " << i << " dEdx=" << m_caloStruct[i].ele_dEdx[ie] << " X0=" << m_caloStruct[i].ele_X0[ie] << " L0=" << m_caloStruct[i].ele_L0[ie] << " w=" << m_caloStruct[i].ele_thick[ie] << "mm, d=" << m_materials[eleName]->GetDensity();
+	    G4cout << "************ " << eleName ;
+	    if (m_nSectors>1) G4cout << " sector " << sectorNum;
+	    G4cout << " layer " << i << " dEdx=" << m_caloStruct[i].ele_dEdx[ie] << " X0=" << m_caloStruct[i].ele_X0[ie] << " L0=" << m_caloStruct[i].ele_L0[ie] << " zpos=" << m_z0pos+zOverburden << "mm w=" << m_caloStruct[i].ele_thick[ie] << "mm";
+	    //G4cout << " d=" << m_materials[eleName]->GetDensity();
 	  //G4cout << G4endl;
 	  //G4cout << *(m_materials[eleName]->GetMaterialTable()) << G4endl;
 
