@@ -143,8 +143,9 @@ for et in enlist :
         if opt.eta<5 : en=et*math.cosh(opt.eta)
         else : en=et
         g4Macro.write('/gun/energy %f GeV\n'%(en))
-        alpha = 2*math.atan(math.exp(-1*opt.eta));
-        g4Macro.write('/gun/direction %f %f %f\n'%(math.cos(math.pi*opt.phi)*math.sin(alpha),math.sin(math.pi*opt.phi)*math.sin(alpha),math.cos(alpha)))
+        if opt.model!=2 :
+            alpha = 2*math.atan(math.exp(-1.*opt.eta));
+            g4Macro.write('/gun/direction %f %f %f\n'%(math.cos(math.pi*opt.phi)*math.sin(alpha),math.sin(math.pi*opt.phi)*math.sin(alpha),math.cos(alpha)))
         #g4Macro.write('/gun/direction %f %f %f\n'%(math.cos(math.pi*opt.phi)*math.sin(opt.alpha),math.sin(math.pi*opt.phi)*math.sin(opt.alpha),math.cos(opt.alpha)))
         #g4Macro.write('/gun/direction %f %f %f\n'%(random.uniform(0,1000)/100.-5.,math.sin(opt.alpha),math.cos(opt.alpha)))
     else :
