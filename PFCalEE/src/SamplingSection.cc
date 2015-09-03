@@ -15,7 +15,8 @@ void SamplingSection::add(G4double den, G4double dl,
     if(ele_vol[ie] && lstr==ele_vol[ie]->GetName()){ 
       unsigned eleidx = ie%n_elements;
       ele_den[eleidx]+=den;
-      ele_dl[eleidx]+=dl;
+      ele_dl[eleidx]+=dl; 
+      //if (lstr.find("CFMix") != lstr.npos) continue;
       if (isSensitiveElement(eleidx)) {//if Si || sci
 	unsigned idx = getSensitiveLayerIndex(lstr);
 	//std::cout << "sens layer " << idx << " " << lstr << std::endl;

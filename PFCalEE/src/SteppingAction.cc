@@ -75,8 +75,8 @@ void SteppingAction::UserSteppingAction(const G4Step* aStep)
   // get local hit position using touchable with theGlobalPos
   //G4ThreeVector LocalHitPos = theTouchable->GetHistory()->GetTopTransform().TransformPoint(position);
  
-  //G4cout << "Pre   position " << volume->GetName() << " " << position << G4endl;
-  //G4cout << "Post  position " << aStep->GetPostStepPoint()->GetTouchableHandle()->GetVolume()->GetName() << " " << aStep->GetPostStepPoint()->GetPosition() << G4endl;
+  //G4cout << " -- debug Pre   position " << volume->GetName() << " " << position << G4endl;
+  //G4cout << " -- debug Post  position " << aStep->GetPostStepPoint()->GetTouchableHandle()->GetVolume()->GetName() << " " << aStep->GetPostStepPoint()->GetPosition() << G4endl;
   //G4cout << "Local position " << LocalHitPos << G4endl;
 
 
@@ -110,7 +110,7 @@ void SteppingAction::UserSteppingAction(const G4Step* aStep)
   return;
   */
 
-  //std::cout << "-- debug: " << thePrePVname << " " << thePostPVname << " " << eventAction_->GetFirstVolumeName() << " " << globalTime << std::endl;
+  //if (thePrePVname=="Wphys") std::cout << "-- debug: " << thePrePVname << " " << thePostPVname << " " << eventAction_->isFirstVolume(thePostPVname) << " time " << globalTime << " trackid=" << trackID << std::endl;
   //if (abs(pdgId)==11 && 
   //((thePrePVname=="Si11_0phys" && thePostPVname=="Si11_1phys") || 
   //(thePrePVname=="Si11_1phys" && thePostPVname=="Si11_0phys")) || 
@@ -119,8 +119,7 @@ void SteppingAction::UserSteppingAction(const G4Step* aStep)
 //)
   if (globalTime < timeLimit_ && 
       thePrePVname=="Wphys"
-      && (thePostPVname==eventAction_->GetFirstVolumeName())
-      )
+      && eventAction_->isFirstVolume(thePostPVname))
     {
     //if (pdgId == 2112) 
     //std::cout << "-- found incoming: " << thePrePVname << " " << thePostPVname << " " << globalTime << std::endl;

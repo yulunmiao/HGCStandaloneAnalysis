@@ -45,7 +45,7 @@ public:
 
   //std::ofstream & fout() {return fout_;}
 
-  std::string GetFirstVolumeName() const;
+  bool isFirstVolume(const std::string volname) const;
 
 private:
   RunAction*  runAct;

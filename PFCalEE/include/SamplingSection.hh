@@ -61,7 +61,7 @@ public:
   //DTOR
   ~SamplingSection() { };
 
-  void setNumberOfSectors(const unsigned nSec){
+  inline void setNumberOfSectors(const unsigned nSec){
     n_sectors = nSec;
     ele_vol.clear();
     for (unsigned ie(0);  ie<n_elements*n_sectors; ++ie){
@@ -78,7 +78,7 @@ public:
 	   G4int layerId);
   
   inline bool isSensitiveElement(const unsigned & aEle){
-    if (aEle < n_elements && 
+    if (aEle < n_elements &&
 	(ele_name[aEle] == "Si" || ele_name[aEle] == "Scintillator")
 	) return true;
     return false;

@@ -41,8 +41,8 @@ int main(int argc,char** argv)
   //int version=DetectorConstruction::v_HGCALEE_concept;
   int version=DetectorConstruction::v_HGCALEE_TB;
   //int model=DetectorConstruction::m_FULLSECTION;
-  //int model=DetectorConstruction::m_BOXWITHCRACK_100;
-  int model=DetectorConstruction::m_SIMPLE_100;
+  int model=DetectorConstruction::m_BOXWITHCRACK_100;
+  //int model=DetectorConstruction::m_SIMPLE_100;
 
   double eta=0;
 

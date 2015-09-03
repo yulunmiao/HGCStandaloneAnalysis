@@ -784,7 +784,8 @@ void DetectorConstruction::UpdateCalorSize(){
   for(size_t i=0; i<m_caloStruct.size(); i++) m_caloStruct[i].setNumberOfSectors(m_nSectors);
 
   m_WorldSizeZ=m_CalorSizeZ*1.1;  
-  m_WorldSizeXY=m_CalorSizeXY*1.1;
+  if (m_nSectors>1) m_WorldSizeXY=(m_CalorSizeXY+2*m_sectorWidth)*1.1;
+  else m_WorldSizeXY=m_CalorSizeXY*1.1;
 
   if (model_ == DetectorConstruction::m_FULLSECTION) 
     G4cout << "[DetectorConstruction][UpdateCalorSize] Z x minR * maxR = " 
@@ -974,7 +975,8 @@ void DetectorConstruction::fillInterSectorSpace(const unsigned sectorNum,
 	G4double thick = m_caloStruct[i].ele_thick[ie];
 	G4double extraWidth = 0;
 	if (eleName=="W" && model_ != DetectorConstruction::m_FULLSECTION){
-	 extraWidth = -5*mm;
+	 extraWidth = -5.*mm;
+	 //std::cout << " -- total width: " << width+extraWidth << " offsets: " << crackOffset << " " << angOffset << std::endl;
 	}
 	eleName = "CFMix";
 	sprintf(nameBuf,"%s%d_%d",eleName.c_str(),int(sectorNum),int(i+1));
@@ -984,8 +986,8 @@ void DetectorConstruction::fillInterSectorSpace(const unsigned sectorNum,
 	  G4LogicalVolume *logi = new G4LogicalVolume(solid, m_materials[eleName], baseName+"log");
 	  G4double xpvpos = -m_CalorSizeXY/2.+minL+width/2+crackOffset;
 	  if (model_ == DetectorConstruction::m_FULLSECTION) xpvpos=0;
-	  m_caloStruct[i].ele_vol[nEle*sectorNum+ie]= new G4PVPlacement(0, G4ThreeVector(xpvpos,0.,zOffset+zOverburden+thick/2), logi, baseName+"phys", m_logicWorld, false, 0);
-	  //std::cout << " positionning layer at " << xpvpos << " 0 " << zOffset+zOverburden+thick/2 << std::endl;
+	  G4PVPlacement *tmp = new G4PVPlacement(0, G4ThreeVector(xpvpos,0.,zOffset+zOverburden+thick/2), logi, baseName+"phys", m_logicWorld, false, 0);
+	  //std::cout << "** positionning layer " << baseName << " at " << xpvpos << " 0 " << zOffset+zOverburden+thick/2 << std::endl;
 
 	  G4VisAttributes *simpleBoxVisAtt= new G4VisAttributes(G4Colour::Magenta);
 	  simpleBoxVisAtt->SetVisibility(true);

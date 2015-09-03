@@ -76,20 +76,36 @@ void EventAction::Detect(G4double edep, G4double stepl,G4double globalTime,
   if (genPart.isIncoming()) genvec_.push_back(genPart);
 }
 
-std::string EventAction::GetFirstVolumeName() const{
-  if (detector_->size()>0 && (*detector_)[0].n_elements>0)
-    return ((*detector_)[0].ele_vol[0])->GetName();
+bool EventAction::isFirstVolume(const std::string volname) const{
+  if (detector_->size()>0 && (*detector_)[0].n_elements>0){
+    bool found = false;
+    for (unsigned iS(0); iS<(*detector_)[0].n_sectors;++iS){
+      if ((((*detector_)[0].ele_vol[(*detector_)[0].n_elements*iS])->GetName())==volname.c_str()) found = true;
+    }
+    return found;
+  }
   return "";
 }
 
 //
-void EventAction::EndOfEventAction(const G4Event*)
+void EventAction::EndOfEventAction(const G4Event* g4evt)
 {
   //return;
   bool debug(evtNb_%printModulo == 0);
   hitvec_.clear();
 
   event_.eventNumber(evtNb_);
+
+  //std::cout << " -- Number of primary vertices: " << g4evt->GetNumberOfPrimaryVertex() << std::endl
+  //<< " -- vtx pos x=" << g4evt->GetPrimaryVertex(0)->GetX0() 
+  //	    << " y=" << g4evt->GetPrimaryVertex(0)->GetY0()
+  //	    << " z=" << g4evt->GetPrimaryVertex(0)->GetZ0()
+  //	    << " t=" << g4evt->GetPrimaryVertex(0)->GetT0()
+  //	    << std::endl;
+
+  event_.vtx_x(g4evt->GetPrimaryVertex(0)->GetX0());
+  event_.vtx_y(g4evt->GetPrimaryVertex(0)->GetY0());
+  event_.vtx_z(g4evt->GetPrimaryVertex(0)->GetZ0());
   //event_.cellSize(CELL_SIZE_X);
 
   ssvec_.clear();
