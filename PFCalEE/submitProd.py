@@ -10,13 +10,14 @@ random.seed()
 
 usage = 'usage: %prog [options]'
 parser = optparse.OptionParser(usage)
-parser.add_option('-s', '--short-queue',    dest='squeue'             , help='short batch queue'            , default='1nd')
-parser.add_option('-q', '--long-queue' ,    dest='lqueue'             , help='long batch queue'             , default='2nw')
+parser.add_option('-s', '--short-queue' ,    dest='squeue'             , help='short batch queue'            , default='1nd')
+parser.add_option('-q', '--long-queue'  ,    dest='lqueue'             , help='long batch queue'             , default='2nw')
 parser.add_option('-t', '--git-tag'     ,    dest='gittag'             , help='git tag version'              , default='V00-00-00')
 parser.add_option('-r', '--run'         ,    dest='run'                , help='stat run'                     , default=-1,      type=int)
 parser.add_option('-v', '--version'     ,    dest='version'            , help='detector version'             , default=3,      type=int)
 parser.add_option('-m', '--model'       ,    dest='model'              , help='detector model'               , default=3,      type=int)
-parser.add_option('-a', '--eta'       ,    dest='eta'              , help='incidence eta'       , default=0,      type=float)
+parser.add_option('-a', '--eta'         ,    dest='eta'                , help='incidence eta'                , default=0,      type=float)
+parser.add_option('-p', '--phi'         ,    dest='phi'                , help='incidence phi angle in pi unit' , default=0.5,      type=float)
 parser.add_option('-b', '--Bfield'      ,    dest='Bfield'             , help='B field value in Tesla'       , default=0,      type=float)
 parser.add_option('-d', '--datatype'    ,    dest='datatype'           , help='data type or particle to shoot', default='e-')
 parser.add_option('-f', '--datafile'    ,    dest='datafile'           , help='full path to HepMC input file', default='data/example_MyPythia.dat')
@@ -31,8 +32,8 @@ enlist=[0]
 if opt.dogun : 
     #enlist=[3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200]
     #enlist=[2,5,10,20,40,60,80,100,150,200]
-    enlist=[3,5,10,30,50,70,100,200]
-    #enlist=[16,82,160]
+    #enlist=[3,5,10,30,50,70,100,200]
+    enlist=[60]
 
 #hgg seeds
 #for seed in 1417791355 1417791400 1417791462 1417791488 1417791672 1417791741 1417791747 1417791766 1417791846
@@ -80,6 +81,7 @@ for et in enlist :
     if et>0 : outDir='%s/et_%d'%(outDir,et)
     eosDir='%s/git%s/%s'%(opt.eos,opt.gittag,opt.datatype)
     if opt.eta>0 : outDir='%s/eta_%3.3f/'%(outDir,opt.eta)
+    if opt.phi!=0.5 : outDir='%s/phi_%3.3fpi/'%(outDir,opt.phi) 
     if (opt.run>=0) : outDir='%s/run_%d/'%(outDir,opt.run)
 
     os.system('mkdir -p %s'%outDir)
@@ -94,6 +96,7 @@ for et in enlist :
     outTag='%s_version%d_model%d_%s'%(label,opt.version,opt.model,bval)
     if et>0 : outTag='%s_et%d'%(outTag,et)
     if opt.eta>0 : outTag='%s_eta%3.3f'%(outTag,opt.eta) 
+    if opt.phi!=0.5 : outTag='%s_phi%3.3fpi'%(outTag,opt.phi) 
     if (opt.run>=0) : outTag='%s_run%d'%(outTag,opt.run)
     scriptFile.write('mv PFcal.root HGcal_%s.root\n'%(outTag))
     scriptFile.write('localdir=`pwd`\n')
@@ -140,7 +143,7 @@ for et in enlist :
         if opt.eta<5 : en=et*math.cosh(opt.eta)
         else : en=et
         g4Macro.write('/gun/energy %f GeV\n'%(en))
-        alpha = 2*atan(exp(-1*opt.eta));
+        alpha = 2*math.atan(math.exp(-1*opt.eta));
         g4Macro.write('/gun/direction %f %f %f\n'%(math.cos(math.pi*opt.phi)*math.sin(alpha),math.sin(math.pi*opt.phi)*math.sin(alpha),math.cos(alpha)))
         #g4Macro.write('/gun/direction %f %f %f\n'%(math.cos(math.pi*opt.phi)*math.sin(opt.alpha),math.sin(math.pi*opt.phi)*math.sin(opt.alpha),math.cos(opt.alpha)))
         #g4Macro.write('/gun/direction %f %f %f\n'%(random.uniform(0,1000)/100.-5.,math.sin(opt.alpha),math.cos(opt.alpha)))
