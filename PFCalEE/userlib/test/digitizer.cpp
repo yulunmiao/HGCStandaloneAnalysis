@@ -94,6 +94,8 @@ void processHist(const unsigned iL,
       double y = histE->GetYaxis()->GetBinCenter(iY);
       double radius = sqrt(pow(x,2)+pow(y,2));
 
+      //if (iY==1) std::cout << " Layer " << iL << " " << x << " " << y << std::endl;
+
       if ( (doSmall && radius >= rLim) ||
 	   (!doSmall && radius < rLim && !isScint) ) continue;
 
@@ -185,7 +187,7 @@ int main(int argc, char** argv){//main
   /////////////////////////////////////////////////////////////
   //parameters
   /////////////////////////////////////////////////////////////
-  const unsigned nReqA = 10;
+  const unsigned nReqA = 11;
   const unsigned nPar = static_cast<unsigned>(argc);
   if (nPar < nReqA-1) {
     std::cout << " Usage: "
@@ -196,6 +198,7 @@ int main(int argc, char** argv){//main
               << "<noise (in Mips) \"layer_i-layer_j:factor,layer:factor,...\">"<< std::endl
               << "<threshold (in ADC counts) \"layer_i-layer_j:factor,layer:factor,...\">"<< std::endl
               << "<intercalib factor in %>" << std::endl
+	      << "<Number of si layers for TB setups>" << std::endl
               << "<number of PU>" << std::endl
               << "<full path to MinBias file if nPU!=0>" << std::endl
               << std::endl
@@ -215,9 +218,10 @@ int main(int argc, char** argv){//main
   std::string noiseStr = argv[5];
   std::string threshStr = argv[6];
   const unsigned interCalib = atoi(argv[7]);
-  const unsigned nPU = atoi(argv[8]);
+  const unsigned nSiLayers = atoi(argv[8]);
+  const unsigned nPU = atoi(argv[9]);
   std::string puPath;
-  if (nPar > nReqA-1) puPath = argv[9];
+  if (nPar > nReqA-1) puPath = argv[10];
   if (nPU>0 && puPath.size()==0) {
     std::cout << " -- Error! Missing full path to minbias file. Exiting." << std::endl;
     return 1;
@@ -353,6 +357,8 @@ int main(int argc, char** argv){//main
   
   //models 0,1 or 3.
   bool isTBsetup = (model != 2);
+  if (isTBsetup) std::cout << " -- Number of Si layers: " << nSiLayers << std::endl;
+  else std::cout << " -- Number of Si layers ignored: hardcoded as a function of radius in HGCSSGeometryConversion class." << std::endl;
 
 
   HGCSSEvent * event=0;
@@ -377,14 +383,16 @@ int main(int argc, char** argv){//main
 	    << ", cellSize = " << cellSize
 	    << std::endl;
 
-  myDetector.buildDetector(versionNumber,concept,isCaliceHcal);
+  bool bypassR = false;
+  if (isTBsetup) bypassR = true;
+  myDetector.buildDetector(versionNumber,concept,isCaliceHcal,bypassR);
 
   //initialise calibration class
-  HGCSSCalibration mycalib(inFilePath);
+  HGCSSCalibration mycalib(inFilePath,bypassR,nSiLayers);
 
   const unsigned nLayers = myDetector.nLayers();
 
-  HGCSSGeometryConversion geomConv(inFilePath,model,cellSize);
+  HGCSSGeometryConversion geomConv(inFilePath,model,cellSize,bypassR,nSiLayers);
   //const double xWidth = geomConv.getXYwidth();
 
   HGCSSDigitisation myDigitiser;
@@ -483,9 +491,13 @@ int main(int argc, char** argv){//main
 
     inputTree->GetEntry(ievt);
     lEvent.eventNumber(event->eventNumber());
-    
+    lEvent.vtx_x(event->vtx_x());
+    lEvent.vtx_y(event->vtx_y());
+    lEvent.vtx_z(event->vtx_z());
     //unsigned layer = volNb;
     
+    mycalib.setVertex(lEvent.vtx_x(),lEvent.vtx_y(),lEvent.vtx_z());
+
     if (debug>0) {
       std::cout << " **DEBUG** Processing evt " << ievt << std::endl;
     }
@@ -634,7 +646,7 @@ int main(int argc, char** argv){//main
       }
 
       processHist(iL,false,histE,myDigitiser,p_noise,histZ,meanZpos,isTBsetup,subdet,pThreshInADC,pSaveDigis,lDigiHits,lRecoHits,pMakeJets,lParticles);
-      if (!isScint) processHist(iL,true,histEs,myDigitiser,p_noise,histZ,meanZpos,isTBsetup,subdet,pThreshInADC,pSaveDigis,lDigiHits,lRecoHits,pMakeJets,lParticles);
+      if (!isScint && !bypassR) processHist(iL,true,histEs,myDigitiser,p_noise,histZ,meanZpos,isTBsetup,subdet,pThreshInADC,pSaveDigis,lDigiHits,lRecoHits,pMakeJets,lParticles);
  
     }//loop on layers
 

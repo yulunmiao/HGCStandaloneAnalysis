@@ -3,30 +3,26 @@
 #include <iostream>
 #include <cmath>
 
-HGCSSCalibration::HGCSSCalibration(std::string filePath){
+HGCSSCalibration::HGCSSCalibration(std::string filePath,
+				   const bool bypassR,
+				   const unsigned nSi){
 
   vtx_x_ = 0;
   vtx_y_ = 0;
   vtx_z_ = 0;
-  
-  bool isScintOnly =  filePath.find("version22")!=filePath.npos;
-  isHCALonly_ = filePath.find("version21")!=filePath.npos || isScintOnly;
-  isCaliceHcal_ = filePath.find("version23")!=filePath.npos || filePath.find("version_23")!=filePath.npos;
-  bool isECALHCAL = filePath.find("version20")!=filePath.npos;
-  
-  //set vertex pos for square section only
-  if (filePath.find("model2")==filePath.npos){
-    if (isCaliceHcal_) vtx_z_ = -1091.75;//mm
-    else if (isScintOnly) vtx_z_ = -430.65;//mm
-    else if (isHCALonly_) vtx_z_ = -824.01;//mm
-    else if (isECALHCAL) vtx_z_ = -985.875;//mm
-    else vtx_z_ = -161.865;//mm
-  }
-
+  bypassRadius_ = bypassR;
+  nSiLayers_ = nSi;
 }
 
 
 HGCSSCalibration::~HGCSSCalibration(){
+}
+
+double HGCSSCalibration::addTimeOfFlight(const double & aTime,
+					 const double & posx,
+					 const double & posy,
+					 const double & posz){
+  return addTimeOfFlight(aTime,posx,posy,posz,vtx_x_,vtx_y_,vtx_z_);
 }
 
 double HGCSSCalibration::addTimeOfFlight(const double & aTime,
@@ -53,13 +49,20 @@ double HGCSSCalibration::addTimeOfFlight(const double & aTime,
 double HGCSSCalibration::correctTime(const double & aTime,
 				     const double & posx,
 				     const double & posy,
+				     const double & posz){
+  return correctTime(aTime,posx,posy,posz,vtx_x_,vtx_y_,vtx_z_);
+}
+
+double HGCSSCalibration::correctTime(const double & aTime,
+				     const double & posx,
+				     const double & posy,
 				     const double & posz,
 				     const double & vtxx,
 				     const double & vtxy,
 				     const double & vtxz){
-  double distance = sqrt(pow(posx-vtxx-vtx_x_,2)+
-			 pow(posy-vtxy-vtx_y_,2)+
-			 pow(posz-vtxz-vtx_z_,2)
+  double distance = sqrt(pow(posx-vtxx,2)+
+			 pow(posy-vtxy,2)+
+			 pow(posz-vtxz,2)
 			 );
   double c = 299.792458;//3.e8*1000./1.e9;//in mm / ns...
   double cor = distance/c;
@@ -98,6 +101,9 @@ double HGCSSCalibration::MeVToMip(const unsigned layer, const double aRadius, co
       *(absWeight?theDetector().subDetectorByLayer(layer).absWeight : 1.0);
 
   if (theDetector().subDetectorByLayer(layer).isSi == false) return res;
+
+  if (bypassRadius_) return res*2./nSiLayers_;
+
   double r1 = 1200;
   double r2 = theDetector().subDetectorByLayer(layer).radiusLim;
   if (theDetector().subDetectorByLayer(layer).type == DetectorEnum::FHCAL) {

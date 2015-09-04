@@ -1004,13 +1004,15 @@ void DetectorConstruction::fillInterSectorSpace(const unsigned sectorNum,
 }//fill intersector space
 
 G4double DetectorConstruction::getCrackOffset(size_t layer){
-  if (m_nSectors>1) return static_cast<unsigned>(layer/10.)*m_sectorWidth/3.;
+  if (m_nSectors>1) return static_cast<unsigned>(layer/10.)*static_cast<unsigned>(m_sectorWidth/30.)*10;
   return 0;
 }
 
 G4double DetectorConstruction::getAngOffset(size_t layer){
-  if (model_ == DetectorConstruction::m_FULLSECTION)
-    return getCrackOffset(layer);
+  if (model_ == DetectorConstruction::m_FULLSECTION){
+    if (m_nSectors>1) return static_cast<unsigned>(layer/10.)*m_sectorWidth/3.;
+    return 0;
+  }
   return 0;
 }
 //

@@ -3,16 +3,18 @@
 #include <iostream>
 #include <cmath>
 
-HGCSSGeometryConversion::HGCSSGeometryConversion(std::string filePath, int model, double cellsize){
+HGCSSGeometryConversion::HGCSSGeometryConversion(std::string filePath, const unsigned & model, const double & cellsize, const bool bypassR, const unsigned nSiLayers){
 
   width_ = 200;//mm
   model_ = model;
   if (model==1) width_ = 500;
   else if (model == 2) width_ = 1700*2;
   else if (model == 3) width_ = 1000;
+  else if (model == 4) width_ = 1300;
   
   cellSize_ = cellsize;
-  
+  bypassRadius_ = bypassR;
+  nSiLayers_ = nSiLayers;
 }
 /*
 unsigned HGCSSGeometryConversion::getNumberOfSiLayers(const DetectorEnum type,
@@ -40,14 +42,14 @@ unsigned HGCSSGeometryConversion::getNumberOfSiLayers(const DetectorEnum type,
 unsigned HGCSSGeometryConversion::getNumberOfSiLayers(const DetectorEnum type,
 						      const double & radius) const
 {
-  if (model_ != 2) return 3;
   if (theDetector().subDetectorByEnum(type).isScint) return 3;
+  if (model_ != 2) return nSiLayers_;
 
   double r1 = 1200;
-  double r2 = theDetector().subDetectorByEnum(type).radiusLim;
   if (type == DetectorEnum::FHCAL) {
     r1 = 1000;
   }
+  double r2 = theDetector().subDetectorByEnum(type).radiusLim;
   if (radius>r1) return 3;
   else if (radius>r2) return 2;
   else return 1;
@@ -61,23 +63,25 @@ HGCSSGeometryConversion::~HGCSSGeometryConversion(){
     deleteHistos(liter->second);
   }
   HistMapE_.clear();
-  liter =  HistMapESmall_.begin();
-  for (; liter !=HistMapESmall_.end();++liter){
-    deleteHistos(liter->second);
+  if (!bypassRadius_) {
+    liter =  HistMapESmall_.begin();
+    for (; liter !=HistMapESmall_.end();++liter){
+      deleteHistos(liter->second);
+    }
+    HistMapESmall_.clear();
   }
-  HistMapESmall_.clear();
-
   liter = HistMapTime_.begin();
   for (; liter !=HistMapTime_.end();++liter){
     deleteHistos(liter->second);
   }
   HistMapTime_.clear();
-  liter = HistMapTimeSmall_.begin();
-  for (; liter !=HistMapTimeSmall_.end();++liter){
-    deleteHistos(liter->second);
+  if (!bypassRadius_) {
+    liter = HistMapTimeSmall_.begin();
+    for (; liter !=HistMapTimeSmall_.end();++liter){
+      deleteHistos(liter->second);
+    }
+    HistMapTimeSmall_.clear();
   }
-  HistMapTimeSmall_.clear();
-
   liter = HistMapZ_.begin();
   for (; liter !=HistMapZ_.end();++liter){
     deleteHistos(liter->second);
@@ -104,7 +108,7 @@ void HGCSSGeometryConversion::setGranularity(const std::vector<unsigned> & granu
 }
 
 double HGCSSGeometryConversion::cellSize(const unsigned aLayer, const double aR) const{
-  if (theDetector().subDetectorByLayer(aLayer).isScint) return cellSize_*granularity_[aLayer];
+  if (theDetector().subDetectorByLayer(aLayer).isScint || model_ != 2) return cellSize_*granularity_[aLayer];
   double r1 = theDetector().subDetectorByLayer(aLayer).radiusLim;
   if (aR<r1) return cellSize_*3;
   else return cellSize_*4;
@@ -120,7 +124,7 @@ void HGCSSGeometryConversion::initialiseHistos(const bool recreate,
 
    for (unsigned iS(0); iS<theDetector().nSections();++iS){
      resetVector(HistMapE_[theDetector().detType(iS)],"EmipHits"+uniqStr,theDetector().detName(iS),theDetector().subDetectorBySection(iS),theDetector().nLayers(iS),recreate,print);
-     resetVector(HistMapESmall_[theDetector().detType(iS)],"EmipHitsSmall"+uniqStr,theDetector().detName(iS),theDetector().subDetectorBySection(iS),theDetector().nLayers(iS),recreate,print);
+     if (!bypassRadius_) resetVector(HistMapESmall_[theDetector().detType(iS)],"EmipHitsSmall"+uniqStr,theDetector().detName(iS),theDetector().subDetectorBySection(iS),theDetector().nLayers(iS),recreate,print);
      //std::cout << " check: " << HistMapE_[theDetector().detType(iS)].size() << std::endl;
      
      std::vector<double> avgvecE;
@@ -128,7 +132,7 @@ void HGCSSGeometryConversion::initialiseHistos(const bool recreate,
      avgMapE_[theDetector().detType(iS)]=avgvecE;
      
      resetVector(HistMapTime_[theDetector().detType(iS)],"TimeHits"+uniqStr,theDetector().detName(iS),theDetector().subDetectorBySection(iS),theDetector().nLayers(iS),recreate,print);
-     resetVector(HistMapTimeSmall_[theDetector().detType(iS)],"TimeHitsSmall"+uniqStr,theDetector().detName(iS),theDetector().subDetectorBySection(iS),theDetector().nLayers(iS),recreate,print);
+     if (!bypassRadius_) resetVector(HistMapTimeSmall_[theDetector().detType(iS)],"TimeHitsSmall"+uniqStr,theDetector().detName(iS),theDetector().subDetectorBySection(iS),theDetector().nLayers(iS),recreate,print);
      //std::cout << " check: " << HistMapTime_[theDetector().detType(iS)].size() << std::endl;
 
      resetVector(HistMapZ_[theDetector().detType(iS)],"zHits"+uniqStr,theDetector().detName(iS),theDetector().subDetectorBySection(iS),theDetector().nLayers(iS),recreate,print);
@@ -151,10 +155,29 @@ void HGCSSGeometryConversion::fill(const DetectorEnum type,
   double radius = sqrt(posx*posx+posy*posy);
   double r1 = theDetector().subDetectorByEnum(type).radiusLim;
 
+  //patch for crack regions
+  if (model_==4){
+    double xcrack1 = -160;
+    double xcrack2 = 150;
+    if (type==DetectorEnum::MECAL){
+    xcrack1 += 310/3.;
+    xcrack2 += 310/3.;
+    }
+    else if (type == DetectorEnum::BECAL){
+      xcrack1 += 2*310/3.;
+      xcrack2 += 2*310/3.;
+    }
+
+    if ( fabs(posx-xcrack1)<5 || fabs(posx-xcrack2)<5 ) {
+      //std::cout << " -- skipping hit " << posx << ", det " << type << " layer " << newlayer << " cracks at " << xcrack1 << " " << xcrack2 << std::endl;
+      return;
+    }
+
+  }
   HistMapE_[type][newlayer]->Fill(posx,posy,weightedE);
   //if (radius >= r1) HistMapE_[type][newlayer]->Fill(posx,posy,weightedE);
   //else 
-  if (theDetector().subDetectorByEnum(type).isSi && radius<r1) {
+  if (!bypassRadius_ && theDetector().subDetectorByEnum(type).isSi && radius<r1) {
     HistMapESmall_[type][newlayer]->Fill(posx,posy,weightedE);
     HistMapTimeSmall_[type][newlayer]->Fill(posx,posy,weightedE*aTime);
   }
@@ -177,9 +200,15 @@ TH2D * HGCSSGeometryConversion::get2DHist(const unsigned layer,std::string name)
   const HGCSSSubDetector & subdet = theDetector().subDetectorByLayer(layer);
   unsigned newlayer = layer-subdet.layerIdMin;
   if (name == "E") return HistMapE_[subdet.type][newlayer];
-  else if (name == "ESmall") return HistMapESmall_[subdet.type][newlayer];
+  else if (name == "ESmall") {
+    if (bypassRadius_) return 0;
+    return HistMapESmall_[subdet.type][newlayer];
+  }
   else if (name == "Time") return HistMapTime_[subdet.type][newlayer];
-  else if (name == "TimeSmall") return HistMapTimeSmall_[subdet.type][newlayer];
+  else if (name == "TimeSmall"){
+    if (bypassRadius_) return 0;
+    return HistMapTimeSmall_[subdet.type][newlayer];
+  }
   else if (name == "Z") return HistMapZ_[subdet.type][newlayer];
   else {
     std::cerr << " ERROR !! Unknown histogram name. Exiting..." << std::endl;
@@ -259,20 +288,37 @@ void HGCSSGeometryConversion::resetVector(std::vector<TH2D *> & aVec,
 	unsigned nBins = (aVar.find("Small")!=aVar.npos) ? 452 : 339;
 	double min=-1695;
 	double max=1695;
+	double minx = min;
+	double maxx = max;
 	// if (getGranularity(iL,aDet) == 1) {
 	//   nBins = static_cast<unsigned>(width_*1./cellSize_);
 	//   min = -1.0*nBins*newcellsize/2.;
 	//   max = nBins*newcellsize/2.;
 	// }
 	// else {
-	if (aDet.isScint){
+	if (aDet.isScint || bypassRadius_ || model_!=2){
 	  double newcellsize = cellSize_*getGranularity(iL,aDet);
 	  nBins = static_cast<unsigned>(width_*1./(newcellsize*2.))*2-2;
 	  min = -1.0*nBins*newcellsize/2.-newcellsize/2.;
 	  max = nBins*newcellsize/2.+newcellsize/2.;
 	  nBins+=1;
+	  minx = min;
+	  maxx = max;
+
+	  if (model_==4){
+	    if (aDet.type == DetectorEnum::MECAL) {
+	      //set specific binning for displaced sections
+	      minx += 310/3.;
+	      maxx += 310/3.;
+	    }
+	    if (aDet.type == DetectorEnum::BECAL){
+	      minx += 2*310/3.;
+	      maxx += 2*310/3.;
+	    }
+	  }
+
 	}
-	aVec[iL] = new TH2D(lname.str().c_str(),";x(mm);y(mm)",nBins,min,max,nBins,min,max);
+	aVec[iL] = new TH2D(lname.str().c_str(),";x(mm);y(mm)",nBins,minx,maxx,nBins,min,max);
 	if (print && aVar.find("EmipHits")!=aVar.npos) std::cout << " ---- Layer " << iL << " bins, min, max = " << nBins << " " << min << " " << max << std::endl;
       }
     }

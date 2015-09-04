@@ -17,24 +17,47 @@ public:
     vtx_z_ = 0;
   };
 
-  HGCSSCalibration(std::string filePath);
+  HGCSSCalibration(std::string filePath, 
+		   const bool bypassR=false,
+		   const unsigned nSi=2);
+
   ~HGCSSCalibration();
+
+  inline void setVertex(const double & x,
+			const double & y,
+			const double & z){
+
+    vtx_x_ = x;
+    vtx_y_ = y;
+    vtx_z_ = z;
+    
+  };
+
+  double addTimeOfFlight(const double & aTime,
+			 const double & posx,
+			 const double & posy,
+			 const double & posz);
 
   double addTimeOfFlight(const double & aTime,
 			 const double & posx,
 			 const double & posy,
 			 const double & posz,
-			 const double & vtxx=0,
-			 const double & vtxy=0,
-			 const double & vtxz=0);
+			 const double & vtxx,
+			 const double & vtxy,
+			 const double & vtxz);
+
+  double correctTime(const double & aTime,
+		     const double & posx,
+		     const double & posy,
+		     const double & posz);
 
   double correctTime(const double & aTime,
 		     const double & posx,
 		     const double & posy,
 		     const double & posz,
-		     const double & vtxx=0,
-		     const double & vtxy=0,
-		     const double & vtxz=0);
+		     const double & vtxx,
+		     const double & vtxy,
+		     const double & vtxz);
 
   double MeVToMip(const unsigned layer,
 		  const bool absWeight=false) const;
@@ -50,10 +73,8 @@ private:
   double vtx_x_;
   double vtx_y_;
   double vtx_z_;
-
-  bool isHCALonly_;
-  bool isCaliceHcal_;
-
+  bool bypassRadius_;
+  unsigned nSiLayers_;
 };
 
 
