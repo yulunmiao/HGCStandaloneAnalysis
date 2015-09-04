@@ -11,6 +11,7 @@
 #include "G4SiHit.hh"
 #include "Math/Point3D.h"
 #include "Math/Point3Dfwd.h"
+#include "TH2Poly.h"
 
 static const float CELL_SIZE_X=2.5;//mm
 static const float CELL_SIZE_Y=CELL_SIZE_X;
@@ -128,6 +129,12 @@ public:
   };
 
   void Add(const G4SiHit & aSiHit);
+
+  TH2Poly *hexagonMap(){
+    static TH2Poly hc;
+    hc.Honeycomb(0,0,1,10,10);
+    return *hc;
+  };
 
   void encodeCellId(const bool x_side,const bool y_side,const unsigned x_cell,const unsigned y_cell);
 
