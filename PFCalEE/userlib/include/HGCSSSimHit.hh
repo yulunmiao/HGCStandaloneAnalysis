@@ -132,7 +132,8 @@ public:
 
   TH2Poly *hexagonMap(){
     static TH2Poly hc;
-    hc.Honeycomb(0,0,1,10,10);
+    //xstart,ystart,side length,nhexa_in_x,nhexa_in_y
+    hc.Honeycomb(-2800,-2800,1,10,10);
     return *hc;
   };
 

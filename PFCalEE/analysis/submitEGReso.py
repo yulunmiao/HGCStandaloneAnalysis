@@ -42,19 +42,19 @@ workdir='/afs/cern.ch/work/a/amagnan/PFCalEEAna/'
 enlist=[0]
 if opt.dogun : 
     #enlist=[3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200]
-    enlist=[3,5,10,30,50,70,100,200]
-    #enlist=[20,50,100]
+    #enlist=[3,5,10,30,50,70,100,200]
+    enlist=[60]
     #enlist=[3,5,7,10,30,50,70,90,125,150,175,200]
 
 #alphaset=[0.361,0.297,0.244,0.200,0.164,0.134,0.110]
 #alphaset=[0.361,0.244,0.164,0.110]
-alphaset=[1.600]
+alphaset=[2.000]
 #alphaset=[0.297,0.244,0.200,0.134,0.110]
 #nPuVtxset=[0,140]
 nPuVtxset=[0]
 #etaset=[17,19,21,23,25,27,29]
 #etaset=[17,21,25,29]
-etaset=[16]
+etaset=[20]
 #etaset=[17,21,23,25,27,29]
 
 interCalibList=[3] #0,1,2,3,4,5,10,15,20,50]
