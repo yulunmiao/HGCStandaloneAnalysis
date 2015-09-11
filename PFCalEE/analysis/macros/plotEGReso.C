@@ -577,7 +577,7 @@ int plotEGReso(){//main
   SetTdrStyle();
 
   bool dovsE = true;
-  bool processNoFitFiles = false;
+  bool processNoFitFiles = true;
 
   const unsigned nIC = 1;
   const unsigned ICval[nIC] = {3};//0,1,2,3,4,5,10,15,20,50};
@@ -587,7 +587,7 @@ int plotEGReso(){//main
 
   const unsigned nS = 1;
   std::string scenario[nS] = {
-    "gamma/"
+    "gamma/v5_30/"
   };
 
   std::string foutname = "PLOTS/PuSubtraction.root";
@@ -607,9 +607,9 @@ int plotEGReso(){//main
 
   
   const unsigned nV = 1;
-  TString version[nV] = {"30"};//,"0"};
+  TString version[nV] = {"12"};//,"0"};
   
-  const unsigned nLayers = 28;
+  const unsigned nLayers = 30;
 
   const unsigned nSR = 8;
   double fitQual[nSR];
@@ -695,7 +695,7 @@ int plotEGReso(){//main
     for (unsigned iV(0); iV<nV;++iV){//loop on versions
       for (unsigned iS(0); iS<nS;++iS){//loop on scenarios
 	
-	TString plotDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalDescop/gitV03-02-02/version"+version[iV]+"/"+scenario[iS]+"/";
+	TString plotDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalDescop/gitV02-01-01/version"+version[iV]+"/"+scenario[iS]+"/";
 	TTree *ltree[neta][nPu][nGenEnAll];
 	TGraphErrors *resoRecoFit[nPu][neta][nSR];
 	
