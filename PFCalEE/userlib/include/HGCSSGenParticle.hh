@@ -90,7 +90,7 @@ public:
   inline double phi() const {
     double x = px_;
     double y = py_;
-    if (x==0) return 0;
+    if (x==0) return TMath::Pi()/2.;
     if (x>0) return atan(y/x);
     else if (y>0) return TMath::Pi()+atan(y/x);
     else return -1.*TMath::Pi()+atan(y/x);

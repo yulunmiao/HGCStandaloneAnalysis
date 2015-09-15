@@ -10,6 +10,7 @@
 #include "TTree.h"
 #include "TH1F.h"
 
+#include "HGCSSEvent.hh"
 #include "HGCSSRecoHit.hh"
 #include "HGCSSSimHit.hh"
 #include "HGCSSSamplingSection.hh"
@@ -57,6 +58,7 @@ public:
 		    const unsigned nPuVtx);
 
   bool fillEnergies(const unsigned ievt,
+		    const HGCSSEvent & event,
 		    const std::vector<HGCSSGenParticle> & genvec,
 		    const std::vector<HGCSSSamplingSection> & ssvec,
 		    const std::vector<HGCSSSimHit> & simhitvec,
@@ -138,6 +140,10 @@ private:
   double totalE_;
   double wgttotalE_;
   double trueE_;
+  double vtxX_;
+  double vtxY_;
+  double trueEta_;
+  double truePhi_;
   std::vector<std::vector<double> > energySR_;
   std::vector<std::vector<double> > subtractedenergySR_;
   

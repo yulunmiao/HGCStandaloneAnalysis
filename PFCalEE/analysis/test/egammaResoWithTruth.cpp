@@ -272,7 +272,7 @@ int main(int argc, char** argv){//main
   //perform first loop over simhits to find z positions of layers
   PositionFit lChi2Fit(nSR,residualMax,nLayers,nSiLayers,applyPuMixFix,debug);
   lChi2Fit.initialise(outputFile,"PositionFit",outFolder,geomConv,puDensity);
-  lChi2Fit.getZpositions(versionNumber,lSimTree,nEvts);
+  if (!lChi2Fit.getZpositions(versionNumber)) lChi2Fit.getZpositions(versionNumber,lSimTree,500);
   
   //perform second loop over events to find positions to fit and get energies
   SignalRegion SignalEnergy(outFolder, nLayers, nEvts, geomConv, puDensity,applyPuMixFix,versionNumber);
@@ -300,7 +300,7 @@ int main(int argc, char** argv){//main
 
     lSimTree->GetEntry(ievt);
     lRecTree->GetEntry(ievt);
-    SignalEnergy.fillEnergies(ievt,(*genvec),(*ssvec),(*simhitvec),(*rechitvec),nPuVtx);
+    SignalEnergy.fillEnergies(ievt,(*event),(*genvec),(*ssvec),(*simhitvec),(*rechitvec),nPuVtx);
 
   }//loop on entries
 
