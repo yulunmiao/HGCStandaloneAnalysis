@@ -28,6 +28,13 @@ int plotNabove60fCvspt(){//main
   bool doresol = false;
   bool docm = false;
 
+  const unsigned nT = 3;
+  unsigned thresh[nT] = {30,45,60};
+  unsigned threshMip[nT];
+  for (unsigned iT(0); iT<nT;++iT) {
+    threshMip[iT] = static_cast<unsigned>(26*thresh[iT]/60.+0.5);
+  }
+
   SetTdrStyle();
 #ifdef ISPI
   bool isPi = true;
@@ -79,24 +86,27 @@ int plotNabove60fCvspt(){//main
     lname << "myc1_" << eta[ie]; 
     myc1[ie] = new TCanvas(lname.str().c_str(),lname.str().c_str(),1500,1000);
   }
-  std::ostringstream label;
-  TGraphErrors *grDummy[nLim];
-  for (unsigned il(0);il<nLim;++il){//loop on limits
-    grDummy[il] = new TGraphErrors();
-    grDummy[il]->SetMinimum(0.001);
-    grDummy[il]->SetMaximum(1.2);
-    for (unsigned ipt(0);ipt<npt;++ipt){//loop on pt
-      grDummy[il]->SetPoint(ipt,pt[ipt],0);
-    }
-    label.str("");
-    label << ";p_{T} (GeV);proba(n_{E>60fC}#geq" << limit[il] << ")";
-    grDummy[il]->SetTitle(label.str().c_str());
-    
-  }//loop on limits
-  TGraphErrors *grDummy1 = new TGraphErrors();
-  if (!doresol){
-    grDummy1->SetMinimum(isPi ?0 : 0.5);
-    grDummy1->SetMaximum(isPi ? 3 : 1000);
+
+  for (unsigned iT(0); iT<nT;++iT) {
+
+    std::ostringstream label;
+    TGraphErrors *grDummy[nLim];
+    for (unsigned il(0);il<nLim;++il){//loop on limits
+      grDummy[il] = new TGraphErrors();
+      grDummy[il]->SetMinimum(0.001);
+      grDummy[il]->SetMaximum(1.2);
+      for (unsigned ipt(0);ipt<npt;++ipt){//loop on pt
+	grDummy[il]->SetPoint(ipt,pt[ipt],0);
+      }
+      label.str("");
+      label << ";p_{T} (GeV);proba(n_{E>" << thresh[iT] << "fC}#geq" << limit[il] << ")";
+      grDummy[il]->SetTitle(label.str().c_str());
+      
+    }//loop on limits
+    TGraphErrors *grDummy1 = new TGraphErrors();
+    if (!doresol){
+      grDummy1->SetMinimum(isPi ?0 : 0.5);
+      grDummy1->SetMaximum(isPi ? 3 : 1000);
   } else if (!docm) {
     grDummy1->SetMinimum(isPi ? 0 : 0.5);
     grDummy1->SetMaximum(isPi ? 3 : 50);
@@ -108,9 +118,9 @@ int plotNabove60fCvspt(){//main
     grDummy1->SetPoint(ipt,pt[ipt],0);
   }
   label.str("");
-  if (!doresol) label << ";p_{T} (GeV);<n_{E>60fC}>";
-  else if (!docm) label << ";p_{T} (GeV);<50/#sqrt{n_{E>60fC}}> (ps)";
-  else label << ";p_{T} (GeV);<50#times c/#sqrt{n_{E>60fC}}> (cm)";
+  if (!doresol) label << ";p_{T} (GeV);<n_{E>" << thresh[iT] << "fC}>";
+  else if (!docm) label << ";p_{T} (GeV);<50/#sqrt{n_{E>" << thresh[iT] << "fC}}> (ps)";
+  else label << ";p_{T} (GeV);<50#times c/#sqrt{n_{E>" << thresh[iT] << "fC}}> (cm)";
   grDummy1->SetTitle(label.str().c_str());
 
   TGraphErrors *gr[nV][neta][nLim];
@@ -152,8 +162,9 @@ int plotNabove60fCvspt(){//main
 	std::ostringstream fname;
 	fname << path << "v" << v[iv] << "_et" << pt[ipt] << "_eta" << eta[ieta];
 	if (eta[ieta]==2) fname << ".0";
-	if (ieta==4 && (pt[ipt]==50 || pt[ipt]==70)) fname << "/NAbove26_old.root";
-	else fname  << "/NAbove26.root";
+	if (thresh[iT]!=60) fname << "_thresh" << threshMip[iT];
+	if (ieta==4 && (pt[ipt]==50 || pt[ipt]==70)) fname << "/NAbove" << threshMip[iT] << "_old.root";
+	else fname  << "/NAbove" << threshMip[iT] << ".root";
 	ftmp = TFile::Open(fname.str().c_str());
 	if (!ftmp) {
 	  continue;
@@ -164,7 +175,9 @@ int plotNabove60fCvspt(){//main
 	  continue;
 	}
 	const unsigned nbins = 2000;
-	TH1F *hprob = new TH1F("hprob",";n(E>26 mips);proba",nbins,0,nbins);
+	fname.str("");
+	fname << ";n(E>" << threshMip[iT] << " mips);proba";
+	TH1F *hprob = new TH1F("hprob",fname.str().c_str(),nbins,0,nbins);
 	//hprob->StatOverflows(1);
 	hprob->Sumw2();
 	myc2->cd();
@@ -241,14 +254,17 @@ int plotNabove60fCvspt(){//main
       grMean[iv][ieta]->Draw("PEL");
 
     }//loop on versions
+
+    std::cout << " End loopon versions" << std::endl;
+
     for (unsigned il(0);il<nLim;++il){//loop on limits
  
       myc[ieta]->cd(il+1);
       if (il>2) gPad->SetLogy(1);
       if (ieta==0 && il==0) {
 	leg->AddEntry(gr[0][ieta][il],"TP-28-12","P");
-	leg->AddEntry(gr[1][ieta][il],"TP-24-11","P");
-	leg->AddEntry(gr[2][ieta][il],"TP-18-09","P");
+	if (nV>1) leg->AddEntry(gr[1][ieta][il],"TP-24-11","P");
+	if (nV>2) leg->AddEntry(gr[2][ieta][il],"TP-18-09","P");
       }
       
       if (il==0) leg->Draw("same");
@@ -271,7 +287,8 @@ int plotNabove60fCvspt(){//main
 	lat.SetTextSize(0.03);
 	lat.DrawLatexNDC(0.02,0.02,"HGCAL Standalone Simulation");
 	std::ostringstream lsave;
-	lsave << "SummaryNabove60fC_" << particle << "_vspt_eta" << eta[ieta] << "_limit" << limit[il];
+	lsave << "SummaryNabove" << thresh[iT] << "fC_" << particle << "_vspt_eta" << eta[ieta] << "_limit" << limit[il];
+	mycl->Update();
 	mycl->Print((lsave.str()+".pdf").c_str());
 	mycl->Print((lsave.str()+".C").c_str());
       }
@@ -280,7 +297,7 @@ int plotNabove60fCvspt(){//main
     }
     myc[ieta]->Update();
     std::ostringstream lsave;
-    lsave << "SummaryNabove60fC_" << particle << "_vspt_eta" << eta[ieta];
+    lsave << "SummaryNabove"<< thresh[iT] << "fC_" << particle << "_vspt_eta" << eta[ieta];
     if (!doresol && !docm) {
       myc[ieta]->Print((lsave.str()+".pdf").c_str());
       myc[ieta]->Print((lsave.str()+".C").c_str());
@@ -294,14 +311,15 @@ int plotNabove60fCvspt(){//main
     lat.DrawLatexNDC(0.02,0.02,"HGCAL Standalone Simulation");
     myc1[ieta]->Update();
     lsave.str("");
-    if (!doresol) lsave << "SummaryNMeanabove60fC_" << particle << "_vspt_eta" << eta[ieta];
-    else if (!docm) lsave << "SummaryResolabove60fC_" << particle << "_vspt_eta" << eta[ieta];
-    else lsave << "SummaryResolAtVertexabove60fC_" << particle << "_vspt_eta" << eta[ieta] ;
+    if (!doresol) lsave << "SummaryNMeanabove" << thresh[iT] << "fC_" << particle << "_vspt_eta" << eta[ieta];
+    else if (!docm) lsave << "SummaryResolabove" << thresh[iT] << "fC_" << particle << "_vspt_eta" << eta[ieta];
+    else lsave << "SummaryResolAtVertexabove" << thresh[iT] << "fC_" << particle << "_vspt_eta" << eta[ieta] ;
     myc1[ieta]->Print((lsave.str()+".pdf").c_str());
     myc1[ieta]->Print((lsave.str()+".C").c_str());
 
 
   }//loop on eta
 
+  }//loop on thresholds
   return 0;
 }//main

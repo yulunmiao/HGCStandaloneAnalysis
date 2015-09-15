@@ -1004,7 +1004,11 @@ void DetectorConstruction::fillInterSectorSpace(const unsigned sectorNum,
 }//fill intersector space
 
 G4double DetectorConstruction::getCrackOffset(size_t layer){
-  if (m_nSectors>1) return static_cast<unsigned>(layer/10.)*static_cast<unsigned>(m_sectorWidth/30.)*10;
+  //model with 3 cracks identical by block of 10 layers
+  //if (m_nSectors>1) return static_cast<unsigned>(layer/10.)*static_cast<unsigned>(m_sectorWidth/30.)*10;
+  //with cracks shifted systematically layer-to-layer
+  if (m_nSectors>1) return 10*((7*layer)%31);
+
   return 0;
 }
 
