@@ -35,7 +35,7 @@ nSiLayers=2
 enlist=[0]
 #if opt.dogun : enlist=[3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200]
 if opt.dogun : 
-    enlist=[60]
+    enlist=[20]
     #enlist=[3,5,10,30,50,70,100,200]
 
 #if opt.dogun : enlist=[2,5,10,20,40,60,80,100,150,200]#,300,400,500]

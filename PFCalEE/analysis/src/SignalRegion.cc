@@ -38,6 +38,7 @@ SignalRegion::SignalRegion(const std::string inputFolder,
   else {
     std::cout << " -- z positions taken from file " << finname.str() << std::endl;
   }
+
   for(unsigned iL(0);iL<nLayers_;iL++){
     fzpos >> layerIndex >> zpos;
     zPos_.push_back(zpos);
@@ -161,6 +162,7 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
 
    vtxX_ = event.vtx_x();
    vtxY_ = event.vtx_y();
+   vtxZ_ = event.vtx_z();
  
    return fillEnergies(ievt,ssvec,simhitvec,rechitvec,nPuVtx,fit);
 }
@@ -210,15 +212,13 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
  
   //fill weights for first event only: same in all events
   if (firstEvent_){
-    absweight_.clear();
-    absweight_.reserve(nLayers_);
     std::cout << " -- Absorber weights used for total energy:" << std::endl;
     for(unsigned iL(0); iL<nLayers_; iL++){
       //double w = absWeight(iL);
       double w = ssvec[iL].voldEdx()/ssvec[1].voldEdx();
       //double w = ssvec[iL].volX0trans()/ssvec[1].volX0trans();
       std::cout << " - Layer " << iL << " w=" << w << std::endl;
-      absweight_.push_back(w);
+      absweight_[iL]=w;
     }
     firstEvent_=false;
   }
@@ -237,6 +237,9 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
     for (unsigned iSR(0);iSR<nSR_;++iSR){
       energySR_[iL][iSR] = 0;
       subtractedenergySR_[iL][iSR] = 0;
+    }
+    for (unsigned idx(0);idx<9;++idx){
+      Exy_[iL][idx] = 0;
     }
   }
 
@@ -312,14 +315,28 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
     double subtractedenergy = std::max(0.,energy - puE);
     double halfCell = 0.5*geomConv_.cellSize(layer,lradius);
     //std::cout << " halfcell = " << halfCell << std::endl;
-    double dx = eventPos[layer].x()-posx;
-    double dy = eventPos[layer].y()-posy;
+    double dx = posx-eventPos[layer].x();
+    double dy = posy-eventPos[layer].y();
     
     //SR0-4
     for (unsigned isr(0); isr<nSR_;++isr){
       if ( (fabs(dx) <= ((isr+1)*halfCell)) && (fabs(dy) <= ((isr+1)*halfCell))){
 	energySR_[layer][isr] += energy;//*absweight_[layer]*etacor;
-	subtractedenergySR_[layer][isr] += subtractedenergy*absweight_[layer];//*etacor;
+	subtractedenergySR_[layer][isr] += subtractedenergy;//*absweight_[layer];//*etacor;
+	//save energy in 3*3 cells
+	if (isr==2){
+	  int ix = dx/(2*halfCell);
+	  int iy = dy/(2*halfCell);
+	  unsigned idx = 0;
+	  if ((ix > 1 || ix < -1) || (iy>1 || iy<-1)) {
+	    std::cout << " error, check ix=" << ix << " iy=" << iy << " posx,y-max=" << dx << " " << dy << " step " << (isr+1)*halfCell << std::endl;
+	    continue;
+	  }
+	  else 
+	    idx = 3*(iy+1)+(ix+1);
+	  Exy_[layer][idx] = energy;	  
+	}
+
       }
     }
   }//loop on hits
@@ -350,6 +367,7 @@ void SignalRegion::initialiseHistograms(){
     outtree_->Branch("trueE",&trueE_);
     outtree_->Branch("vtxX",&vtxX_);
     outtree_->Branch("vtxY",&vtxY_);
+    outtree_->Branch("vtxZ",&vtxZ_);
     outtree_->Branch("trueEta",&trueEta_);
     outtree_->Branch("truePhi",&truePhi_);
 
@@ -358,8 +376,28 @@ void SignalRegion::initialiseHistograms(){
     energySR_.resize(nLayers_,emptyvec);
     subtractedenergySR_.resize(nLayers_,emptyvec);
 
+    absweight_.resize(nLayers_,1);
+
+    if (zPos_.size()!=nLayers_) {
+      std::cout << " -- ERROR! z positions not filled properly. Exiting..." << std::endl;
+      exit(1);
+    }
+
+    std::vector<double> init;
+    init.resize(9,0);
+    Exy_.resize(nLayers_,init);
+
     std::ostringstream label;
     for (unsigned iL(0); iL<nLayers_;++iL){
+      label.str("");
+      label << "absweight_" << iL;
+      outtree_->Branch(label.str().c_str(),&absweight_[iL]);
+
+      label.str("");
+      label << "zpos_" << iL;
+      outtree_->Branch(label.str().c_str(),&zPos_[iL]);
+
+
       for (unsigned iSR(0);iSR<nSR_;++iSR){
 	label.str("");
 	label << "energy_" << iL << "_SR" << iSR;
@@ -367,6 +405,14 @@ void SignalRegion::initialiseHistograms(){
 	label.str("");
 	label << "subtractedenergy_" << iL << "_SR" << iSR;
 	outtree_->Branch(label.str().c_str(),&subtractedenergySR_[iL][iSR]);
+      }
+      for (unsigned iy(0);iy<3;++iy){
+	for (unsigned ix(0);ix<3;++ix){
+	  unsigned idx = 3*iy+ix;
+	  label.str("");     
+	  label << "E_" << iL << "_" << idx;
+	  outtree_->Branch(label.str().c_str(),&Exy_[iL][idx]);
+	}
       }
     }
 
