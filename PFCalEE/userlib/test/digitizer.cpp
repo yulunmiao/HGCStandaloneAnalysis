@@ -457,7 +457,7 @@ int main(int argc, char** argv){//main
   HGCSSInfo *lInfo = new HGCSSInfo();
   lInfo->cellSize(cellSize);
   lInfo->version(versionNumber);
-  lInfo->version(model);
+  lInfo->model(model);
 
   TTree *outputTree = new TTree("RecoTree","HGC Standalone simulation reco tree");
   HGCSSSimHitVec lSimHits;

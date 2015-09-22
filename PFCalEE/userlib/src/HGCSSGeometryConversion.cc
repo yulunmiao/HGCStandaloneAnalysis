@@ -5,6 +5,7 @@
 
 HGCSSGeometryConversion::HGCSSGeometryConversion(std::string filePath, const unsigned & model, const double & cellsize, const bool bypassR, const unsigned nSiLayers){
 
+  dopatch_=false;
   width_ = 200;//mm
   model_ = model;
   if (model==1) width_ = 500;
@@ -154,9 +155,8 @@ void HGCSSGeometryConversion::fill(const DetectorEnum type,
 {
   double radius = sqrt(posx*posx+posy*posy);
   double r1 = theDetector().subDetectorByEnum(type).radiusLim;
-
   //patch for crack regions
-  if (model_==4){
+  if (dopatch_ && model_==4){
     double xcrack1 = -160;
     double xcrack2 = 150;
     if (type==DetectorEnum::MECAL){
@@ -305,7 +305,7 @@ void HGCSSGeometryConversion::resetVector(std::vector<TH2D *> & aVec,
 	  minx = min;
 	  maxx = max;
 
-	  if (model_==4){
+	  if (dopatch_ && model_==4){
 	    if (aDet.type == DetectorEnum::MECAL) {
 	      //set specific binning for displaced sections
 	      minx += 310/3.;

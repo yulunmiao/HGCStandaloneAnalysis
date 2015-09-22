@@ -103,6 +103,7 @@ public:
 
 private:
 
+  bool dopatch_;
   double width_;
   double cellSize_;
   std::vector<unsigned> granularity_;
