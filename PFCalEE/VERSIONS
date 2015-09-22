@@ -10,6 +10,7 @@ V06a-03-05
 ----------
 * add energy per 3*3 region in SignalRegion output tree.
 * add missing analysis config files for mip studies.
+* fix digi for model 4
 
 V06a-03-04
 ----------
