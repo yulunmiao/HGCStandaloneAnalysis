@@ -170,9 +170,10 @@ int main(int argc, char** argv){//main
   }
   else {
     for (unsigned i(0);i<nRuns;++i){
-      std::ostringstream lstr;
-      lstr << inputsim.str() << "_run" << i << ".root";
-      if (testInputFile(lstr.str(),simFile)){  
+      std::ostringstream lstrsim;
+      std::ostringstream lstrrec;
+      lstrsim << inputsim.str() << "_run" << i << ".root";
+      if (testInputFile(lstrsim.str(),simFile)){  
 	if (simFile) info =(HGCSSInfo*)simFile->Get("Info");
 	else {
 	  std::cout << " -- Error in getting information from simfile!" << std::endl;
@@ -180,11 +181,10 @@ int main(int argc, char** argv){//main
 	}
       }
       else continue;
-      lSimTree->AddFile(lstr.str().c_str());
-      lstr.str("");
-      lstr << inputrec.str() << "_run" << i << ".root";
-      if (!testInputFile(lstr.str(),recFile)) continue;
-      lRecTree->AddFile(lstr.str().c_str());
+      lstrrec << inputrec.str() << "_run" << i << ".root";
+      if (!testInputFile(lstrrec.str(),recFile)) continue;
+      lSimTree->AddFile(lstrsim.str().c_str());
+      lRecTree->AddFile(lstrrec.str().c_str());
     }
   }
 
@@ -268,15 +268,20 @@ int main(int argc, char** argv){//main
   
   const unsigned nEvts = ((pNevts > lSimTree->GetEntries() || pNevts==0) ? static_cast<unsigned>(lSimTree->GetEntries()) : pNevts) ;
   
+  std::cout << " -- Processing " << nEvts << " events out of " << lSimTree->GetEntries() << std::endl;
 
   //perform first loop over simhits to find z positions of layers
   PositionFit lChi2Fit(nSR,residualMax,nLayers,nSiLayers,applyPuMixFix,debug);
   lChi2Fit.initialise(outputFile,"PositionFit",outFolder,geomConv,puDensity);
-  lChi2Fit.getZpositions(versionNumber,lSimTree,nEvts);
+  if (!lChi2Fit.getZpositions(versionNumber)) lChi2Fit.getZpositions(versionNumber,lSimTree,500);
+
+  std::cout << " -- positionfit initilisation done." << std::endl;
   
   //perform second loop over events to find positions to fit and get energies
   SignalRegion SignalEnergy(outFolder, nLayers, nEvts, geomConv, puDensity,applyPuMixFix,versionNumber);
   SignalEnergy.initialise(outputFile,"Energies");
+
+  std::cout << " -- sigenergy initialisation done." << std::endl;
 
   //loop on events
   HGCSSEvent * event = 0;
@@ -300,7 +305,7 @@ int main(int argc, char** argv){//main
 
     lSimTree->GetEntry(ievt);
     lRecTree->GetEntry(ievt);
-    SignalEnergy.fillEnergies(ievt,(*genvec),(*ssvec),(*simhitvec),(*rechitvec),nPuVtx);
+    SignalEnergy.fillEnergies(ievt,(*event),(*genvec),(*ssvec),(*simhitvec),(*rechitvec),nPuVtx);
 
   }//loop on entries
 

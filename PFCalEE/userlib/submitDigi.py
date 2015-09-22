@@ -29,11 +29,14 @@ parser.add_option('-g', '--gun'         ,    action="store_true",  dest='dogun' 
 parser.add_option('-S', '--no-submit'   ,    action="store_true",  dest='nosubmit'           , help='Do not submit batch job.')
 (opt, args) = parser.parse_args()
 
+
+nSiLayers=2
+
 enlist=[0]
 #if opt.dogun : enlist=[3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200]
 if opt.dogun : 
-    #enlist=[16,82,160]
-    enlist=[3,5,10,30,50,70,100,200]
+    enlist=[60]
+    #enlist=[3,5,10,30,50,70,100,200]
 
 #if opt.dogun : enlist=[2,5,10,20,40,60,80,100,150,200]#,300,400,500]
 
@@ -87,7 +90,7 @@ elif (opt.version==25 or opt.version==26):
     granularity='0-29:4,30-41:4,42-53:8'
     noise='0-41:0.14,42-53:0.2'
     threshold='0-53:5'
-elif (opt.version==30):
+elif (opt.version==30 or opt.version==100):
     granularity='0-27:4'
     noise='0-27:0.14'
     threshold='0-27:5'
@@ -139,8 +142,10 @@ for nPuVtx in nPuVtxlist:
             suffix='Pu%d_IC%d'%(nPuVtx,interCalib)
             myqueue=opt.lqueue
         else :
-            suffix='IC%d'%interCalib
+            suffix='IC%d'%(interCalib)
             myqueue=opt.squeue
+
+        if opt.model!=2 : suffix='%s_Si%d'%(suffix,nSiLayers)
             
         for en in enlist :
             
@@ -172,7 +177,7 @@ for nPuVtx in nPuVtxlist:
             if opt.phi!=0.5 : outTag='%s_phi%3.3fpi'%(outTag,opt.phi) 
             if (opt.run>=0) : outTag='%s_run%d'%(outTag,opt.run)
             scriptFile.write('localdir=`pwd`\n')
-            scriptFile.write('%s/bin/digitizer %d root://eoscms//eos/cms%s/HGcal_%s.root $localdir/ %s %s %s %d %d %s | tee %s\n'%(os.getcwd(),opt.nevts,eosDirIn,outTag,granularity,noise,threshold,interCalib,nPuVtx,INPATHPU,outlog))
+            scriptFile.write('%s/bin/digitizer %d root://eoscms//eos/cms%s/HGcal_%s.root $localdir/ %s %s %s %d %d %d %s | tee %s\n'%(os.getcwd(),opt.nevts,eosDirIn,outTag,granularity,noise,threshold,interCalib,nSiLayers,nPuVtx,INPATHPU,outlog))
             scriptFile.write('echo "--Local directory is " $localdir >> %s\n'%(g4log))
             scriptFile.write('ls * >> %s\n'%(g4log))
             if len(opt.eos)>0:

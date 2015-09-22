@@ -10,6 +10,7 @@
 #include "TTree.h"
 #include "TH1F.h"
 
+#include "HGCSSEvent.hh"
 #include "HGCSSRecoHit.hh"
 #include "HGCSSSimHit.hh"
 #include "HGCSSSamplingSection.hh"
@@ -57,6 +58,7 @@ public:
 		    const unsigned nPuVtx);
 
   bool fillEnergies(const unsigned ievt,
+		    const HGCSSEvent & event,
 		    const std::vector<HGCSSGenParticle> & genvec,
 		    const std::vector<HGCSSSamplingSection> & ssvec,
 		    const std::vector<HGCSSSimHit> & simhitvec,
@@ -108,7 +110,11 @@ public:
     if(layer >= nLayers_) return 0;
     return absweight_[layer];
   };
-  
+
+  inline std::vector<std::vector<double> > getEnergyArray() const{
+    return Exy_;
+  };
+
 private:
   
   unsigned nSR_;
@@ -126,21 +132,27 @@ private:
   
   bool fixForPuMixBug_;
   
-  std::vector<double> zPos_;
   std::vector<FitResult> accurateFit_;
-  std::vector<double> absweight_;
 
   unsigned nSkipped_;
   bool firstEvent_;
 
   //for tree
+  std::vector<double> zPos_;
+  std::vector<double> absweight_;
   unsigned evtIdx_;
   double totalE_;
   double wgttotalE_;
   double trueE_;
+  double vtxX_;
+  double vtxY_;
+  double vtxZ_;
+  double trueEta_;
+  double truePhi_;
   std::vector<std::vector<double> > energySR_;
   std::vector<std::vector<double> > subtractedenergySR_;
-  
+  std::vector<std::vector<double> > Exy_;
+
   TH1F *p_rawEtotal;
   TH1F *p_wgtEtotal;
   //std::vector<TH1F*> p_rawESR;

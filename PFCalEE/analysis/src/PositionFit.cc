@@ -778,8 +778,9 @@ void PositionFit::getZpositions(const unsigned versionNumber,
        if (lHit.silayer() >= nSiLayers_) continue; 
 
        double posz = lHit.get_z();
-       //get z position of hits
-       if (avgZ_[layer]<posz) avgZ_[layer]=posz;
+       //get z position of hits, take right-most position
+       if (avgZ_[layer]<posz||
+	   avgZ_[layer]==0) avgZ_[layer]=posz;
      }
    }
 
