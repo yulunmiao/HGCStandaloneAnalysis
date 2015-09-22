@@ -21,6 +21,9 @@ EventAction::EventAction()
   printModulo = 10;
   outF_=TFile::Open("PFcal.root","RECREATE");
   outF_->cd();
+  //honeycomb
+  geomConv_.initialiseHoneyComb(((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->GetCalorSizeXY(),CELL_SIZE_X);
+
   //save some info
   HGCSSInfo *info = new HGCSSInfo();
   info->cellSize(CELL_SIZE_X);
@@ -144,7 +147,7 @@ void EventAction::EndOfEventAction(const G4Event* g4evt)
 
 	for (unsigned iSiHit(0); iSiHit<(*detector_)[i].getSiHitVec(idx).size();++iSiHit){
 	  G4SiHit lSiHit = (*detector_)[i].getSiHitVec(idx)[iSiHit];
-	  HGCSSSimHit lHit(lSiHit,idx);
+	  HGCSSSimHit lHit(lSiHit,idx,geomConv_.hexagonMap());
 	  
 	  isInserted = lHitMap.insert(std::pair<unsigned,HGCSSSimHit>(lHit.cellid(),lHit));
 	  if (!isInserted.second) isInserted.first->second.Add(lSiHit);

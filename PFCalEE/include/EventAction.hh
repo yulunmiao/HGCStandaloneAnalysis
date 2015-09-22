@@ -16,6 +16,7 @@
 #include "HGCSSSamplingSection.hh"
 #include "HGCSSSimHit.hh"
 #include "HGCSSGenParticle.hh"
+#include "HGCSSGeometryConversion.hh"
 
 #include <vector>
 #include <map>
@@ -51,6 +52,9 @@ private:
   RunAction*  runAct;
   std::vector<SamplingSection> *detector_;
   G4int     evtNb_,printModulo;
+
+  HGCSSGeometryConversion geomConv_;
+
   TFile *outF_;
   TTree *tree_;
   HGCSSEvent event_;

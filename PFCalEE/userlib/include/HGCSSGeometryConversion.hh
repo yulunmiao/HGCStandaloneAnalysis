@@ -2,10 +2,12 @@
 #define HGCSSGeometryConversion_h
 
 
+#include <iostream>
 #include <string>
 #include <vector>
 #include <cmath>
 #include "TH2D.h"
+#include "TH2Poly.h"
 
 #include "HGCSSDetector.hh"
 
@@ -16,6 +18,22 @@ public:
   HGCSSGeometryConversion(std::string filePath,const unsigned & model, const double & cellsize, const bool bypassR=false, const unsigned nSiLayers=3);
 
   ~HGCSSGeometryConversion();
+
+  TH2Poly *hexagonMap(){
+    static TH2Poly hc;
+    return &hc;
+  };
+
+  void initialiseHoneyComb(const double xymin, const double side){
+    //xstart,ystart,side length,
+    double d=sqrt(3.)*side;
+    unsigned nx=static_cast<unsigned>(xymin*2./d);
+    unsigned ny=static_cast<unsigned>(xymin*4./(3.*side));
+    std::cout << " -- Initialising HoneyComb with parameters: " << std::endl
+	      << " ---- xymin = " << -1.*xymin << ", side = " << side
+	      << ", nx = " << nx << ", ny=" << ny << std::endl;
+    hexagonMap()->Honeycomb(-1.*xymin,-1.*xymin,side,nx,ny);
+  };
 
   void setGranularity(const std::vector<unsigned> & granul);
 

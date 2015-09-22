@@ -4,7 +4,10 @@
 #include <cmath>
 #include <stdlib.h>
 
-HGCSSSimHit::HGCSSSimHit(const G4SiHit & aSiHit, const unsigned & asilayer, const float cellSize){
+HGCSSSimHit::HGCSSSimHit(const G4SiHit & aSiHit, 
+			 const unsigned & asilayer, 
+			 TH2Poly* map, 
+			 const float cellSize){
   energy_ = aSiHit.energy;
   //energy weighted time
   //PS: need to call calculateTime() after all hits 
@@ -18,12 +21,21 @@ HGCSSSimHit::HGCSSSimHit(const G4SiHit & aSiHit, const unsigned & asilayer, cons
   double y = aSiHit.hit_y;
   double x = aSiHit.hit_x;
   //cellid encoding:
-  bool x_side = x>0 ? true : false;
-  bool y_side = y>0 ? true : false;
-  unsigned x_cell = static_cast<unsigned>(fabs(x)/(cellSize*getGranularity()));
-  unsigned y_cell = static_cast<unsigned>(fabs(y)/(cellSize*getGranularity()));
+  map->Reset("");
+  map->Fill(x,y);
+  cellid_ = map->GetMaximumBin();
 
-  encodeCellId(x_side,y_side,x_cell,y_cell);
+  std::cout << " - Sanity check: x,y = " << x << " " << y 
+	    << " cellid=" << cellid_
+	    << " bin content = " << map->GetBinContent(cellid_)
+	    << " x,y bin = " << map->GetMean(1) << " " << map->GetMean(2) << std::endl;
+
+  //bool x_side = x>0 ? true : false;
+  //bool y_side = y>0 ? true : false;
+  //unsigned x_cell = static_cast<unsigned>(fabs(x)/(cellSize*getGranularity()));
+  //unsigned y_cell = static_cast<unsigned>(fabs(y)/(cellSize*getGranularity()));
+
+  //encodeCellId(x_side,y_side,x_cell,y_cell);
 
   nGammas_= 0;
   nElectrons_ = 0;

@@ -13,7 +13,9 @@
 #include "Math/Point3Dfwd.h"
 #include "TH2Poly.h"
 
-static const float CELL_SIZE_X=2.5;//mm
+
+//for hexagons: side size.
+static const float CELL_SIZE_X=6.4;//2.5;//mm
 static const float CELL_SIZE_Y=CELL_SIZE_X;
 
 class HGCSSSimHit{
@@ -36,7 +38,7 @@ public:
   {
     
   };
-  HGCSSSimHit(const G4SiHit & aSiHit, const unsigned & asilayer, const float cellSize = CELL_SIZE_X);
+  HGCSSSimHit(const G4SiHit & aSiHit, const unsigned & asilayer, TH2Poly* map, const float cellSize = CELL_SIZE_X);
 
   ~HGCSSSimHit(){};
 
@@ -129,13 +131,6 @@ public:
   };
 
   void Add(const G4SiHit & aSiHit);
-
-  TH2Poly *hexagonMap(){
-    static TH2Poly hc;
-    //xstart,ystart,side length,nhexa_in_x,nhexa_in_y
-    hc.Honeycomb(-2800,-2800,1,10,10);
-    return *hc;
-  };
 
   void encodeCellId(const bool x_side,const bool y_side,const unsigned x_cell,const unsigned y_cell);
 
