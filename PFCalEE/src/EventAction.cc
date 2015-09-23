@@ -21,11 +21,17 @@ EventAction::EventAction()
   printModulo = 10;
   outF_=TFile::Open("PFcal.root","RECREATE");
   outF_->cd();
+
+  double xysize = ((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->GetCalorSizeXY();
   //honeycomb
-  geomConv_.initialiseHoneyComb(((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->GetCalorSizeXY(),CELL_SIZE_X);
+  geomConv_.initialiseHoneyComb(xysize,CELL_SIZE_X);
+  //square map for BHCAL
+  geomConv_.initialiseSquareMap(xysize,10.);
+
 
   //save some info
   HGCSSInfo *info = new HGCSSInfo();
+  info->calorSizeXY(xysize);
   info->cellSize(CELL_SIZE_X);
   info->model(((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->getModel());
   info->version(((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->getVersion());
@@ -136,7 +142,7 @@ void EventAction::EndOfEventAction(const G4Event* g4evt)
 			       <<  lSec.voldEdx() << ";"
 			       << std::endl;
       //std::cout << " n_sens_ele = " << (*detector_)[i].n_sens_elements << std::endl;
-
+      bool is_scint = (*detector_)[i].hasScintillator;
       for (unsigned idx(0); idx<(*detector_)[i].n_sens_elements; ++idx){
 	std::map<unsigned,HGCSSSimHit> lHitMap;
 	std::pair<std::map<unsigned,HGCSSSimHit>::iterator,bool> isInserted;
@@ -147,7 +153,7 @@ void EventAction::EndOfEventAction(const G4Event* g4evt)
 
 	for (unsigned iSiHit(0); iSiHit<(*detector_)[i].getSiHitVec(idx).size();++iSiHit){
 	  G4SiHit lSiHit = (*detector_)[i].getSiHitVec(idx)[iSiHit];
-	  HGCSSSimHit lHit(lSiHit,idx,geomConv_.hexagonMap());
+	  HGCSSSimHit lHit(lSiHit,idx,is_scint?geomConv_.squareMap() : geomConv_.hexagonMap());
 	  
 	  isInserted = lHitMap.insert(std::pair<unsigned,HGCSSSimHit>(lHit.cellid(),lHit));
 	  if (!isInserted.second) isInserted.first->second.Add(lSiHit);

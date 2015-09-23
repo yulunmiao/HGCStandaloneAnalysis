@@ -24,15 +24,59 @@ public:
     return &hc;
   };
 
+  TH2Poly *squareMap(){
+    static TH2Poly hsq;
+    return &hsq;
+  };
+
+  void initialiseSquareMap(const double xymin, const double side){
+    initialiseSquareMap(squareMap(),xymin,side,true);
+  };
+
+  void initialiseSquareMap(TH2Poly *map, const double xymin, const double side, bool print){
+    unsigned nx=static_cast<unsigned>(xymin*2./side);
+    unsigned ny=nx;
+    unsigned i,j;
+    Double_t x1,y1,x2,y2;
+    Double_t dx=side, dy=side;
+    x1 = -1.*xymin;
+    x2 = x1+dx;
+
+   for (i = 0; i<nx; i++) {
+      y1 = -1.*xymin;
+      y2 = y1+dy;
+      for (j = 0; j<ny; j++) {
+	map->AddBin(x1, y1, x2, y2);
+	y1 = y2;
+	y2 = y1+dy;
+      }
+      x1 = x2;
+      x2 = x1+dx;
+   }
+
+   if (print) {
+     std::cout <<  " -- Initialising squareMap with parameters: " << std::endl
+	       << " ---- xymin = " << -1.*xymin << ", side = " << side
+	       << ", nx = " << nx << ", ny=" << ny
+	       << std::endl;
+   }
+  };
+
   void initialiseHoneyComb(const double xymin, const double side){
+    initialiseHoneyComb(hexagonMap(),xymin,side,true);
+  };
+
+  void initialiseHoneyComb(TH2Poly *map, const double xymin, const double side, bool print){
     //xstart,ystart,side length,
     double d=sqrt(3.)*side;
     unsigned nx=static_cast<unsigned>(xymin*2./d);
     unsigned ny=static_cast<unsigned>(xymin*4./(3.*side));
-    std::cout << " -- Initialising HoneyComb with parameters: " << std::endl
-	      << " ---- xymin = " << -1.*xymin << ", side = " << side
-	      << ", nx = " << nx << ", ny=" << ny << std::endl;
-    hexagonMap()->Honeycomb(-1.*xymin,-1.*xymin,side,nx,ny);
+    if (print) {
+      std::cout << " -- Initialising HoneyComb with parameters: " << std::endl
+		<< " ---- xymin = " << -1.*xymin << ", side = " << side
+		<< ", nx = " << nx << ", ny=" << ny << std::endl;
+    }
+    map->Honeycomb(-1.*xymin,-1.*xymin,side,nx,ny);
   };
 
   void setGranularity(const std::vector<unsigned> & granul);
@@ -83,10 +127,10 @@ public:
 
   double getAverageZ(const unsigned layer);
 
-  double sumBins(const std::vector<TH2D *> & aHistVec,
+  double sumBins(const std::vector<TH2Poly *> & aHistVec,
 		 const double & aMipThresh=0.);
 
-  void resetVector(std::vector<TH2D *> & aVec,
+  void resetVector(std::vector<TH2Poly *> & aVec,
 		   std::string aVar,
 		   std::string aString,
 		   const HGCSSSubDetector & aDet,
@@ -95,27 +139,19 @@ public:
 		   bool print=true);
 
 
-  void deleteHistos(std::vector<TH2D *> & aVec);
+  void deleteHistos(std::vector<TH2Poly *> & aVec);
 
-  TH2D * get2DHist(const unsigned layer,std::string name);
+  TH2Poly * get2DHist(const unsigned layer,std::string name);
 
-  inline std::vector<TH2D *> & get2DEnergyVec(const DetectorEnum aDet){
+  inline std::vector<TH2Poly *> & get2DEnergyVec(const DetectorEnum aDet){
     return HistMapE_[aDet];
   };
 
-  inline std::vector<TH2D *> & get2DEnergyVecSmall(const DetectorEnum aDet){
-    return HistMapESmall_[aDet];
-  };
-
-  inline std::vector<TH2D *> & get2DTimeVec(const DetectorEnum aDet){
+  inline std::vector<TH2Poly *> & get2DTimeVec(const DetectorEnum aDet){
     return HistMapTime_[aDet];
   };
 
-  inline std::vector<TH2D *> & get2DTimeVecSmall(const DetectorEnum aDet){
-    return HistMapTimeSmall_[aDet];
-  };
-
-  inline std::vector<TH2D *> & get2DZposVec(const DetectorEnum aDet){
+  inline std::vector<TH2Poly *> & get2DZposVec(const DetectorEnum aDet){
     return HistMapZ_[aDet];
   };
 
@@ -128,13 +164,13 @@ private:
   unsigned model_;
   bool bypassRadius_;
   unsigned nSiLayers_;
-  std::map<DetectorEnum,std::vector<TH2D *> > HistMapE_;
-  std::map<DetectorEnum,std::vector<TH2D *> > HistMapESmall_;
-  std::map<DetectorEnum,std::vector<TH2D *> > HistMapTime_;
-  std::map<DetectorEnum,std::vector<TH2D *> > HistMapTimeSmall_;
-  std::map<DetectorEnum,std::vector<TH2D *> > HistMapZ_;
+  std::map<DetectorEnum,std::vector<TH2Poly *> > HistMapE_;
+  std::map<DetectorEnum,std::vector<TH2Poly *> > HistMapTime_;
+  std::map<DetectorEnum,std::vector<TH2Poly *> > HistMapZ_;
   std::map<DetectorEnum,std::vector<double> > avgMapZ_;
   std::map<DetectorEnum,std::vector<double> > avgMapE_;
+
+
 };
 
 

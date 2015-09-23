@@ -43,12 +43,20 @@ public:
     return cellsize_;
   };
 
+  inline void calorSizeXY(const double & aVal){
+    calorSizeXY_ = aVal;
+  };
+  
+  inline double calorSizeXY() const{
+    return calorSizeXY_;
+  };
+
 private:
 
   int version_;
   int model_;
   double cellsize_;
-
+  double calorSizeXY_;
 
   ClassDef(HGCSSInfo,1);
 

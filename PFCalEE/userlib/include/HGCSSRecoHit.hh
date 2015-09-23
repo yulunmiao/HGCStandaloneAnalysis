@@ -11,6 +11,7 @@
 #include "HGCSSSimHit.hh"
 #include "Math/Point3D.h"
 #include "Math/Point3Dfwd.h"
+#include "TH2Poly.h"
 
 class HGCSSRecoHit{
 
@@ -27,7 +28,8 @@ public:
     time_(0)
   {};
 
-  HGCSSRecoHit(const HGCSSSimHit & aSimHit, const unsigned granularity=1);
+  HGCSSRecoHit(const HGCSSSimHit & aSimHit,
+	       TH2Poly* map);
 
   ~HGCSSRecoHit(){};
 

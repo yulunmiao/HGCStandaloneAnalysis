@@ -18,17 +18,41 @@ HGCSSSimHit::HGCSSSimHit(const G4SiHit & aSiHit,
 
   //coordinates in mm
   //double z = aSiHit.hit_x;
-  double y = aSiHit.hit_y;
   double x = aSiHit.hit_x;
+  double y = aSiHit.hit_y;
   //cellid encoding:
-  map->Reset("");
-  map->Fill(x,y);
-  cellid_ = map->GetMaximumBin();
+  //map->Reset("");
+  //map->Fill(x,y);
+  //GetMaximumBin doesn't work :(
+  cellid_ = map->FindBin(x,y);
+
+  //for (int ix(1);ix<map->GetNumberOfBins()+1; ++ix){
+  //if (map->GetBinContent(ix)!=0)
+    //cellid_ = ix;
+    //std::cout << ix << " " << map->GetBinContent(ix) << std::endl;
+  //}
+
+  /*
+  TIter next(map->GetBins());
+  TObject *obj=0; 
+  TH2PolyBin *polyBin = 0;
+
+  while ((obj=next())){
+    polyBin=(TH2PolyBin*)obj;
+    int id = polyBin->GetBinNumber();
+    if (id==cellid_) break; 
+  }
 
   std::cout << " - Sanity check: x,y = " << x << " " << y 
-	    << " cellid=" << cellid_
-	    << " bin content = " << map->GetBinContent(cellid_)
-	    << " x,y bin = " << map->GetMean(1) << " " << map->GetMean(2) << std::endl;
+	    << " cellid=" << cellid_ 
+	    << " polybin# " << polyBin->GetBinNumber() << " area " << polyBin->GetArea() << std::endl
+	    << " x bin = " << polyBin->GetXMin() << "-" << polyBin->GetXMax() << std::endl
+	    << " y bin = " << polyBin->GetYMin() << "-" << polyBin->GetYMax() << std::endl
+	    << " middle = " << (polyBin->GetXMax()+polyBin->GetXMin())/2 
+	    << " " << (polyBin->GetYMax()+polyBin->GetYMin())/2 
+	    << std::endl;
+*/
+
 
   //bool x_side = x>0 ? true : false;
   //bool y_side = y>0 ? true : false;
@@ -55,7 +79,7 @@ HGCSSSimHit::HGCSSSimHit(const G4SiHit & aSiHit,
 
 }
 
-void HGCSSSimHit::encodeCellId(const bool x_side,const bool y_side,const unsigned x_cell,const unsigned y_cell){
+/*void HGCSSSimHit::encodeCellId(const bool x_side,const bool y_side,const unsigned x_cell,const unsigned y_cell){
   cellid_ = 
     x_side | (x_cell<<1) |
     (y_side<<16) | (y_cell<<17);
@@ -66,7 +90,7 @@ void HGCSSSimHit::encodeCellId(const bool x_side,const bool y_side,const unsigne
   // 	    << " x_cell " << x_cell << " " << get_x_cell() << std::endl
   // 	    << " y_cell " << y_cell << " " << get_y_cell() << std::endl
   //   ;
-}
+  }*/
 
 void HGCSSSimHit::Add(const G4SiHit & aSiHit){
 
@@ -98,16 +122,36 @@ void HGCSSSimHit::Add(const G4SiHit & aSiHit){
   else return -leta;
   }*/
 
-double HGCSSSimHit::theta() const {
-  return 2*atan(exp(-1.*eta()));
+
+
+std::pair<double,double> HGCSSSimHit::get_xy(TH2Poly* map) const {
+  TIter next(map->GetBins());
+  TObject *obj=0; 
+  TH2PolyBin *polyBin = 0;
+  
+  while ((obj=next())){
+    polyBin=(TH2PolyBin*)obj;
+    int id = polyBin->GetBinNumber();
+    if (id==cellid_) break; 
+  }
+  return std::pair<double,double>((polyBin->GetXMax()+polyBin->GetXMin())/2.,(polyBin->GetYMax()+polyBin->GetYMin())/2.);
 }
 
-double HGCSSSimHit::eta() const {
-  return position().eta();
+ROOT::Math::XYZPoint HGCSSSimHit::position(TH2Poly* map) const{
+  std::pair<double,double> xy = get_xy(map);
+  return ROOT::Math::XYZPoint(xy.first/10.,xy.second/10.,zpos_/10.);
 }
 
-double HGCSSSimHit::phi() const {
-  return position().phi();
+double HGCSSSimHit::theta(TH2Poly* map) const {
+  return 2*atan(exp(-1.*eta(map)));
+}
+
+double HGCSSSimHit::eta(TH2Poly* map) const {
+  return position(map).eta();
+}
+
+double HGCSSSimHit::phi(TH2Poly* map) const {
+  return position(map).phi();
 }
 
 void HGCSSSimHit::Print(std::ostream & aOs) const{
