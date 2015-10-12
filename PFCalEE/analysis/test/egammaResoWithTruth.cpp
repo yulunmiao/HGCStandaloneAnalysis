@@ -165,6 +165,11 @@ int main(int argc, char** argv){//main
   if (nRuns == 0){
     if (!testInputFile(inputsim.str(),simFile)) return 1;
     lSimTree->AddFile(inputsim.str().c_str());
+    if (simFile) info =(HGCSSInfo*)simFile->Get("Info");
+    else {
+      std::cout << " -- Error in getting information from simfile!" << std::endl;
+      return 1;
+    }
     if (!testInputFile(inputrec.str(),recFile)) return 1;
     lRecTree->AddFile(inputrec.str().c_str());
   }
@@ -203,17 +208,24 @@ int main(int argc, char** argv){//main
   //Info
   /////////////////////////////////////////////////////////////
 
-  const double cellSize = info->cellSize();
+  double calorSizeXY = info->calorSizeXY();
+  double cellSize = info->cellSize();
   const unsigned versionNumber = info->version();
   const unsigned model = info->model();
   
+  if (calorSizeXY<1 || calorSizeXY>6000) calorSizeXY=495;
+
+  bool doHexa = fabs(cellSize-2.5)>0.01;
+  if (!doHexa) cellSize = 4*cellSize;
+
   //models 0,1 or 3.
   //bool isTBsetup = (model != 2);
   bool isCaliceHcal = versionNumber==23;//inFilePath.find("version23")!=inFilePath.npos || inFilePath.find("version_23")!=inFilePath.npos;
 
   //extract input energy
 
-  std::cout << " -- Version number is : " << versionNumber 
+  std::cout << " -- Calor size XY = " << calorSizeXY
+	    << ", version number = " << versionNumber 
 	    << ", model = " << model
 	    << ", cellSize = " << cellSize
 	    << std::endl;
@@ -231,11 +243,14 @@ int main(int argc, char** argv){//main
 	    << " -- N sections = " << nSections << std::endl;
 
 
-  HGCSSGeometryConversion geomConv(inFilePath,model,cellSize);
+  HGCSSGeometryConversion geomConv(model,cellSize);
   //set granularity to get cellsize for PU subtraction
   std::vector<unsigned> granularity;
   granularity.resize(nLayers,4);
   geomConv.setGranularity(granularity);
+  geomConv.setXYwidth(calorSizeXY);
+  if (doHexa) geomConv.initialiseHoneyComb(calorSizeXY,cellSize);
+  else geomConv.initialiseSquareMap(calorSizeXY,cellSize);
 
   //////////////////////////////////////////////////
   //////////////////////////////////////////////////
@@ -278,7 +293,7 @@ int main(int argc, char** argv){//main
   std::cout << " -- positionfit initilisation done." << std::endl;
   
   //perform second loop over events to find positions to fit and get energies
-  SignalRegion SignalEnergy(outFolder, nLayers, nEvts, geomConv, puDensity,applyPuMixFix,versionNumber);
+  SignalRegion SignalEnergy(outFolder, nLayers, nEvts, geomConv, puDensity,applyPuMixFix,versionNumber,doHexa);
   SignalEnergy.initialise(outputFile,"Energies");
 
   std::cout << " -- sigenergy initialisation done." << std::endl;

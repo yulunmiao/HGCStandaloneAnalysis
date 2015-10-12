@@ -7,7 +7,7 @@
 HGCSSSimHit::HGCSSSimHit(const G4SiHit & aSiHit, 
 			 const unsigned & asilayer, 
 			 TH2Poly* map, 
-			 const float cellSize){
+			 const float ){
   energy_ = aSiHit.energy;
   //energy weighted time
   //PS: need to call calculateTime() after all hits 
@@ -124,34 +124,32 @@ void HGCSSSimHit::Add(const G4SiHit & aSiHit){
 
 
 
-std::pair<double,double> HGCSSSimHit::get_xy(TH2Poly* map) const {
-  TIter next(map->GetBins());
-  TObject *obj=0; 
-  TH2PolyBin *polyBin = 0;
-  
-  while ((obj=next())){
-    polyBin=(TH2PolyBin*)obj;
-    int id = polyBin->GetBinNumber();
-    if (id==cellid_) break; 
-  }
-  return std::pair<double,double>((polyBin->GetXMax()+polyBin->GetXMin())/2.,(polyBin->GetYMax()+polyBin->GetYMin())/2.);
+std::pair<double,double> HGCSSSimHit::get_xy(const bool isScintillator,
+					     const HGCSSGeometryConversion & aGeom) const {
+  if (isScintillator) return aGeom.squareGeom.find(cellid_)->second;
+  else return aGeom.hexaGeom.find(cellid_)->second;
+
 }
 
-ROOT::Math::XYZPoint HGCSSSimHit::position(TH2Poly* map) const{
-  std::pair<double,double> xy = get_xy(map);
+ROOT::Math::XYZPoint HGCSSSimHit::position(const bool isScintillator,
+					   const HGCSSGeometryConversion & aGeom) const{
+  std::pair<double,double> xy = get_xy(isScintillator,aGeom);
   return ROOT::Math::XYZPoint(xy.first/10.,xy.second/10.,zpos_/10.);
 }
 
-double HGCSSSimHit::theta(TH2Poly* map) const {
-  return 2*atan(exp(-1.*eta(map)));
+double HGCSSSimHit::theta(const bool isScintillator,
+			  const HGCSSGeometryConversion & aGeom) const {
+  return 2*atan(exp(-1.*eta(isScintillator,aGeom)));
 }
 
-double HGCSSSimHit::eta(TH2Poly* map) const {
-  return position(map).eta();
+double HGCSSSimHit::eta(const bool isScintillator,
+			const HGCSSGeometryConversion & aGeom) const {
+  return position(isScintillator,aGeom).eta();
 }
 
-double HGCSSSimHit::phi(TH2Poly* map) const {
-  return position(map).phi();
+double HGCSSSimHit::phi(const bool isScintillator,
+			const HGCSSGeometryConversion & aGeom) const {
+  return position(isScintillator,aGeom).phi();
 }
 
 void HGCSSSimHit::Print(std::ostream & aOs) const{

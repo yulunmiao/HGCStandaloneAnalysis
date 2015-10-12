@@ -35,7 +35,8 @@ public:
                  const HGCSSGeometryConversion & geomConv,
                  const HGCSSPUenergy & puDensity,
 		 const bool applyPuMixFix,
-		 const unsigned versionNumber=12);
+		 const unsigned versionNumber=12,
+		 const bool doHexa=true);
 
     ~SignalRegion();
 
@@ -117,6 +118,7 @@ public:
 
 private:
   
+  bool doHexa_;
   unsigned nSR_;
   unsigned nevt_;
   std::string inputFolder_;

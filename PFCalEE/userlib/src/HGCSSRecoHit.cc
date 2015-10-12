@@ -4,8 +4,10 @@
 #include <cmath>
 #include <stdlib.h>
 
+
 HGCSSRecoHit::HGCSSRecoHit(const HGCSSSimHit & aSimHit, 
-			   TH2Poly* map){
+			   const bool isScintillator,
+			   const HGCSSGeometryConversion & aGeom){
   energy_ = aSimHit.energy();
   adcCounts_ = 0;
   zpos_ = aSimHit.get_z();
@@ -14,7 +16,7 @@ HGCSSRecoHit::HGCSSRecoHit(const HGCSSSimHit & aSimHit,
   layer_ = aSimHit.layer();
   noiseFrac_ = 0;
 
-  std::pair<double,double> xy = aSimHit.get_xy(map);
+  std::pair<double,double> xy = aSimHit.get_xy(isScintillator,aGeom);
   xpos_ = xy.first;
   ypos_ = xy.second;
 

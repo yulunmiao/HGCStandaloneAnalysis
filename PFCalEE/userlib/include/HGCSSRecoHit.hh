@@ -9,9 +9,9 @@
 #include "TMath.h"
 
 #include "HGCSSSimHit.hh"
+#include "HGCSSGeometryConversion.hh"
 #include "Math/Point3D.h"
 #include "Math/Point3Dfwd.h"
-#include "TH2Poly.h"
 
 class HGCSSRecoHit{
 
@@ -28,8 +28,9 @@ public:
     time_(0)
   {};
 
-  HGCSSRecoHit(const HGCSSSimHit & aSimHit,
-	       TH2Poly* map);
+  HGCSSRecoHit(const HGCSSSimHit & aSimHit, 
+	       const bool isScintillator,
+	       const HGCSSGeometryConversion & aGeom);
 
   ~HGCSSRecoHit(){};
 

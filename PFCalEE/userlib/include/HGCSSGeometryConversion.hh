@@ -15,7 +15,7 @@ class HGCSSGeometryConversion{
   
 public:
   HGCSSGeometryConversion(){};
-  HGCSSGeometryConversion(std::string filePath,const unsigned & model, const double & cellsize, const bool bypassR=false, const unsigned nSiLayers=3);
+  HGCSSGeometryConversion(const unsigned & model, const double & cellsize, const bool bypassR=false, const unsigned nSiLayers=3);
 
   ~HGCSSGeometryConversion();
 
@@ -29,55 +29,18 @@ public:
     return &hsq;
   };
 
-  void initialiseSquareMap(const double xymin, const double side){
-    initialiseSquareMap(squareMap(),xymin,side,true);
-  };
+  std::map<int,std::pair<double,double> > hexaGeom;
+  std::map<int,std::pair<double,double> > squareGeom;
 
-  void initialiseSquareMap(TH2Poly *map, const double xymin, const double side, bool print){
-    unsigned nx=static_cast<unsigned>(xymin*2./side);
-    unsigned ny=nx;
-    unsigned i,j;
-    Double_t x1,y1,x2,y2;
-    Double_t dx=side, dy=side;
-    x1 = -1.*xymin;
-    x2 = x1+dx;
+  void initialiseSquareMap(const double xymin, const double side);
 
-   for (i = 0; i<nx; i++) {
-      y1 = -1.*xymin;
-      y2 = y1+dy;
-      for (j = 0; j<ny; j++) {
-	map->AddBin(x1, y1, x2, y2);
-	y1 = y2;
-	y2 = y1+dy;
-      }
-      x1 = x2;
-      x2 = x1+dx;
-   }
+  void initialiseSquareMap(TH2Poly *map, const double xymin, const double side, bool print);
 
-   if (print) {
-     std::cout <<  " -- Initialising squareMap with parameters: " << std::endl
-	       << " ---- xymin = " << -1.*xymin << ", side = " << side
-	       << ", nx = " << nx << ", ny=" << ny
-	       << std::endl;
-   }
-  };
+  void initialiseHoneyComb(const double xymin, const double side);
 
-  void initialiseHoneyComb(const double xymin, const double side){
-    initialiseHoneyComb(hexagonMap(),xymin,side,true);
-  };
+  void initialiseHoneyComb(TH2Poly *map, const double xymin, const double side, bool print);
 
-  void initialiseHoneyComb(TH2Poly *map, const double xymin, const double side, bool print){
-    //xstart,ystart,side length,
-    double d=sqrt(3.)*side;
-    unsigned nx=static_cast<unsigned>(xymin*2./d);
-    unsigned ny=static_cast<unsigned>(xymin*4./(3.*side));
-    if (print) {
-      std::cout << " -- Initialising HoneyComb with parameters: " << std::endl
-		<< " ---- xymin = " << -1.*xymin << ", side = " << side
-		<< ", nx = " << nx << ", ny=" << ny << std::endl;
-    }
-    map->Honeycomb(-1.*xymin,-1.*xymin,side,nx,ny);
-  };
+  void fillXY(TH2Poly* hist, std::map<int,std::pair<double,double> > & geom);
 
   void setGranularity(const std::vector<unsigned> & granul);
 

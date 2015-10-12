@@ -12,9 +12,11 @@ SignalRegion::SignalRegion(const std::string inputFolder,
 			   const HGCSSGeometryConversion & geomConv,
 			   const HGCSSPUenergy & puDensity,
 			   const bool applyPuMixFix,
-			   const unsigned versionNumber){
+			   const unsigned versionNumber,
+			   const bool doHexa){
 
-  nSR_ = 5;
+  doHexa_ = doHexa;
+  nSR_ = 6;
   nevt_ = nevt;
   inputFolder_ = inputFolder;
   nLayers_ = nLayers;
@@ -195,6 +197,7 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
   eventPos.resize(nLayers_,ROOT::Math::XYZPoint(0,0,0));
   for (unsigned iL(0); iL<nLayers_;++iL){
     eventPos[iL] = getAccuratePos(fit,iL);
+
     //std::cout << " Layer " << iL << " best pos = " << eventPos[iL].X() << " " << eventPos[iL].Y() << " " << eventPos[iL].Z() << std::endl;
   }
 
@@ -242,7 +245,15 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
       Exy_[iL][idx] = 0;
     }
   }
+  double refx[nLayers_],refy[nLayers_];
 
+  for (unsigned iL(0); iL<nLayers_;++iL){
+    int refid = 0;
+    if (doHexa_) refid = geomConv_.hexagonMap()->FindBin(eventPos[iL].X(),eventPos[iL].Y());
+    else refid = geomConv_.squareMap()->FindBin(eventPos[iL].X(),eventPos[iL].Y());
+    refx[iL] = doHexa_ ? geomConv_.hexaGeom[refid].first : geomConv_.squareGeom[refid].first;
+    refy[iL] = doHexa_ ? geomConv_.hexaGeom[refid].second : geomConv_.squareGeom[refid].second;
+  }
 
   //std::cout << " -- Accurate direction for evt " << ievt << ": " << std::endl;
   //getAccurateDirection(ievt).Print();
@@ -313,27 +324,48 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
     double lradius = sqrt(pow(posx,2)+pow(posy,2));
     double puE = puDensity_.getDensity(leta,layer,geomConv_.cellSizeInCm(layer,lradius),nPuVtx);
     double subtractedenergy = std::max(0.,energy - puE);
-    double halfCell = 0.5*geomConv_.cellSize(layer,lradius);
+    //double halfCell = 0.5*geomConv_.cellSize(layer,lradius);
+    double distance = sqrt(3.)*geomConv_.cellSize(layer,lradius);
+    double halfCellx = 0.5*distance;
+    double halfCelly = doHexa_?geomConv_.cellSize(layer,lradius):geomConv_.cellSize(layer,lradius)/2.;
     //std::cout << " halfcell = " << halfCell << std::endl;
-    double dx = posx-eventPos[layer].x();
-    double dy = posy-eventPos[layer].y();
-    
     //SR0-4
     for (unsigned isr(0); isr<nSR_;++isr){
-      if ( (fabs(dx) <= ((isr+1)*halfCell)) && (fabs(dy) <= ((isr+1)*halfCell))){
+      double dx = isr%2==0? posx-refx[layer] : posx-eventPos[layer].x();
+      double dy = isr%2==0? posy-refy[layer] : posy-eventPos[layer].y();
+      double dr = sqrt(dx*dx+dy*dy);
+      if (isr==nSR_-1){
+	energySR_[layer][isr] += energy;
+	subtractedenergySR_[layer][isr] += subtractedenergy;
+      }
+      else if ( (doHexa_ && ((isr%2==0 && dr<(isr*halfCelly+0.1)) || (isr%2==1 && dr <= ((isr+1)*halfCellx) && (fabs(dx) <= ((isr+1)*halfCellx)) && (fabs(dy) <= ((isr+1)*halfCelly))))) || 
+		(!doHexa_ && (fabs(dx) <= ((isr+1)*halfCelly)) && (fabs(dy) <= ((isr+1)*halfCelly))) ){
 	energySR_[layer][isr] += energy;//*absweight_[layer]*etacor;
 	subtractedenergySR_[layer][isr] += subtractedenergy;//*absweight_[layer];//*etacor;
-	//save energy in 3*3 cells
+	//save energy in 1+6 cells
 	if (isr==2){
-	  int ix = dx/(2*halfCell);
-	  int iy = dy/(2*halfCell);
+	  int ix = doHexa_ ? dx/halfCellx : dx/(2*halfCelly);
+	  int iy = doHexa_ ? dy/(1.5*halfCelly) : dy/(2*halfCelly);
 	  unsigned idx = 0;
-	  if ((ix > 1 || ix < -1) || (iy>1 || iy<-1)) {
-	    std::cout << " error, check ix=" << ix << " iy=" << iy << " posx,y-max=" << dx << " " << dy << " step " << (isr+1)*halfCell << std::endl;
+	  if (((doHexa_ && (ix > 2 || ix < -2)) || (!doHexa_ && (ix > 1 || ix < -1))) || (iy>1 || iy<-1)) {
+	    std::cout << " error, check ix=" << ix << " iy=" << iy << " posx,y-max=" << dx << " " << dy << " step " ;
+	    if (!doHexa_) std::cout << (isr+1)*halfCelly;
+	    else std::cout << isr*halfCelly+0.1;
+	    std::cout << std::endl;
 	    continue;
 	  }
-	  else 
-	    idx = 3*(iy+1)+(ix+1);
+	  else {
+	    if (!doHexa_) idx = 3*(iy+1)+(ix+1);	    
+	    else {
+	      if (ix==-1 && iy==-1) idx=0;
+	      else if (ix==1 && iy==-1) idx = 1;
+	      else if (ix==-2 && iy==0) idx = 2;
+	      else if (ix==0 && iy==0) idx = 3;
+	      else if (ix==2 && iy==0) idx = 4;
+	      else if (ix==-1 && iy==1) idx = 5;
+	      else if (ix==1 && iy==1) idx = 6;
+	    }
+	  }
 	  Exy_[layer][idx] = energy;	  
 	}
 

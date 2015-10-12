@@ -85,7 +85,7 @@ void processHist(const unsigned iL,
   bool isScint = subdet.isScint;
   bool isSi = subdet.isSi;
 
-  double rLim = subdet.radiusLim;
+  //double rLim = subdet.radiusLim;
 
   TIter next(histE->GetBins());
   TObject *obj=0; 
@@ -95,7 +95,7 @@ void processHist(const unsigned iL,
     polyBin=(TH2PolyBin*)obj;
     double x = (polyBin->GetXMax()+polyBin->GetXMin())/2.;
     double y = (polyBin->GetYMax()+polyBin->GetYMin())/2.;
-    double radius = sqrt(pow(x,2)+pow(y,2));
+    //double radius = sqrt(pow(x,2)+pow(y,2));
     
     double digiE = 0;
     double simE = polyBin->GetContent();
@@ -392,12 +392,12 @@ int main(int argc, char** argv){//main
 
   const unsigned nLayers = myDetector.nLayers();
 
-  HGCSSGeometryConversion geomConv(inFilePath,model,cellSize,bypassR,nSiLayers);
+  HGCSSGeometryConversion geomConv(model,cellSize,bypassR,nSiLayers);
+  geomConv.setXYwidth(calorSizeXY);
   //const double xWidth = geomConv.getXYwidth();
   geomConv.initialiseHoneyComb(calorSizeXY,cellSize);
   //square map for BHCAL
   geomConv.initialiseSquareMap(calorSizeXY,10.);
-  geomConv.setXYwidth(calorSizeXY);
 
   HGCSSDigitisation myDigitiser;
 
@@ -527,7 +527,7 @@ int main(int argc, char** argv){//main
 	prevLayer = layer;
 	if (debug > 1) std::cout << " - layer " << layer << " " << subdet.name << " " << subdetLayer << std::endl;
       }
-      std::pair<double,double> xy = lHit.get_xy(isScint?geomConv.squareMap():geomConv.hexagonMap());
+      std::pair<double,double> xy = lHit.get_xy(isScint,geomConv);
       double posx = xy.first;//lHit.get_x(cellSize);
       double posy = xy.second;//lHit.get_y(cellSize);
       double radius = sqrt(pow(posx,2)+pow(posy,2));
@@ -593,7 +593,7 @@ int main(int argc, char** argv){//main
 	      prevLayer = layer;
 	      //std::cout << " - layer " << layer << " " << subdet.name << " " << subdetLayer << std::endl;
 	    }
-	    std::pair<double,double> xy = lHit.get_xy(isScint?geomConv.squareMap():geomConv.hexagonMap());
+	    std::pair<double,double> xy = lHit.get_xy(isScint,geomConv);
 	    double posx = xy.first;//lHit.get_x(cellSize);
 	    double posy = xy.second;//lHit.get_y(cellSize);
 	    double posz = lHit.get_z();

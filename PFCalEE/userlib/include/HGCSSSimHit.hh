@@ -9,6 +9,8 @@
 #include <map>
 
 #include "G4SiHit.hh"
+#include "HGCSSGeometryConversion.hh"
+
 #include "Math/Point3D.h"
 #include "Math/Point3Dfwd.h"
 #include "TH2Poly.h"
@@ -147,9 +149,11 @@ public:
   // return (cellid_ & 0xFFFE0000) >> 17;
   //};
 
-  std::pair<double,double> get_xy(TH2Poly* map) const;
+  std::pair<double,double> get_xy(const bool isScintillator,
+				  const HGCSSGeometryConversion & aGeom) const;
 
-  ROOT::Math::XYZPoint position(TH2Poly* map) const;
+  ROOT::Math::XYZPoint position(const bool isScintillator,
+				const HGCSSGeometryConversion & aGeom) const;
 
   //inline double get_x(TH2Poly* map) const {
   //float sign = get_x_side() ? 1. : -1. ;
@@ -200,9 +204,12 @@ public:
     return zpos_;
   };
 
-  double eta(TH2Poly* map) const;
-  double theta(TH2Poly* map) const;
-  double phi(TH2Poly* map) const;
+  double eta(const bool isScintillator,
+	     const HGCSSGeometryConversion & aGeom) const;
+  double theta(const bool isScintillator,
+	       const HGCSSGeometryConversion & aGeom) const;
+  double phi(const bool isScintillator,
+	     const HGCSSGeometryConversion & aGeom) const;
 
   inline unsigned getGranularity() const{
     return 1;

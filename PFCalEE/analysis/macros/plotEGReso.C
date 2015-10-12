@@ -54,45 +54,6 @@ void drawChi2(TCanvas *myc,TH1F ** p_chi2ndf){
   myc->Print(lsave.str().c_str());
 }
 
-double absWeight(const unsigned layer, const double eta){
-  //already added to tree variables
-  return 1.;
-  double weight = 1.0;
-  if (layer == 0) weight = 0.0378011;
-  else if (layer == 1) weight = 1;
-  else if (layer == 2) weight = 0.646989;
-  else if (layer == 3) weight = 0.617619;
-  else if (layer == 4) weight = 0.646989;
-  else if (layer == 5) weight = 0.617619;
-  else if (layer == 6) weight = 0.646989;
-  else if (layer == 7) weight = 0.617619;
-  else if (layer == 8) weight = 0.646989;
-  else if (layer == 9) weight = 0.617619;
-  else if (layer == 10) weight = 0.646989;
-  else if (layer == 11) weight = 0.942829;
-  else if (layer == 12) weight = 0.859702;
-  else if (layer == 13) weight = 0.942829;
-  else if (layer == 14) weight = 0.859702;
-  else if (layer == 15) weight = 0.942829;
-  else if (layer == 16) weight = 0.859702;
-  else if (layer == 17) weight = 0.942829;
-  else if (layer == 18) weight = 0.859702;
-  else if (layer == 19) weight = 0.942829;
-  else if (layer == 20) weight = 0.859702;
-  else if (layer == 21) weight = 1.37644;
-  else if (layer == 22) weight = 1.30447;
-  else if (layer == 23) weight = 1.37644;
-  else if (layer == 24) weight = 1.30447;
-  else if (layer == 25) weight = 1.37644;
-  else if (layer == 26) weight = 1.30447;
-  else if (layer == 27) weight = 1.37644;
-  else if (layer == 28) weight = 1.30447;
-  else if (layer == 29) weight = 1.37644;
-  else weight = 1;
-  return weight/tanh(eta);
-};
-
-
 TPad* plot_ratio(TPad *canv, bool up){
   canv->SetFillColor      (0);
   canv->SetBorderMode     (0);
@@ -358,8 +319,8 @@ bool plotResolution(TGraphErrors *gr,TPad *pad,
   fitFunc->SetParameter(2,noise0/2.);
   fitFunc->SetParLimits(2,0,noise0);
 
-  //if (ipu<2) 
-  //fitFunc->FixParameter(2,noise0);
+  if (ipu<2) 
+    fitFunc->FixParameter(2,noise0);
   //if (ipu==2) fitFunc->FixParameter(1,const0);
   
   std::cout << " Initial params: "  << fitFunc->GetParameter(0) << " "<< fitFunc->GetParameter(1) << " " << fitFunc->GetParameter(2)
@@ -440,15 +401,22 @@ bool retrievePuSigma(TTree *atree, TTree *atreePu,
 
   std::vector<std::vector<double> > energySR[2];
   std::vector<std::vector<double> > subtractedenergySR;
- 
+  std::vector<double> absweight;
+
   std::vector<double> emptyvec;
   emptyvec.resize(nSR,0);
   energySR[0].resize(nLayers,emptyvec);
   energySR[1].resize(nLayers,emptyvec);
   subtractedenergySR.resize(nLayers,emptyvec);
+  absweight.resize(nLayers,1);
 
   std::ostringstream label;
   for (unsigned iL(0); iL<nLayers;++iL){
+    label.str("");
+    label << "absweight_" << iL;
+    atree->SetBranchAddress(label.str().c_str(),&absweight[iL]);
+    atreePu->SetBranchAddress(label.str().c_str(),&absweight[iL]);
+
     for (unsigned iSR(0);iSR<nSR;++iSR){
       label.str("");
       label << "energy_" << iL << "_SR" << iSR;
@@ -497,74 +465,28 @@ bool retrievePuSigma(TTree *atree, TTree *atreePu,
 		<< "SR2 E[14] = " << energySR[0][14][2] << " " << energySR[1][14][2] << std::endl;
 	}
 
-    double puE[nSR+2];
-    double E[nSR+2];
-    double subtrE[nSR+1];
-    for (unsigned iSR(0); iSR<nSR+2;++iSR){//loop on signal region
+    double puE[nSR];
+    double E[nSR];
+    double subtrE[nSR];
+    for (unsigned iSR(0); iSR<nSR;++iSR){//loop on signal region
       puE[iSR]=0;
       E[iSR]=0;
       subtrE[iSR]=0;
       for (unsigned iL(0);iL<nLayers;++iL){
-	if (iSR<nSR){
-	  E[iSR]   += absWeight(iL,etaval)*energySR[0][iL][iSR];
-	  subtrE[iSR]   += absWeight(iL,etaval)*subtractedenergySR[iL][iSR];
-	  puE[iSR] += absWeight(iL,etaval)*energySR[1][iL][iSR];
-	}
-	else if (iSR==nSR) {
-	  if (iL<5) {
-	    E[iSR] += absWeight(iL,etaval)*energySR[0][iL][0];
-	    subtrE[iSR] += absWeight(iL,etaval)*subtractedenergySR[iL][0];
-	    puE[iSR] += absWeight(iL,etaval)*energySR[1][iL][0];
-	  }
-	  else if (iL<10) {
-	    E[iSR] += absWeight(iL,etaval)*energySR[0][iL][1];
-	    subtrE[iSR] += absWeight(iL,etaval)*subtractedenergySR[iL][1];
-	    puE[iSR] += absWeight(iL,etaval)*energySR[1][iL][1];
-	      }
-	  else if (iL<15) {
-	    E[iSR] += absWeight(iL,etaval)*energySR[0][iL][2];
-	    subtrE[iSR] += absWeight(iL,etaval)*subtractedenergySR[iL][2];
-	    puE[iSR] += absWeight(iL,etaval)*energySR[1][iL][2];
-	  } 
-	  else if (iL<20) {
-	    E[iSR] += absWeight(iL,etaval)*energySR[0][iL][3];
-	    subtrE[iSR] += absWeight(iL,etaval)*subtractedenergySR[iL][3];
-	    puE[iSR] += absWeight(iL,etaval)*energySR[1][iL][3];
-	  } 
-	  else  {
-	    E[iSR] += absWeight(iL,etaval)*energySR[0][iL][4];
-	    subtrE[iSR] += absWeight(iL,etaval)*subtractedenergySR[iL][4];
-	    puE[iSR] += absWeight(iL,etaval)*energySR[1][iL][4];
-	  }
-	}
-	else if (iSR==nSR+1) {
-	  if (iL<5) {
-	    E[iSR] += absWeight(iL,etaval)*energySR[0][iL][0];
-	    subtrE[iSR] += absWeight(iL,etaval)*subtractedenergySR[iL][0];
-	    puE[iSR] += absWeight(iL,etaval)*energySR[1][iL][0];
-	  }
-	  else if (iL<12) {
-	    E[iSR] += absWeight(iL,etaval)*energySR[0][iL][2];
-	    subtrE[iSR] += absWeight(iL,etaval)*subtractedenergySR[iL][2];
-	    puE[iSR] += absWeight(iL,etaval)*energySR[1][iL][2];
-	  }
-	  else  {
-	    E[iSR] += absWeight(iL,etaval)*energySR[0][iL][4];
-	    subtrE[iSR] += absWeight(iL,etaval)*subtractedenergySR[iL][4];
-	    puE[iSR] += absWeight(iL,etaval)*energySR[1][iL][4];
-	  } 
-	}
+	E[iSR]   += absweight[iL]*energySR[0][iL][iSR];
+	subtrE[iSR]   += absweight[iL]*subtractedenergySR[iL][iSR];
+	puE[iSR] += absweight[iL]*energySR[1][iL][iSR];
       }//loop on layers
       p_sigma[iSR]->Fill((puE[iSR]-E[iSR])/calib[iSR]);
       p_subtrEvspuE[iSR]->Fill((puE[iSR]-E[iSR])/calib[iSR],(puE[iSR]-subtrE[iSR])/calib[iSR]);
     }//loop on SR
 
     //p_sigma[nSR+2]->Fill((totalEpu-totalE)/tanh(etaval)*1./calib[nSR+2]);
-    if (p_sigma[nSR+2]) p_sigma[nSR+2]->Fill((totalEpu-totalE)/calib[nSR+2]);
+    if (p_sigma[nSR]) p_sigma[nSR]->Fill((totalEpu-totalE)/calib[nSR]);
 
   }//loop on events
 
-  for (unsigned iSR(0); iSR<nSR+3;++iSR){
+  for (unsigned iSR(0); iSR<nSR+1;++iSR){
     if (p_sigma[iSR]) std::cout << " -- SR " << iSR << " - Found " << p_sigma[iSR]->GetEntries() << " events for pu subtraction sigma! nEvts = " << nEvts << " nEvtsPu=" << nEvtsPu << std::endl;
   }
 
@@ -577,7 +499,7 @@ int plotEGReso(){//main
   SetTdrStyle();
 
   bool dovsE = true;
-  bool processNoFitFiles = true;
+  bool processNoFitFiles = false;
 
   const unsigned nIC = 1;
   const unsigned ICval[nIC] = {3};//0,1,2,3,4,5,10,15,20,50};
@@ -587,14 +509,14 @@ int plotEGReso(){//main
 
   const unsigned nS = 1;
   std::string scenario[nS] = {
-    "gamma/v5_30/"
+    "model3/gamma/"
   };
 
   std::string foutname = "PLOTS/PuSubtraction.root";
   TFile *fout = TFile::Open(foutname.c_str(),"RECREATE");
 
   const unsigned neta = 1;
-  unsigned eta[neta]={16};
+  unsigned eta[neta]={20};
   //const unsigned neta = 7;
   //unsigned eta[neta]={17,19,21,23,25,27,29};
 
@@ -607,11 +529,11 @@ int plotEGReso(){//main
 
   
   const unsigned nV = 1;
-  TString version[nV] = {"12"};//,"0"};
+  TString version[nV] = {"100"};//,"0"};
   
-  const unsigned nLayers = 30;
+  const unsigned nLayers = 28;
 
-  const unsigned nSR = 8;
+  const unsigned nSR = 6;
   double fitQual[nSR];
   double srval[nSR];
   double srerr[nSR];
@@ -638,7 +560,7 @@ int plotEGReso(){//main
   std::ostringstream saveName;
 
   //unsigned genEnAll[]={3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200};
-  unsigned genEnAll[]={3,5,10,30,50,70,100,200};
+  unsigned genEnAll[]={5,10,20,30,50,70,100};
   //unsigned genEnAll[]={7,10,20,30,40};
   const unsigned nGenEnAll=sizeof(genEnAll)/sizeof(unsigned);
 
@@ -649,11 +571,9 @@ int plotEGReso(){//main
     std::ostringstream lName;
     lName << "mycE" << genEnAll[iE];
     mycE[iE] = new TCanvas(lName.str().c_str(),lName.str().c_str(),1500,1000);
-    mycE[iE]->Divide(4,2);
+    mycE[iE]->Divide(3,2);
   }
 
-  TCanvas *mycEtot = new TCanvas("mycEtot","mycEtot",1500,1000);
-  mycEtot->Divide(5,3);
   TCanvas *mycSig = new TCanvas("mycSig","puSigma",1);
   //mycSig->Divide(2,2);
   TCanvas *mycCalibEta = new TCanvas("mycCalibEta","mycCalibEta",1500,1000);
@@ -665,7 +585,7 @@ int plotEGReso(){//main
     std::ostringstream lName;
     lName << "myc" << iC;
     myc[iC] = new TCanvas(lName.str().c_str(),lName.str().c_str(),1500,1000);
-    myc[iC]->Divide(2,4);
+    myc[iC]->Divide(2,3);
   }
 
   TCanvas *mycReso = new TCanvas("mycReso","mycReso",750,500);
@@ -695,7 +615,7 @@ int plotEGReso(){//main
     for (unsigned iV(0); iV<nV;++iV){//loop on versions
       for (unsigned iS(0); iS<nS;++iS){//loop on scenarios
 	
-	TString plotDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalDescop/gitV02-01-01/version"+version[iV]+"/"+scenario[iS]+"/";
+	TString plotDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalHexa/gittestHexa/version"+version[iV]+"/"+scenario[iS]+"/";
 	TTree *ltree[neta][nPu][nGenEnAll];
 	TGraphErrors *resoRecoFit[nPu][neta][nSR];
 	
@@ -718,9 +638,8 @@ int plotEGReso(){//main
 	    skip[iE] = false;
 	    TFile *inputFile = 0;
 	    std::ostringstream linputStr;
-	    if (pu[ipu]!=200) linputStr << plotDir ;
-	    else linputStr << "/afs/cern.ch/work/a/amagnan/PFCalEEAna/PLOTS/gitV00-02-12/version"+version[iV]+"/"+scenario[iS]+"/";
-	    linputStr << "eta" << eta[ieta] << "_et" << genEnAll[iE] << "_pu" << pu[ipu] << "_IC" << ICval[ic];
+	    linputStr << plotDir ;
+	    linputStr << "eta" << eta[ieta] << "_et" << genEnAll[iE] << "_pu" << pu[ipu] << "_IC" << ICval[ic] << "_Si2";
 	    if (!processNoFitFiles) linputStr << ".root";
 	    else linputStr << "_nofit.root";
 	    inputFile = TFile::Open(linputStr.str().c_str());
@@ -807,9 +726,8 @@ int plotEGReso(){//main
 	    
 	    TFile *inputFile = 0;
 	    std::ostringstream linputStr;
-	    if (pu[ipu]!=200) linputStr << plotDir ;
-	    else linputStr << "/afs/cern.ch/work/a/amagnan/PFCalEEAna/PLOTS/gitV00-02-12/version"+version[iV]+"/"+scenario[iS]+"/";
-	    linputStr << "eta" << eta[ieta] << "_et" << genEn[iE] << "_pu" << pu[ipu]  << "_IC" << ICval[ic];
+	    linputStr << plotDir ;
+	    linputStr << "eta" << eta[ieta] << "_et" << genEn[iE] << "_pu" << pu[ipu]  << "_IC" << ICval[ic] << "_Si2";
 	    if (!processNoFitFiles) linputStr << ".root" ;
 	    else linputStr << "_nofit.root";
 	    inputFile = TFile::Open(linputStr.str().c_str());
@@ -830,26 +748,8 @@ int plotEGReso(){//main
 	      if (ipu>0) lName << "(";
 	      if (iSR<5){
 		for (unsigned iL(0);iL<nLayers;++iL){	      
-		  if (iL==0) lName << absWeight(iL,etaval[ieta]) << "*subtractedenergy_" << iL << "_SR" << iSR ;
-		  else lName << "+" << absWeight(iL,etaval[ieta]) << "*subtractedenergy_" << iL << "_SR" << iSR ;
-		}
-	      }
-	      else if (iSR==5) {
-		for (unsigned iL(0);iL<nLayers;++iL){	      
-		  if (iL==0) lName << absWeight(iL,etaval[ieta]) << "*subtractedenergy_" << iL << "_SR0" ;
-		  else if (iL<5) lName << "+" << absWeight(iL,etaval[ieta]) << "*subtractedenergy_" << iL << "_SR0";
-		  else if (iL<10) lName << "+" << absWeight(iL,etaval[ieta]) << "*subtractedenergy_" << iL << "_SR1";
-		  else if (iL<15) lName << "+" << absWeight(iL,etaval[ieta]) << "*subtractedenergy_" << iL << "_SR2";
-		  else if (iL<20) lName << "+" << absWeight(iL,etaval[ieta]) << "*subtractedenergy_" << iL << "_SR3";
-		  else lName << "+" << absWeight(iL,etaval[ieta]) << "*subtractedenergy_" << iL << "_SR4";
-		}
-	      }
-	      else if (iSR==6) {
-		for (unsigned iL(0);iL<nLayers;++iL){	      
-		  if (iL==0) lName<< absWeight(iL,etaval[ieta]) << "*subtractedenergy_" << iL << "_SR0" ;
-		  else if (iL<5) lName << "+" << absWeight(iL,etaval[ieta]) << "*subtractedenergy_" << iL << "_SR0";
-		  else if (iL<12) lName << "+" << absWeight(iL,etaval[ieta]) << "*subtractedenergy_" << iL << "_SR2";
-		  else lName << "+" << absWeight(iL,etaval[ieta]) << "*subtractedenergy_" << iL << "_SR4";
+		  if (iL==0) lName << "absweight_" << iL  << "*subtractedenergy_" << iL << "_SR" << iSR ;
+		  else lName << "+" << "absweight_" << iL  << "*subtractedenergy_" << iL << "_SR" << iSR ;
 		}
 	      }
 	      else lName << "wgtEtotal";///" << tanh(etaval[ieta]);
@@ -1064,8 +964,8 @@ int plotEGReso(){//main
       for (unsigned ipu(0); ipu<nPu; ++ipu){//loop on pu
 	mycCalibEta->Clear();
 	mycOffsetEta->Clear();
-	mycCalibEta->Divide(4,2);
-	mycOffsetEta->Divide(4,2);
+	mycCalibEta->Divide(3,2);
+	mycOffsetEta->Divide(3,2);
 
 	for (unsigned iSR(0); iSR<nSR;++iSR){//loop on signal region
 	  if (pu[ipu]!=0 && iSR==nSR-1) continue;
@@ -1205,25 +1105,33 @@ int plotEGReso(){//main
       TLegend *leg = new TLegend(0.75,0.8,0.94,0.94);
       leg->SetFillColor(10);
 
-      mycR->Divide(2,1);
-      mycC->Divide(2,1);
-      mycN->Divide(2,1);
       TPad *mypad[3][neta];
-      TPad *left[3];
-      TPad *right[3];
-      left[0] = (TPad*)mycR->cd(1);
-      right[0] = (TPad*)mycR->cd(2);
-      left[1] = (TPad*)mycC->cd(1);
-      right[1] = (TPad*)mycC->cd(2);
-      left[2] = (TPad*)mycN->cd(1);
-      right[2] = (TPad*)mycN->cd(2);
-      for (unsigned iC(0);iC<3;++iC){
-	left[iC]->Divide(1,4);
-	right[iC]->Divide(1,3);
-	for (unsigned ieta=0; ieta<neta;++ieta){//loop on pt values
-	  if (ieta<4) mypad[iC][ieta] = (TPad*)left[iC]->GetPad(ieta+1);
-	  else mypad[iC][ieta] = (TPad*)right[iC]->GetPad((ieta-4)+1);
+
+      if (neta>1){
+	mycR->Divide(2,1);
+	mycC->Divide(2,1);
+	mycN->Divide(2,1);
+	TPad *left[3];
+	TPad *right[3];
+	left[0] = (TPad*)mycR->cd(1);
+	right[0] = (TPad*)mycR->cd(2);
+	left[1] = (TPad*)mycC->cd(1);
+	right[1] = (TPad*)mycC->cd(2);
+	left[2] = (TPad*)mycN->cd(1);
+	right[2] = (TPad*)mycN->cd(2);
+	for (unsigned iC(0);iC<3;++iC){
+	  left[iC]->Divide(1,4);
+	  right[iC]->Divide(1,3);
+	  for (unsigned ieta=0; ieta<neta;++ieta){//loop on pt values
+	    if (ieta<4) mypad[iC][ieta] = (TPad*)left[iC]->GetPad(ieta+1);
+	    else mypad[iC][ieta] = (TPad*)right[iC]->GetPad((ieta-4)+1);
+	  }
 	}
+      }
+      else {
+	mypad[0][0] = (TPad*)mycR->cd();
+	mypad[1][0] = (TPad*)mycC->cd();
+	mypad[2][0] = (TPad*)mycN->cd();
       }
 
       TGraphErrors *grStoch[nPu-1][neta];

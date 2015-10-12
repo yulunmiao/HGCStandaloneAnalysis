@@ -3,7 +3,7 @@
 #include <iostream>
 #include <cmath>
 
-HGCSSGeometryConversion::HGCSSGeometryConversion(std::string filePath, const unsigned & model, const double & cellsize, const bool bypassR, const unsigned nSiLayers){
+HGCSSGeometryConversion::HGCSSGeometryConversion(const unsigned & model, const double & cellsize, const bool bypassR, const unsigned nSiLayers){
 
   dopatch_=false;
   width_ = 200;//mm
@@ -16,6 +16,7 @@ HGCSSGeometryConversion::HGCSSGeometryConversion(std::string filePath, const uns
   cellSize_ = cellsize;
   bypassRadius_ = bypassR;
   nSiLayers_ = nSiLayers;
+
 }
 /*
 unsigned HGCSSGeometryConversion::getNumberOfSiLayers(const DetectorEnum type,
@@ -76,8 +77,89 @@ HGCSSGeometryConversion::~HGCSSGeometryConversion(){
     deleteHistos(liter->second);
   }
   HistMapZ_.clear();
+
+  hexaGeom.clear();
+  squareGeom.clear();
 }
 
+
+
+void HGCSSGeometryConversion::initialiseSquareMap(const double xymin, const double side){
+  initialiseSquareMap(squareMap(),xymin,side,true);
+  fillXY(squareMap(),squareGeom);
+}
+
+void HGCSSGeometryConversion::initialiseSquareMap(TH2Poly *map, const double xymin, const double side, bool print){
+  unsigned nx=static_cast<unsigned>(xymin*2./side);
+  unsigned ny=nx;
+  unsigned i,j;
+  Double_t x1,y1,x2,y2;
+  Double_t dx=side, dy=side;
+  x1 = -1.*xymin;
+  x2 = x1+dx;
+  
+  for (i = 0; i<nx; i++) {
+    y1 = -1.*xymin;
+    y2 = y1+dy;
+    for (j = 0; j<ny; j++) {
+      map->AddBin(x1, y1, x2, y2);
+      y1 = y2;
+      y2 = y1+dy;
+    }
+    x1 = x2;
+    x2 = x1+dx;
+  }
+  
+  if (print) {
+    std::cout <<  " -- Initialising squareMap with parameters: " << std::endl
+	      << " ---- xymin = " << -1.*xymin << ", side = " << side
+	      << ", nx = " << nx << ", ny=" << ny
+	      << std::endl;
+  }
+  
+}
+
+void HGCSSGeometryConversion::initialiseHoneyComb(const double xymin, const double side){
+  initialiseHoneyComb(hexagonMap(),xymin,side,true);
+  fillXY(hexagonMap(),hexaGeom);
+}
+
+void HGCSSGeometryConversion::initialiseHoneyComb(TH2Poly *map, const double xymin, const double side, bool print){
+  //xstart,ystart,side length,
+  double d=sqrt(3.)*side;
+  unsigned nx=static_cast<unsigned>(xymin*2./d);
+  unsigned ny=static_cast<unsigned>(xymin*4./(3.*side));
+  if (print) {
+    std::cout << " -- Initialising HoneyComb with parameters: " << std::endl
+	      << " ---- xymin = " << -1.*xymin << ", side = " << side
+	      << ", nx = " << nx << ", ny=" << ny << std::endl;
+  }
+  map->Honeycomb(-1.*xymin,-1.*xymin,side,nx,ny);
+  
+  
+}
+
+
+void HGCSSGeometryConversion::fillXY(TH2Poly* hist, std::map<int,std::pair<double,double> > & geom){
+  TIter next(hist->GetBins());
+  TObject *obj=0; 
+  TH2PolyBin *polyBin = 0;
+  geom.clear();
+  
+  while ((obj=next())){
+    polyBin=(TH2PolyBin*)obj;
+    int id = polyBin->GetBinNumber();
+    std::pair<double,double> xy = std::pair<double,double>((polyBin->GetXMax()+polyBin->GetXMin())/2.,(polyBin->GetYMax()+polyBin->GetYMin())/2.);
+    geom.insert(std::pair<unsigned,std::pair<double,double> >(id,xy));
+  }
+  
+  std::cout << " -- Check geomMap: size = " << geom.size() << std::endl;
+  //std::map<int,std::pair<double,double> >::iterator liter=geom.begin();
+  //for ( ; liter != geom.end();++liter){
+  //std::cout << " id " << liter->first << ": x=" << liter->second.first << ", y=" << liter->second.second << std::endl;
+  //}
+  
+}
 
 void HGCSSGeometryConversion::deleteHistos(std::vector<TH2Poly *> & aVec){
   if (aVec.size()!=0){
