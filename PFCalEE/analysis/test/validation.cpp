@@ -3,8 +3,13 @@
 #include<fstream>
 #include<sstream>
 #include <boost/algorithm/string.hpp>
+#include "boost/lexical_cast.hpp"
+#include "boost/program_options.hpp"
+#include "boost/format.hpp"
+#include "boost/function.hpp"
 
 #include "TFile.h"
+#include "TChain.h"
 #include "TTree.h"
 #include "TH3F.h"
 #include "TH2F.h"
@@ -27,26 +32,28 @@
 #include "HGCSSDetector.hh"
 #include "HGCSSGeometryConversion.hh"
 
-int main(int argc, char** argv){//main  
+using boost::lexical_cast;
+namespace po=boost::program_options;
 
-  if (argc < 7) {
-    std::cout << " Usage: " 
-	      << argv[0] << " <nEvts to process (0=all)>"
-	      << " <path to input files>"
-	      << " <name of input sim file>"
-	      << " <name of input reco file>"
-	      << " <full path to output file>"
-	      << " <number of si layers to consider: 1,2 or 3>" 
-	      << " <optional: debug (default=0)>"
-	      << std::endl;
-    return 1;
+bool testInputFile(std::string input, TFile* & file){
+  file = TFile::Open(input.c_str());
+  
+  if (!file) {
+    std::cout << " -- Error, input file " << input.c_str() << " cannot be opened. Skipping..." << std::endl;
+    return false;
   }
+  else std::cout << " -- input file " << file->GetName() << " successfully opened." << std::endl;
+  return true;
+};
 
+
+int main(int argc, char** argv){//main  
   //////////////////////////////////////////////////////////
   //// Hardcoded config ////////////////////////////////////
   //////////////////////////////////////////////////////////
   //for HGCAL, true means only 12 FHCAL layers considered (24 are simulated)
-  bool concept = true;
+
+  bool skipSimStuff = true;
 
   bool selectEarlyDecays = true;
 
@@ -76,41 +83,52 @@ int main(int argc, char** argv){//main
   //// End Hardcoded config ////////////////////////////////////
   //////////////////////////////////////////////////////////
 
-  const unsigned pNevts = atoi(argv[1]);
-  std::string filePath = argv[2];
-  std::string simFileName = argv[3];
-  std::string recoFileName = argv[4];
+  //Input output and config options
+  std::string cfg;
+  bool concept;
+  unsigned pNevts;
+  std::string filePath;
+  std::string digifilePath;
+  unsigned nRuns;
+  std::string simFileName;
+  std::string recoFileName;
+  std::string outPath;
+  unsigned nSiLayers;
+  unsigned debug;
+
+  po::options_description preconfig("Configuration"); 
+  preconfig.add_options()("cfg,c",po::value<std::string>(&cfg)->required());
+  po::variables_map vm;
+  po::store(po::command_line_parser(argc, argv).options(preconfig).allow_unregistered().run(), vm);
+  po::notify(vm);
+  po::options_description config("Configuration");
+  config.add_options()
+    //Input output and config options //->required()
+    ("concept",        po::value<bool>(&concept)->default_value(true))
+    ("pNevts,n",       po::value<unsigned>(&pNevts)->default_value(0))
+    ("filePath,i",     po::value<std::string>(&filePath)->required())
+    ("digifilePath", po::value<std::string>(&digifilePath)->default_value(""))
+    ("nRuns",        po::value<unsigned>(&nRuns)->default_value(0))
+    ("simFileName,s",  po::value<std::string>(&simFileName)->required())
+    ("recoFileName,r", po::value<std::string>(&recoFileName)->required())
+    ("outPath,o",      po::value<std::string>(&outPath)->required())
+    ("nSiLayers",      po::value<unsigned>(&nSiLayers)->default_value(2))
+    ("debug,d",        po::value<unsigned>(&debug)->default_value(0))
+    ;
+
+  // ("output_name,o",            po::value<std::string>(&outputname)->default_value("tmp.root"))
+
+  po::store(po::command_line_parser(argc, argv).options(config).allow_unregistered().run(), vm);
+  po::store(po::parse_config_file<char>(cfg.c_str(), config), vm);
+  po::notify(vm);
 
   std::string inFilePath = filePath+simFileName;
 
-  std::string outPath = argv[5];
-  unsigned nSiLayers = 2;
-  nSiLayers = atoi(argv[6]);
-
-  unsigned debug = 0;
-  if (argc >7) debug = atoi(argv[7]);
-
-
-  unsigned genEn;
-  size_t end=outPath.find_last_of(".root");
-  size_t start=outPath.find_last_of("e");
-  std::istringstream(outPath.substr(start+1,end))>>genEn;
-
-  bool isEM = false;
-
-  if (inFilePath.find("e-")!=inFilePath.npos || 
-      inFilePath.find("e+")!=inFilePath.npos) isEM = true;
-
-  if (selectEarlyDecays && isEM) {
-    selectEarlyDecays = false;
-    HcalPionCalib = 1;
-    HcalPionOffset = 0;
-  }
 
   std::cout << " -- Input parameters: " << std::endl
 	    << " -- Input file path: " << filePath << std::endl
+	    << " -- Digi Input file path: " << digifilePath << std::endl
 	    << " -- Output file path: " << outPath << std::endl
-	    << " -- Generated energy: " << genEn << std::endl
 	    << " -- Requiring " << nSiLayers << " si layers." << std::endl
 	    << " -- Processing ";
   if (pNevts == 0) std::cout << "all events." << std::endl;
@@ -123,47 +141,85 @@ int main(int argc, char** argv){//main
   //input
   /////////////////////////////////////////////////////////////
 
+  std::ostringstream inputsim;
+  inputsim << filePath << "/" << simFileName;
+  std::ostringstream inputrec;
+  if (digifilePath.size()==0)
+    inputrec << filePath << "/" << recoFileName;
+  else 
+    inputrec << digifilePath << "/" << recoFileName;
 
-  std::ostringstream input;
-  input << filePath << "/" << simFileName;
+  //std::cout << inputsim.str() << " " << inputrec.str() << std::endl;
 
-  TFile *simFile = TFile::Open(input.str().c_str());
+  HGCSSInfo * info;
 
-  if (!simFile) {
-    std::cout << " -- Error, input file " << input.str() << " cannot be opened. Exiting..." << std::endl;
-    return 1;
-  }
-  else std::cout << " -- input file " << simFile->GetName() << " successfully opened." << std::endl;
+  TChain *lSimTree = new TChain("HGCSSTree");
+  TChain *lRecTree = 0;
   
-  TTree *lSimTree = (TTree*)simFile->Get("HGCSSTree");
+  TFile * simFile = 0;
+  TFile * recFile = 0;
+
+  if (recoFileName.find("Digi") != recoFileName.npos) 
+    lRecTree = new TChain("RecoTree");
+  else lRecTree = new TChain("PUTree");
+
+  if (nRuns == 0){
+    if (!testInputFile(inputsim.str(),simFile)) return 1;
+    lSimTree->AddFile(inputsim.str().c_str());
+    if (!testInputFile(inputrec.str(),recFile)) return 1;
+    lRecTree->AddFile(inputrec.str().c_str());
+  }
+  else {
+    for (unsigned i(0);i<nRuns;++i){
+      std::ostringstream lstr;
+      lstr << inputsim.str() << "_run" << i << ".root";
+      if (testInputFile(lstr.str(),simFile)){  
+	if (simFile) info =(HGCSSInfo*)simFile->Get("Info");
+	else {
+	  std::cout << " -- Error in getting information from simfile!" << std::endl;
+	  return 1;
+	}
+      }
+      else continue;
+      lSimTree->AddFile(lstr.str().c_str());
+      lstr.str("");
+      lstr << inputrec.str() << "_run" << i << ".root";
+      if (!testInputFile(lstr.str(),recFile)) continue;
+      lRecTree->AddFile(lstr.str().c_str());
+    }
+  }
+
   if (!lSimTree){
     std::cout << " -- Error, tree HGCSSTree cannot be opened. Exiting..." << std::endl;
     return 1;
   }
 
-  input.str("");
-  input << filePath << "/" << recoFileName;
-  
-  TFile *recFile = TFile::Open(input.str().c_str());
-
-  if (!recFile) {
-    std::cout << " -- Error, input file " << input.str() << " cannot be opened. Exiting..." << std::endl;
-    return 1;
-  }
-  else std::cout << " -- input file " << recFile->GetName() << " successfully opened." << std::endl;
-
-  TTree *lRecTree = (TTree*)recFile->Get("RecoTree");
   if (!lRecTree){
     std::cout << " -- Error, tree RecoTree cannot be opened. Exiting..." << std::endl;
     return 1;
   }
 
 
+  //unsigned genEn;
+  //size_t end=outPath.find_last_of(".root");
+  //size_t start=outPath.find_last_of("e");
+  //std::istringstream(outPath.substr(start+1,end))>>genEn;
+
+  bool isEM = false;
+
+  if (inFilePath.find("e-")!=inFilePath.npos || 
+      inFilePath.find("e+")!=inFilePath.npos) isEM = true;
+
+  if (selectEarlyDecays && isEM) {
+    selectEarlyDecays = false;
+    HcalPionCalib = 1;
+    HcalPionOffset = 0;
+  }
+
   /////////////////////////////////////////////////////////////
   //Info
   /////////////////////////////////////////////////////////////
 
-  HGCSSInfo * info=(HGCSSInfo*)simFile->Get("Info");
   const double cellSize = info->cellSize();
   const unsigned versionNumber = info->version();
   const unsigned model = info->model();
@@ -201,22 +257,22 @@ int main(int argc, char** argv){//main
   std::vector<unsigned> granularity5;
   granularity5.resize(nLayers,2);
   geomConv5.setGranularity(granularity5);
-  geomConv5.initialiseHistos(false,"_5");
+  if (!skipSimStuff) geomConv5.initialiseHistos(false,"_5");
   HGCSSGeometryConversion geomConv10(inFilePath,model,cellSize);
   std::vector<unsigned> granularity10;
   granularity10.resize(nLayers,4);
   geomConv10.setGranularity(granularity10);
-  geomConv10.initialiseHistos(false,"_10");
+  if (!skipSimStuff) geomConv10.initialiseHistos(false,"_10");
   HGCSSGeometryConversion geomConv15(inFilePath,model,cellSize);
   std::vector<unsigned> granularity15;
   granularity15.resize(nLayers,6);
   geomConv15.setGranularity(granularity15);
-  geomConv15.initialiseHistos(false,"_15");
+  if (!skipSimStuff) geomConv15.initialiseHistos(false,"_15");
   HGCSSGeometryConversion geomConv2d5(inFilePath,model,cellSize);
   std::vector<unsigned> granularity2d5;
   granularity2d5.resize(nLayers,1);
   geomConv2d5.setGranularity(granularity2d5);
-  geomConv2d5.initialiseHistos(false,"_2d5");
+  if (!skipSimStuff) geomConv2d5.initialiseHistos(false,"_2d5");
 
   TFile *outputFile = TFile::Open(outPath.c_str(),"RECREATE");
   
@@ -235,7 +291,6 @@ int main(int argc, char** argv){//main
 	    << " -- Z: " << nZ << " " << minZ << " " << maxZ << std::endl
     ;
   outputFile->cd();
-
   TH2F *p_EsimvsLayer = new TH2F("p_EsimvsLayer",";layer ; Esim (MIPs)",
 				 nLayers,0,nLayers,
 				 1000,0,5000);
@@ -265,10 +320,16 @@ int main(int argc, char** argv){//main
   TH1F *p_maxEhit_10 = new TH1F("p_maxEhit_10",";maxE (MIPS) in 10 #times 10 mm^{2} cell; n_{events}",5000,0,15000);
   TH1F *p_maxEhit_15 = new TH1F("p_maxEhit_15",";maxE (MIPS) in 15 #times 15 mm^{2} cell; n_{events}",5000,0,15000);
 
+  TH1F *p_maxEhit_fh = new TH1F("p_maxEhit_fh",";maxE (MIPS) in FHCAL; n_{events}",5000,0,15000);
+
+  TH1F *p_maxEhit_bh = new TH1F("p_maxEhit_bh",";maxE (MIPS) in BHCAL; n_{events}",5000,0,15000);
+
   p_maxEhit_2d5->StatOverflows();
   p_maxEhit_5->StatOverflows();
   p_maxEhit_10->StatOverflows();
   p_maxEhit_15->StatOverflows();
+  p_maxEhit_fh->StatOverflows();
+  p_maxEhit_bh->StatOverflows();
 
   //  TH1F *p_nAboveMax_2d5 = new TH1F("p_nAboveMax_2d5",";n(E>maxE) 2.5 #times 2.5 mm^{2} cell; n_{events}",500,0,500);
   TH1F *p_nAboveMax_5 = new TH1F("p_nAboveMax_5",";n(E>maxE) 5 #times 5 mm^{2} cell; n_{events}",50,0,50);
@@ -424,10 +485,11 @@ int main(int argc, char** argv){//main
     //   refThicknessEven = 1;
     // }
 
-    //to get simhit energy in final granularity
-    unsigned prevLayer = 10000;
-    DetectorEnum type = DetectorEnum::FECAL;
-    unsigned subdetLayer=0;
+    if (!skipSimStuff) {
+      //to get simhit energy in final granularity
+      unsigned prevLayer = 10000;
+      DetectorEnum type = DetectorEnum::FECAL;
+      unsigned subdetLayer=0;
 
     for (unsigned iH(0); iH<(*simhitvec).size(); ++iH){//loop on hits
       HGCSSSimHit lHit = (*simhitvec)[iH];
@@ -497,12 +559,12 @@ int main(int argc, char** argv){//main
       if (debug>1) std::cout << "-hit" << iH << "-" << layer << " " << energy << " " << EtotSim[layer];
 
       //double absweight = myDetector.subDetectorByLayer(layer).absWeight;
-      double absweight = (*ssvec)[layer].volX0trans()/(*ssvec)[1].volX0trans();
+      double absweight = (*ssvec)[layer].voldEdx()/(*ssvec)[1].voldEdx();
 
       //if (versionNumber==12){
 	//absweight = layer%2==0 ?
-	//(*ssvec)[layer].volX0trans()/refThicknessEven : 
-	//(*ssvec)[layer].volX0trans()/refThicknessOdd;
+	//(*ssvec)[layer].voldEdx()/refThicknessEven : 
+	//(*ssvec)[layer].voldEdx()/refThicknessOdd;
 	//}
       Esim[sec] += energy*absweight;
       
@@ -525,7 +587,7 @@ int main(int argc, char** argv){//main
     unsigned nAbove1_10 = 0;
     unsigned nAbove1_15 = 0;
     for (unsigned iL(0); iL<nLayers; ++iL){//loop on layers
-      double absweight = (*ssvec)[iL].volX0trans()/(*ssvec)[1].volX0trans();
+      double absweight = (*ssvec)[iL].voldEdx()/(*ssvec)[1].voldEdx();
       TH2D *hist = geomConv2d5.get2DHist(iL,"E");
       double Emax = hist->GetBinContent(hist->GetMaximumBin());
       if (Emax>maxE2d5)	maxE2d5=Emax;
@@ -600,6 +662,11 @@ int main(int argc, char** argv){//main
     p_firstInteraction->Fill(firstInteraction);
 
     if (debug)  std::cout << std::endl;
+    }
+
+    double maxEfh = 0;
+    double maxEbh = 0;
+
 
     for (unsigned iH(0); iH<(*rechitvec).size(); ++iH){//loop on rechits
       HGCSSRecoHit lHit = (*rechitvec)[iH];
@@ -622,15 +689,24 @@ int main(int argc, char** argv){//main
       }
       unsigned sec =  myDetector.getSection(layer);
       
+      if (layer >= myDetector.subDetectorByEnum(DetectorEnum::FHCAL).layerIdMin && layer < myDetector.subDetectorByEnum(DetectorEnum::FHCAL).layerIdMax) {
+	if (energy>maxEfh) maxEfh = energy;
+      }
+      if (layer >= myDetector.subDetectorByEnum(DetectorEnum::BHCAL1).layerIdMin && layer < myDetector.subDetectorByEnum(DetectorEnum::BHCAL1).layerIdMax) {
+	if (energy>maxEbh) maxEbh = energy;
+      }
       //p_recoxy[layer]->Fill(posx,posy,energy);
       EtotRec[layer] += energy;
       if (debug>1) std::cout << "-hit" << iH << "-" << layer << " " << energy << " " << EtotRec[layer];
 
-      double absweight = (*ssvec)[layer].volX0trans()/(*ssvec)[1].volX0trans();
+      double absweight = (*ssvec)[layer].voldEdx()/(*ssvec)[1].voldEdx();
 
       Ereco[sec] += energy*absweight;
     }//loop on rechits
     
+    p_maxEhit_fh->Fill(maxEfh);
+    p_maxEhit_bh->Fill(maxEbh);
+
     p_nRecHits->Fill((*rechitvec).size());
 
     double Eecal = 0;
@@ -674,7 +750,7 @@ int main(int argc, char** argv){//main
       if (debug) std::cout << " -- Layer " << iL 
 			   << " total sim E = " << EtotSim[iL] 
 			   << " total rec E = " << EtotRec[iL] 
-			   << " absweight = " << (*ssvec)[iL].volX0trans() << "/" << (*ssvec)[0].volX0trans() << " = " << (*ssvec)[iL].volX0trans()/(*ssvec)[0].volX0trans() << std::endl
+			   << " absweight = " << (*ssvec)[iL].voldEdx() << "/" << (*ssvec)[0].voldEdx() << " = " << (*ssvec)[iL].voldEdx()/(*ssvec)[0].voldEdx() << std::endl
 			   << std::endl;
       //unsigned sec =  myDetector.getSection(iL);
       if (doFill) p_EsimvsLayer->Fill(iL,EtotSim[iL]);
