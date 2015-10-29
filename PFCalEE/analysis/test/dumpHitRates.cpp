@@ -62,11 +62,12 @@ int main(int argc, char** argv){//main
     return 1;
   }
   
-  const unsigned nT = 3;
-  const double threshold[nT] = {3,4,5};
+  const unsigned nT = 20;
+  double threshold[nT];
   std::ofstream hitsOut[nT];
 
   for (unsigned it(0); it<nT;++it){
+    threshold[it] = it+1;
     std::ostringstream lstrrec;
     lstrrec << outPath << "_thresh" << threshold[it] << "mips.dat";
     hitsOut[it].open(lstrrec.str());
@@ -117,7 +118,7 @@ int main(int argc, char** argv){//main
       double posy = lHit.get_y();
 
       double phi = lHit.phi();
-      unsigned sector = phi>=0? 6+static_cast<unsigned>(phi/(2*TMath::Pi())*nSectors) : 6-static_cast<unsigned>(fabs(phi)/(2*TMath::Pi())*nSectors);
+      unsigned sector = phi>=0? 6+static_cast<unsigned>(phi/(2*TMath::Pi())*nSectors) : 5-static_cast<unsigned>(fabs(phi)/(2*TMath::Pi())*nSectors);
 
       if (sector==12) sector=0;
       if (sector>=nSectors) {
@@ -142,6 +143,7 @@ int main(int argc, char** argv){//main
     }//loop on hits
 
     for (unsigned it(0); it<nT;++it){
+      hitsOut[it] <<  nPuVtx << " ";
       for (unsigned iL(0); iL<nLayers;++iL){
 	for (unsigned iS(0); iS<nSectors;++iS){
 	  hitsOut[it] << nAbove[it][iL][iS] << " ";
