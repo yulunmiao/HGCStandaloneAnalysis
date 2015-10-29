@@ -37,6 +37,7 @@ int compareSquareHexa(){//main
   TCanvas *myc1 = new TCanvas("myc1","myc1",1500,1000);
   TCanvas *myc17 = new TCanvas("myc17","myc17",1500,1000);
   TCanvas *myc7all = new TCanvas("myc7all","myc7all",1500,1000);
+  TCanvas *mycmaxout7 = new TCanvas("mycmaxout7","mycmaxout7",1500,1000);
   TCanvas *myc2D = new TCanvas("myc2D","myc2D",1500,1000);
   TCanvas *mycprof = new TCanvas("mycprof","mycprof",1500,1000);
   TCanvas *mycCor = new TCanvas("mycCor","mycCor",1);
@@ -49,6 +50,7 @@ int compareSquareHexa(){//main
   TH1F *E1[nF][nLayers];
   TH1F *E1over7[nF][nLayers];
   TH1F *E7overtot[nF][nLayers];
+  TH1F *EmaxOut7[nF][nLayers];
   TH2F *transverseCor[nF][nLayers];
   TProfile *prof[nF][nLayers];
   TH1F *ECor[nF];

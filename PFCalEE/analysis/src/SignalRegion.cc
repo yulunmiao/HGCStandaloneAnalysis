@@ -235,11 +235,12 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
   evtIdx_ = ievt;
   totalE_ = 0;
   wgttotalE_ = 0;
-  
+
   for (unsigned iL(0); iL<nLayers_;++iL){
     for (unsigned iSR(0);iSR<nSR_;++iSR){
       energySR_[iL][iSR] = 0;
       subtractedenergySR_[iL][iSR] = 0;
+      maxhitEoutside_[iL][iSR] = 0;
     }
     for (unsigned idx(0);idx<9;++idx){
       Exy_[iL][idx] = 0;
@@ -370,7 +371,10 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
 	}
 
       }
-    }
+      else {
+	if (energy>maxhitEoutside_[layer][isr]) maxhitEoutside_[layer][isr] = energy;
+      }
+    }//loop on SR
   }//loop on hits
   
   outputFile_->cd(outputDir_.c_str());
@@ -407,7 +411,7 @@ void SignalRegion::initialiseHistograms(){
     emptyvec.resize(nSR_,0);
     energySR_.resize(nLayers_,emptyvec);
     subtractedenergySR_.resize(nLayers_,emptyvec);
-
+    maxhitEoutside_.resize(nLayers_,emptyvec);
     absweight_.resize(nLayers_,1);
 
     if (zPos_.size()!=nLayers_) {
@@ -437,6 +441,9 @@ void SignalRegion::initialiseHistograms(){
 	label.str("");
 	label << "subtractedenergy_" << iL << "_SR" << iSR;
 	outtree_->Branch(label.str().c_str(),&subtractedenergySR_[iL][iSR]);
+	label.str("");
+	label << "maxhitEoutside_" << iL << "_SR" << iSR;
+	outtree_->Branch(label.str().c_str(),&maxhitEoutside_[iL][iSR]);
       }
       for (unsigned iy(0);iy<3;++iy){
 	for (unsigned ix(0);ix<3;++ix){

@@ -154,6 +154,7 @@ private:
   std::vector<std::vector<double> > energySR_;
   std::vector<std::vector<double> > subtractedenergySR_;
   std::vector<std::vector<double> > Exy_;
+  std::vector<std::vector<double> > maxhitEoutside_;
 
   TH1F *p_rawEtotal;
   TH1F *p_wgtEtotal;
