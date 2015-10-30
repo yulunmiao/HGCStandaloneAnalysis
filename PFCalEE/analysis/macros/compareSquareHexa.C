@@ -97,7 +97,7 @@ int compareSquareHexa(){//main
     for (unsigned iL(0);iL<nLayers;++iL){	      
       lname.str("");
       lname << "E1" << label[iF] << "_" << iL;
-      E1[iF][iL] = new TH1F(lname.str().c_str(),";ESR0 (mips);showers",1000,0,500);
+      E1[iF][iL] = new TH1F(lname.str().c_str(),";ESR0 (mips);showers",200,0,500);
       E1[iF][iL]->SetLineColor(1+iF);
       E1[iF][iL]->SetMarkerColor(1+iF);
       E1[iF][iL]->SetMarkerStyle(21+iF);
@@ -138,6 +138,18 @@ int compareSquareHexa(){//main
 	tree[iF]->Draw(lvar.str().c_str(),lcut.str().c_str());
       }
 
+      lname.str("");
+      lname << "EmaxOut7" << label[iF] << "_" << iL;
+      EmaxOut7[iF][iL] = new TH1F(lname.str().c_str(),";max Ehit outside SR2 (mips);showers",100,0,150.);
+      EmaxOut7[iF][iL]->SetLineColor(1+iF);
+      EmaxOut7[iF][iL]->SetMarkerColor(1+iF);
+      EmaxOut7[iF][iL]->SetMarkerStyle(21+iF);
+      EmaxOut7[iF][iL]->Sumw2();
+      lvar.str("");
+      lvar << "maxhitEoutside_" << iL << "_SR2>>+" << lname.str();
+      lcut.str("");
+      tree[iF]->Draw(lvar.str().c_str(),lcut.str().c_str());
+      
       lname.str("");
       lname << "transverseCor" << label[iF] << "_" << iL;
       transverseCor[iF][iL] = new TH2F(lname.str().c_str(),";ESR0/ESR2;ESR2/Etot;showers",50,0.,1.,50,iL<14? 0.5 : 0,1.);
@@ -220,7 +232,9 @@ int compareSquareHexa(){//main
   myc1->Divide(7,4);
   for (unsigned iL(0);iL<nLayers;++iL){	      
     myc1->cd(iL+1);
-    for (unsigned iF(0); iF<nF;++iF){//loop on files
+    gPad->SetLogx(1);
+    gPad->SetGridx(1);
+   for (unsigned iF(0); iF<nF;++iF){//loop on files
       E1[iF][iL]->Scale(E1[1][iL]->GetEntries()/E1[iF][iL]->GetEntries());
       E1[iF][iL]->Draw(iF==0?"PE":"PEsame");
     }//loop on files
@@ -258,6 +272,22 @@ int compareSquareHexa(){//main
   }
   myc7all->Update();
   myc7all->Print("ComparisonSquareHexa_ESR2overTotal_gamma_pt20_eta2.pdf");
+
+  mycmaxout7->Divide(7,4);
+  for (unsigned iL(0);iL<nLayers;++iL){	      
+    mycmaxout7->cd(iL+1);
+    gPad->SetLogx(1);
+    gPad->SetGridx(1);
+    for (unsigned iF(0); iF<nF;++iF){//loop on files
+      EmaxOut7[iF][iL]->Scale(EmaxOut7[1][iL]->GetEntries()/EmaxOut7[iF][iL]->GetEntries());
+      EmaxOut7[iF][iL]->Draw(iF==0?"PE":"PEsame");
+    }//loop on files
+    leg->Draw("same");
+    sprintf(buf,"Layer %d",iL);
+    lat.DrawLatexNDC(0.15,0.85,buf);
+  }
+  mycmaxout7->Update();
+  mycmaxout7->Print("ComparisonSquareHexa_EmaxHitOutOfSR2_gamma_pt20_eta2.pdf");
 
   myc2D->Divide(7,4);
   for (unsigned iL(0);iL<nLayers;++iL){	      
@@ -317,7 +347,7 @@ int compareSquareHexa(){//main
     fin[iF]->cd("Energies");
     lname.str("");
     lname << "ECor" << label[iF];
-    ECor[iF] = new TH1F(lname.str().c_str(),";Ecor (mips);showers",100,5000,10000);
+    ECor[iF] = new TH1F(lname.str().c_str(),";Ecor (mips);showers",100,5000,15000);
     ECor[iF]->SetLineColor(1+iF);
     ECor[iF]->SetMarkerColor(1+iF);
     ECor[iF]->SetMarkerStyle(21+iF);
