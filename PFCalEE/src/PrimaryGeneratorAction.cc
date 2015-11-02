@@ -120,7 +120,7 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
     //y0 = (G4RandFlat::shoot(0.,10.)-5)*mm;
   }
   else if (model_ == 3) {
-    x0 = (G4RandFlat::shoot(0.,30)-15)*mm;
+    x0 = (G4RandFlat::shoot(0.,30.)-15)*mm;
     y0 = (G4RandFlat::shoot(0.,30.)-15)*mm;
   }
 

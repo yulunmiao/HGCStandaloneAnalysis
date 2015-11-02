@@ -60,7 +60,10 @@ public:
     v_HGCAL_v618=37,
     v_HGCALHE_v624=38,
     v_HGCALHE_v618=39,
-    v_HGCALEE_TB=100
+    v_HGCALEE_TB=100,
+    v_HGCALEE_TB_gap0=101,
+    v_HGCALEE_TB_allW=102,
+    v_HGCALEE_TB_samedEdx=103
   };
 
   enum DetectorModel {

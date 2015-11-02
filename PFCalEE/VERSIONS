@@ -6,6 +6,10 @@
 #####################
 ## For branch master
 #####################
+* Add TB version 101 with 0 air gap for study of impact on even-odd layer structure.
+
+
+
 V06a-03-05
 ----------
 * add energy per 3*3 region in SignalRegion output tree.
