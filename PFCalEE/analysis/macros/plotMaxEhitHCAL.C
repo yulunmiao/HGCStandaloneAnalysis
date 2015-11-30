@@ -25,33 +25,36 @@ int plotMaxEhitHCAL() {
 
   const unsigned nS = 1;
   std::string scenario[nS] = {
-   "pi-/"
+   "u_pt"
   };
 
   const unsigned nV = 1;
   TString version[nV] = {"33"};//,"0"};
  
-  const unsigned nHists = 3;
-  std::string label[nHists] = {"eta18","eta25","eta29"};
-
-  const double leta[nHists] = {1.8,2.5,2.9};
+  const unsigned nHists = 2;
+  std::string etastr[nHists] = {"eta18","eta18"};//,"eta25","eta29"};
+  std::string label[nHists] = {"u quark","single pi^{-}"};
+  const double leta[nHists] = {1.8,1.8};//,2.5,2.9};
 
   unsigned genEn[]={1,2,3};
   const unsigned nGenEn=sizeof(genEn)/sizeof(unsigned);
 
   unsigned genEt[nGenEn][nHists] = 
-    {{320,170,110},
-     {650,320,220},
-     {1000,500,330}
+    {{320,320},//,170,110},
+     {650,650},//,320,220},
+     {1000,1000}//,500,330}
     };
   double genEnErr[nGenEn];
   double genEnD[nGenEn];
   TCanvas *mycL = new TCanvas("mycL","mycL",1500,1000);
   mycL->Divide(nHists,nGenEn);
   TCanvas *myc = new TCanvas("myc","myc",1);
-  TCanvas *mycmax[2];
+
+  const unsigned nP = 3;
+  TCanvas *mycmax[nP];
   mycmax[0] = new TCanvas("mycmax1","mycmax1",1);
   mycmax[1] = new TCanvas("mycmax3","mycmax3",1);
+  mycmax[2] = new TCanvas("mycmax95","mycmax95",1);
 
   double mean[nHists][nGenEn];
   double meanerr[nHists][nGenEn];
@@ -59,6 +62,8 @@ int plotMaxEhitHCAL() {
   double rmserr[nHists][nGenEn];
   double mean3rms[nHists][nGenEn];
   double mean3rmserr[nHists][nGenEn];
+  double int95[nHists][nGenEn];
+  double int95err[nHists][nGenEn];
 
   char buf[500];
   TLatex lat;
@@ -66,7 +71,8 @@ int plotMaxEhitHCAL() {
   for (unsigned iV(0); iV<nV;++iV){//loop on versions
     for (unsigned iS(0); iS<nS;++iS){//loop on scenarios
 
-      TString plotDir = "../PLOTS/gitV06a-03-05/version"+version[iV]+"/"+scenario[iS]+"/";
+      std::ostringstream plotDir;
+      plotDir << "../PLOTS/gitV06a-03-05/version" << version[iV] << "/";
  
       TH1F *maxEhit[nHists];
 
@@ -79,7 +85,12 @@ int plotMaxEhitHCAL() {
 	for (unsigned iH(0); iH<nHists;++iH){
 	  TFile *inputFile = 0;
 	  std::ostringstream linputStr;
-	  linputStr << plotDir << "validation_" << label[iH]  << "_et" << genEt[iE][iH] << ".root";
+	  linputStr << plotDir.str();
+	  if (iH==0) linputStr << "/" << scenario[iS] << genEt[iE][0];
+	  else linputStr << "/pi-";
+	  linputStr << "/validation_" << etastr[iH];
+	  if (iH==1) linputStr << "_et" << genEt[iE][iH];
+	  linputStr << ".root";
 	  inputFile = TFile::Open(linputStr.str().c_str());
 	  if (!inputFile) {
 	    std::cout << " -- Error, input file " << linputStr.str() << " cannot be opened. Exiting..." << std::endl;
@@ -106,7 +117,7 @@ int plotMaxEhitHCAL() {
 	  lat.DrawLatexNDC(0.12,0.85,buf);
 	  //sprintf(buf,"%s #mu m Si",pSuffix.c_str());
 	  lat.DrawLatexNDC(0.12,0.75,label[iH].c_str());
-	  sprintf(buf,"Geant4 Standalone, pi- %3.3f TeV",genEt[iE][iH]*cosh(leta[iH]));
+	  sprintf(buf,"Geant4 Standalone, %3.3f TeV",genEt[iE][iH]*cosh(leta[iH]));
 	  lat.DrawLatexNDC(0.1,0.92,buf);
 
 	  mean[iH][iE] = maxEhit[iH]->GetMean();
@@ -115,9 +126,25 @@ int plotMaxEhitHCAL() {
 	  rmserr[iH][iE] = maxEhit[iH]->GetRMSError();
 	  mean3rms[iH][iE] = maxEhit[iH]->GetMean()+3*maxEhit[iH]->GetRMS();
 	  mean3rmserr[iH][iE] = maxEhit[iH]->GetMeanError()+3*maxEhit[iH]->GetRMSError();
+	  double total = maxEhit[iH]->Integral();
+	  for (int iB(0); iB<maxEhit[iH]->GetNbinsX()+2;++iB){
+	    double integral = maxEhit[iH]->Integral(0,iB);
+	    if (integral/total>0.95) {
+	      int95[iH][iE] = maxEhit[iH]->GetXaxis()->GetBinCenter(iB);
+	      int95err[iH][iE] = maxEhit[iH]->GetXaxis()->GetBinWidth(iB);
+	      break;
+	    }
+	  }
+
+	  std::cout << label[iH] << " E=" << genEt[iE][iH]*cosh(leta[iH]) 
+		    << " & $" << mean[iH][iE] << " #pm " << rms[iH][iE]
+		    << "$ & $" << mean3rms[iH][iE] << " #pm " << mean3rmserr[iH][iE]
+		    << "$ & $" << int95[iH][iE] << " #pm " << int95err[iH][iE]
+		    << "$ \\\\"
+		    << std::endl;
 
 	  std::ostringstream lsave;
-	  lsave << plotDir << pSuffix << "/maxEhit_" << label[iH] << "_" << genEn[iE] << "TeV.pdf";
+	  lsave << plotDir.str() << pSuffix << "/FHmaxEhit_" << etastr[iH] << "_" << genEn[iE] << "TeV.pdf";
 	  myc->Print(lsave.str().c_str());
 
 	  mycL->cd(nHists*iE+iH+1);
@@ -129,22 +156,23 @@ int plotMaxEhitHCAL() {
 	  //lat.DrawLatexNDC(0.2,0.7,buf);
 	  //sprintf(buf,"Geant4 Standalone, e- %d GeV, pad size = %s",genEn[iE],label[iH].c_str());
 	  lat.DrawLatexNDC(0.12,0.75,label[iH].c_str());
-	  sprintf(buf,"Geant4 Standalone, pi- %3.3f TeV",genEt[iE][iH]*cosh(leta[iH]));
+	  sprintf(buf,"Geant4 Standalone, %3.3f TeV",genEt[iE][iH]*cosh(leta[iH]));
 	  lat.DrawLatexNDC(0.1,0.92,buf);
 
 	}//loop on hists
 
       }//loop on energies
       std::ostringstream lsave;
-      lsave << plotDir << pSuffix<< "/maxEhit_all.pdf";
+      lsave << plotDir.str() << pSuffix<< "/FHmaxEhit_all.pdf";
       mycL->Print(lsave.str().c_str());
 
 
-      TGraphErrors *gr[nHists][2];
-      TLegend *leg[2];
+      TGraphErrors *gr[nHists][nP];
+      TLegend *leg[nP];
       leg[0] = new TLegend(0.6,0.5,0.88,0.78);
-      leg[1] = new TLegend(0.6,0.2,0.88,0.48);
-      for (unsigned i(0); i<2;++i){
+      leg[1] = new TLegend(0.15,0.5,0.33,0.78);
+      leg[2] = new TLegend(0.15,0.5,0.33,0.78);
+      for (unsigned i(0); i<nP;++i){
 	leg[i]->SetFillColor(10);
 	mycmax[i]->cd();
 	//gPad->SetLogx(1);
@@ -154,10 +182,12 @@ int plotMaxEhitHCAL() {
 	TF1 *fitfunc[nHists];
 	for (unsigned iH(0);iH<nHists;++iH){
 	  if (i==0) gr[iH][i] = new TGraphErrors(nGenEn,genEnD,mean[iH],genEnErr,rms[iH]);
-	  else gr[iH][i] = new TGraphErrors(nGenEn,genEnD,mean3rms[iH],genEnErr,mean3rmserr[iH]); 
-	  gr[iH][i]->GetXaxis()->SetTitle("Beam energy (GeV)");
+	  else if (i==1) gr[iH][i] = new TGraphErrors(nGenEn,genEnD,mean3rms[iH],genEnErr,mean3rmserr[iH]); 
+	  else gr[iH][i] = new TGraphErrors(nGenEn,genEnD,int95[iH],genEnErr,int95err[iH]); 
+	  gr[iH][i]->GetXaxis()->SetTitle("Beam energy (TeV)");
 	  if (i==0) gr[iH][i]->GetYaxis()->SetTitle("<maxEhit> (MIPs)");
-	  else gr[iH][i]->GetYaxis()->SetTitle("<maxE>+3#times RMS (MIPs)");
+	  else if (i==1) gr[iH][i]->GetYaxis()->SetTitle("<maxE>+3#times RMS (MIPs)");
+	  else gr[iH][i]->GetYaxis()->SetTitle("95% content  (MIPs)");
 	  gr[iH][i]->SetTitle("");
 	  gr[iH][i]->SetMarkerColor(iH+1);
 	  gr[iH][i]->SetLineColor(iH+1);
@@ -189,8 +219,9 @@ int plotMaxEhitHCAL() {
 
 	leg[i]->Draw("same");
 	lsave.str("");
-	lsave << plotDir << pSuffix << "/summary";
+	lsave << plotDir.str() << pSuffix << "/FHsummary";
 	if (i==1) lsave << "_meanplus3rms";
+	else if (i==2) lsave << "_95percent";
 	lsave << ".pdf";
 	mycmax[i]->Update();
 	mycmax[i]->Print(lsave.str().c_str());

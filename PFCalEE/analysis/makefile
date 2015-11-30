@@ -57,7 +57,7 @@ OBJS=$(subst $(SRCDIR), $(OBJDIR),$(subst cc,$(OBJ_EXT),$(SRCS)))
 
 #BINS=$(EXEDIR)/MixPUSignal $(EXEDIR)/egammaResolution $(EXEDIR)/higgsResolution $(EXEDIR)/timeResolution $(EXEDIR)/plotMomentum $(EXEDIR)/plotTime
 
-BINS=$(EXEDIR)/dumpHitRates
+#BINS=$(EXEDIR)/dumpHitRates
 
 #BINS=$(EXEDIR)/plotParticleDensity $(EXEDIR)/validation $(EXEDIR)/timeResolution $(EXEDIR)/hepmcHggChargedTracks
 
@@ -68,7 +68,8 @@ BINS=$(EXEDIR)/dumpHitRates
 #BINS=$(EXEDIR)/maxChargeStudy $(EXEDIR)/plotMomentum $(EXEDIR)/egammaResolution $(EXEDIR)/higgsResolution $(EXEDIR)/ootpuOnHiggsPhotons $(EXEDIR)/getAbsorberWeight
 
 #BINS=$(EXEDIR)/egammaResolution $(EXEDIR)/higgsResolution
-#BINS=$(EXEDIR)/egammaResoWithTruth $(EXEDIR)/egammaResolution $(EXEDIR)/hadronResolution $(EXEDIR)/plotNabove100fC
+
+BINS= $(EXEDIR)/validation $(EXEDIR)/egammaResoWithTruth $(EXEDIR)/egammaResolution $(EXEDIR)/hadronResolution $(EXEDIR)/plotNabove100fC
 
 SUBDIRS = ../userlib
 

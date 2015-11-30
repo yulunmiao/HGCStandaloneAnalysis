@@ -320,14 +320,19 @@ int main(int argc, char** argv){//main
   TH1F *p_maxEhit_10 = new TH1F("p_maxEhit_10",";maxE (MIPS) in 10 #times 10 mm^{2} cell; n_{events}",5000,0,15000);
   TH1F *p_maxEhit_15 = new TH1F("p_maxEhit_15",";maxE (MIPS) in 15 #times 15 mm^{2} cell; n_{events}",5000,0,15000);
 
+  TH1F *p_maxEhit_ee = new TH1F("p_maxEhit_ee",";maxE (MIPS) in ECAL; n_{events}",5000,0,15000);
   TH1F *p_maxEhit_fh = new TH1F("p_maxEhit_fh",";maxE (MIPS) in FHCAL; n_{events}",5000,0,15000);
-
   TH1F *p_maxEhit_bh = new TH1F("p_maxEhit_bh",";maxE (MIPS) in BHCAL; n_{events}",5000,0,15000);
+
+  TH1F *p_layerMaxEHit = new TH1F("p_layerMaxEHit",";layer with max E hit; n_{events}",nLayers,0,nLayers);
+
+  TH2F *p_layerMaxEHitvsEphotonmax = new TH2F("p_layerMaxEHitvsEphotonmax",";max E^{#gamma} (GeV);layer with max E hit",1000,0,3000,nLayers,0,nLayers);
 
   p_maxEhit_2d5->StatOverflows();
   p_maxEhit_5->StatOverflows();
   p_maxEhit_10->StatOverflows();
   p_maxEhit_15->StatOverflows();
+  p_maxEhit_ee->StatOverflows();
   p_maxEhit_fh->StatOverflows();
   p_maxEhit_bh->StatOverflows();
 
@@ -466,8 +471,10 @@ int main(int argc, char** argv){//main
       std::cout << "... Size of hit vectors: sim = " <<  (*simhitvec).size() << ", reco = " << (*rechitvec).size()<< std::endl;
     }
 
+    double maxEphoton = 0;
     for (unsigned iP(0); iP<(*genvec).size(); ++iP){//loop on gen particles
       p_genPartId->Fill((*genvec)[iP].pdgid());
+      if ((*genvec)[iP].pdgid()==22 && (*genvec)[iP].E()>maxEphoton) maxEphoton = (*genvec)[iP].E();
     }//loop on gen particles
 
     p_nGenPart->Fill((*genvec).size());
@@ -664,9 +671,11 @@ int main(int argc, char** argv){//main
     if (debug)  std::cout << std::endl;
     }
 
+    double maxEee = 0;
     double maxEfh = 0;
     double maxEbh = 0;
-
+    double maxEall = 0;
+    double layMax = nLayers;
 
     for (unsigned iH(0); iH<(*rechitvec).size(); ++iH){//loop on rechits
       HGCSSRecoHit lHit = (*rechitvec)[iH];
@@ -689,11 +698,18 @@ int main(int argc, char** argv){//main
       }
       unsigned sec =  myDetector.getSection(layer);
       
+      if (layer >= myDetector.subDetectorByEnum(DetectorEnum::FECAL).layerIdMin && layer < myDetector.subDetectorByEnum(DetectorEnum::BECAL).layerIdMax) {
+	if (energy>maxEee) maxEee = energy;
+      }
       if (layer >= myDetector.subDetectorByEnum(DetectorEnum::FHCAL).layerIdMin && layer < myDetector.subDetectorByEnum(DetectorEnum::FHCAL).layerIdMax) {
 	if (energy>maxEfh) maxEfh = energy;
       }
       if (layer >= myDetector.subDetectorByEnum(DetectorEnum::BHCAL1).layerIdMin && layer < myDetector.subDetectorByEnum(DetectorEnum::BHCAL1).layerIdMax) {
 	if (energy>maxEbh) maxEbh = energy;
+      }
+      if (energy>maxEall){
+	maxEall = energy;
+	layMax = layer;
       }
       //p_recoxy[layer]->Fill(posx,posy,energy);
       EtotRec[layer] += energy;
@@ -704,8 +720,11 @@ int main(int argc, char** argv){//main
       Ereco[sec] += energy*absweight;
     }//loop on rechits
     
+    p_maxEhit_ee->Fill(maxEee);
     p_maxEhit_fh->Fill(maxEfh);
     p_maxEhit_bh->Fill(maxEbh);
+    p_layerMaxEHit->Fill(layMax);
+    p_layerMaxEHitvsEphotonmax->Fill(maxEphoton/1000.,layMax);//in GeV
 
     p_nRecHits->Fill((*rechitvec).size());
 
