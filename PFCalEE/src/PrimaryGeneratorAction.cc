@@ -120,8 +120,12 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
     //y0 = (G4RandFlat::shoot(0.,10.)-5)*mm;
   }
   else if (model_ == 3) {
-    x0 = (G4RandFlat::shoot(0.,30)-15)*mm;
-    y0 = (G4RandFlat::shoot(0.,30.)-15)*mm;
+    //x0 = (G4RandFlat::shoot(0.,30)-15)*mm;
+    //y0 = (G4RandFlat::shoot(0.,30.)-15)*mm;
+    //update to cover full hexagon
+    //size=6.4mm
+    x0 = (G4RandFlat::shoot(0.,24.)-12)*mm;
+    y0 = (G4RandFlat::shoot(0.,24.)-12)*mm;
   }
 
   particleGun->SetParticlePosition(G4ThreeVector(x0,y0,z0));
