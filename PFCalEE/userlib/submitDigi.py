@@ -155,13 +155,19 @@ for nPuVtx in nPuVtxlist:
             outDir='%s/git_%s/version_%d/model_%d/%s/%s'%(opt.out,opt.gittag,opt.version,opt.model,opt.datatype,bval)
             outDir='%s/%s'%(outDir,label) 
             if en>0 : outDir='%s/et_%d'%(outDir,en)
-            eosDir='%s/git%s/%s'%(opt.eos,opt.gittag,opt.datatype)
-            eosDirIn='%s/git%s/%s'%(opt.eosin,opt.gittag,opt.datatype)
+
             #eosDirIn='%s'%(opt.eosin)
             if opt.alpha>0 : outDir='%s/eta_%3.3f/'%(outDir,opt.alpha) 
             if opt.phi!=0.5 : outDir='%s/phi_%3.3fpi/'%(outDir,opt.phi) 
             if (opt.run>=0) : outDir='%s/run_%d/'%(outDir,opt.run)
         
+            if len(opt.eos)>0:
+                eosDir='%s/git%s/%s'%(opt.eos,opt.gittag,opt.datatype)
+                eosDirIn='%s/git%s/%s'%(opt.eosin,opt.gittag,opt.datatype)
+            else:
+                eosDir='%s/'%(outDir)
+                eosDirIn='%s/'%(outDir)
+
             outlog='%s/digitizer%s.log'%(outDir,suffix)
             g4log='digijob%s.log'%(suffix)
             os.system('mkdir -p %s'%outDir)
@@ -198,6 +204,9 @@ for nPuVtx in nPuVtxlist:
                 scriptFile.write('rm DigiPFcal.root\n')
                 scriptFile.write('fi\n')
                 scriptFile.write('fi\n')
+            else:
+                scriptFile.write('mv DigiPFcal.root Digi%s_%s.root\n'%(suffix,outTag))
+
             scriptFile.write('echo "--deleting core files: too heavy!!"\n')
             scriptFile.write('rm core.*\n')
             scriptFile.write('cp * %s/\n'%(outDir))
