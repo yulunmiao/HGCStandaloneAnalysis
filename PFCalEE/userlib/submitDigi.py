@@ -163,7 +163,7 @@ for nPuVtx in nPuVtxlist:
         
             if len(opt.eos)>0:
                 eosDir='%s/git%s/%s'%(opt.eos,opt.gittag,opt.datatype)
-                eosDirIn='%s/git%s/%s'%(opt.eosin,opt.gittag,opt.datatype)
+                eosDirIn='root://eoscms//eos/cms%s/git%s/%s'%(opt.eosin,opt.gittag,opt.datatype)
             else:
                 eosDir='%s/'%(outDir)
                 eosDirIn='%s/'%(outDir)
@@ -183,7 +183,7 @@ for nPuVtx in nPuVtxlist:
             if opt.phi!=0.5 : outTag='%s_phi%3.3fpi'%(outTag,opt.phi) 
             if (opt.run>=0) : outTag='%s_run%d'%(outTag,opt.run)
             scriptFile.write('localdir=`pwd`\n')
-            scriptFile.write('%s/bin/digitizer %d root://eoscms//eos/cms%s/HGcal_%s.root $localdir/ %s %s %s %d %d %d %s | tee %s\n'%(os.getcwd(),opt.nevts,eosDirIn,outTag,granularity,noise,threshold,interCalib,nSiLayers,nPuVtx,INPATHPU,outlog))
+            scriptFile.write('%s/bin/digitizer %d %s/HGcal_%s.root $localdir/ %s %s %s %d %d %d %s | tee %s\n'%(os.getcwd(),opt.nevts,eosDirIn,outTag,granularity,noise,threshold,interCalib,nSiLayers,nPuVtx,INPATHPU,outlog))
             scriptFile.write('echo "--Local directory is " $localdir >> %s\n'%(g4log))
             scriptFile.write('ls * >> %s\n'%(g4log))
             if len(opt.eos)>0:
