@@ -81,6 +81,8 @@ void processHist(const unsigned iL,
 		 std::vector<PseudoJet> & lParticles
 		 ){
 
+  bool doSaturation=true;
+
   DetectorEnum adet = subdet.type;
   bool isScint = subdet.isScint;
   bool isSi = subdet.isSi;
@@ -129,10 +131,10 @@ void processHist(const unsigned iL,
       
 
       //correct for particle angle in conversion to MIP
-      double simEcor = isTBsetup ? xtalkE : myDigitiser.mipCor(xtalkE,x,y,posz);
+      double simEcor = xtalkE;//isTBsetup ? xtalkE : myDigitiser.mipCor(xtalkE,x,y,posz);
       digiE = simEcor;
       
-      if (isScint && simEcor>0) {
+      if (isScint && simEcor>0 && doSaturation) {
 	digiE = myDigitiser.digiE(simEcor);
       }
       myDigitiser.addNoise(digiE,iL,p_noise);
