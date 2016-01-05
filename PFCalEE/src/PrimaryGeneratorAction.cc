@@ -116,7 +116,7 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
   //smear within 1cm...
   if (model_ == 2) z0 = (G4RandGauss::shoot(0.,5.))*cm;
   else if (model_ == 4) {
-    x0 = (G4RandFlat::shoot(0.,310)-100)*mm;
+    x0 = (G4RandFlat::shoot(0.,460)-170)*mm;
     //y0 = (G4RandFlat::shoot(0.,10.)-5)*mm;
   }
   else if (model_ == 3) {

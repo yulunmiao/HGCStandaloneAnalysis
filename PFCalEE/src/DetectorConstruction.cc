@@ -791,7 +791,7 @@ void DetectorConstruction::UpdateCalorSize(){
   }
   else if (model_ == DetectorConstruction::m_BOXWITHCRACK_100 ){
     m_nSectors = 3;
-    m_sectorWidth = 310;
+    m_sectorWidth = 460;
     m_interSectorWidth = 10;
     m_CalorSizeXY=m_nSectors*m_sectorWidth;
   }

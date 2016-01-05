@@ -22,6 +22,30 @@
 
 #include "effSigmaMacro.C"
 
+void drawLayerWithGap(TLatex & lat, bool random, double ypos=0)
+{
+  lat.SetTextColor(9);
+  lat.SetTextSize(0.03);
+  lat.SetTextAngle(90);
+  char buf[500];
+  for (unsigned il(0);il<28;++il){
+    if (random) sprintf(buf,"Layer %d",il);
+    else sprintf(buf,"Layer %d-%d",il,il+1);
+    double offset = random ? 10.*((7*il)%31) : il/2*30;
+    if (-230+offset < -170) continue;
+    if (random || (!random && il%2==0)) lat.DrawLatex(-230.+offset,ypos,buf);
+  }
+  for (unsigned il(0);il<28;++il){
+    if (random) sprintf(buf,"Layer %d",il);
+    else sprintf(buf,"Layer %d-%d",il,il+1);
+    double offset = random ? 10.*((7*il)%31) : il/2*30;
+    if (230+offset > 290) continue;
+    if (random || (!random && il%2==0)) lat.DrawLatex(230.+offset,ypos,buf);
+  }
+  lat.SetTextAngle(0);
+  lat.SetTextColor(1);
+  lat.SetTextSize(0.05);
+}
 
 unsigned getGapLayer(const double & vtxx){
 
@@ -46,23 +70,27 @@ int plotSigmaEffvsVtxPos(){//main
   const double pT = 60;
   const double Egen = pT*cosh(eta);
 
-  const std::string version = "V06";
+  const std::string version = "V06b-03-05";
   std::string label[nF] = {"phi90","phi79"};
 
-  bool linedup = (version!="V06a");
-
-  if (!linedup) {
+  bool linedup = (version=="V06-03-04");
+  bool random = (version=="V06a-03-04");
+  if (version=="V06a-03-04") {
     label[0] = "V06aphi90";
     label[1] = "V06aphi79";
   }
+  else if (version=="V06b-03-05") {
+    label[0] = "V06bphi90";
+    label[1] = "V06bphi79";
+  }
 
   TFile *fin[nF];
-  fin[0] = TFile::Open(("/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalCracks/git"+version+"-03-04/version100/model4/gamma/eta20_et60_pu0_IC3_Si2.root").c_str());
-  fin[1] = TFile::Open(("/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalCracks/git"+version+"-03-04/version100/model4/gamma/phi_0.440pi/eta20_et60_pu0_IC3_Si2.root").c_str());
+  fin[0] = TFile::Open(("/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalCracks/git"+version+"/version100/model4/gamma/eta20_et60_pu0_IC3_Si2.root").c_str());
+  fin[1] = TFile::Open(("/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalCracks/git"+version+"/version100/model4/gamma/phi_0.440pi/eta20_et60_pu0_IC3_Si2.root").c_str());
 
   const unsigned nP = 62;
-  const double stepsize = 310./nP;
-  double xmin = -100;
+  const double stepsize = 460./nP;
+  double xmin = -170;
   if (linedup) xmin += 0.33+2.5;
 
   TLatex lat;
@@ -273,27 +301,10 @@ int plotSigmaEffvsVtxPos(){//main
       lat.SetTextSize(0.05);
     }
     else {
-      lat.SetTextColor(9);
-      lat.SetTextSize(0.03);
-      lat.SetTextAngle(90);
-      for (unsigned il(0);il<28;++il){
-	sprintf(buf,"Layer %d",il);
-	double offset = 10.*((7*il)%31);
-	if (-160+offset < -100) continue;
-	lat.DrawLatex(-160.+offset,0,buf);
-      }
-      for (unsigned il(0);il<28;++il){
-	sprintf(buf,"Layer %d",il);
-	double offset = 10.*((7*il)%31);
-	if (150+offset > 210) continue;
-	lat.DrawLatex(150.+offset,0,buf);
-      }
-      lat.SetTextAngle(0);
-      lat.SetTextColor(1);
-      lat.SetTextSize(0.05);
+      drawLayerWithGap(lat,random);
     }
 
-    TLine *ref = new TLine(-100,sigmaeff_ref*normalisation/Egen,210,sigmaeff_ref*normalisation/Egen);
+    TLine *ref = new TLine(-170,sigmaeff_ref*normalisation/Egen,290,sigmaeff_ref*normalisation/Egen);
     ref->SetLineColor(2);
     ref->Draw();
     gr[iF]->Draw("PE");
@@ -340,25 +351,8 @@ int plotSigmaEffvsVtxPos(){//main
       lat.SetTextColor(1);
       lat.SetTextSize(0.05);
     } 
-    else {
-      lat.SetTextColor(9);
-      lat.SetTextSize(0.03);
-      lat.SetTextAngle(90);
-      for (unsigned il(0);il<28;++il){
-	sprintf(buf,"Layer %d",il);
-	double offset = 10.*((7*il)%31);
-	if (-160.+offset < -100.) continue;
-	lat.DrawLatex(-160.+offset,-0.02,buf);
-      }
-      for (unsigned il(0);il<28;++il){
-	sprintf(buf,"Layer %d",il);
-	double offset = 10.*((7*il)%31);
-	if (150.+offset > 210.) continue;
-	lat.DrawLatex(150.+offset,-0.02,buf);
-      }
-      lat.SetTextAngle(0);
-      lat.SetTextColor(1);
-      lat.SetTextSize(0.05);
+    else { 
+      drawLayerWithGap(lat,random,-0.015);
     }
 
     grMean[iF]->Draw("PE");
