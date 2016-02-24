@@ -35,7 +35,8 @@ public:
                  const HGCSSGeometryConversion & geomConv,
                  const HGCSSPUenergy & puDensity,
 		 const bool applyPuMixFix,
-		 const unsigned versionNumber=12);
+		 const unsigned versionNumber=12,
+		 const bool doHexa=true);
 
     ~SignalRegion();
 
@@ -117,6 +118,7 @@ public:
 
 private:
   
+  bool doHexa_;
   unsigned nSR_;
   unsigned nevt_;
   std::string inputFolder_;
@@ -152,6 +154,7 @@ private:
   std::vector<std::vector<double> > energySR_;
   std::vector<std::vector<double> > subtractedenergySR_;
   std::vector<std::vector<double> > Exy_;
+  std::vector<std::vector<double> > maxhitEoutside_;
 
   TH1F *p_rawEtotal;
   TH1F *p_wgtEtotal;

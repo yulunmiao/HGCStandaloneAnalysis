@@ -2,10 +2,12 @@
 #define HGCSSGeometryConversion_h
 
 
+#include <iostream>
 #include <string>
 #include <vector>
 #include <cmath>
 #include "TH2D.h"
+#include "TH2Poly.h"
 
 #include "HGCSSDetector.hh"
 
@@ -13,9 +15,32 @@ class HGCSSGeometryConversion{
   
 public:
   HGCSSGeometryConversion(){};
-  HGCSSGeometryConversion(std::string filePath,const unsigned & model, const double & cellsize, const bool bypassR=false, const unsigned nSiLayers=3);
+  HGCSSGeometryConversion(const unsigned & model, const double & cellsize, const bool bypassR=false, const unsigned nSiLayers=3);
 
   ~HGCSSGeometryConversion();
+
+  TH2Poly *hexagonMap(){
+    static TH2Poly hc;
+    return &hc;
+  };
+
+  TH2Poly *squareMap(){
+    static TH2Poly hsq;
+    return &hsq;
+  };
+
+  std::map<int,std::pair<double,double> > hexaGeom;
+  std::map<int,std::pair<double,double> > squareGeom;
+
+  void initialiseSquareMap(const double xymin, const double side);
+
+  void initialiseSquareMap(TH2Poly *map, const double xymin, const double side, bool print);
+
+  void initialiseHoneyComb(const double xymin, const double side);
+
+  void initialiseHoneyComb(TH2Poly *map, const double xymin, const double side, bool print);
+
+  void fillXY(TH2Poly* hist, std::map<int,std::pair<double,double> > & geom);
 
   void setGranularity(const std::vector<unsigned> & granul);
 
@@ -65,10 +90,10 @@ public:
 
   double getAverageZ(const unsigned layer);
 
-  double sumBins(const std::vector<TH2D *> & aHistVec,
+  double sumBins(const std::vector<TH2Poly *> & aHistVec,
 		 const double & aMipThresh=0.);
 
-  void resetVector(std::vector<TH2D *> & aVec,
+  void resetVector(std::vector<TH2Poly *> & aVec,
 		   std::string aVar,
 		   std::string aString,
 		   const HGCSSSubDetector & aDet,
@@ -77,27 +102,19 @@ public:
 		   bool print=true);
 
 
-  void deleteHistos(std::vector<TH2D *> & aVec);
+  void deleteHistos(std::vector<TH2Poly *> & aVec);
 
-  TH2D * get2DHist(const unsigned layer,std::string name);
+  TH2Poly * get2DHist(const unsigned layer,std::string name);
 
-  inline std::vector<TH2D *> & get2DEnergyVec(const DetectorEnum aDet){
+  inline std::vector<TH2Poly *> & get2DEnergyVec(const DetectorEnum aDet){
     return HistMapE_[aDet];
   };
 
-  inline std::vector<TH2D *> & get2DEnergyVecSmall(const DetectorEnum aDet){
-    return HistMapESmall_[aDet];
-  };
-
-  inline std::vector<TH2D *> & get2DTimeVec(const DetectorEnum aDet){
+  inline std::vector<TH2Poly *> & get2DTimeVec(const DetectorEnum aDet){
     return HistMapTime_[aDet];
   };
 
-  inline std::vector<TH2D *> & get2DTimeVecSmall(const DetectorEnum aDet){
-    return HistMapTimeSmall_[aDet];
-  };
-
-  inline std::vector<TH2D *> & get2DZposVec(const DetectorEnum aDet){
+  inline std::vector<TH2Poly *> & get2DZposVec(const DetectorEnum aDet){
     return HistMapZ_[aDet];
   };
 
@@ -110,13 +127,13 @@ private:
   unsigned model_;
   bool bypassRadius_;
   unsigned nSiLayers_;
-  std::map<DetectorEnum,std::vector<TH2D *> > HistMapE_;
-  std::map<DetectorEnum,std::vector<TH2D *> > HistMapESmall_;
-  std::map<DetectorEnum,std::vector<TH2D *> > HistMapTime_;
-  std::map<DetectorEnum,std::vector<TH2D *> > HistMapTimeSmall_;
-  std::map<DetectorEnum,std::vector<TH2D *> > HistMapZ_;
+  std::map<DetectorEnum,std::vector<TH2Poly *> > HistMapE_;
+  std::map<DetectorEnum,std::vector<TH2Poly *> > HistMapTime_;
+  std::map<DetectorEnum,std::vector<TH2Poly *> > HistMapZ_;
   std::map<DetectorEnum,std::vector<double> > avgMapZ_;
   std::map<DetectorEnum,std::vector<double> > avgMapE_;
+
+
 };
 
 

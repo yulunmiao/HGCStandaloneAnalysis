@@ -4,7 +4,10 @@
 #include <cmath>
 #include <stdlib.h>
 
-HGCSSSimHit::HGCSSSimHit(const G4SiHit & aSiHit, const unsigned & asilayer, const float cellSize){
+HGCSSSimHit::HGCSSSimHit(const G4SiHit & aSiHit, 
+			 const unsigned & asilayer, 
+			 TH2Poly* map, 
+			 const float ){
   energy_ = aSiHit.energy;
   //energy weighted time
   //PS: need to call calculateTime() after all hits 
@@ -15,15 +18,48 @@ HGCSSSimHit::HGCSSSimHit(const G4SiHit & aSiHit, const unsigned & asilayer, cons
 
   //coordinates in mm
   //double z = aSiHit.hit_x;
-  double y = aSiHit.hit_y;
   double x = aSiHit.hit_x;
+  double y = aSiHit.hit_y;
   //cellid encoding:
-  bool x_side = x>0 ? true : false;
-  bool y_side = y>0 ? true : false;
-  unsigned x_cell = static_cast<unsigned>(fabs(x)/(cellSize*getGranularity()));
-  unsigned y_cell = static_cast<unsigned>(fabs(y)/(cellSize*getGranularity()));
+  //map->Reset("");
+  //map->Fill(x,y);
+  //GetMaximumBin doesn't work :(
+  cellid_ = map->FindBin(x,y);
 
-  encodeCellId(x_side,y_side,x_cell,y_cell);
+  //for (int ix(1);ix<map->GetNumberOfBins()+1; ++ix){
+  //if (map->GetBinContent(ix)!=0)
+    //cellid_ = ix;
+    //std::cout << ix << " " << map->GetBinContent(ix) << std::endl;
+  //}
+
+  /*
+  TIter next(map->GetBins());
+  TObject *obj=0; 
+  TH2PolyBin *polyBin = 0;
+
+  while ((obj=next())){
+    polyBin=(TH2PolyBin*)obj;
+    int id = polyBin->GetBinNumber();
+    if (id==cellid_) break; 
+  }
+
+  std::cout << " - Sanity check: x,y = " << x << " " << y 
+	    << " cellid=" << cellid_ 
+	    << " polybin# " << polyBin->GetBinNumber() << " area " << polyBin->GetArea() << std::endl
+	    << " x bin = " << polyBin->GetXMin() << "-" << polyBin->GetXMax() << std::endl
+	    << " y bin = " << polyBin->GetYMin() << "-" << polyBin->GetYMax() << std::endl
+	    << " middle = " << (polyBin->GetXMax()+polyBin->GetXMin())/2 
+	    << " " << (polyBin->GetYMax()+polyBin->GetYMin())/2 
+	    << std::endl;
+*/
+
+
+  //bool x_side = x>0 ? true : false;
+  //bool y_side = y>0 ? true : false;
+  //unsigned x_cell = static_cast<unsigned>(fabs(x)/(cellSize*getGranularity()));
+  //unsigned y_cell = static_cast<unsigned>(fabs(y)/(cellSize*getGranularity()));
+
+  //encodeCellId(x_side,y_side,x_cell,y_cell);
 
   nGammas_= 0;
   nElectrons_ = 0;
@@ -43,7 +79,7 @@ HGCSSSimHit::HGCSSSimHit(const G4SiHit & aSiHit, const unsigned & asilayer, cons
 
 }
 
-void HGCSSSimHit::encodeCellId(const bool x_side,const bool y_side,const unsigned x_cell,const unsigned y_cell){
+/*void HGCSSSimHit::encodeCellId(const bool x_side,const bool y_side,const unsigned x_cell,const unsigned y_cell){
   cellid_ = 
     x_side | (x_cell<<1) |
     (y_side<<16) | (y_cell<<17);
@@ -54,7 +90,7 @@ void HGCSSSimHit::encodeCellId(const bool x_side,const bool y_side,const unsigne
   // 	    << " x_cell " << x_cell << " " << get_x_cell() << std::endl
   // 	    << " y_cell " << y_cell << " " << get_y_cell() << std::endl
   //   ;
-}
+  }*/
 
 void HGCSSSimHit::Add(const G4SiHit & aSiHit){
 
@@ -86,16 +122,34 @@ void HGCSSSimHit::Add(const G4SiHit & aSiHit){
   else return -leta;
   }*/
 
-double HGCSSSimHit::theta() const {
-  return 2*atan(exp(-1.*eta()));
+
+
+std::pair<double,double> HGCSSSimHit::get_xy(const bool isScintillator,
+					     const HGCSSGeometryConversion & aGeom) const {
+  if (isScintillator) return aGeom.squareGeom.find(cellid_)->second;
+  else return aGeom.hexaGeom.find(cellid_)->second;
+
 }
 
-double HGCSSSimHit::eta() const {
-  return position().eta();
+ROOT::Math::XYZPoint HGCSSSimHit::position(const bool isScintillator,
+					   const HGCSSGeometryConversion & aGeom) const{
+  std::pair<double,double> xy = get_xy(isScintillator,aGeom);
+  return ROOT::Math::XYZPoint(xy.first/10.,xy.second/10.,zpos_/10.);
 }
 
-double HGCSSSimHit::phi() const {
-  return position().phi();
+double HGCSSSimHit::theta(const bool isScintillator,
+			  const HGCSSGeometryConversion & aGeom) const {
+  return 2*atan(exp(-1.*eta(isScintillator,aGeom)));
+}
+
+double HGCSSSimHit::eta(const bool isScintillator,
+			const HGCSSGeometryConversion & aGeom) const {
+  return position(isScintillator,aGeom).eta();
+}
+
+double HGCSSSimHit::phi(const bool isScintillator,
+			const HGCSSGeometryConversion & aGeom) const {
+  return position(isScintillator,aGeom).phi();
 }
 
 void HGCSSSimHit::Print(std::ostream & aOs) const{

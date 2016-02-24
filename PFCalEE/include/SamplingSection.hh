@@ -31,11 +31,13 @@ public:
     ele_X0.clear();
     ele_L0.clear();
     ele_vol.clear();
+    hasScintillator = false;
     for (unsigned ie(0);  ie<aThicknessVec.size(); ++ie){
       //consider only material with some non-0 width...
       if (aThicknessVec[ie]>0){
 	ele_thick.push_back(aThicknessVec[ie]);
 	ele_name.push_back(aMaterialVec[ie]);
+	if (aMaterialVec[ie]== "Scintillator") hasScintillator = true;
 	ele_X0.push_back(0);
 	ele_dEdx.push_back(0);
 	ele_L0.push_back(0);
@@ -178,6 +180,7 @@ public:
   G4double Total_thick;
   std::vector<G4SiHitVec> sens_HitVec;
   unsigned sens_HitVec_size_max;
+  bool hasScintillator;
 
 
 };

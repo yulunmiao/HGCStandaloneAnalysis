@@ -9,6 +9,7 @@
 #include "TMath.h"
 
 #include "HGCSSSimHit.hh"
+#include "HGCSSGeometryConversion.hh"
 #include "Math/Point3D.h"
 #include "Math/Point3Dfwd.h"
 
@@ -27,7 +28,9 @@ public:
     time_(0)
   {};
 
-  HGCSSRecoHit(const HGCSSSimHit & aSimHit, const unsigned granularity=1);
+  HGCSSRecoHit(const HGCSSSimHit & aSimHit, 
+	       const bool isScintillator,
+	       const HGCSSGeometryConversion & aGeom);
 
   ~HGCSSRecoHit(){};
 

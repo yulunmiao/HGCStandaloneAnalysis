@@ -4,7 +4,10 @@
 #include <cmath>
 #include <stdlib.h>
 
-HGCSSRecoHit::HGCSSRecoHit(const HGCSSSimHit & aSimHit, const unsigned granularity){
+
+HGCSSRecoHit::HGCSSRecoHit(const HGCSSSimHit & aSimHit, 
+			   const bool isScintillator,
+			   const HGCSSGeometryConversion & aGeom){
   energy_ = aSimHit.energy();
   adcCounts_ = 0;
   zpos_ = aSimHit.get_z();
@@ -13,8 +16,9 @@ HGCSSRecoHit::HGCSSRecoHit(const HGCSSSimHit & aSimHit, const unsigned granulari
   layer_ = aSimHit.layer();
   noiseFrac_ = 0;
 
-  xpos_ = aSimHit.get_x();
-  ypos_ = aSimHit.get_y();
+  std::pair<double,double> xy = aSimHit.get_xy(isScintillator,aGeom);
+  xpos_ = xy.first;
+  ypos_ = xy.second;
 
   time_ = aSimHit.time();
 

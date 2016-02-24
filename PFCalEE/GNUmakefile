@@ -11,7 +11,7 @@ ifndef G4INSTALL
   G4INSTALL = ../../..
 endif
 
-CPPFLAGS += -Iuserlib/include/ $(shell $(ROOTSYS)/bin/root-config --cflags)
+CPPFLAGS += -std=c++0x -Iuserlib/include/ $(shell $(ROOTSYS)/bin/root-config --cflags)
 EXTRALIBS += $(shell $(ROOTSYS)/bin/root-config --glibs) -Luserlib/lib -lPFCalEEuserlib
 
 .PHONY: $(SUBDIRS) all

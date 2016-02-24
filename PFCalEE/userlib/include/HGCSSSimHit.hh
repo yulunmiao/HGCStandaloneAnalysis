@@ -9,10 +9,15 @@
 #include <map>
 
 #include "G4SiHit.hh"
+#include "HGCSSGeometryConversion.hh"
+
 #include "Math/Point3D.h"
 #include "Math/Point3Dfwd.h"
+#include "TH2Poly.h"
 
-static const float CELL_SIZE_X=2.5;//mm
+
+//for hexagons: side size.
+static const float CELL_SIZE_X=6.4;//2.5;//mm
 static const float CELL_SIZE_Y=CELL_SIZE_X;
 
 class HGCSSSimHit{
@@ -35,7 +40,7 @@ public:
   {
     
   };
-  HGCSSSimHit(const G4SiHit & aSiHit, const unsigned & asilayer, const float cellSize = CELL_SIZE_X);
+  HGCSSSimHit(const G4SiHit & aSiHit, const unsigned & asilayer, TH2Poly* map, const float cellSize = CELL_SIZE_X);
 
   ~HGCSSSimHit(){};
 
@@ -59,9 +64,6 @@ public:
     return layer_%3;
   };
 
-  inline ROOT::Math::XYZPoint position() const{
-    return ROOT::Math::XYZPoint(get_x()/10.,get_y()/10.,zpos_/10.);
-  };
 
   //re-encode local layer into det layer + si layer if several sensitive layers (up to 3...)
   inline void setLayer(const unsigned & layer, const unsigned & silayer){
@@ -129,38 +131,44 @@ public:
 
   void Add(const G4SiHit & aSiHit);
 
-  void encodeCellId(const bool x_side,const bool y_side,const unsigned x_cell,const unsigned y_cell);
+  //void encodeCellId(const bool x_side,const bool y_side,const unsigned x_cell,const unsigned y_cell);
 
-  inline bool get_x_side() const{
-    return cellid_ & 0x0001;
-  };
+  //inline bool get_x_side() const{
+  //return cellid_ & 0x0001;
+  //};
 
-  inline bool get_y_side() const {
-    return (cellid_ & 0x00010000) >> 16;
-  };
+  //inline bool get_y_side() const {
+  //return (cellid_ & 0x00010000) >> 16;
+  //};
 
-  inline unsigned get_x_cell() const {
-    return (cellid_ & 0xFFFE) >> 1;
-  };
+  //inline unsigned get_x_cell() const {
+  //return (cellid_ & 0xFFFE) >> 1;
+  //};
 
-  inline unsigned get_y_cell() const {
-    return (cellid_ & 0xFFFE0000) >> 17;
-  };
+  //inline unsigned get_y_cell() const {
+  // return (cellid_ & 0xFFFE0000) >> 17;
+  //};
 
-  inline double get_x(const float cellSize = CELL_SIZE_X) const {
-    float sign = get_x_side() ? 1. : -1. ;
-    if (sign > 0)
-      return get_x_cell()*sign*cellSize*getGranularity()+cellSize*getGranularity()/2;
-    else return get_x_cell()*sign*cellSize*getGranularity()-cellSize*getGranularity()/2;
-  };
+  std::pair<double,double> get_xy(const bool isScintillator,
+				  const HGCSSGeometryConversion & aGeom) const;
 
-  inline double get_y(const float cellSize = CELL_SIZE_Y) const {
-    float sign = get_y_side() ? 1. : -1. ;
-    if (sign > 0)
-      return get_y_cell()*sign*cellSize*getGranularity()+cellSize*getGranularity()/2;
-    else return get_y_cell()*sign*cellSize*getGranularity()-cellSize*getGranularity()/2;
-  };
+  ROOT::Math::XYZPoint position(const bool isScintillator,
+				const HGCSSGeometryConversion & aGeom) const;
 
+  //inline double get_x(TH2Poly* map) const {
+  //float sign = get_x_side() ? 1. : -1. ;
+  //if (sign > 0)
+  //return get_x_cell()*sign*cellSize*getGranularity()+cellSize*getGranularity()/2;
+  //else return get_x_cell()*sign*cellSize*getGranularity()-cellSize*getGranularity()/2;
+  //};
+
+  //inline double get_y(TH2Poly* map) const {
+    //float sign = get_y_side() ? 1. : -1. ;
+    //if (sign > 0)
+    //return get_y_cell()*sign*cellSize*getGranularity()+cellSize*getGranularity()/2;
+    //else return get_y_cell()*sign*cellSize*getGranularity()-cellSize*getGranularity()/2;
+  //};
+  /*
   inline bool get_x_side_old() const{
     return cellid_ & 0x0001;
   };
@@ -190,14 +198,18 @@ public:
       return get_y_cell_old()*sign*cellSize*getGranularity()+cellSize*getGranularity()/2;
     else return get_y_cell_old()*sign*cellSize*getGranularity()-cellSize*getGranularity()/2;
   };
+  */
 
   inline double get_z() const {
     return zpos_;
   };
 
-  double eta() const;
-  double theta() const;
-  double phi() const;
+  double eta(const bool isScintillator,
+	     const HGCSSGeometryConversion & aGeom) const;
+  double theta(const bool isScintillator,
+	       const HGCSSGeometryConversion & aGeom) const;
+  double phi(const bool isScintillator,
+	     const HGCSSGeometryConversion & aGeom) const;
 
   inline unsigned getGranularity() const{
     return 1;

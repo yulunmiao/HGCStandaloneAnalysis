@@ -35,7 +35,7 @@ nSiLayers=2
 enlist=[0]
 #if opt.dogun : enlist=[3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200]
 if opt.dogun : 
-    enlist=[60]
+    enlist=[100]
     #enlist=[3,5,10,30,50,70,100,200]
 
 #if opt.dogun : enlist=[2,5,10,20,40,60,80,100,150,200]#,300,400,500]
@@ -155,13 +155,19 @@ for nPuVtx in nPuVtxlist:
             outDir='%s/git_%s/version_%d/model_%d/%s/%s'%(opt.out,opt.gittag,opt.version,opt.model,opt.datatype,bval)
             outDir='%s/%s'%(outDir,label) 
             if en>0 : outDir='%s/et_%d'%(outDir,en)
-            eosDir='%s/git%s/%s'%(opt.eos,opt.gittag,opt.datatype)
-            eosDirIn='%s/git%s/%s'%(opt.eosin,opt.gittag,opt.datatype)
+
             #eosDirIn='%s'%(opt.eosin)
             if opt.alpha>0 : outDir='%s/eta_%3.3f/'%(outDir,opt.alpha) 
             if opt.phi!=0.5 : outDir='%s/phi_%3.3fpi/'%(outDir,opt.phi) 
             if (opt.run>=0) : outDir='%s/run_%d/'%(outDir,opt.run)
         
+            if len(opt.eos)>0:
+                eosDir='%s/git%s/%s'%(opt.eos,opt.gittag,opt.datatype)
+                eosDirIn='root://eoscms//eos/cms%s/git%s/%s'%(opt.eosin,opt.gittag,opt.datatype)
+            else:
+                eosDir='%s/'%(outDir)
+                eosDirIn='%s/'%(outDir)
+
             outlog='%s/digitizer%s.log'%(outDir,suffix)
             g4log='digijob%s.log'%(suffix)
             os.system('mkdir -p %s'%outDir)
@@ -177,7 +183,7 @@ for nPuVtx in nPuVtxlist:
             if opt.phi!=0.5 : outTag='%s_phi%3.3fpi'%(outTag,opt.phi) 
             if (opt.run>=0) : outTag='%s_run%d'%(outTag,opt.run)
             scriptFile.write('localdir=`pwd`\n')
-            scriptFile.write('%s/bin/digitizer %d root://eoscms//eos/cms%s/HGcal_%s.root $localdir/ %s %s %s %d %d %d %s | tee %s\n'%(os.getcwd(),opt.nevts,eosDirIn,outTag,granularity,noise,threshold,interCalib,nSiLayers,nPuVtx,INPATHPU,outlog))
+            scriptFile.write('%s/bin/digitizer %d %s/HGcal_%s.root $localdir/ %s %s %s %d %d %d %s | tee %s\n'%(os.getcwd(),opt.nevts,eosDirIn,outTag,granularity,noise,threshold,interCalib,nSiLayers,nPuVtx,INPATHPU,outlog))
             scriptFile.write('echo "--Local directory is " $localdir >> %s\n'%(g4log))
             scriptFile.write('ls * >> %s\n'%(g4log))
             if len(opt.eos)>0:
@@ -198,6 +204,9 @@ for nPuVtx in nPuVtxlist:
                 scriptFile.write('rm DigiPFcal.root\n')
                 scriptFile.write('fi\n')
                 scriptFile.write('fi\n')
+            else:
+                scriptFile.write('mv DigiPFcal.root Digi%s_%s.root\n'%(suffix,outTag))
+
             scriptFile.write('echo "--deleting core files: too heavy!!"\n')
             scriptFile.write('rm core.*\n')
             scriptFile.write('cp * %s/\n'%(outDir))
