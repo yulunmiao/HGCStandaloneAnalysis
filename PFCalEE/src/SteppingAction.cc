@@ -83,6 +83,26 @@ void SteppingAction::UserSteppingAction(const G4Step* aStep)
   HGCSSGenParticle genPart;
   //record truth particles
   //time cut: we don't want neutrons re-entering the front-face a long time after...
+  //bit for muons study
+  /*if (abs(pdgId)==13 && 
+      thePrePVname=="Scintillator51phys" && 
+      thePostPVname=="Air51phys"){
+    eventAction_->fout() << thePrePVname
+			 << " " << thePostPVname
+			 << " " << trackID
+			 << " " << pdgId
+			 << " " << globalTime
+			 << " " << thePostStepPoint->GetPosition()[0]
+			 << " " << thePostStepPoint->GetPosition()[1]
+			 << " " << thePostStepPoint->GetPosition()[2]
+			 << " " << lTrack->GetMomentum()[0]
+			 << " " << lTrack->GetMomentum()[1]
+			 << " " << lTrack->GetMomentum()[2]
+			 << std::endl;
+			 }*/
+    
+
+
   //bit for particles study
   /*
   if (abs(pdgId)==11 && 

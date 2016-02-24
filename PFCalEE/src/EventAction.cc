@@ -37,7 +37,7 @@ EventAction::EventAction()
   tree_->Branch("HGCSSSimHitVec","std::vector<HGCSSSimHit>",&hitvec_);
   tree_->Branch("HGCSSGenParticleVec","std::vector<HGCSSGenParticle>",&genvec_);
 
-  //fout_.open("momentum_list_layer11_18.dat");
+  //fout_.open("momentum_list_layer51.dat");
   //if (!fout_.is_open()){
   //std::cout << " -- Output file could not be opened..." << std::endl;
   //exit(1);
