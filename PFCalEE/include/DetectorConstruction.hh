@@ -63,7 +63,8 @@ public:
     v_HGCALEE_TB=100,
     v_HGCALEE_TB_gap0=101,
     v_HGCALEE_TB_allW=102,
-    v_HGCALEE_TB_samedEdx=103
+    v_HGCALEE_TB_samedEdx=103,
+    v_HGCAL_2016TB=110
   };
 
   enum DetectorModel {
@@ -71,7 +72,8 @@ public:
     m_SIMPLE_50=1,
     m_FULLSECTION=2,
     m_SIMPLE_100=3,
-    m_BOXWITHCRACK_100=4
+    m_BOXWITHCRACK_100=4,
+    m_2016TB=5
   };
 
   /**

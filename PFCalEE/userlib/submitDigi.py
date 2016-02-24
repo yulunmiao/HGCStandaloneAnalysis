@@ -35,7 +35,7 @@ nSiLayers=2
 enlist=[0]
 #if opt.dogun : enlist=[3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200]
 if opt.dogun : 
-    enlist=[100]
+    enlist=[10]
     #enlist=[3,5,10,30,50,70,100,200]
 
 #if opt.dogun : enlist=[2,5,10,20,40,60,80,100,150,200]#,300,400,500]
@@ -90,7 +90,7 @@ elif (opt.version==25 or opt.version==26):
     granularity='0-29:4,30-41:4,42-53:8'
     noise='0-41:0.14,42-53:0.2'
     threshold='0-53:5'
-elif (opt.version==30 or opt.version==100):
+elif (opt.version==30 or opt.version==100 or opt.version==110):
     granularity='0-27:4'
     noise='0-27:0.14'
     threshold='0-27:5'
