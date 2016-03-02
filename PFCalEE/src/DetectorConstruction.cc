@@ -943,7 +943,7 @@ void DetectorConstruction::buildSectorStack(const unsigned sectorNum,
 	//
 	G4double extraWidth = 0;
 	if (m_nSectors>1 && eleName=="W" && model_ != DetectorConstruction::m_FULLSECTION){
-	 extraWidth = 5*mm;
+	 extraWidth = 10*mm;
 	}
 	if(thick>0){
 	  solid = constructSolid(baseName,thick,zOffset+zOverburden,angOffset+minL,width+extraWidth);
@@ -1017,7 +1017,7 @@ void DetectorConstruction::fillInterSectorSpace(const unsigned sectorNum,
 	G4double thick = m_caloStruct[i].ele_thick[ie];
 	G4double extraWidth = 0;
 	if (eleName=="W" && model_ != DetectorConstruction::m_FULLSECTION){
-	 extraWidth = -5.*mm;
+	 extraWidth = -10.*mm;
 	 //std::cout << " -- total width: " << width+extraWidth << " offsets: " << crackOffset << " " << angOffset << std::endl;
 	}
 	eleName = "CFMix";
@@ -1048,7 +1048,9 @@ G4double DetectorConstruction::getCrackOffset(size_t layer){
   //with cracks shifted systematically layer-to-layer
   //if (m_nSectors>1) return 10*((7*layer)%31);
   //cracks shifted every two layers by 2cm
-  if (m_nSectors>1) return static_cast<unsigned>(layer/2.)*30;
+  //if (m_nSectors>1) return static_cast<unsigned>(layer/2.)*30;
+  //cracks shifted every other layer by 2cm
+  if (m_nSectors>1) return static_cast<unsigned>((layer%4)/2.)*30;
 
   return 0;
 }
