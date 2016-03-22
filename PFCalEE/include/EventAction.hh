@@ -53,7 +53,7 @@ private:
   std::vector<SamplingSection> *detector_;
   G4int     evtNb_,printModulo;
 
-  HGCSSGeometryConversion geomConv_;
+  HGCSSGeometryConversion* geomConv_;
 
   TFile *outF_;
   TTree *tree_;

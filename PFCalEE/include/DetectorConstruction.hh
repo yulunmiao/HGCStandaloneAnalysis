@@ -9,7 +9,7 @@
 #include <map>
 #include <string>
 
-class G4CSGSolid;
+class G4VSolid;
 class G4Box;
 class G4LogicalVolume;
 class G4VPhysicalVolume;
@@ -179,7 +179,7 @@ private:
   G4double getCrackOffset(size_t layer);
   G4double getAngOffset(size_t layer);
 
-  G4CSGSolid *constructSolid (std::string baseName, G4double thick, G4double zpos,const G4double & minL, const G4double & width);
+  G4VSolid *constructSolid (std::string baseName, G4double thick, G4double zpos,const G4double & minL, const G4double & width);
   
 
   std::vector<G4Material* > m_SensitiveMaterial;
@@ -191,7 +191,7 @@ private:
   G4double           m_WorldSizeXY, m_WorldSizeZ;
   G4double m_nSectors,m_sectorWidth,m_interSectorWidth;
             
-  G4CSGSolid*        m_solidWorld;    //pointer to the solid World 
+  G4VSolid*          m_solidWorld;    //pointer to the solid World 
   G4LogicalVolume*   m_logicWorld;    //pointer to the logical World
   G4VPhysicalVolume* m_physWorld;     //pointer to the physical World  
   
