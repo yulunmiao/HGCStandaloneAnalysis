@@ -8,14 +8,14 @@
 #include <cmath>
 #include "TH2D.h"
 #include "TH2Poly.h"
-
+#include "TMath.h"
 #include "HGCSSDetector.hh"
 
 class HGCSSGeometryConversion{
   
 public:
   HGCSSGeometryConversion(){};
-  HGCSSGeometryConversion(const unsigned & model, const double & cellsize, const bool bypassR=false, const unsigned nSiLayers=3);
+  HGCSSGeometryConversion(const unsigned model, const double cellsize, const bool bypassR=false, const unsigned nSiLayers=3);
 
   ~HGCSSGeometryConversion();
 
@@ -119,6 +119,13 @@ public:
   };
 
 private:
+
+void myHoneycomb(TH2Poly* map,
+		 Double_t xstart,
+		 Double_t ystart,
+		 Double_t a,  // side length
+		 Int_t k,     // # hexagons in a column
+		 Int_t s);    // # columns
 
   bool dopatch_;
   double width_;

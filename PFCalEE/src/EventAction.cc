@@ -23,11 +23,6 @@ EventAction::EventAction()
   outF_->cd();
 
   double xysize = ((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->GetCalorSizeXY();
-  //honeycomb
-  geomConv_.initialiseHoneyComb(xysize,CELL_SIZE_X);
-  //square map for BHCAL
-  geomConv_.initialiseSquareMap(xysize,10.);
-
 
   //save some info
   HGCSSInfo *info = new HGCSSInfo();
@@ -39,6 +34,13 @@ EventAction::EventAction()
   std::cout << " -- check Info: version = " << info->version()
 	    << " model = " << info->model() << std::endl;
   outF_->WriteObjectAny(info,"HGCSSInfo","Info");
+
+  //honeycomb
+  geomConv_ = new HGCSSGeometryConversion(info->model(),CELL_SIZE_X);
+  geomConv_->initialiseHoneyComb(xysize,CELL_SIZE_X);
+  //square map for BHCAL
+  geomConv_->initialiseSquareMap(xysize,10.);
+
 
   tree_=new TTree("HGCSSTree","HGC Standalone simulation tree");
   tree_->Branch("HGCSSEvent","HGCSSEvent",&event_);
@@ -153,7 +155,7 @@ void EventAction::EndOfEventAction(const G4Event* g4evt)
 
 	for (unsigned iSiHit(0); iSiHit<(*detector_)[i].getSiHitVec(idx).size();++iSiHit){
 	  G4SiHit lSiHit = (*detector_)[i].getSiHitVec(idx)[iSiHit];
-	  HGCSSSimHit lHit(lSiHit,idx,is_scint?geomConv_.squareMap() : geomConv_.hexagonMap());
+	  HGCSSSimHit lHit(lSiHit,idx,is_scint?geomConv_->squareMap() : geomConv_->hexagonMap());
 	  
 	  isInserted = lHitMap.insert(std::pair<unsigned,HGCSSSimHit>(lHit.cellid(),lHit));
 	  if (!isInserted.second) isInserted.first->second.Add(lSiHit);
