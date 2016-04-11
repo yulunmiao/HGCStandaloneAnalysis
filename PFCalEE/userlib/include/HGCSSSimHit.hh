@@ -17,7 +17,7 @@
 
 
 //for hexagons: side size.
-static const float CELL_SIZE_X=6.4;//2.5;//mm
+static const float CELL_SIZE_X=6.496345; //2.5;//mm
 static const float CELL_SIZE_Y=CELL_SIZE_X;
 
 class HGCSSSimHit{

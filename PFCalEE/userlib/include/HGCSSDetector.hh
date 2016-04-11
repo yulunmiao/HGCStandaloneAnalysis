@@ -166,6 +166,15 @@ public:
       indices_[5] = 39;
       indices_[6] = 39;
     }
+    else if (versionNumber == 110){
+      indices_[0] = 0;
+      indices_[1] = 4;
+      indices_[2] = indices_[1];
+      indices_[3] = indices_[1];
+      indices_[4] = indices_[1];
+      indices_[5] = indices_[1];
+      indices_[6] = indices_[1];
+    }
     else {
       indices_[0] = 0;
       indices_[1] = versionNumber==24?11:10;
