@@ -139,7 +139,7 @@ void HGCSSGeometryConversion::initialiseHoneyComb(TH2Poly *map, const double wid
   // Center a cell at (x,y)=(0,0) and ensure coverage up to/past width/2 in all 4 directions,
   // assuming each cell is lying on a side.
 
-  unsigned ncellwide=width/2.;
+  unsigned ncellwide=width/(2.*side);
   unsigned ny=ncellwide+1;
   unsigned nx=ncellwide+4;
   double xstart= -((double)ncellwide+0.5)*side;

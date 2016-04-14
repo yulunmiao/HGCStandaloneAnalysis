@@ -68,7 +68,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
     case v_HGCALEE_TB: case v_HGCALEE_TB_gap0: case v_HGCALEE_TB_allW: case v_HGCALEE_TB_samedEdx:
       {
 	G4cout << "[DetectorConstruction] starting v_HGCAL for testbeam"<< G4endl;
-	G4double airThick = 3*mm;
+	G4double airThick = 2*mm;
 	if(version_ == v_HGCALEE_TB_gap0) airThick = 0*mm;
 	G4double pcbThick = 2*mm;
 
@@ -210,7 +210,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
     case v_HGCALEE_v6: case v_HGCAL_v6: case v_HGCALEE_v624: case v_HGCALEE_v618: case v_HGCAL_v624: case v_HGCAL_v618:
       {
 	G4cout << "[DetectorConstruction] starting v_HGCALEE_v6"<< G4endl;
-	G4double airThick = 3*mm;
+	G4double airThick = 2*mm;
 	G4double pcbThick = 2*mm;
         unsigned Nmodule=4;
 	G4double wThick = 2.*mm;
@@ -231,8 +231,9 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 	std::vector<std::string> lEleL;
         lThickL.push_back(100.*mm);lEleL.push_back("NeutMod");
 	lThickL.push_back(2.*mm);lEleL.push_back("Al");
-	lThickL.push_back(26.*mm);lEleL.push_back("Foam");
+	lThickL.push_back(16.*mm);lEleL.push_back("Foam");
 	lThickL.push_back(2.*mm);lEleL.push_back("Al");
+	lThickL.push_back(10.*mm);lEleL.push_back("Air");
 	lThickL.push_back(0.5*mm);lEleL.push_back("CFMix");
 	lThickL.push_back(wThick);lEleL.push_back("W");
 	lThickL.push_back(0.5*mm);lEleL.push_back("CFMix");
@@ -607,9 +608,9 @@ void DetectorConstruction::buildHGCALFHE(const unsigned aVersion){
   std::vector<G4double> lThick;
   std::vector<std::string> lEle;
   if(aVersion==6 || aVersion==624 || aVersion==618) {
-    airThick = 3*mm;
+    airThick = 2*mm;
     G4double pcbthick = 2*mm;
-    G4double brassthick = aVersion==618? 62*mm : 45*mm;
+    G4double brassthick = aVersion==618? 62*mm : 35*mm;
     //putting all absorber in front of each Si layer to have correct reweighting
     lThick.push_back(0.5*mm); lEle.push_back("Cu");
     lThick.push_back(15.*mm);lEle.push_back("SSteel");
@@ -691,7 +692,7 @@ void DetectorConstruction::buildHGCALBHE(const unsigned aVersion){
     lThick.push_back(1*mm); lEle.push_back("Pb");
   }
   lThick.push_back(2.*mm);lEle.push_back("Al");
-  lThick.push_back(26.*mm);lEle.push_back("Foam");
+  lThick.push_back(16.*mm);lEle.push_back("Foam");
   lThick.push_back(2.*mm);lEle.push_back("Al");
   lThick.push_back(65.*mm);lEle.push_back("Air");
   lThick.push_back(78.*mm);lEle.push_back("Brass");
@@ -767,7 +768,7 @@ void DetectorConstruction::DefineMaterials()
   m_materials["PCB"]->AddElement(nistManager->FindOrBuildElement(6) , 3);
   m_materials["PCB"]->AddElement(nistManager->FindOrBuildElement(1) , 3);
   m_dEdx["PCB"] = 0;
-  m_materials["Brass"]= new G4Material("Brass",8.5*g/cm3,2);
+  m_materials["Brass"]= new G4Material("Brass",8.53*g/cm3,2);
   m_materials["Brass"]->AddMaterial(m_materials["Cu"]  , 70*perCent);
   m_materials["Brass"]->AddMaterial(m_materials["Zn"]  , 30*perCent);
   m_dEdx["Brass"] = 0.7*m_dEdx["Cu"]+0.3*m_dEdx["Zn"];
@@ -788,11 +789,12 @@ void DetectorConstruction::DefineMaterials()
   m_dEdx["AbsHCAL"] = (version_== v_HGCALHE_CALICE) ?
     m_dEdx["Steel"]:
     m_dEdx["Brass"];
-  m_materials["Scintillator"]= nistManager->FindOrBuildMaterial("G4_POLYSTYRENE",false); 
+  //m_materials["Scintillator"]= nistManager->FindOrBuildMaterial("G4_POLYSTYRENE",false); 
+  m_materials["Scintillator"]= new G4Material("Scintillator",1.032*g/cm3,2);
+  m_materials["Scintillator"]->AddMaterial(m_materials["C"]  , 91.512109*perCent);
+  m_materials["Scintillator"]->AddMaterial(m_materials["H"]  , 8.4878906*perCent);
   m_dEdx["Scintillator"] = m_dEdx["C"];
-  //m_materials["Scintillator"]= new G4Material("Scintillator",1.032*g/cm3,2);
-  //m_materials["Scintillator"]->AddMaterial(m_materials["C"]  , 91.512109*perCent);
-  //m_materials["Scintillator"]->AddMaterial(m_materials["H"]  , 8.4878906*perCent);
+
   G4cout << m_materials["Scintillator"] << G4endl;
   m_materials["Polystyrole"]= new G4Material("Polystyrole",1.065*g/cm3,2);
   m_materials["Polystyrole"]->AddMaterial(m_materials["H"]  , 50*perCent);
