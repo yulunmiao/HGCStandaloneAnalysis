@@ -761,13 +761,23 @@ void DetectorConstruction::DefineMaterials()
   m_dEdx["Cr"] = 1.046;
   m_materials["Ni"] = nistManager->FindOrBuildMaterial("G4_Ni",false); 
   m_dEdx["Ni"] = 1.307;
+  m_materials["O"] = nistManager->FindOrBuildMaterial("G4_O",false);
+  m_materials["Br"] = nistManager->FindOrBuildMaterial("G4_Br",false);
 
-  m_materials["PCB"] = new G4Material("G10",1.700*g/cm3,4);
+  /*m_materials["PCB"] = new G4Material("G10",1.700*g/cm3,4);
   m_materials["PCB"]->AddElement(nistManager->FindOrBuildElement(14), 1);
   m_materials["PCB"]->AddElement(nistManager->FindOrBuildElement(8) , 2);
   m_materials["PCB"]->AddElement(nistManager->FindOrBuildElement(6) , 3);
   m_materials["PCB"]->AddElement(nistManager->FindOrBuildElement(1) , 3);
+  m_dEdx["PCB"] = 0;*/
+  m_materials["PCB"] = new G4Material("FR4",1.700*g/cm3,5);
+  m_materials["PCB"]->AddMaterial(m_materials["Si"] , 0.18077359);
+  m_materials["PCB"]->AddMaterial(m_materials["O"]  , 0.4056325);
+  m_materials["PCB"]->AddMaterial(m_materials["C"]  , 0.27804208);
+  m_materials["PCB"]->AddMaterial(m_materials["H"]  , 0.068442752);
+  m_materials["PCB"]->AddMaterial(m_materials["Br"] , 0.067109079);
   m_dEdx["PCB"] = 0;
+
   m_materials["Brass"]= new G4Material("Brass",8.53*g/cm3,2);
   m_materials["Brass"]->AddMaterial(m_materials["Cu"]  , 70*perCent);
   m_materials["Brass"]->AddMaterial(m_materials["Zn"]  , 30*perCent);
@@ -807,10 +817,16 @@ void DetectorConstruction::DefineMaterials()
   m_materials["PVC"]->AddMaterial(m_materials["Cl"]  , 16.67*perCent);
   m_dEdx["PVC"] = 0.33*m_dEdx["C"];
 
-  m_materials["CFMix"]= new G4Material("CFMix",0.120*g/cm3,3);
+  /*m_materials["CFMix"]= new G4Material("CFMix",0.120*g/cm3,3);
   m_materials["CFMix"]->AddMaterial(m_materials["Air"]  , 0.009);
   m_materials["CFMix"]->AddMaterial(m_materials["PVC"]  , 0.872);
   m_materials["CFMix"]->AddMaterial(m_materials["Polystyrole"]  , 0.119);
+  m_dEdx["CFMix"] = 0;*/
+
+  m_materials["CFMix"]= new G4Material("CFMix",0.845*g/cm3,3);
+  m_materials["CFMix"]->AddMaterial(m_materials["C"]  , 0.84491305);
+  m_materials["CFMix"]->AddMaterial(m_materials["H"]  , 0.042542086);
+  m_materials["CFMix"]->AddMaterial(m_materials["O"]  , 0.11254487);
   m_dEdx["CFMix"] = 0;
 
   m_materials["Foam"]= new G4Material("Foam",0.0999*g/cm3,2);
