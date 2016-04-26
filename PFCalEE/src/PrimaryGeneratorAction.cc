@@ -110,22 +110,26 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 {
   //this function is called at the begining of event
   // 
-  G4double z0 = -0.5*(Detector->GetWorldSizeZ());
-  if (model_ == 2) z0 = 0;
   G4double x0 = 0.*cm, y0 = 0.*cm;
-  //smear within 1cm...
-  if (model_ == 2) z0 = (G4RandGauss::shoot(0.,5.))*cm;
-  else if (model_ == 4) {
-    x0 = (G4RandFlat::shoot(0.,460)-170)*mm;
+  G4double z0 = -0.5*(Detector->GetWorldSizeZ());
+
+  switch(model_) {
+  case 2:
+    //smear within 1cm...
+    z0 = (G4RandGauss::shoot(0.,5.))*cm; break;
+  case 4:
+    x0 = (G4RandFlat::shoot(0.,460)-170)*mm; break;
     //y0 = (G4RandFlat::shoot(0.,10.)-5)*mm;
-  }
-  else if (model_ == 3) {
+  case 3:
+  case 5:
     //x0 = (G4RandFlat::shoot(0.,30)-15)*mm;
     //y0 = (G4RandFlat::shoot(0.,30.)-15)*mm;
     //update to cover full hexagon
     //size=6.4mm
-    x0 = (G4RandFlat::shoot(0.,24.)-12)*mm;
-    y0 = (G4RandFlat::shoot(0.,24.)-12)*mm;
+    x0 = (G4RandFlat::shoot(0.,1.)-0.5)*mm;
+    y0 = (G4RandFlat::shoot(0.,1.)-0.5)*mm;
+    break;
+  default: break;
   }
 
   particleGun->SetParticlePosition(G4ThreeVector(x0,y0,z0));
