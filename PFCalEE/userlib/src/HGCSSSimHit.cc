@@ -24,6 +24,8 @@ HGCSSSimHit::HGCSSSimHit(const G4SiHit & aSiHit,
   //map->Reset("");
   //map->Fill(x,y);
   //GetMaximumBin doesn't work :(
+
+  assert(map);
   cellid_ = map->FindBin(x,y);
 
   //for (int ix(1);ix<map->GetNumberOfBins()+1; ++ix){
