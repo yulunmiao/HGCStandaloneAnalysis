@@ -18,12 +18,15 @@
 /gui/addMenu gun Gun
 /gui/addButton gun "50 MeV"  "/gun/energy 50 MeV"
 /gui/addButton gun "1 GeV"   "/gun/energy 1 GeV"
-/gui/addButton gun "10 GeV"  "/gun/energy 10 GeV"
+/gui/addButton gun "5 GeV"   "/gun/energy 5 GeV"
+/gui/addButton gun "30 GeV"  "/gun/energy 30 GeV"
+/gui/addButton gun "120 GeV"  "/gun/energy 120 GeV"
 /gui/addButton gun "e-"      "/gun/particle e-"
 /gui/addButton gun "pi0"     "/gun/particle pi0"
 /gui/addButton gun "pi+"     "/gun/particle pi+"
 /gui/addButton gun "neutron" "/gun/particle neutron"
 /gui/addButton gun "proton"  "/gun/particle proton"
+/gui/addButton gun "muon"    "/gun/particle mu-"
 #
 # Vis menu :
 /gui/addMenu vis Vis
