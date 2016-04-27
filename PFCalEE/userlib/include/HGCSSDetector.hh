@@ -19,7 +19,7 @@ class HGCSSSubDetector {
 
 public:
   HGCSSSubDetector():
-    type(DetectorEnum::FECAL),
+    type(FECAL),
     name(""),
     layerIdMin(0),
     layerIdMax(0),

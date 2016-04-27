@@ -17,9 +17,10 @@ parser.add_option('-m', '--model'       ,    dest='model'              , help='d
 parser.add_option('-a', '--eta'         ,    dest='eta'                , help='pseudorapidity'               , default=0,      type=float)
 parser.add_option('-p', '--phi'         ,    dest='phi'                , help='incidence phi angle in pi unit' , default=0.0,      type=float)
 parser.add_option('-b', '--Bfield'      ,    dest='Bfield'             , help='B field value in Tesla'       , default=0,      type=float)
-parser.add_option('-d', '--datatype'    ,    dest='datatype'           , help='data type or particle to shoot', default='mu-')
+parser.add_option('-d', '--datatype'    ,    dest='datatype'           , help='data type or particle to shoot', default='e-')
 parser.add_option('-f', '--datafile'    ,    dest='datafile'           , help='full path to HepMC input file', default='data/example_MyPythia.dat')
-parser.add_option('-n', '--nevts'       ,    dest='nevts'              , help='number of events to generate' , default=1000,    type=int)
+parser.add_option('-n', '--nevts'       ,    dest='nevts'              , help='number of events to generate' , default=5000,    type=int)
+parser.add_option('-N', '--njobs'       ,    dest='njobs'              , help='number of jobs'           , default=10,   type=int)
 parser.add_option('-o', '--out'         ,    dest='out'                , help='output directory'             , default=os.getcwd() )
 parser.add_option('-e', '--eos'         ,    dest='eos'                , help='eos path to save root file to EOS',         default='')
 parser.add_option('-E', '--eosin'       ,    dest='eosin'              , help='eos path to read input root file from EOS',  default='')
@@ -27,10 +28,12 @@ parser.add_option('-g', '--gun'         ,    action="store_true",  dest='dogun' 
 parser.add_option('-S', '--no-submit'   ,    action="store_true",  dest='nosubmit'           , help='Do not submit batch job.')
 (opt, args) = parser.parse_args()
 
+nSiLayers=2
+
 #enlist=[100]
 #enlist=[2,5,10,50,100,300,500]
 #enlist=[500]
-enlist=[100]
+enlist=[8]
 #if opt.dogun : enlist=[3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200]
 #if opt.dogun : 
     #enlist=[16,82,160]
@@ -130,8 +133,9 @@ elif (opt.version==39):
     threshold='0-20:5'
 elif (opt.version==110):
     granularity='0-3:4'
-    noise='0-3:0.14'
-    threshold='0-3:5'
+#    noise='0-3:0.14'
+    noise='0-3:0.'
+    threshold='0-3:0'
 else:
     granularity='0-51:4'
     noise='0-51:0.15'
@@ -155,7 +159,15 @@ for nPuVtx in nPuVtxlist:
             if en>0 : outDir='%s/en_%d'%(outDir,en)
             if opt.eta>0 : outDir='%s/eta_%3.3f/'%(outDir,opt.eta) 
             if opt.phi!=0.5 : outDir='%s/phi_%3.3fpi/'%(outDir,opt.phi) 
-            if (opt.run>=0) : outDir='%s/run_%d/'%(outDir,opt.run)
+
+            os.system('mkdir -p %s'%outDir)
+
+            outTag='%s_version%d_model%d_%s'%(label,opt.version,opt.model,bval)
+
+            if en>0 : outTag='%s_%sen%d'%(outTag,opt.datatype,en)
+            if opt.eta>0 : outTag='%s_eta%3.3f'%(outTag,opt.eta) 
+            if opt.phi!=0.5 : outTag='%s_phi%3.3fpi'%(outTag,opt.phi) 
+            if (opt.run>=0) : outTag='%s_%d'%(outTag,opt.run)
 
             eosDir='%s/git%s/%s'%(opt.eos,opt.gittag,opt.datatype)
             #eosDirIn='%s/git%s/%s'%(opt.eosin,opt.gittag,opt.datatype)
@@ -165,43 +177,43 @@ for nPuVtx in nPuVtxlist:
             #wrapper
             scriptFile = open('%s/%s'%(outDir,scrFileName), 'w')
             scriptFile.write('#!/bin/bash\n')
+            scriptFile.write('JOBNUM=$1\n')
+            scriptFile.write('shift\n')  # the shift is necessary to consume the argument prior to sourcing any other scripts!
+            scriptFile.write('hostname\n')
+            scriptFile.write('echo "job number = $JOBNUM"\n')
             scriptFile.write('source ./g4env4lpc.sh\n')
             scriptFile.write('export localdir=`pwd`\n')
             #scriptFile.write('cd %s\n'%(outDir))
-            outTag='%s_version%d_model%d_%s'%(label,opt.version,opt.model,bval)
-
-            if en>0 : outTag='%s_%sen%d'%(outTag,opt.datatype,en)
-            if opt.eta>0 : outTag='%s_eta%3.3f'%(outTag,opt.eta) 
-            if opt.phi!=0.5 : outTag='%s_phi%3.3fpi'%(outTag,opt.phi) 
-            if (opt.run>=0) : outTag='%s_run%d'%(outTag,opt.run)
         
-            outlog='%s/digitizer%s_%s.log'%('.',suffix,outtag)
-            g4log='digijob%s.log'%(suffix)
             os.system('mkdir -p %s'%outDir)
 
-            scriptFile.write('%s/digitizer %d root://cmsxrootd.fnal.gov/%s/HGcal_%s.root ./ %s %s %s %d %d %s | tee %s\n'%('.',opt.nevts,eosDirIn,outTag,granularity,noise,threshold,interCalib,nPuVtx,INPATHPU,outlog))
-            scriptFile.write('mv DigiPFcal.root Digi%s_%s.root\n'%(suffix,outTag))
+            outlog='./digitizer%s_%s_${JOBNUM}.log'%(suffix,outTag)
+            infile='root://cmseos.fnal.gov/%s/HGcal_%s_${JOBNUM}.root'%(eosDirIn,outTag)
+            #infile='%s/HGcal_%s_${JOBNUM}.root'%(eosDirIn,outTag)
+            scriptFile.write('./digitizer %d %s ./ %s %s %s %d %d %d %s | tee %s\n'%(opt.nevts,infile,granularity,noise,threshold,interCalib,nSiLayers,nPuVtx,INPATHPU,outlog))
+            scriptFile.write('mv DigiPFcal.root Digi%s_%s_${JOBNUM}.root\n'%(suffix,outTag))
             scriptFile.write('echo "--Local directory is " $localdir\n')
             scriptFile.write('ls *\n')
-            if len(opt.eos)>0:
-                scriptFile.write('grep "alias eos=" /afs/cern.ch/project/eos/installation/cms/etc/setup.sh | sed "s/alias /export my/" > eosenv.sh\n')
-                scriptFile.write('source eosenv.sh\n')
-                scriptFile.write('$myeos mkdir -p %s\n'%eosDir)
-                scriptFile.write('cmsStage -f Digi%s_%s.root %s\n'%(suffix,outTag,eosDir))
-                scriptFile.write('if (( "$?" != "0" )); then\n')
-                scriptFile.write('echo " --- Problem with copy of file DigiPFcal.root to EOS. Keeping locally." >> %s\n'%(g4log))
-                scriptFile.write('else\n')
-                scriptFile.write('eossize=`$myeos ls -l %s/Digi%s_%s.root | awk \'{print $5}\'`\n'%(eosDir,suffix,outTag))
-                scriptFile.write('localsize=`ls -l DigiPFcal.root | awk \'{print $5}\'`\n')
-                scriptFile.write('if (( "$eossize" != "$localsize" )); then\n')
-                scriptFile.write('echo " --- Copy of digi file to eos failed. Localsize = $localsize, eossize = $eossize. Keeping locally..." >> %s\n'%(g4log))
-                scriptFile.write('else\n')
-                scriptFile.write('echo " --- Size check done: Localsize = $localsize, eossize = $eossize" >> %s\n'%(g4log))
-                scriptFile.write('echo " --- File DigiPFcal.root successfully copied to EOS: %s/Digi%s_%s.root" >> %s\n'%(eosDir,suffix,outTag,g4log))
-                scriptFile.write('fi\n')
-                scriptFile.write('fi\n')
+#           g4log='digijob%s.log'%(suffix)
+#           if len(opt.eos)>0:
+#               scriptFile.write('grep "alias eos=" /afs/cern.ch/project/eos/installation/cms/etc/setup.sh | sed "s/alias /export my/" > eosenv.sh\n')
+#               scriptFile.write('source eosenv.sh\n')
+#               scriptFile.write('$myeos mkdir -p %s\n'%eosDir)
+#               scriptFile.write('cmsStage -f Digi%s_%s.root %s\n'%(suffix,outTag,eosDir))
+#               scriptFile.write('if (( "$?" != "0" )); then\n')
+#               scriptFile.write('echo " --- Problem with copy of file DigiPFcal.root to EOS. Keeping locally." >> %s\n'%(g4log))
+#               scriptFile.write('else\n')
+#               scriptFile.write('eossize=`$myeos ls -l %s/Digi%s_%s.root | awk \'{print $5}\'`\n'%(eosDir,suffix,outTag))
+#               scriptFile.write('localsize=`ls -l DigiPFcal.root | awk \'{print $5}\'`\n')
+#               scriptFile.write('if (( "$eossize" != "$localsize" )); then\n')
+#               scriptFile.write('echo " --- Copy of digi file to eos failed. Localsize = $localsize, eossize = $eossize. Keeping locally..." >> %s\n'%(g4log))
+#               scriptFile.write('else\n')
+#               scriptFile.write('echo " --- Size check done: Localsize = $localsize, eossize = $eossize" >> %s\n'%(g4log))
+#               scriptFile.write('echo " --- File DigiPFcal.root successfully copied to EOS: %s/Digi%s_%s.root" >> %s\n'%(eosDir,suffix,outTag,g4log))
+#               scriptFile.write('fi\n')
+#               scriptFile.write('fi\n')
             scriptFile.write('echo "--deleting core files: too heavy!!"\n')
-            scriptFile.write('rm core.*\n')
+            scriptFile.write('rm -f core.*\n')
             scriptFile.write('echo "All done"\n')
             scriptFile.close()
 
@@ -213,17 +225,16 @@ for nPuVtx in nPuVtxlist:
             jdlFile.write('Notification = ERROR\n')
             jdlFile.write('Should_Transfer_Files = YES\n')
             jdlFile.write('transfer_input_files = ../g4env4lpc.sh,bin/digitizer,lib/libPFCalEEuserlib.so\n')
-            jdlFile.write('x509userproxy = $ENV(X509_USER_PROXY)\n')
             jdlFile.write('WhenToTransferOutput = ON_EXIT\n')
-            jdlFile.write('Error = digitizer.stderr\n')
-            jdlFile.write('Output = digitizer.stdout\n')
-            jdlFile.write('Queue\n')
+#            jdlFile.write('x509userproxy = $ENV(X509_USER_PROXY)\n')
+            for j in xrange(0,opt.njobs):
+                jdlFile.write('Arguments = %d\n'%j)
+                jdlFile.write('Error = digitizer_%s_%d.stderr\n'%(outTag,j))
+                jdlFile.write('Output = digitizer_%s_%d.stdout\n'%(outTag,j))
+                jdlFile.write('Queue\n')
             jdlFile.close()
             
             #submit
             os.system('chmod u+rwx %s/%s'%(outDir,scrFileName))
             if opt.nosubmit : os.system('echo condor_submit %s/submitDigi.jdl'%outDir) 
             else: os.system('condor_submit %s/submitDigi.jdl'%outDir)
-
-
-

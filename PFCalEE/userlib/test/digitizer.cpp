@@ -240,6 +240,7 @@ int main(int argc, char** argv){//main
             << " -- noise: " << noiseStr << std::endl
             << " -- thresholds: " << threshStr << std::endl
             << " -- intercalibration factor (in %): " << interCalib << std::endl
+	    << " -- number of Si layers: " << nSiLayers << std::endl
             << " -- number of PU: " << nPU << std::endl
 	    << " -- pu file path: " << puPath << std::endl
     ;
@@ -296,17 +297,23 @@ int main(int argc, char** argv){//main
 
   std::string inputStr = inFilePath ;
   TFile *inputFile = TFile::Open(inputStr.c_str());
-  
+
+  std::cout << "Opening input file " << inputStr << std::flush;
+
   if (!inputFile) {
     std::cout << " -- Error, input file " << inputStr << " cannot be opened. Exiting..." << std::endl;
     return 1;
   }
+
+  std::cout << "...Done." << std::endl <<  "Getting HGCSSTree" << std::flush;
 
   TTree *inputTree = (TTree*)inputFile->Get("HGCSSTree");
   if (!inputTree){
     std::cout << " -- Error, tree HGCSSTree  cannot be opened. Exiting..." << std::endl;
     return 1;
   }
+
+  std::cout << "...Done." <<  std::endl;
 
   /////////////////////////////////////////////////////////////
   //  //input PU hits
@@ -352,12 +359,14 @@ int main(int argc, char** argv){//main
   /////////////////////////////////////////////////////////////
 
   HGCSSInfo * info=(HGCSSInfo*)inputFile->Get("Info");
+
+  assert(info);
+
   const double calorSizeXY = info->calorSizeXY();
   const double cellSize = info->cellSize();
   const unsigned versionNumber = info->version();
   const unsigned model = info->model();
   
-  //models 0,1 or 3.
   bool isTBsetup = (model != 2);
   if (isTBsetup) std::cout << " -- Number of Si layers: " << nSiLayers << std::endl;
   else std::cout << " -- Number of Si layers ignored: hardcoded as a function of radius in HGCSSGeometryConversion class." << std::endl;
@@ -535,7 +544,7 @@ int main(int argc, char** argv){//main
       double posy = xy.second;//lHit.get_y(cellSize);
       double radius = sqrt(pow(posx,2)+pow(posy,2));
       double posz = lHit.get_z();
-      double energy = lHit.energy()*mycalib.MeVToMip(layer,radius);
+      double energy = lHit.energy()*mycalib.MeVToMip(layer,radius); // if (energy > 0) std::cout << "sim energy = "<<lHit.energy()<<", reco energy = "<<energy<<std::endl;
       double realtime = mycalib.correctTime(lHit.time(),posx,posy,posz);
       bool passTime = myDigitiser.passTimeCut(type,realtime);
       if (!passTime) continue;

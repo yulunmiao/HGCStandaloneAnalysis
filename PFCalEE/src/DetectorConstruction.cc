@@ -150,59 +150,35 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
     case v_HGCAL_2016TB:
       {
 	G4cout << "[DetectorConstruction] starting v_HGCAL for testbeam 2016"<< G4endl;
-	G4double airThick = 2*mm;
-	G4double pcbThick = 1.2*mm;
 
-	G4double interCassetteThick = 2*mm;
+	G4double absPlateAirGap = 6*mm;
 
-	std::vector<G4double> lThickL;
-	std::vector<std::string> lEleL;
-	lThickL.push_back(2.8*mm);lEleL.push_back("W");
-	// Not in the four-layer March edition
-	//lThickL.push_back(0.5*mm);lEleL.push_back("CFMix");
-	//lThickL.push_back(0.5*mm);lEleL.push_back("Cu");
-	lThickL.push_back(airThick);lEleL.push_back("Air");
-	/* Module */
-	lThickL.push_back(0.5*mm);  lEleL.push_back("PCB"); // really "FR4"
-	lThickL.push_back(pcbThick);lEleL.push_back("PCB");
-	lThickL.push_back(0.01*mm); lEleL.push_back("Air"); // kapton
-	lThickL.push_back(0.1*mm);  lEleL.push_back("Si");
-	lThickL.push_back(0.1*mm);  lEleL.push_back("Si");
-	lThickL.push_back(0.12*mm); lEleL.push_back("Si"); // depletion zone
+	std::vector<G4double> lThick;
+	std::vector<std::string> lEle;
 
-	std::vector<G4double> lThickR;
-	std::vector<std::string> lEleR;
+	// One module behind the copper cooling plate with
+	// tungsten absorbing plates in front.
+	//
+	for (int i=0; i<3; i++) {
+	  lThick.push_back(4.2*mm);        lEle.push_back("W");
+	  lThick.push_back(absPlateAirGap);lEle.push_back("Air");
+	}
+	for (int i=0; i<2; i++) {
+	  lThick.push_back(2.1*mm);        lEle.push_back("W");
+	  lThick.push_back(absPlateAirGap);lEle.push_back("Air");
+	}
+	lThick.push_back(2.1*mm);        lEle.push_back("W");
+	lThick.push_back(3.0*mm);        lEle.push_back("Air");
 
-	lThickR.push_back(0.6*mm); lEleR.push_back("WCu");
-	lThickR.push_back(6.0*mm); lEleR.push_back("Cu");
-	lThickR.push_back(0.6*mm); lEleR.push_back("WCu");
-	lThickR.push_back(0.01*mm);lEleR.push_back("Air"); // kapton
-	lThickR.push_back(0.1*mm); lEleR.push_back("Si");
-	lThickR.push_back(0.1*mm); lEleR.push_back("Si");
-	lThickR.push_back(0.12*mm); lEleR.push_back("Si");
+	lThick.push_back(0.6*mm); lEle.push_back("WCu");
+	lThick.push_back(6.0*mm); lEle.push_back("Cu");
+	lThick.push_back(0.6*mm); lEle.push_back("WCu");
+	lThick.push_back(0.01*mm);lEle.push_back("Air"); // kapton
+	lThick.push_back(0.1*mm); lEle.push_back("Si");
+	lThick.push_back(0.1*mm); lEle.push_back("Si");
+	lThick.push_back(0.12*mm); lEle.push_back("Si");
 
-	// Module #1 & 2
-	m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
-	m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
-
-	std::vector<G4double> lThickBack;
-	std::vector<std::string> lEleBack;
-
-	lThickBack.push_back(0.01);    lEleBack.push_back("Air"); // kapton
-	lThickBack.push_back(pcbThick);lEleBack.push_back("PCB");
-	lThickBack.push_back(0.5);     lEleBack.push_back("PCB"); // really "FR4" cover
-	lThickBack.push_back(airThick);lEleBack.push_back("Air");
-	// Not in the four-layer March edition
-	//lThickL.push_back(0.5*mm);lEleL.push_back("CFMix");
-	//lThickL.push_back(0.5*mm);lEleL.push_back("Cu");
-	lThickBack.push_back(interCassetteThick);lEleBack.push_back("Air");
-
-	lThickL.insert(lThickL.begin(),lThickBack.begin(),lThickBack.end());
-	lEleL.insert  (lEleL.begin(),  lEleBack.begin(),  lEleBack.end());
-
-	// Module #3 & 4
-	m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
-	m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
+	m_caloStruct.push_back( SamplingSection(lThick,lEle) );
 
 	break;
       }//TB setup

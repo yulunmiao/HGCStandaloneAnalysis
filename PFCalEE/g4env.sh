@@ -1,3 +1,4 @@
+#!/bin/bash
 export USERBASE=`pwd`
 ARCH=x86_64-slc6-gcc46-opt
 source /afs/cern.ch/sw/lcg/contrib/gcc/4.6/${ARCH}/setup.sh 

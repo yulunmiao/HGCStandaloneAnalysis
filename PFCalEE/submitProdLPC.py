@@ -21,8 +21,8 @@ parser.add_option('-p', '--phi'         ,    dest='phi'                , help='i
 parser.add_option('-b', '--Bfield'      ,    dest='Bfield'             , help='B field value in Tesla'       , default=0.0,    type=float)
 parser.add_option('-d', '--datatype'    ,    dest='datatype'           , help='data type or particle to shoot', default='e-')
 parser.add_option('-f', '--datafile'    ,    dest='datafile'           , help='full path to HepMC input file', default='data/example_MyPythia.dat')
-parser.add_option('-N', '--njobs'       ,    dest='njobs'              , help='number of jobs'           , default=1,     type=int)
-parser.add_option('-n', '--nevtsperjob' ,    dest='nevtsperjob'        , help='number of events per job' , default=10,  type=int)
+parser.add_option('-N', '--njobs'       ,    dest='njobs'              , help='number of jobs'           , default=10,   type=int)
+parser.add_option('-n', '--nevtsperjob' ,    dest='nevtsperjob'        , help='number of events per job' , default=500,  type=int)
 parser.add_option('-o', '--out'         ,    dest='out'                , help='output directory'             , default=os.getcwd() )
 parser.add_option('-e', '--eos'         ,    dest='eos'                , help='eos path to save root file to EOS',         default='')
 parser.add_option('-g', '--gun'         ,    action="store_true",  dest='dogun'              , help='use particle gun.')
@@ -39,8 +39,8 @@ if opt.dogun :
     #enlist=[3,5,10,30,50,70,100,200]
     #enlist=[2,5,10,50,100,300,500]
     #enlist=[500]
-    enlist=[30]
-    #enlist=[60]
+    #enlist=[8,16,32]
+    enlist=[8]
 
 #hgg seeds
 #for seed in 1417791355 1417791400 1417791462 1417791488 1417791672 1417791741 1417791747 1417791766 1417791846
@@ -215,7 +215,7 @@ for en in enlist :
     jdlFile.write('WhenToTransferOutput = ON_EXIT\n')
     for j in xrange(0,opt.njobs):
         jdlFile.write('Arguments = %d\n'%j)
-        jdlFile.write('transfer_input_files = g4env4lpc.sh,%s/g4steer_%d.mac,%s/bin/Linux-g++/PFCalEE,%s/tmp/Linux-g++/PFCalEE/libPFCalEE.so,analysis/lib/libPFCalEEAnalysis.so,userlib/lib/libPFCalEEuserlib.so\n'%(outDir,j,os.environ['G4WORKDIR'],os.environ['G4WORKDIR']))
+        jdlFile.write('transfer_input_files = %s/g4env4lpc.sh,%s/g4steer_%d.mac,%s/bin/Linux-g++/PFCalEE,%s/tmp/Linux-g++/PFCalEE/libPFCalEE.so,%s/analysis/lib/libPFCalEEAnalysis.so,%s/userlib/lib/libPFCalEEuserlib.so\n'%(opt.out,outDir,j,os.environ['G4WORKDIR'],os.environ['G4WORKDIR'],opt.out,opt.out))
         jdlFile.write('Error = pfcalee_%s_%d.stderr\n'%(outTag,j))
         jdlFile.write('Output = pfcalee_%s_%d.stdout\n'%(outTag,j))
         jdlFile.write('Queue\n')
