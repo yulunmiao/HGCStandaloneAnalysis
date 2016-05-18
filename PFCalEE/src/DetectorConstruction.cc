@@ -860,7 +860,7 @@ void DetectorConstruction::UpdateCalorSize(){
     m_maxRadius   = m_CalorSizeXY/2.;          // center-to-corner radius of hexagon
   }
   else if (model_ == DetectorConstruction::m_FULLSECTION){
-    m_CalorSizeXY=2800;//1700;
+    m_CalorSizeXY=2800*2;//use full length for making hexagon map
     m_minRadius = 150;
     m_maxRadius = m_CalorSizeXY;
     m_minEta = 1.4;
