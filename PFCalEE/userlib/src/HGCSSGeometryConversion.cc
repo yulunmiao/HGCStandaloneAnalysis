@@ -139,11 +139,27 @@ void HGCSSGeometryConversion::initialiseHoneyComb(TH2Poly *map, const double wid
   // Center a cell at (x,y)=(0,0) and ensure coverage up to/past width/2 in all 4 directions,
   // assuming each cell is lying on a side.
 
-  unsigned ncellwide=width/(2.*side);
-  unsigned ny=ncellwide+1;
-  unsigned nx=ncellwide+4;
-  double xstart= -((double)ncellwide+0.5)*side;
-  double ystart= -((double)ncellwide+1)*side*sqrt(3)/2;
+  //1.5*side is two cells next to each others in x....
+  unsigned nx=2*width/(3.*side);
+  unsigned ny=width/(side*sqrt(3));
+  //make them odd to center on (0,0)
+  if (nx%2==0) nx+=1;
+  if (ny%2==0) ny+=1;
+
+  double xstart=0,ystart=0;
+
+  //check whether even or odd number on each side to decide where to put the starting point
+  if (static_cast<unsigned>((nx-1)/4)%2==0) {
+    //std::cout << "Even"<< std::endl;
+    xstart = -(static_cast<unsigned>((nx-1)/4)*2*side+side+static_cast<unsigned>((nx-1)/4)*side);
+    ystart = -(static_cast<double>(ny)/2.)*side*sqrt(3);
+  }
+  else {
+    //std::cout << "Odd"<< std::endl;
+    xstart = -(static_cast<unsigned>((nx-1)/4)*2*side+1.5*side+static_cast<unsigned>((nx-1)/4)*side+side);
+    ystart = -(static_cast<unsigned>((ny-1)/2)*side*sqrt(3));
+  }
+
   if (print) {
     std::cout << " -- Initialising HoneyComb with parameters: " << std::endl
 	      << " ---- (xstart,ystart) = (" << xstart << "," << ystart << ")"

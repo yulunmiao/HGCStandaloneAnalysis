@@ -855,7 +855,7 @@ void DetectorConstruction::UpdateCalorSize(){
     m_nSectors    = 1;
     m_sectorWidth = CELL_SIZE_X * 2 *11;
     m_interSectorWidth = 0;
-    m_CalorSizeXY = m_sectorWidth;
+    m_CalorSizeXY = m_sectorWidth*m_nSectors;
     m_minRadius   = m_CalorSizeXY/(2*sqrt(3)); // center-to-side radius of hexagon
     m_maxRadius   = m_CalorSizeXY/2.;          // center-to-corner radius of hexagon
   }
