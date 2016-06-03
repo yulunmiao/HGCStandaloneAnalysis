@@ -101,32 +101,32 @@ public:
   inline unsigned nHadrons() const {
     return nHadrons_;
   };
-  inline unsigned numberOfParticles() const {
+  inline double numberOfParticles() const {
     return nGammas_+nElectrons_+nMuons_+nNeutrons_+nProtons_+nHadrons_;
   };
 
   inline double gFrac() const {
-    return nGammas_/numberOfParticles();
+    return 1.0*nGammas_/numberOfParticles();
   };
 
   inline double eFrac() const {
-    return nElectrons_/numberOfParticles();
+    return 1.0*nElectrons_/numberOfParticles();
   };
 
   inline  double muFrac() const {
-    return nMuons_/numberOfParticles();
+    return 1.0*nMuons_/numberOfParticles();
   };
 
   inline double neutronFrac() const {
-    return nNeutrons_/numberOfParticles();
+    return 1.0*nNeutrons_/numberOfParticles();
   };
 
   inline double protonFrac() const {
-    return nProtons_/numberOfParticles();
+    return 1.0*nProtons_/numberOfParticles();
   };
 
   inline double hadFrac() const {
-    return nHadrons_/numberOfParticles();
+    return 1.0*nHadrons_/numberOfParticles();
   };
 
   void Add(const G4SiHit & aSiHit);
