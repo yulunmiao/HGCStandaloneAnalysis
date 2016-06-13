@@ -11,6 +11,12 @@
 #include "TMath.h"
 #include "HGCSSDetector.hh"
 
+struct MergeCells {
+  double energy;
+  double time;
+  //double z;
+};
+
 class HGCSSGeometryConversion{
   
 public:
@@ -80,17 +86,25 @@ public:
 			std::string uniqStr="",
 			const bool print=true);
 
-  void fill(const DetectorEnum type,
-	    const unsigned newlayer,
+  //void fill(const DetectorEnum type,
+  //const unsigned newlayer,
+  //const double & weightedE,
+  //const double & aTime,
+  //const double & posx,
+  //const double & posy,
+  //const double & posz);
+
+  void fill(const unsigned layer,
 	    const double & weightedE,
 	    const double & aTime,
-	    const double & posx,
-	    const double & posy,
+	    const unsigned & cellid,
 	    const double & posz);
+
 
   double getAverageZ(const unsigned layer);
 
-  double sumBins(const std::vector<TH2Poly *> & aHistVec,
+  //with TH2Poly
+  /*double sumBins(const std::vector<TH2Poly *> & aHistVec,
 		 const double & aMipThresh=0.);
 
   void resetVector(std::vector<TH2Poly *> & aVec,
@@ -117,6 +131,17 @@ public:
   inline std::vector<TH2Poly *> & get2DZposVec(const DetectorEnum aDet){
     return HistMapZ_[aDet];
   };
+  */
+
+  //with maps of MergeCells struct
+  double sumBins(const std::map<unsigned,MergeCells> & aHistVec,
+		 const double & aMipThresh=0.);
+
+  void resetVector(std::map<unsigned,MergeCells> & aVec);
+
+  void deleteHistos(std::map<unsigned,MergeCells> & aVec);
+
+  std::map<unsigned,MergeCells> & get2DHist(const unsigned layer);
 
 private:
 
@@ -134,11 +159,15 @@ void myHoneycomb(TH2Poly* map,
   unsigned model_;
   bool bypassRadius_;
   unsigned nSiLayers_;
-  std::map<DetectorEnum,std::vector<TH2Poly *> > HistMapE_;
-  std::map<DetectorEnum,std::vector<TH2Poly *> > HistMapTime_;
-  std::map<DetectorEnum,std::vector<TH2Poly *> > HistMapZ_;
-  std::map<DetectorEnum,std::vector<double> > avgMapZ_;
-  std::map<DetectorEnum,std::vector<double> > avgMapE_;
+  //std::map<DetectorEnum,std::vector<TH2Poly *> > HistMapE_;
+  //std::map<DetectorEnum,std::vector<TH2Poly *> > HistMapTime_;
+  //std::map<DetectorEnum,std::vector<TH2Poly *> > HistMapZ_;
+  //std::map<DetectorEnum,std::vector<double> > avgMapZ_;
+  //std::map<DetectorEnum,std::vector<double> > avgMapE_;
+  std::map<unsigned,std::map<unsigned,MergeCells> > HistMap_;
+  std::map<unsigned,double> avgMapZ_;
+  std::map<unsigned,double> avgMapE_;
+
 
 
 };

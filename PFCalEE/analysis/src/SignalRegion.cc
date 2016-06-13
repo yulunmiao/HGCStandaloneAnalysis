@@ -13,8 +13,10 @@ SignalRegion::SignalRegion(const std::string inputFolder,
 			   const HGCSSPUenergy & puDensity,
 			   const bool applyPuMixFix,
 			   const unsigned versionNumber,
-			   const bool doHexa){
+			   const bool doHexa,
+			   const unsigned g4trackID){
 
+  g4trackID_ = g4trackID;
   doHexa_ = doHexa;
   nSR_ = 6;
   nevt_ = nevt;
@@ -141,7 +143,7 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
    bool found = false;
    FitResult fit;
    for (unsigned iP(0); iP<genvec.size(); ++iP){//loop on gen particles    
-     if (genvec[iP].trackID()==1){
+     if (genvec[iP].trackID()==g4trackID_){
        found = true;
        //set direction
        trueE_ = genvec[iP].E()/1000.;
@@ -154,11 +156,11 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
        fit.tanangle_x = genvec[iP].px()/genvec[iP].pz();
        fit.tanangle_y = genvec[iP].py()/genvec[iP].pz();
        fit.found = true;
-       //std::cout << " True particle z eta phi = " << genvec[iP].z() << " " << genvec[iP].eta() << " " << genvec[iP].phi() << std::endl;
+       //std::cout << " True particle pdgid=" << genvec[iP].pdgid() << " z eta phi = " << genvec[iP].z() << " " << genvec[iP].eta() << " " << genvec[iP].phi() << std::endl;
      }
    }
    if (!found){
-     std::cout << " - Info: no photon G4trackID=1 found, already converted or outside of acceptance ..." << std::endl;
+     std::cout << " - Info: no photon G4trackID=" << g4trackID_ << " found, already converted or outside of acceptance ..." << std::endl;
      fit.found = false;
    }
 

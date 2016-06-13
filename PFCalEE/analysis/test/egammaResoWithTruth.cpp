@@ -81,6 +81,7 @@ int main(int argc, char** argv){//main
   unsigned redoStep;
   unsigned debug;
   bool applyPuMixFix;
+  unsigned g4trackID;
 
   po::options_description preconfig("Configuration"); 
   preconfig.add_options()("cfg,c",po::value<std::string>(&cfg)->required());
@@ -103,6 +104,7 @@ int main(int argc, char** argv){//main
     ("nSiLayers",      po::value<unsigned>(&nSiLayers)->default_value(2))
     ("redoStep",       po::value<unsigned>(&redoStep)->default_value(0))
     ("debug,d",        po::value<unsigned>(&debug)->default_value(0))
+    ("g4trackID",        po::value<unsigned>(&g4trackID)->default_value(1))
     ("applyPuMixFix",  po::value<bool>(&applyPuMixFix)->default_value(false))
     ;
 
@@ -288,12 +290,13 @@ int main(int argc, char** argv){//main
   //perform first loop over simhits to find z positions of layers
   PositionFit lChi2Fit(nSR,residualMax,nLayers,nSiLayers,applyPuMixFix,debug);
   lChi2Fit.initialise(outputFile,"PositionFit",outFolder,geomConv,puDensity);
-  if (!lChi2Fit.getZpositions(versionNumber)) lChi2Fit.getZpositions(versionNumber,lSimTree,500);
+  if (!lChi2Fit.getZpositions(versionNumber)) 
+    lChi2Fit.getZpositions(versionNumber,lSimTree,500);
 
   std::cout << " -- positionfit initilisation done." << std::endl;
   
   //perform second loop over events to find positions to fit and get energies
-  SignalRegion SignalEnergy(outFolder, nLayers, nEvts, geomConv, puDensity,applyPuMixFix,versionNumber,doHexa);
+  SignalRegion SignalEnergy(outFolder, nLayers, nEvts, geomConv, puDensity,applyPuMixFix,versionNumber,doHexa,g4trackID);
   SignalEnergy.initialise(outputFile,"Energies");
 
   std::cout << " -- sigenergy initialisation done." << std::endl;

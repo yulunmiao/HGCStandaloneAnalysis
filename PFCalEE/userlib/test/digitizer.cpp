@@ -65,8 +65,9 @@ void extractParameterFromStr(std::string aStr,T & vec){
   }//loop on elements
 }
 
+/*
 void processHist(const unsigned iL,
-		 TH2Poly* histE,
+		 std::map<unsigned,MergeCells> & histE,
 		 HGCSSDigitisation & myDigitiser,
 		 TH1F* & p_noise,
 		 const TH2Poly* histZ,
@@ -180,7 +181,117 @@ void processHist(const unsigned iL,
   }//loop on bins
      
 }//processHist
+*/
 
+void processHist(const unsigned iL,
+		 std::map<unsigned,MergeCells> & histE,
+		 std::map<int,std::pair<double,double> > & geom,
+		 HGCSSDigitisation & myDigitiser,
+		 TH1F* & p_noise,
+		 //const TH2Poly* histZ,
+		 const double & meanZpos,
+		 const bool isTBsetup,
+		 const HGCSSSubDetector & subdet,
+		 const std::vector<unsigned> & pThreshInADC,
+		 const bool pSaveDigis,
+		 HGCSSRecoHitVec & lDigiHits,
+		 HGCSSRecoHitVec & lRecoHits,
+		 const bool pMakeJets,
+		 std::vector<PseudoJet> & lParticles
+		 ){
+
+  bool doSaturation=true;
+
+  DetectorEnum adet = subdet.type;
+  bool isScint = subdet.isScint;
+  bool isSi = subdet.isSi;
+
+  //double rLim = subdet.radiusLim;
+  for (unsigned iB(0); iB<histE.size();++iB){//loop on bins
+    std::pair<double,double> xy = geom[iB+1];
+    
+    double digiE = 0;
+    double simE = histE[iB].energy;
+    //double time = 0;
+    //if (simE>0) time = histE[iB].time/simE;
+    
+    //fill vector with neighbours and calculate cross-talk
+    double xtalkE = simE;
+    //CAMM @TODO
+    /*if (isScint){
+      std::vector<double> simEvec;
+      simEvec.push_back(simE);
+      double side = polyBin->GetXMax()-polyBin->GetXMin();
+      simEvec.push_back(histE->GetBinContent(histE->FindBin(x-side,y)));
+      simEvec.push_back(histE->GetBinContent(histE->FindBin(x+side,y)));
+      simEvec.push_back(histE->GetBinContent(histE->FindBin(x,y-side)));
+      simEvec.push_back(histE->GetBinContent(histE->FindBin(x,y+side)));
+      xtalkE = myDigitiser.ipXtalk(simEvec);
+      }*/
+      
+    //bool passTime = myDigitiser.passTimeCut(adet,time);
+    //if (!passTime) continue;
+      
+    double posz = meanZpos;
+    //for noise only hits
+    //if (simE>0) posz = histZ->GetBinContent(iX,iY)/simE;
+    //else posz = meanZpos;
+    
+    
+    //if (fabs(x) > 500 || fabs(y)>500) std::cout << " x=" << x << ", y=" << y << std::endl;
+    
+    
+    //correct for particle angle in conversion to MIP
+    //not necessary, if not done for aborber thickness either
+    double simEcor = xtalkE;//isTBsetup ? xtalkE : myDigitiser.mipCor(xtalkE,x,y,posz);
+    digiE = simEcor;
+    
+    if (isScint && simEcor>0 && doSaturation) {
+      digiE = myDigitiser.digiE(simEcor);
+    }
+    myDigitiser.addNoise(digiE,iL,p_noise);
+    
+    double noiseFrac = 1.0;
+    if (simEcor>0) noiseFrac = (digiE-simEcor)/simEcor;
+    
+    //for silicon-based Calo
+    unsigned adc = 0;
+    if (isSi){
+      adc = myDigitiser.adcConverter(digiE,adet);
+      digiE = myDigitiser.adcToMIP(adc,adet);
+    }
+    bool aboveThresh = //digiE > 0.5;
+      (isSi && adc > pThreshInADC[iL]) ||
+      (isScint && digiE > pThreshInADC[iL]*myDigitiser.adcToMIP(1,adet,false));
+    //histE->SetBinContent(iX,iY,digiE);
+    if ((!pSaveDigis && aboveThresh) ||
+	pSaveDigis)
+      {//save hits
+	//double calibE = myDigitiser.MIPtoGeV(subdet,digiE);
+	HGCSSRecoHit lRecHit;
+	lRecHit.layer(iL);
+	lRecHit.energy(digiE);
+	lRecHit.adcCounts(adc);
+	lRecHit.x(xy.first);
+	lRecHit.y(xy.second);
+	lRecHit.z(posz);
+	lRecHit.noiseFraction(noiseFrac);
+	//unsigned x_cell = static_cast<unsigned>(fabs(x)/(cellSize*granularity[iL]));
+	//unsigned y_cell = static_cast<unsigned>(fabs(y)/(cellSize*granularity[iL]));
+	//lRecHit.encodeCellId(x>0,y>0,x_cell,y_cell,granularity[iL]);
+	
+	if (pSaveDigis) lDigiHits.push_back(lRecHit);
+	
+	lRecoHits.push_back(lRecHit);
+	
+	if (pMakeJets){
+	  if (posz>0) lParticles.push_back( PseudoJet(lRecHit.px(),lRecHit.py(),lRecHit.pz(),lRecHit.E()));
+	}
+	
+      }//save hits
+  }//loop on bins
+     
+}//processHist
 
 
 int main(int argc, char** argv){//main  
@@ -409,7 +520,7 @@ int main(int argc, char** argv){//main
   //const double xWidth = geomConv.getXYwidth();
   geomConv.initialiseHoneyComb(calorSizeXY,cellSize);
   //square map for BHCAL
-  geomConv.initialiseSquareMap(calorSizeXY,10.);
+  geomConv.initialiseSquareMap(calorSizeXY/2.,10.);
 
   HGCSSDigitisation myDigitiser;
 
@@ -558,7 +669,8 @@ int main(int argc, char** argv){//main
 				 << " z " << posz
 				 << " t " << lHit.time() << " " << realtime
 				 << std::endl;
-	geomConv.fill(type,subdetLayer,energy,realtime,posx,posy,posz);
+	//geomConv.fill(type,subdetLayer,energy,realtime,posx,posy,posz);
+	geomConv.fill(layer,energy,realtime,lHit.cellid(),posz);
       }
 
     }//loop on input simhits
@@ -623,7 +735,8 @@ int main(int argc, char** argv){//main
 				       << " z " << posz
 				       << " t " << lHit.time() << " " << realtime
 				       << std::endl;
-	      geomConv.fill(type,subdetLayer,energy,realtime,posx,posy,posz);
+	      //geomConv.fill(type,subdetLayer,energy,realtime,posx,posy,posz);
+	      geomConv.fill(layer,energy,realtime,lHit.cellid(),posz);
 	    }
 	  }
 
@@ -631,7 +744,7 @@ int main(int argc, char** argv){//main
       }//loop on interactions
     }//add PU
 
-    if (debug>1) {
+    if (debug>0) {
       std::cout << " **DEBUG** simhits = " << (*hitvec).size() << " " << lSimHits.size() << std::endl;
     }
 
@@ -641,21 +754,32 @@ int main(int argc, char** argv){//main
     //save
     unsigned nTotBins = 0;
     for (unsigned iL(0); iL<nLayers; ++iL){//loop on layers
-      TH2Poly *histE = geomConv.get2DHist(iL,"E");
-      TH2Poly *histTime = geomConv.get2DHist(iL,"Time");
-      TH2Poly *histZ = geomConv.get2DHist(iL,"Z");
+      //TH2Poly *histE = geomConv.get2DHist(iL,"E");
+      std::map<unsigned,MergeCells> & histE = geomConv.get2DHist(iL);
+      //TH2Poly *histTime = geomConv.get2DHist(iL,"Time");
+      //TH2Poly *histZ = geomConv.get2DHist(iL,"Z");
       const HGCSSSubDetector & subdet = myDetector.subDetectorByLayer(iL);
       bool isScint = subdet.isScint;
-      nTotBins += histE->GetNumberOfBins();
+      //nTotBins += histE->GetNumberOfBins();
+      unsigned nBins = isScint?geomConv.squareMap()->GetNumberOfBins() : geomConv.hexagonMap()->GetNumberOfBins();
+      nTotBins += nBins;
       if (pSaveDigis) lDigiHits.reserve(nTotBins);
       
       double meanZpos = geomConv.getAverageZ(iL);
       
+      //extend map to include all cells
+      for (unsigned iB(1); iB<nBins+1;++iB){
+	MergeCells tmpCell;
+	tmpCell.energy = 0;
+	tmpCell.time = 0;
+	histE.insert(std::pair<unsigned,MergeCells>(iB,tmpCell));
+      }
+
       //std::cout << iL << " " << meanZpos << std::endl;
 
-      if (debug>1){
+      if (debug>0){
 	std::cout << " -- Layer " << iL << " " << subdet.name << " z=" << meanZpos
-		  << " totbins = " << nTotBins << " histE entries = " << histE->GetEntries() << std::endl;
+		  << " bins = " << nBins << " histE entries = " << histE.size() << std::endl;
       }
 
       //cell-to-cell cross-talk for scintillator
@@ -667,7 +791,8 @@ int main(int argc, char** argv){//main
 	myDigitiser.setIPCrossTalk(0);
       }
 
-      processHist(iL,histE,myDigitiser,p_noise,histZ,meanZpos,isTBsetup,subdet,pThreshInADC,pSaveDigis,lDigiHits,lRecoHits,pMakeJets,lParticles);
+      //processHist(iL,histE,myDigitiser,p_noise,histZ,meanZpos,isTBsetup,subdet,pThreshInADC,pSaveDigis,lDigiHits,lRecoHits,pMakeJets,lParticles);
+      processHist(iL,histE,isScint?geomConv.squareGeom:geomConv.hexaGeom,myDigitiser,p_noise,meanZpos,isTBsetup,subdet,pThreshInADC,pSaveDigis,lDigiHits,lRecoHits,pMakeJets,lParticles);
  
     }//loop on layers
 

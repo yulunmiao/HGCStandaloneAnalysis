@@ -36,7 +36,8 @@ public:
                  const HGCSSPUenergy & puDensity,
 		 const bool applyPuMixFix,
 		 const unsigned versionNumber=12,
-		 const bool doHexa=true);
+		 const bool doHexa=true,
+		 const unsigned g4trackID=1);
 
     ~SignalRegion();
 
@@ -118,6 +119,7 @@ public:
 
 private:
   
+  unsigned g4trackID_;
   bool doHexa_;
   unsigned nSR_;
   unsigned nevt_;

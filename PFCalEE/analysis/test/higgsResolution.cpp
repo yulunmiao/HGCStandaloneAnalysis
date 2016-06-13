@@ -271,7 +271,7 @@ int main(int argc, char** argv){//main
 	    << " -- N sections = " << nSections << std::endl;
 
 
-  HGCSSGeometryConversion geomConv(inFilePath,model,cellSize);
+  HGCSSGeometryConversion geomConv(model,cellSize,false,2);
   //set granularity to get cellsize for PU subtraction
   std::vector<unsigned> granularity;
   granularity.resize(nLayers,4);
@@ -308,6 +308,8 @@ int main(int argc, char** argv){//main
   
   const unsigned nEvts = ((pNevts > lSimTree->GetEntries() || pNevts==0) ? static_cast<unsigned>(lSimTree->GetEntries()) : pNevts) ;
 
+  std::cout << " *1* " << std::endl;
+
   //higgs mass
   
   HiggsMass hM;
@@ -315,8 +317,12 @@ int main(int argc, char** argv){//main
   HiggsMass hMnofit;
   hMnofit.initialiseHistograms(outputFile,"HiggsMassNoFit");
   //Photon 1
+  std::cout << " *2* " << std::endl;
+
   PositionFit lGamma1(nSR,residualMax,nLayers,nSiLayers,applyPuMixFix,debug,false);
+  std::cout << " *3* " << std::endl;
   lGamma1.initialise(outputFile,"Gamma1Fit",outFolder1,geomConv,puDensity);
+
 
   if (!lGamma1.getZpositions(versionNumber))
     lGamma1.getZpositions(versionNumber,lSimTree,nEvts);
@@ -387,6 +393,8 @@ int main(int argc, char** argv){//main
   unsigned nMatrixNotFound2 = 0;
   unsigned nTooFar1 = 0;
   unsigned nTooFar2 = 0;
+  unsigned nNoCluster1 = 0;
+  unsigned nNoCluster2 = 0;
 
   std::cout << " --- Number of events: " << nEvts << std::endl;
 
@@ -439,8 +447,8 @@ int main(int argc, char** argv){//main
 
     if (doFit1 || doFit2){
       //get initial position
-      bool good1 = lGamma1.getInitialPosition(ievt,nPuVtx,rechitvec,nTooFar1);
-      bool good2 = lGamma2.getInitialPosition(ievt,nPuVtx,rechitvec,nTooFar2);
+      bool good1 = lGamma1.getInitialPosition(ievt,nPuVtx,rechitvec,nTooFar1,nNoCluster1);
+      bool good2 = lGamma2.getInitialPosition(ievt,nPuVtx,rechitvec,nTooFar2,nNoCluster2);
 
       if (good1) lGamma1.getOutTree()->Fill();
       if (good2) lGamma2.getOutTree()->Fill();
@@ -462,6 +470,7 @@ int main(int argc, char** argv){//main
       std::vector<double> posytruth2;
       std::vector<double> Ereco1;
       std::vector<double> Ereco2;
+      const std::vector<unsigned> lToRemove;
       layerId1.reserve(nLayers);
       posx1.reserve(nLayers);
       posy1.reserve(nLayers);
@@ -477,14 +486,14 @@ int main(int argc, char** argv){//main
       Ereco1.reserve(nLayers);
       Ereco2.reserve(nLayers);
       if (!lGamma1.getPositionFromFile(ievt,
-				      layerId1,posx1,posy1,posz1,
-				      posxtruth1,posytruth1,
-				      Ereco1,
-				      true,false) ||
+				       layerId1,posx1,posy1,posz1,
+				       posxtruth1,posytruth1,
+				       Ereco1,lToRemove,
+				       true,false) ||
 	  !lGamma2.getPositionFromFile(ievt,
-				      layerId2,posx2,posy2,posz2,
-				      posxtruth2,posytruth2,
-				      Ereco2,
+				       layerId2,posx2,posy2,posz2,
+				       posxtruth2,posytruth2,
+				       Ereco2,lToRemove,
 				       true,false)) continue;
       
       if (Ereco1.size() != nLayers || Ereco2.size() != nLayers){
@@ -551,7 +560,7 @@ int main(int argc, char** argv){//main
 	  nMatrixNotFound1++;
 	  continue;
 	}
-	if ( lGamma1.performLeastSquareFit(ievt,fit1)==0){
+	if ( lGamma1.performLeastSquareFit(ievt,fit1,lToRemove)==0){
 	  found1 = Signal1.fillEnergies(ievt,(*ssvec),(*simhitvec),(*rechitvec),nPuVtx,fit1);
 	} else std::cout << " -- Fit failed for photon 1." << std::endl;
       }
@@ -575,7 +584,7 @@ int main(int argc, char** argv){//main
 	  nMatrixNotFound2++;
 	  continue;
 	}
-	if ( lGamma2.performLeastSquareFit(ievt,fit2)==0){
+	if ( lGamma2.performLeastSquareFit(ievt,fit2,lToRemove)==0){
 	  found2 = Signal2.fillEnergies(ievt,(*ssvec),(*simhitvec),(*rechitvec),nPuVtx,fit2);
 	} else std::cout << " -- Fit failed for photon 2." << std::endl;
       }

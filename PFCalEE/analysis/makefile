@@ -71,7 +71,8 @@ OBJS=$(subst $(SRCDIR), $(OBJDIR),$(subst cc,$(OBJ_EXT),$(SRCS)))
 #BINS= $(EXEDIR)/validation $(EXEDIR)/egammaResoWithTruth $(EXEDIR)/egammaResolution $(EXEDIR)/hadronResolution $(EXEDIR)/plotNabove100fC
 
 #BINS=$(EXEDIR)/egammaResoWithTruth
-BINS=$(EXEDIR)/studyOutliers
+#BINS=$(EXEDIR)/studyOutliers
+BINS=$(EXEDIR)/getAbsorberWeight $(EXEDIR)/egammaResoWithTruth
 # $(EXEDIR)/egammaResolution $(EXEDIR)/hadronResolution $(EXEDIR)/plotNabove100fC
 
 SUBDIRS = ../userlib

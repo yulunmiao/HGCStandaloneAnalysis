@@ -147,6 +147,8 @@ PositionFit::PositionFit(const unsigned nSR,
   p_tanAngleX[1] = 0;
   p_tanAngleY[1] = 0;
 
+  if (debug_) std::cout << " -- end of PositionFit constructor." << std::endl;
+
 }
 
 void PositionFit::initialise(TFile *outputFile,
@@ -170,12 +172,13 @@ void PositionFit::initialise(TFile *outputFile,
 
   nL_sigma_.resize(nLayers_,nL_mean_);
   sigma_[0].resize(nLayers_,mean_[0]);
-  sigma_[1].resize(nLayers_,mean_[0]);
+  sigma_[1].resize(nLayers_,mean_[1]);
   for (unsigned iL(0);iL<nLayers_;++iL){
     nL_sigma_[iL].resize(nLayers_,0);
     sigma_[0][iL].resize(nLayers_,0);
     sigma_[1][iL].resize(nLayers_,0);
   }
+  if (debug_) std::cout << " -- end of PositionFit initialisation." << std::endl;
 
 }
 
@@ -741,11 +744,18 @@ void PositionFit::initialiseClusterHistograms(){
 
 void PositionFit::getZpositions(const unsigned versionNumber,
 				TTree *aSimTree,
-				 const unsigned nEvts){
+				const unsigned nEvts){
 
 
-   std::vector<HGCSSSimHit> * simhitvec = 0;
-   aSimTree->SetBranchAddress("HGCSSSimHitVec",&simhitvec);
+
+  HGCSSEvent * event = 0;
+  std::vector<HGCSSSamplingSection> * ssvec = 0;
+  std::vector<HGCSSSimHit> * simhitvec = 0;
+  std::vector<HGCSSGenParticle> * genvec = 0;
+  aSimTree->SetBranchAddress("HGCSSEvent",&event);
+  aSimTree->SetBranchAddress("HGCSSSamplingSectionVec",&ssvec);
+  aSimTree->SetBranchAddress("HGCSSSimHitVec",&simhitvec);
+  aSimTree->SetBranchAddress("HGCSSGenParticleVec",&genvec);
 
    std::ofstream fout;
    std::ostringstream foutname;

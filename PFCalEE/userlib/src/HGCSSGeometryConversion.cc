@@ -68,7 +68,15 @@ unsigned HGCSSGeometryConversion::getNumberOfSiLayers(const DetectorEnum type,
 }
 
 HGCSSGeometryConversion::~HGCSSGeometryConversion(){
-  std::map<DetectorEnum,std::vector<TH2Poly *> >::iterator liter =
+
+  std::map<unsigned,std::map<unsigned,MergeCells> >::iterator liter =
+    HistMap_.begin();
+  for (; liter !=HistMap_.end();++liter){
+    deleteHistos(liter->second);
+  }
+  HistMap_.clear();
+
+  /*std::map<DetectorEnum,std::vector<TH2Poly *> >::iterator liter =
     HistMapE_.begin();
   for (; liter !=HistMapE_.end();++liter){
     deleteHistos(liter->second);
@@ -86,6 +94,7 @@ HGCSSGeometryConversion::~HGCSSGeometryConversion(){
     deleteHistos(liter->second);
   }
   HistMapZ_.clear();
+  */
 
   hexaGeom.clear();
   squareGeom.clear();
@@ -244,7 +253,7 @@ void HGCSSGeometryConversion::fillXY(TH2Poly* hist, std::map<int,std::pair<doubl
   
 }
 
-void HGCSSGeometryConversion::deleteHistos(std::vector<TH2Poly *> & aVec){
+/*void HGCSSGeometryConversion::deleteHistos(std::vector<TH2Poly *> & aVec){
   if (aVec.size()!=0){
     for (unsigned iL(0); iL<aVec.size();++iL){
       //if (aVec[iL]) aVec[iL]->Delete();
@@ -252,6 +261,10 @@ void HGCSSGeometryConversion::deleteHistos(std::vector<TH2Poly *> & aVec){
     }
     aVec.clear();
   }
+  }*/
+
+void HGCSSGeometryConversion::deleteHistos(std::map<unsigned,MergeCells> & aVec){
+  aVec.clear();
 }
 
 void HGCSSGeometryConversion::setGranularity(const std::vector<unsigned> & granul){
@@ -277,7 +290,14 @@ void HGCSSGeometryConversion::initialiseHistos(const bool recreate,
 					       std::string uniqStr,
 					       const bool print){
 
-   for (unsigned iS(0); iS<theDetector().nSections();++iS){
+  for (unsigned iL(0); iL<theDetector().nLayers();++iL){
+    //unsigned iS = theDetector().getSection(iL);
+    resetVector(HistMap_[iL]);
+    avgMapE_[iL] = 0;
+    avgMapZ_[iL] = 0;
+  }
+  
+  /*   for (unsigned iS(0); iS<theDetector().nSections();++iS){
      resetVector(HistMapE_[theDetector().detType(iS)],"EmipHits"+uniqStr,theDetector().detName(iS),theDetector().subDetectorBySection(iS),theDetector().nLayers(iS),recreate,print);
      //std::cout << " check: " << HistMapE_[theDetector().detType(iS)].size() << std::endl;
      
@@ -295,9 +315,11 @@ void HGCSSGeometryConversion::initialiseHistos(const bool recreate,
      avgvecZ.resize(theDetector().nLayers(iS),0);
      avgMapZ_[theDetector().detType(iS)]=avgvecZ;
    }
+  */
+
  }
 
-void HGCSSGeometryConversion::fill(const DetectorEnum type,
+/*void HGCSSGeometryConversion::fill(const DetectorEnum type,
 				   const unsigned newlayer,
 				   const double & weightedE,
 				   const double & aTime,
@@ -311,18 +333,38 @@ void HGCSSGeometryConversion::fill(const DetectorEnum type,
   HistMapZ_[type][newlayer]->Fill(posx,posy,weightedE*posz);
   avgMapZ_[type][newlayer] += weightedE*posz;
   avgMapE_[type][newlayer] += weightedE;
+  }*/
+
+void HGCSSGeometryConversion::fill(const unsigned layer,
+				   const double & weightedE,
+				   const double & aTime,
+				   const unsigned & cellid,
+				   const double & posz)
+{
+  MergeCells tmpCell;
+  tmpCell.energy = weightedE;
+  tmpCell.time = weightedE*aTime;
+  
+  if (!HistMap_[layer].insert(std::pair<unsigned,MergeCells>(cellid,tmpCell)).second){
+    HistMap_[layer][cellid].energy += weightedE;
+    HistMap_[layer][cellid].time += weightedE*aTime;
+  }
+  avgMapZ_[layer] += weightedE*posz;
+  avgMapE_[layer] += weightedE;
 }
 
 double HGCSSGeometryConversion::getAverageZ(const unsigned layer){
-  const HGCSSSubDetector & subdet = theDetector().subDetectorByLayer(layer);
-  unsigned newlayer = layer-subdet.layerIdMin;
+  //const HGCSSSubDetector & subdet = theDetector().subDetectorByLayer(layer);
+  //unsigned newlayer = layer-subdet.layerIdMin;
   double avg = 0;
-  if (avgMapE_[subdet.type][newlayer]>0)
-    avg =avgMapZ_[subdet.type][newlayer]/avgMapE_[subdet.type][newlayer];
+  //if (avgMapE_[subdet.type][newlayer]>0 && avgMapZ_.size()>0)
+  //avg =avgMapZ_[subdet.type][newlayer]/avgMapE_[subdet.type][newlayer];
+  if (avgMapE_[layer]>0)
+    avg = avgMapZ_[layer]/avgMapE_[layer];
   return avg;
 }
 
-TH2Poly * HGCSSGeometryConversion::get2DHist(const unsigned layer,std::string name){
+/*TH2Poly * HGCSSGeometryConversion::get2DHist(const unsigned layer,std::string name){
   const HGCSSSubDetector & subdet = theDetector().subDetectorByLayer(layer);
   unsigned newlayer = layer-subdet.layerIdMin;
   if (name == "E") return HistMapE_[subdet.type][newlayer];
@@ -332,6 +374,10 @@ TH2Poly * HGCSSGeometryConversion::get2DHist(const unsigned layer,std::string na
     std::cerr << " ERROR !! Unknown histogram name. Exiting..." << std::endl;
     exit(1);
   }
+  }*/
+
+std::map<unsigned,MergeCells> &  HGCSSGeometryConversion::get2DHist(const unsigned layer){
+  return HistMap_[layer];
 }
 
 unsigned HGCSSGeometryConversion::getGranularity(const unsigned aLayer, const HGCSSSubDetector & adet){
@@ -339,6 +385,7 @@ unsigned HGCSSGeometryConversion::getGranularity(const unsigned aLayer, const HG
   return granularity_[idx];
 }
 
+/*
 void HGCSSGeometryConversion::resetVector(std::vector<TH2Poly *> & aVec,
 					  std::string aVar,
 					  std::string aString,
@@ -385,7 +432,12 @@ void HGCSSGeometryConversion::resetVector(std::vector<TH2Poly *> & aVec,
   }
   //std::cout << " vector size after: " << aVar << " " << aString << " = " << aVec.size() << std::endl;
 }
+*/
 
+void HGCSSGeometryConversion::resetVector(std::map<unsigned,MergeCells> & aVec)
+{
+  aVec.clear();
+}
 
 
 
