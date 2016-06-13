@@ -6,9 +6,37 @@
 #####################
 ## For branch master
 #####################
+Nothing for the moment
+
+
+
+hexaV03-02-02
+--------------
+* update digitisation to not use vector of TH2Poly anymore, too heavy for model=2 full end-cap simulation.
+
+hexaV03-01-01
+--------------
+* update TH2Poly to accomodate any size, not just the TB setup.
+
+hexaV02-01-01
+--------------
+* integrate Phil's update for TB setup: in particular rotate geometry.
+
+hexaV01-01-01
+--------------
+* first version with hexagons.
+
+V07-00-00
+----------
+* tag square version before switching master to hexagons.
+
+V06d-04-06
+----------
+* Add other TB versions for study of gaps structure
+
+V06b-03-05
+-----------
 * Add TB version 101 with 0 air gap for study of impact on even-odd layer structure.
-
-
 
 V06a-03-05
 ----------
