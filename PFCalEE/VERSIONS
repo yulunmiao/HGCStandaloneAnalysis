@@ -8,7 +8,11 @@
 #####################
 Nothing for the moment
 
-
+V08-00-00
+----------
+* Update geometry to TDR as of review end-of-June 2017
+* adapt code to Si-Scint divide for back of FH and BH
+* do eta-phi granularity for BH scintillator cell sizes
 
 hexaV03-02-02
 --------------
