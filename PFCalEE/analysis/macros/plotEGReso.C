@@ -517,6 +517,8 @@ int plotEGReso(){//main
   bool dovsE = false;
   bool processNoFitFiles = false;
 
+  bool doBackLeakCor = true;
+
   const unsigned nIC = 1;
   const unsigned ICval[nIC] = {3};//0,1,2,3,4,5,10,15,20,50};
 
@@ -599,6 +601,15 @@ int plotEGReso(){//main
     lName << "mycE" << genEnAll[iE];
     mycE[iE] = new TCanvas(lName.str().c_str(),lName.str().c_str(),1500,1000);
     mycE[iE]->Divide(3,2);
+  }
+  TCanvas *mycE2D[nGenEnAll];
+  if (doBackLeakCor){
+    for (unsigned iE(0); iE<nGenEnAll;++iE){
+      std::ostringstream lName;
+      lName << "mycE2D" << genEnAll[iE];
+      mycE2D[iE] = new TCanvas(lName.str().c_str(),lName.str().c_str(),1500,1000);
+      mycE2D[iE]->Divide(3,2);
+    }
   }
 
   TCanvas *mycSig = new TCanvas("mycSig","puSigma",1);
@@ -708,6 +719,7 @@ int plotEGReso(){//main
 	    }
 	    
 	    TH1F *p_Ereco[nGenEn][nSR];
+	    TH2F *p_ErecovsEback[nGenEn][nSR];
 	    TGraphErrors *calibRecoFit[nSR];
 	    TGraphErrors *calibRecoDelta[nSR];
 	    
@@ -781,27 +793,59 @@ int plotEGReso(){//main
 		gStyle->SetOptStat(0);
 		gStyle->SetOptFit(0);
 		
-		std::ostringstream lName;
+		std::ostringstream lName,lNameTot,lNameBack;
 		lName.str("");
+		lNameTot.str("");
+		lNameBack.str("");
 		lName << std::setprecision(6);
-		if (ipu>0) lName << "(";
 		if (iSR<6){
 		  for (unsigned iL(0);iL<nLayers;++iL){	      
 		    //if (iL==0) lName << "absweight_" << iL  << "*subtractedenergy_" << iL << "_SR" << iSR ;
 		    //else lName << "+" << "absweight_" << iL  << "*subtractedenergy_" << iL << "_SR" << iSR ;
 		    //if (iL==0) lName << "absweight_" << iL  << "*energy_" << iL << "_SR" << iSR ;
 		    //else lName << "+" << "absweight_" << iL  << "*energy_" << iL << "_SR" << iSR ;
-		    if (iL==0) lName << "20.3628*energy_" << iL << "_SR" << iSR ;
-		    else if (iL==nLayers-1) lName << "+13.0629*energy_" << iL << "_SR" << iSR ;
-		    else lName << "+10.0166*energy_" << iL << "_SR" << iSR ;
+		    if (iL==0) lNameTot << "20.3628*energy_" << iL << "_SR" << iSR ;
+		    else if (iL==nLayers-1) lNameTot << "+13.0629*energy_" << iL << "_SR" << iSR ;
+		    else lNameTot << "+10.0166*energy_" << iL << "_SR" << iSR ;
+		    if (iL==nLayers-4) lNameBack << "10.0166*energy_" << iL << "_SR" << iSR ;
+		    else if (iL==nLayers-1) lNameBack << "+13.0629*energy_" << iL << "_SR" << iSR ;
+		    else if (iL>nLayers-4) lNameBack << "+10.0166*energy_" << iL << "_SR" << iSR ;
 		  }
 		}
-		else lName << "wgtEtotal";///" << tanh(etaval[ieta]);
+		else lNameTot << "wgtEtotal";///" << tanh(etaval[ieta]);
 		if (iSR==4){
 		  std::cout << lName.str() << std::endl;
 		  return 1;
 		}
 		if (ipu>0) lName << " - " << offset[0][ieta][iSR] << ")/" << calib[0][ieta][iSR];
+
+		
+		if (doBackLeakCor && ipu>0) {
+		  mycE2D[iE]->cd(iSR+1);
+		  lName.str("");
+		  lName << "(";
+		  lName << lNameTot.str();
+		  lName << " - " << offset[0][ieta][iSR] << ")/" << calib[0][ieta][iSR];
+		  lName << ":" << lNameBack.str() << "/" << lNameTot.str();
+		  ltree[ieta][ipu][oldIdx[iE]]->Draw(lName.str().c_str(),"","");
+		  lName.str("");
+		  lName << "energy" << genEn[iE] << "_SR" << iSR << "_vsBackFraction";
+		  p_Ereco[iE][iSR] = (TH1F*)(gPad->GetPrimitive("htemp"))->Clone(lName.str().c_str()); // 1D
+		//if (iSR==7) p_Ereco[iE][iSR] = (TH1F*)gDirectory->Get("p_wgtEtotal");
+		if (!p_Ereco[iE][iSR]){
+		  std::cout << " -- ERROR, pointer for histogram " << lName.str() << " is null." << std::endl;
+		  return 1;
+		}
+		}
+
+
+		mycE[iE]->cd(iSR+1);
+
+		lName.str("");
+		if (ipu>0) lName << "(";
+		lName << lNameTot.str();
+		if (ipu>0) lName << " - " << offset[0][ieta][iSR] << ")/" << calib[0][ieta][iSR];
+		
 		ltree[ieta][ipu][oldIdx[iE]]->Draw(lName.str().c_str(),"","");
 		lName.str("");
 		lName << "energy" << genEn[iE] << "_SR" << iSR ;
@@ -828,7 +872,8 @@ int plotEGReso(){//main
 		  gPad->Clear();
 		  continue;
 		}
-		
+
+
 		TPad *lpad = (TPad*)(mycE[iE]->cd(iSR+1));
 		FitResult lres;
 		if (fitEnergy(p_Ereco[iE][iSR],lpad,unit,lres,iSR)!=0) return 1;

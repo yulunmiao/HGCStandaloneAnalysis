@@ -30,6 +30,7 @@ parser.add_option('-S', '--no-submit'   ,    action="store_true",  dest='nosubmi
 (opt, args) = parser.parse_args()
 
 #for run in `seq 0 19`; do ./submitProd.py -s 2nd -q 1nw -g -S -t testV8 -r $run -v 63 -m 2 -a 1.7 -b 3.8 -d gamma -n 250 -o /afs/cern.ch/work/a/amagnan/public/HGCalTDR/ -e /store/cmst3/group/hgcal/HGCalTDR; done
+#for run in `seq 0 49`; do ./submitProd.py -s 2nd -q 2nd  -t testV8 -r $run -v 63 -m 2  -b 3.8 -d HggLarge -n 100 -o /afs/cern.ch/work/a/amagnan/public/HGCalTDR/ -e /store/group/dpg_hgcal/comm_hgcal/amagnan/HGCalTDR -f /afs/cern.ch/work/a/amagnan/public/HepMCFiles/ggHgg_run$run.dat -F ""; done
 
 #1 = hexagons, 2=diamonds, 3=triangles, 4=squares
 shape=1
