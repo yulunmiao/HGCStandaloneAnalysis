@@ -830,12 +830,12 @@ int plotEGReso(){//main
 		  ltree[ieta][ipu][oldIdx[iE]]->Draw(lName.str().c_str(),"","");
 		  lName.str("");
 		  lName << "energy" << genEn[iE] << "_SR" << iSR << "_vsBackFraction";
-		  p_Ereco[iE][iSR] = (TH1F*)(gPad->GetPrimitive("htemp"))->Clone(lName.str().c_str()); // 1D
-		//if (iSR==7) p_Ereco[iE][iSR] = (TH1F*)gDirectory->Get("p_wgtEtotal");
-		if (!p_Ereco[iE][iSR]){
-		  std::cout << " -- ERROR, pointer for histogram " << lName.str() << " is null." << std::endl;
-		  return 1;
-		}
+		  p_ErecovsEback[iE][iSR] = (TH2F*)(gPad->GetPrimitive("htemp"))->Clone(lName.str().c_str()); // 2D
+		  //if (iSR==7) p_Ereco[iE][iSR] = (TH1F*)gDirectory->Get("p_wgtEtotal");
+		  if (!p_ErecovsEback[iE][iSR]){
+		    std::cout << " -- ERROR, pointer for histogram " << lName.str() << " is null." << std::endl;
+		    return 1;
+		  }
 		}
 
 
