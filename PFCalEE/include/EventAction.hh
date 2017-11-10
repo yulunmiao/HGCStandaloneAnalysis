@@ -60,9 +60,11 @@ private:
   HGCSSEvent event_;
   HGCSSSamplingSectionVec ssvec_;
   HGCSSSimHitVec hitvec_;
+  HGCSSSimHitVec alhitvec_;
   HGCSSGenParticleVec genvec_;
   EventActionMessenger*  eventMessenger;
   //std::ofstream fout_;
+  unsigned shape_;
 
 };
 

@@ -209,9 +209,10 @@ int main(int argc, char** argv){//main
   }
   else {
     for (unsigned i(0);i<nRuns;++i){
-      std::ostringstream lstr;
-      lstr << inputsim.str() << "_run" << i << ".root";
-      if (testInputFile(lstr.str(),simFile)){  
+      std::ostringstream lstrsim;
+      std::ostringstream lstrrec;
+      lstrsim << inputsim.str() << "_run" << i << ".root";
+      if (testInputFile(lstrsim.str(),simFile)){  
 	if (simFile) info =(HGCSSInfo*)simFile->Get("Info");
 	else {
 	  std::cout << " -- Error in getting information from simfile!" << std::endl;
@@ -219,11 +220,10 @@ int main(int argc, char** argv){//main
 	}
       }
       else continue;
-      lSimTree->AddFile(lstr.str().c_str());
-      lstr.str("");
-      lstr << inputrec.str() << "_run" << i << ".root";
-      if (!testInputFile(lstr.str(),recFile)) continue;
-      lRecTree->AddFile(lstr.str().c_str());
+      lstrrec << inputrec.str() << "_run" << i << ".root";
+      if (!testInputFile(lstrrec.str(),recFile)) continue;
+      lSimTree->AddFile(lstrsim.str().c_str());
+      lRecTree->AddFile(lstrrec.str().c_str());
     }
   }
 
@@ -242,17 +242,21 @@ int main(int argc, char** argv){//main
   //Info
   /////////////////////////////////////////////////////////////
 
-  const double cellSize = info->cellSize();
   const unsigned versionNumber = info->version();
   const unsigned model = info->model();
-  
+  const unsigned shape = info->shape();
+  const double cellSize = info->cellSize();
+  const double calorSizeXY = info->calorSizeXY();
+
   //models 0,1 or 3.
   //bool isTBsetup = (model != 2);
   bool isCaliceHcal = versionNumber==23;//inFilePath.find("version23")!=inFilePath.npos || inFilePath.find("version_23")!=inFilePath.npos;
 
   //extract input energy
+  bool doHexa = fabs(cellSize-2.5)>0.01;
 
-  std::cout << " -- Version number is : " << versionNumber 
+  std::cout << " -- Calor size XY = " << calorSizeXY
+	    << ", version number = " << versionNumber 
 	    << ", model = " << model
 	    << ", cellSize = " << cellSize
 	    << std::endl;
@@ -264,7 +268,7 @@ int main(int argc, char** argv){//main
   //bypass radius
   myDetector.buildDetector(versionNumber,concept,isCaliceHcal,true);
 
-  const unsigned nLayers = myDetector.nLayers();
+  const unsigned nLayers = 28;//myDetector.nLayers();
   const unsigned nSections = myDetector.nSections();
 
   std::cout << " -- N layers = " << nLayers << std::endl
@@ -276,6 +280,18 @@ int main(int argc, char** argv){//main
   std::vector<unsigned> granularity;
   granularity.resize(nLayers,4);
   geomConv.setGranularity(granularity);
+  geomConv.setXYwidth(calorSizeXY);
+  geomConv.setVersion(versionNumber);
+  //if (doHexa) geomConv.initialiseHoneyComb(calorSizeXY,cellSize);
+  //else geomConv.initialiseSquareMap(calorSizeXY,cellSize);
+  if (shape==2) geomConv.initialiseDiamondMap(calorSizeXY,10.);
+  else if (shape==3) geomConv.initialiseTriangleMap(calorSizeXY,10.*sqrt(2.));
+  else if (shape==1) geomConv.initialiseHoneyComb(calorSizeXY,cellSize);
+  else if (shape==4) geomConv.initialiseSquareMap(calorSizeXY,10.);
+  //square map for BHCAL
+  geomConv.initialiseSquareMap1(1.4,3.0,0,2*TMath::Pi(),0.01745);//eta phi segmentation
+  geomConv.initialiseSquareMap2(1.4,3.0,0,2*TMath::Pi(),0.02182);//eta phi segmentation
+  geomConv.initialiseHistos();
 
   //////////////////////////////////////////////////
   //////////////////////////////////////////////////
@@ -310,6 +326,12 @@ int main(int argc, char** argv){//main
 
   std::cout << " *1* " << std::endl;
 
+  std::vector<double> zpos;
+  zpos.resize(myDetector.nLayers(),0);
+  for (unsigned iL(0); iL<myDetector.nLayers(); ++iL){//loop on layers
+    zpos[iL] = myDetector.sensitiveZ(iL);
+  }
+
   //higgs mass
   
   HiggsMass hM;
@@ -324,16 +346,11 @@ int main(int argc, char** argv){//main
   lGamma1.initialise(outputFile,"Gamma1Fit",outFolder1,geomConv,puDensity);
 
 
-  if (!lGamma1.getZpositions(versionNumber))
-    lGamma1.getZpositions(versionNumber,lSimTree,nEvts);
-  
   
   //Photon 2
   PositionFit lGamma2(nSR,residualMax,nLayers,nSiLayers,applyPuMixFix,debug,false);
   lGamma2.initialise(outputFile,"Gamma2Fit",outFolder2,geomConv,puDensity);
 
-  if (!lGamma2.getZpositions(versionNumber))
-    lGamma2.getZpositions(versionNumber,lSimTree,nEvts);
 
   std::vector<double> zPos = lGamma1.getZpositions();
 
@@ -360,9 +377,9 @@ int main(int argc, char** argv){//main
     doFit1 = true;
     doFit2 = true;
   }
-  SignalRegion Signal1(outFolder1, nLayers, nEvts, geomConv, puDensity,applyPuMixFix,versionNumber);
+  SignalRegion Signal1(outFolder1, nLayers, zpos, nEvts, geomConv, puDensity,applyPuMixFix,versionNumber);
   Signal1.initialise(outputFile,"Gamma1E");
-  SignalRegion Signal1nofit(outFolder1, nLayers, nEvts, geomConv, puDensity,applyPuMixFix,versionNumber);
+  SignalRegion Signal1nofit(outFolder1, nLayers, zpos, nEvts, geomConv, puDensity,applyPuMixFix,versionNumber);
   Signal1nofit.initialise(outputFile,"Gamma1Enofit");
   if (!doOld && !Signal1.initialiseFitPositions()) {
     std::cout << " -- Redo fit for photon 1" << std::endl;
@@ -374,9 +391,9 @@ int main(int argc, char** argv){//main
     }
   }
 
-  SignalRegion Signal2(outFolder2, nLayers, nEvts, geomConv, puDensity,applyPuMixFix,versionNumber);
+  SignalRegion Signal2(outFolder2, nLayers, zpos, nEvts, geomConv, puDensity,applyPuMixFix,versionNumber);
   Signal2.initialise(outputFile,"Gamma2E");
-  SignalRegion Signal2nofit(outFolder2, nLayers, nEvts, geomConv, puDensity,applyPuMixFix,versionNumber);
+  SignalRegion Signal2nofit(outFolder2, nLayers, zpos, nEvts, geomConv, puDensity,applyPuMixFix,versionNumber);
   Signal2nofit.initialise(outputFile,"Gamma2Enofit");
   if (!doOld && !Signal2.initialiseFitPositions()) {
     std::cout << " -- Redo fit for photon 2" << std::endl;
@@ -620,13 +637,13 @@ int main(int argc, char** argv){//main
 
 
     TLorentzVector l1;
-    double E1 = calibratedE(Signal1.getEtotalSR(2,true),recoDir1.dir().Eta());
+    double E1 = calibratedE(Signal1.getEtotalSR(4,true),recoDir1.dir().Eta());
     //additional smearing from constant term
     //E1 += lRndm.Gaus(0,0.01*E1);
     //std::cout << " Photon1: TrueE = " << truthE1 << " recoE = " << Signal1.getEtotalSR(2,true) << " calibE = " << E1 << std::endl;
     l1.SetPtEtaPhiE(recoDir1.dir().Pt()*E1,recoDir1.dir().Eta(),recoDir1.dir().Phi(),E1);
     TLorentzVector l2;
-    double E2 = calibratedE(Signal2.getEtotalSR(2,true),recoDir2.dir().Eta());
+    double E2 = calibratedE(Signal2.getEtotalSR(4,true),recoDir2.dir().Eta());
     //E2 += lRndm.Gaus(0,0.01*E2);
     //std::cout << " Photon 2: TrueE = " << truthE2 << " recoE = " << Signal2.getEtotalSR(2,true)<< " calibE = " << E2 << std::endl;
     l2.SetPtEtaPhiE(recoDir2.dir().Pt()*E2,recoDir2.dir().Eta(),recoDir2.dir().Phi(),E2);
@@ -655,10 +672,10 @@ int main(int argc, char** argv){//main
     hMnofit.setRecoInfo(l1nofit,l2nofit,posFF1nofit,posFF2nofit);
 
     std::cout << " Check1: " << E1nofit << " " << truthE1 
-	      << " (Enofit-Efit)/Efit " << (Signal1nofit.getEtotalSR(2,true)- Signal1.getEtotalSR(2,true))/Signal1.getEtotalSR(2,true)
+	      << " (Enofit-Efit)/Efit " << (Signal1nofit.getEtotalSR(4,true)- Signal1.getEtotalSR(4,true))/Signal1.getEtotalSR(4,true)
 	      << std::endl;
     std::cout << " Check2: " << E2nofit << " " << truthE2 
-	      << " (Enofit-Efit)/Efit " << (Signal2nofit.getEtotalSR(2,true) - Signal2.getEtotalSR(2,true))/Signal2.getEtotalSR(2,true)
+	      << " (Enofit-Efit)/Efit " << (Signal2nofit.getEtotalSR(4,true) - Signal2.getEtotalSR(4,true))/Signal2.getEtotalSR(4,true)
 	      << std::endl;
 
     TLorentzVector t1;

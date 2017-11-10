@@ -29,8 +29,9 @@ public:
   {};
 
   HGCSSRecoHit(const HGCSSSimHit & aSimHit, 
-	       const bool isScintillator,
-	       const HGCSSGeometryConversion & aGeom);
+	       const HGCSSSubDetector & subdet,
+	       const HGCSSGeometryConversion & aGeom,
+	       const unsigned & shape);
 
   ~HGCSSRecoHit(){};
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+
 import os,sys
 import optparse
 import commands
@@ -31,11 +32,17 @@ parser.add_option('-S', '--no-submit'   ,    action="store_true",  dest='nosubmi
 (opt, args) = parser.parse_args()
 
 redofit=1
-#label='v5_30_'
 label=''
+#label='200u'
+#label='300u'
+#label='Large'
+#label='v5_30_'
 #label='v5_28_'
 #label='v5_24_'
 #label='v5_18_'
+
+#./submitEGReso.py -q 8nh -s 8nh -t testV8 -v 63 -m 2 -n 0 -o HGCalTDRPaul/ -R 20 -g -d gamma -b 3.8 -e /store/cmst3/group/hgcal/HGCalTDR -E /store/cmst3/group/hgcal/HGCalTDR
+#./submitEGReso.py -q 8nh -s 8nh -t testV8 -v 63 -m 2 -n 0 -o HGCalTDRPaul/ -R 20 -g -d gamma -b 3.8 -E /store/cmst3/group/hgcal/HGCalTDR -e /store/group/dpg_hgcal/comm_hgcal/amagnan/HGCalTDR
 
 workdir='/afs/cern.ch/work/a/amagnan/PFCalEEAna/'
 
@@ -43,19 +50,22 @@ enlist=[0]
 if opt.dogun : 
     #enlist=[3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200]
     #enlist=[3,5,10,30,50,70,100,200]
-    #enlist=[5,10,20,30,50,70,100]
-    enlist=[20]
+    #enlist=[10,20,40,60,80,100,150,200]
+    #enlist=[50]
     #enlist=[3,5,7,10,30,50,70,90,125,150,175,200]
+    enlist=[5,10,20,30,40,60,80,100,150,200]
 
 #alphaset=[0.361,0.297,0.244,0.200,0.164,0.134,0.110]
 #alphaset=[0.361,0.244,0.164,0.110]
-alphaset=[2.000]
+alphaset=[2.400]
+#alphaset=[1.700,2.000]
 #alphaset=[0.297,0.244,0.200,0.134,0.110]
 #nPuVtxset=[0,140]
-nPuVtxset=[0]
+nPuVtxset=[200]
 #etaset=[17,19,21,23,25,27,29]
 #etaset=[17,21,25,29]
-etaset=[20]
+etaset=[24]
+#etaset=[17,20]
 #etaset=[17,21,23,25,27,29]
 
 interCalibList=[3] #0,1,2,3,4,5,10,15,20,50]
@@ -86,8 +96,8 @@ for nPuVtx in nPuVtxset :
                 
             #too many files produced: make local output then copy back to afs
             #outDir='%s/%s/git%s/version%d/%s/200um/eta%s_et%s_pu%s'%(os.getcwd(),opt.out,opt.gittag,opt.version,opt.datatype,eta,et,nPuVtx)
-                outDir='%s/git%s/version%d/model%d/%s/%s/eta%s_et%s_pu%s_%s'%(opt.out,opt.gittag,opt.version,opt.model,opt.datatype,label,eta,et,nPuVtx,suffix)
-                if opt.phi!=0.5 : outDir='%s/git%s/version%d/model%d/%s/phi_%3.3fpi/eta%s_et%s_pu%s_%s'%(opt.out,opt.gittag,opt.version,opt.model,opt.datatype,opt.phi,eta,et,nPuVtx,suffix)
+                outDir='%s/git%s/version%d/model%d/%s/%s/eta%s_et%s_%s'%(opt.out,opt.gittag,opt.version,opt.model,opt.datatype,label,eta,et,suffix)
+                if opt.phi!=0.5 : outDir='%s/git%s/version%d/model%d/%s/phi_%3.3fpi/eta%s_et%s_%s'%(opt.out,opt.gittag,opt.version,opt.model,opt.datatype,opt.phi,eta,et,suffix)
                 eosDir='%s/git%s/%s'%(opt.eos,opt.gittag,opt.datatype)
                 eosDirIn='%s/git%s/%s'%(opt.eosin,opt.gittag,opt.datatype)
 
@@ -103,7 +113,7 @@ for nPuVtx in nPuVtxset :
                 scriptFile.write('#!/bin/bash\n')
                 scriptFile.write('source %s/../g4env.sh\n'%(os.getcwd()))
             #scriptFile.write('cd %s\n'%(outDir))
-                outTag='%s_version%d_model%d_%s'%(label,opt.version,opt.model,bval)
+                outTag='_version%d_model%d_%s'%(opt.version,opt.model,bval)
                 if et>0 : outTag='%s_et%d'%(outTag,et)
                 if alpha>0 : outTag='%s_eta%3.3f'%(outTag,alpha) 
                 if opt.phi!=0.5 : outTag='%s_phi%3.3fpi'%(outTag,opt.phi) 
@@ -116,9 +126,9 @@ for nPuVtx in nPuVtxset :
                 #if (nPuVtx==0) :
                 if (opt.nRuns==0) :
                         #scriptFile.write('%s/bin/egammaResoWithTruth -c scripts/DefaultConfig.cfg -n %s -i root://eoscms//eos/cms%s/ --digifilePath=root://eoscms//eos/cms%s/ -s HGcal_%s.root -r Digi_%s.root -o %s.root --redoStep=%s | tee %s\n'%(os.getcwd(),opt.nevts,eosDirIn,eosDir,outTag,outTag,outDir,redofit,outlog))
-                    scriptFile.write('%s/bin/egammaResoWithTruth -c scripts/DefaultConfig.cfg -n %s -i root://eoscms//eos/cms%s/ --digifilePath=root://eoscms//eos/cms%s/ -s HGcal_%s.root -r Digi%s_%s.root -o %s.root --redoStep=%s | tee %s\n'%(os.getcwd(),opt.nevts,eosDirIn,eosDir,outTag,suffix,outTag,outDir,redofit,outlog))
+                    scriptFile.write('%s/bin/egammaResoWithTruth -c scripts/DefaultConfig.cfg -n %s -i root://eoscms//eos/cms%s/ --digifilePath=root://eoscms//eos/cms%s/ -s HGcal_%s.root -r Digi%s_%s%s.root -o %s.root --redoStep=%s | tee %s\n'%(os.getcwd(),opt.nevts,eosDirIn,eosDir,outTag,suffix,label,outTag,outDir,redofit,outlog))
                 else:
-                    scriptFile.write('%s/bin/egammaResoWithTruth -c scripts/DefaultConfig.cfg -n %s --nRuns=%s -i root://eoscms//eos/cms%s/ --digifilePath=root://eoscms//eos/cms%s/ -s HGcal_%s -r Digi%s_%s -o %s.root --redoStep=%s | tee %s\n'%(os.getcwd(),opt.nevts,opt.nRuns,eosDirIn,eosDir,outTag,suffix,outTag,outDir,redofit,outlog))
+                    scriptFile.write('%s/bin/egammaResoWithTruth -c scripts/DefaultConfig.cfg -n %s --nRuns=%s -i root://eoscms//eos/cms%s --digifilePath=root://eoscms//eos/cms%s -s HGcal_%s -r Digi%s_%s%s -o %s.root --redoStep=%s | tee %s\n'%(os.getcwd(),opt.nevts,opt.nRuns,eosDirIn,eosDir,outTag,suffix,label,outTag,outDir,redofit,outlog))
                 #else:
                     #if (opt.nRuns==0) :
                      #   scriptFile.write('%s/bin/egammaResoWithTruth -c scripts/DefaultConfig.cfg -n %s -i root://eoscms//eos/cms%s/ --digifilePath=root://eoscms//eos/cms%s/ -s HGcal_%s.root -r PuMix%s_%s.root -o %s.root --redoStep=%s | tee %s\n'%(os.getcwd(),opt.nevts,eosDirIn,eosDir,outTag,nPuVtx,outTag,outDir,redofit,outlog)) 

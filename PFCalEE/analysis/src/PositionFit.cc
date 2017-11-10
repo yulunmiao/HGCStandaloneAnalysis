@@ -163,7 +163,7 @@ void PositionFit::initialise(TFile *outputFile,
   outFolder_ = outFolder;
   matrixFolder_ = outFolder_;
 
-  geomConv_ = geomConv;
+  geomConv_.setCellSize(geomConv.cellSize());
   puDensity_ = puDensity;
 
   nL_mean_.resize(nLayers_,0);

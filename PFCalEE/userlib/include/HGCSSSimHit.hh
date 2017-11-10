@@ -10,6 +10,7 @@
 
 #include "G4SiHit.hh"
 #include "HGCSSGeometryConversion.hh"
+#include "HGCSSDetector.hh"
 
 #include "Math/Point3D.h"
 #include "Math/Point3Dfwd.h"
@@ -18,6 +19,8 @@
 
 //for hexagons: side size.
 static const float CELL_SIZE_X=6.496345; //2.5;//mm
+//small hexagons
+//static const float CELL_SIZE_X=4.76;//mm
 static const float CELL_SIZE_Y=CELL_SIZE_X;
 
 class HGCSSSimHit{
@@ -40,7 +43,7 @@ public:
   {
     
   };
-  HGCSSSimHit(const G4SiHit & aSiHit, const unsigned & asilayer, TH2Poly* map, const float cellSize = CELL_SIZE_X);
+  HGCSSSimHit(const G4SiHit & aSiHit, const unsigned & asilayer, TH2Poly* map, const float cellSize = CELL_SIZE_X, const bool etaphimap = false);
 
   ~HGCSSSimHit(){};
 
@@ -149,11 +152,14 @@ public:
   // return (cellid_ & 0xFFFE0000) >> 17;
   //};
 
-  std::pair<double,double> get_xy(const bool isScintillator,
-				  const HGCSSGeometryConversion & aGeom) const;
+  //shape=1 for hexagons, 2 for diamonds and 3 for triangles
+  std::pair<double,double> get_xy(const HGCSSSubDetector & subdet,
+				  const HGCSSGeometryConversion & aGeom,
+				  const unsigned shape) const;
 
-  ROOT::Math::XYZPoint position(const bool isScintillator,
-				const HGCSSGeometryConversion & aGeom) const;
+  ROOT::Math::XYZPoint position(const HGCSSSubDetector & subdet,
+				const HGCSSGeometryConversion & aGeom,
+				const unsigned shape) const;
 
   //inline double get_x(TH2Poly* map) const {
   //float sign = get_x_side() ? 1. : -1. ;
@@ -204,12 +210,15 @@ public:
     return zpos_;
   };
 
-  double eta(const bool isScintillator,
-	     const HGCSSGeometryConversion & aGeom) const;
-  double theta(const bool isScintillator,
-	       const HGCSSGeometryConversion & aGeom) const;
-  double phi(const bool isScintillator,
-	     const HGCSSGeometryConversion & aGeom) const;
+  double eta(const HGCSSSubDetector & subdet,
+	     const HGCSSGeometryConversion & aGeom,
+	     const unsigned shape) const;
+  double theta(const HGCSSSubDetector & subdet,
+	       const HGCSSGeometryConversion & aGeom,
+	       const unsigned shape) const;
+  double phi(const HGCSSSubDetector & subdet,
+	     const HGCSSGeometryConversion & aGeom,
+	     const unsigned shape) const;
 
   inline unsigned getGranularity() const{
     return 1;

@@ -26,15 +26,15 @@ int plotHiggsMass(){//main
   const unsigned nP = 3;//2;
   unsigned puVal[nP] = {0,140,200};
 
-  const unsigned nV = 5;//7;
+  const unsigned nV = 1;//7;
 
   std::string label[nV] = {
-    "True E, Shower pos",
-    "True E, Vtx smear",
+    //"True E, Shower pos",
+    //"True E, Vtx smear",
     //"True E, Shower angle",
     "Reco E, True pos",
-    "Reco E, Shower pos",
-    "Reco E, Vtx smear",
+    //"Reco E, Shower pos",
+    //"Reco E, Vtx smear",
     //"Reco E, Shower angle",
   };
 
@@ -52,9 +52,9 @@ int plotHiggsMass(){//main
   double sigmaerr[nP][nV];
   
   TFile *f[nP];
-  f[0] = TFile::Open("/afs/cern.ch/work/a/amagnan/PFCalEEAna/gitV00-02-14/version12/Hgg/dec14pt20/pu0.root");
-  f[1] = TFile::Open("/afs/cern.ch/work/a/amagnan/PFCalEEAna/gitV00-02-14/version12/Hgg/dec14pt20/pu140.root");
-  f[2] = TFile::Open("/afs/cern.ch/work/a/amagnan/PFCalEEAna/gitV00-02-14/version12/Hgg/dec14pt20/pu200.root");
+  f[0] = TFile::Open("/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalTDR//gittestV8/version63/model2/HggLarge/pu140.root");
+  f[1] = TFile::Open("/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalTDR//gittestV8/version63/model2/HggLarge/pu140.root");
+  f[2] = TFile::Open("/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalTDR//gittestV8/version63/model2/HggLarge/pu200.root");
 
   TCanvas *mycfit[2];
   mycfit[0] = new TCanvas("myc1","myc1",1500,1000);
@@ -79,12 +79,12 @@ int plotHiggsMass(){//main
     }
     f[ipu]->cd("HiggsMass");
     TH1F *hMass[nV];
-    hMass[0] = (TH1F*)gDirectory->Get("p_position_trueE");
-    hMass[1] = (TH1F*)gDirectory->Get("p_position_vtxsmear_trueE");
+    //hMass[0] = (TH1F*)gDirectory->Get("p_position_trueE");
+    //hMass[1] = (TH1F*)gDirectory->Get("p_position_vtxsmear_trueE");
     //hMass[2] = (TH1F*)gDirectory->Get("p_angle_trueE");
-    hMass[2] = (TH1F*)gDirectory->Get("p_trueDir_recoE");
-    hMass[3] = (TH1F*)gDirectory->Get("p_position_recoE");
-    hMass[4] = (TH1F*)gDirectory->Get("p_position_vtxsmear_recoE");
+    hMass[0] = (TH1F*)gDirectory->Get("p_trueDir_recoE");
+    //hMass[3] = (TH1F*)gDirectory->Get("p_position_recoE");
+    //hMass[4] = (TH1F*)gDirectory->Get("p_position_vtxsmear_recoE");
     //hMass[6] = (TH1F*)gDirectory->Get("p_angle_recoE");
    
     TH1F *trueM = (TH1F*)gDirectory->Get("p_trueDir_trueE");
@@ -107,7 +107,7 @@ int plotHiggsMass(){//main
       //sigmaerr[ipu][iV] = hMass[iV]->GetRMSError();
     }
     std::ostringstream lsave;
-    lsave << "PLOTS/HiggsMasses_pu" << puVal[ipu] << ".pdf";
+    lsave << "TDRPLOTS/HiggsMasses_pu" << puVal[ipu] << ".pdf";
     mycfit[ipu]->Print(lsave.str().c_str());
 
   }
@@ -165,10 +165,10 @@ int plotHiggsMass(){//main
     lat.DrawLatexNDC(0.2,0.85,"1.5 < #eta_{#gamma^{1}} < 2.8, p_{T}>20 GeV");
     lat.DrawLatexNDC(0.2,0.8,"1.5 < #eta_{#gamma^{2}} < 2.8, p_{T}>20 GeV");
     myc->Update();
-    if (iH==0) myc->Print("PLOTS/SummaryHiggsMass.pdf");
+    if (iH==0) myc->Print("TDRPLOTS/SummaryHiggsMass.pdf");
     else {
-      myc->Print("PLOTS/SummaryHiggsReso.pdf");
-      myc->Print("PLOTS/SummaryHiggsReso.C");
+      myc->Print("TDRPLOTS/SummaryHiggsReso.pdf");
+      myc->Print("TDRPLOTS/SummaryHiggsReso.C");
     }
   }//loop on histos
 

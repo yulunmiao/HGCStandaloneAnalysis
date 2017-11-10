@@ -3,6 +3,14 @@
 #include <iostream>
 #include <cmath>
 
+void HGCSSGeometryConversion::convertFromEtaPhi(std::pair<double,double> & xy, const double & z){
+  double theta = 2*atan(exp(-1.*xy.first));
+  double r = z/cos(theta);
+  double x = r*sin(theta)*cos(xy.second);
+  double y = r*sin(theta)*sin(xy.second);
+  xy = std::pair<double,double>(x,y);
+}
+
 HGCSSGeometryConversion::HGCSSGeometryConversion(const unsigned model, const double cellsize, const bool bypassR, const unsigned nSiLayers){
 
   dopatch_=false;
@@ -98,6 +106,10 @@ HGCSSGeometryConversion::~HGCSSGeometryConversion(){
 
   hexaGeom.clear();
   squareGeom.clear();
+  squareGeom1.clear();
+  squareGeom2.clear();
+  diamGeom.clear();
+  triangleGeom.clear();
 }
 
 
@@ -105,6 +117,16 @@ HGCSSGeometryConversion::~HGCSSGeometryConversion(){
 void HGCSSGeometryConversion::initialiseSquareMap(const double xymin, const double side){
   initialiseSquareMap(squareMap(),xymin,side,true);
   fillXY(squareMap(),squareGeom);
+}
+
+void HGCSSGeometryConversion::initialiseSquareMap1(const double xmin, const double xmax, const double ymin, const double ymax, const double side){
+  initialiseSquareMap(squareMap1(),xmin,xmax,ymin,ymax,side,true);
+  fillXY(squareMap1(),squareGeom1);
+}
+
+void HGCSSGeometryConversion::initialiseSquareMap2(const double xmin, const double xmax, const double ymin, const double ymax, const double side){
+  initialiseSquareMap(squareMap2(),xmin,xmax,ymin,ymax,side,true);
+  fillXY(squareMap2(),squareGeom2);
 }
 
 void HGCSSGeometryConversion::initialiseSquareMap(TH2Poly *map, const double xymin, const double side, bool print){
@@ -130,6 +152,122 @@ void HGCSSGeometryConversion::initialiseSquareMap(TH2Poly *map, const double xym
   
   if (print) {
     std::cout <<  " -- Initialising squareMap with parameters: " << std::endl
+	      << " ---- xymin = " << -1.*xymin << ", side = " << side
+	      << ", nx = " << nx << ", ny=" << ny
+	      << std::endl;
+  }
+  
+}
+
+void HGCSSGeometryConversion::initialiseSquareMap(TH2Poly *map, const double xmin, const double xmax, const double ymin, const double ymax, const double side, bool print){
+  unsigned nx=static_cast<unsigned>((xmax-xmin)/side);
+  unsigned ny=static_cast<unsigned>((ymax-ymin)/side);
+  unsigned i,j;
+  Double_t x1,y1,x2,y2;
+  Double_t dx=side, dy=side;
+  x1 = xmin;
+  x2 = x1+dx;
+  
+  for (i = 0; i<nx; i++) {
+    y1 = ymin;
+    y2 = y1+dy;
+    for (j = 0; j<ny; j++) {
+      map->AddBin(x1, y1, x2, y2);
+      y1 = y2;
+      y2 = y1+dy;
+    }
+    x1 = x2;
+    x2 = x1+dx;
+  }
+  
+  if (print) {
+    std::cout <<  " -- Initialising eta-phi squareMap with parameters: " << std::endl
+	      << " ---- xmin = " << xmin << ", ymin = " << ymin << " side = " << side
+	      << ", nx = " << nx << ", ny=" << ny
+	      << std::endl;
+  }
+  
+}
+
+void HGCSSGeometryConversion::initialiseDiamondMap(const double xymin, const double side){
+  initialiseDiamondMap(diamondMap(),xymin,side,true);
+  fillXY(diamondMap(),diamGeom);
+}
+
+void HGCSSGeometryConversion::initialiseDiamondMap(TH2Poly *map, const double xymin, const double side, bool print){
+  double h = sqrt(3.)/2.*side;
+  unsigned nx=static_cast<unsigned>(xymin*2./h);
+  unsigned ny=static_cast<unsigned>(xymin*4./side);
+  unsigned i,j;
+  Double_t x[4],y[4];
+  Double_t dx=h, dy=side/2.;
+  x[0] = -1.*xymin;
+
+  for (i = 0; i<nx; i++) {
+    x[1] = x[0]+dx;
+    x[2] = x[1]+dx;
+    x[3] = x[0]+dx;
+    y[0] = -1.*xymin;
+    for (j = 0; j<ny; j++) {
+      y[1] = y[0]+dy;
+      y[2] = y[0];
+      y[3] = y[0]-dy;
+      map->AddBin(4, x, y);
+      y[0] = y[1];
+    }
+    x[0] = x[1];
+  }
+    
+  if (print) {
+    std::cout <<  " -- Initialising diamondMap with parameters: " << std::endl
+	      << " ---- xymin = " << -1.*xymin << ", side = " << side
+	      << ", nx = " << nx << ", ny=" << ny
+	      << std::endl;
+  }
+  
+}
+
+void HGCSSGeometryConversion::initialiseTriangleMap(const double xymin, const double side){
+  initialiseTriangleMap(triangleMap(),xymin,side,true);
+  fillXY(triangleMap(),triangleGeom);
+}
+
+void HGCSSGeometryConversion::initialiseTriangleMap(TH2Poly *map, const double xymin, const double side, bool print){
+    
+  double h = sqrt(3.)/2.*side;
+  unsigned nx=static_cast<unsigned>(xymin*2./h);
+  unsigned ny=static_cast<unsigned>(xymin*2./side);
+  unsigned i,j;
+  Double_t x[3],y[3];
+  Double_t dx=h, dy=side/2.;
+  x[0] = -1.*xymin;
+
+  for (i = 0; i<nx; i++) {
+    //triangles in one side 
+   x[1] = x[0]+dx;
+    x[2] = x[0]+dx;
+    y[0] = -1.*xymin+i%2*dy;
+    for (j = 0; j<ny; j++) {
+      y[1] = y[0]+dy;
+      y[2] = y[0]-dy;
+      map->AddBin(3, x, y);
+      y[0] = y[0]+side;
+    }
+    //triangles reverted
+    x[1] = x[0];
+    x[2] = x[0]+dx;
+    y[0] = -1.*xymin+i%2*dy;
+    for (j = 0; j<ny; j++) {
+      y[1] = y[0]+side;
+      y[2] = y[0]+dy;
+      map->AddBin(3, x, y);
+      y[0] = y[0]+side;
+    }
+    x[0] = x[0]+dx;
+  }
+  
+  if (print) {
+    std::cout <<  " -- Initialising triangleMap with parameters: " << std::endl
 	      << " ---- xymin = " << -1.*xymin << ", side = " << side
 	      << ", nx = " << nx << ", ny=" << ny
 	      << std::endl;
@@ -275,7 +413,11 @@ void HGCSSGeometryConversion::setGranularity(const std::vector<unsigned> & granu
 }
 
 double HGCSSGeometryConversion::cellSize(const unsigned aLayer, const double aR) const{
-  if (theDetector().subDetectorByLayer(aLayer).isScint) return 10.*granularity_[aLayer];
+  if (theDetector().subDetectorByLayer(aLayer).isScint){
+    if (theDetector().subDetectorByLayer(aLayer).type == DetectorEnum::BHCAL1) return 0.01745;//FH in eta-phi = 1deg in r-phi
+    else return 0.02182;//BH in eta-phi = 1.5deg in r-phi
+    //return 20.*granularity_[aLayer];
+  }
   return cellSize_;
   //double r1 = theDetector().subDetectorByLayer(aLayer).radiusLim;
   //if (aR<r1) return cellSize_*3;

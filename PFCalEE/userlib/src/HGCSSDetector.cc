@@ -92,7 +92,8 @@ void HGCSSDetector::buildDetector(const unsigned versionNumber,
   BHCAL.layerIdMin = indices_[4];
   BHCAL.layerIdMax = indices_[5];
   BHCAL.mipWeight = 1./0.63;//was 1.49 for 9mm scint
-  BHCAL.absWeight = 92.196/5.848;
+  if (versionNumber>59 && versionNumber<64) BHCAL.mipWeight = 1./0.497;//for 3mm scint, v8
+  BHCAL.absWeight = 1.0;//92.196/5.848;
   BHCAL.gevWeight = 1.0;
   BHCAL.gevOffset = 0.0;
   BHCAL.isScint = true;
@@ -111,9 +112,15 @@ void HGCSSDetector::buildDetector(const unsigned versionNumber,
   BHCAL2.name = "BHCAL2";
   BHCAL2.layerIdMin = indices_[5];
   BHCAL2.layerIdMax = indices_[6];
-  BHCAL2.mipWeight = FHCAL.mipWeight;
-  BHCAL2.absWeight = 104./21.;
-  BHCAL2.gevWeight = FHCAL.gevWeight;//MIPtoGeV
+  BHCAL2.mipWeight = BHCAL.mipWeight;
+  BHCAL2.absWeight = 1;
+  BHCAL2.gevWeight = 1;
+
+  if (isCaliceHcal) {
+    BHCAL2.mipWeight = FHCAL.mipWeight;
+    BHCAL2.absWeight = 104./21.;
+    BHCAL2.gevWeight = FHCAL.gevWeight;//MIPtoGeV
+  }
   BHCAL2.gevOffset = 0.0;
   BHCAL2.isScint = true;
   

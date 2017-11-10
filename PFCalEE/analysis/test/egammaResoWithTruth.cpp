@@ -47,6 +47,17 @@
 using boost::lexical_cast;
 namespace po=boost::program_options;
 
+struct BigHit{
+  int index;
+  double Emax;
+  double Esum;
+  BigHit(int idx,double Em,double Es){
+    index=idx;
+    Emax=Em;
+    Esum=Es;
+  };
+};
+
 bool testInputFile(std::string input, TFile* & file){
   file = TFile::Open(input.c_str());
   
@@ -60,6 +71,8 @@ bool testInputFile(std::string input, TFile* & file){
 
 
 int main(int argc, char** argv){//main  
+
+  bool doPaul = true;
 
   //Input output and config options
   std::string cfg;
@@ -133,7 +146,7 @@ int main(int argc, char** argv){//main
 	    << " -- Apply PUMix fix? " << applyPuMixFix << std::endl
 	    << " -- Processing ";
   if (pNevts == 0) std::cout << "all events." << std::endl;
-  else std::cout << pNevts << " events." << std::endl;
+  else std::cout << pNevts << " events per run." << std::endl;
 
   TRandom3 lRndm(1);
   std::cout << " -- Random number seed: " << lRndm.GetSeed() << std::endl;
@@ -150,7 +163,7 @@ int main(int argc, char** argv){//main
   else 
     inputrec << digifilePath << "/" << recoFileName;
 
-  //std::cout << inputsim.str() << " " << inputrec.str() << std::endl;
+  std::cout << inputsim.str() << " " << inputrec.str() << std::endl;
 
   HGCSSInfo * info;
 
@@ -210,15 +223,22 @@ int main(int argc, char** argv){//main
   //Info
   /////////////////////////////////////////////////////////////
 
-  double calorSizeXY = info->calorSizeXY();
-  double cellSize = info->cellSize();
+  //double calorSizeXY = info->calorSizeXY();
+  //double cellSize = info->cellSize();
   const unsigned versionNumber = info->version();
   const unsigned model = info->model();
-  
-  if (calorSizeXY<1 || calorSizeXY>6000) calorSizeXY=495;
+    //CAMM-dirty fix
+  //const unsigned shape = inputsim.str().find("Diamond")!=inputsim.str().npos? 2: inputsim.str().find("Triangle")!=inputsim.str().npos?3 :1 ;//
+  //const double cellSize = 6.496345;//info->cellSize();
+  //const double calorSizeXY = 2800*2;//info->calorSizeXY();
+  const unsigned shape = info->shape();
+  const double cellSize = info->cellSize();
+  const double calorSizeXY = info->calorSizeXY();
+ 
+  //if (calorSizeXY<1 || calorSizeXY>6000) calorSizeXY=495;
 
   bool doHexa = fabs(cellSize-2.5)>0.01;
-  if (!doHexa) cellSize = 4*cellSize;
+  //if (!doHexa) cellSize = 4*cellSize;
 
   //models 0,1 or 3.
   //bool isTBsetup = (model != 2);
@@ -236,23 +256,36 @@ int main(int argc, char** argv){//main
   //initialise detector
   HGCSSDetector & myDetector = theDetector();
  
-  myDetector.buildDetector(versionNumber,concept,isCaliceHcal);
+  myDetector.buildDetector(versionNumber,true,false,false);
+  //myDetector.buildDetector(versionNumber,concept,isCaliceHcal);
 
-  const unsigned nLayers = myDetector.nLayers();
+  const unsigned nLayers = 28;//myDetector.nLayers();
   const unsigned nSections = myDetector.nSections();
 
   std::cout << " -- N layers = " << nLayers << std::endl
 	    << " -- N sections = " << nSections << std::endl;
 
 
-  HGCSSGeometryConversion geomConv(model,cellSize);
+  HGCSSGeometryConversion geomConv(model,cellSize,false,3);
   //set granularity to get cellsize for PU subtraction
   std::vector<unsigned> granularity;
-  granularity.resize(nLayers,4);
+  granularity.resize(nLayers,1);
   geomConv.setGranularity(granularity);
   geomConv.setXYwidth(calorSizeXY);
-  if (doHexa) geomConv.initialiseHoneyComb(calorSizeXY,cellSize);
-  else geomConv.initialiseSquareMap(calorSizeXY,cellSize);
+  geomConv.setVersion(versionNumber);
+  //if (doHexa) geomConv.initialiseHoneyComb(calorSizeXY,cellSize);
+  //else geomConv.initialiseSquareMap(calorSizeXY,cellSize);
+  if (shape==2) geomConv.initialiseDiamondMap(calorSizeXY,10.);
+  else if (shape==3) geomConv.initialiseTriangleMap(calorSizeXY,10.*sqrt(2.));
+  else if (shape==1) geomConv.initialiseHoneyComb(calorSizeXY,cellSize);
+  else if (shape==4) geomConv.initialiseSquareMap(calorSizeXY,10.);
+  //square map for BHCAL
+  geomConv.initialiseSquareMap1(1.4,3.0,0,2*TMath::Pi(),0.01745);//eta phi segmentation
+  geomConv.initialiseSquareMap2(1.4,3.0,0,2*TMath::Pi(),0.02182);//eta phi segmentation
+  if (doPaul) geomConv.initialiseSquareMap(calorSizeXY,cellSize>5?83.:62);
+
+  geomConv.initialiseHistos();
+
 
   //////////////////////////////////////////////////
   //////////////////////////////////////////////////
@@ -285,24 +318,33 @@ int main(int argc, char** argv){//main
   
   const unsigned nEvts = ((pNevts > lSimTree->GetEntries() || pNevts==0) ? static_cast<unsigned>(lSimTree->GetEntries()) : pNevts) ;
   
-  std::cout << " -- Processing " << nEvts << " events out of " << lSimTree->GetEntries() << std::endl;
+  std::cout << " -- Processing " << nEvts << " events out of " << lSimTree->GetEntries() << " " << lRecTree->GetEntries() << std::endl;
 
   //perform first loop over simhits to find z positions of layers
-  PositionFit lChi2Fit(nSR,residualMax,nLayers,nSiLayers,applyPuMixFix,debug);
-  lChi2Fit.initialise(outputFile,"PositionFit",outFolder,geomConv,puDensity);
-  if (!lChi2Fit.getZpositions(versionNumber)) 
-    lChi2Fit.getZpositions(versionNumber,lSimTree,500);
+  //PositionFit lChi2Fit(nSR,residualMax,nLayers,nSiLayers,applyPuMixFix,debug);
+  //lChi2Fit.initialise(outputFile,"PositionFit",outFolder,geomConv,puDensity);
+  //if (!lChi2Fit.getZpositions(versionNumber)) 
+  //lChi2Fit.getZpositions(versionNumber,lSimTree,500);
 
-  std::cout << " -- positionfit initilisation done." << std::endl;
+  //std::cout << " -- positionfit initilisation done." << std::endl;
   
   //perform second loop over events to find positions to fit and get energies
-  SignalRegion SignalEnergy(outFolder, nLayers, nEvts, geomConv, puDensity,applyPuMixFix,versionNumber,doHexa,g4trackID);
+
+  std::vector<double> zpos;
+  zpos.resize(myDetector.nLayers(),0);
+  for (unsigned iL(0); iL<myDetector.nLayers(); ++iL){//loop on layers
+    zpos[iL] = myDetector.sensitiveZ(iL);
+  }
+
+
+  SignalRegion SignalEnergy(outFolder, nLayers, zpos, nEvts, geomConv, puDensity,applyPuMixFix,versionNumber,doHexa,g4trackID);
   SignalEnergy.initialise(outputFile,"Energies");
 
   std::cout << " -- sigenergy initialisation done." << std::endl;
 
   //loop on events
   HGCSSEvent * event = 0;
+  HGCSSEvent * eventRec = 0;
   std::vector<HGCSSSamplingSection> * ssvec = 0;
   std::vector<HGCSSSimHit> * simhitvec = 0;
   std::vector<HGCSSRecoHit> * rechitvec = 0;
@@ -314,16 +356,82 @@ int main(int argc, char** argv){//main
   lSimTree->SetBranchAddress("HGCSSSimHitVec",&simhitvec);
   lSimTree->SetBranchAddress("HGCSSGenParticleVec",&genvec);
 
+  lRecTree->SetBranchAddress("HGCSSEvent",&eventRec);
   lRecTree->SetBranchAddress("HGCSSRecoHitVec",&rechitvec);
   if (lRecTree->GetBranch("nPuVtx")) lRecTree->SetBranchAddress("nPuVtx",&nPuVtx);
 
+  unsigned ievtRec = 0;
+  unsigned nSkipped = 0;
   for (unsigned ievt(0); ievt<nEvts; ++ievt){//loop on entries
+    if (ievtRec>=lRecTree->GetEntries()) continue;
     if (debug) std::cout << "... Processing entry: " << ievt << std::endl;
     else if (ievt%50 == 0) std::cout << "... Processing entry: " << ievt << std::endl;
-
     lSimTree->GetEntry(ievt);
-    lRecTree->GetEntry(ievt);
+    lRecTree->GetEntry(ievtRec);
+    //std::cout << " Getting entries " << ievt << " " << ievtRec;
+    if (nPuVtx>0 && eventRec->eventNumber()==0 && event->eventNumber()!=0) {
+      std::cout << " skip !" << ievt << " " << ievtRec << std::endl;
+      nSkipped++;
+      continue;
+    }
+
+    //modify hits on the fly
+    //CHECK!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    if (doPaul){
+      std::map<int,BigHit> lBoxMap[nLayers];
+      std::pair<std::map<int,BigHit>::iterator,bool> lInsert;
+      for (unsigned iH(0); iH<(*rechitvec).size(); ++iH){//loop on hits
+	HGCSSRecoHit & lHit = (*rechitvec)[iH];
+	unsigned lay = lHit.layer();
+	if (lay<nLayers) {
+	  double posx = lHit.get_x();
+	  double posy = lHit.get_y();
+	  int id = geomConv.squareMap()->FindBin(posx,posy);
+	  //if (id==7036 && lay==6) std::cout << " Hit " << iH << " layer " << lHit.layer() << " id " << id << " energy " << lHit.energy() << std::endl;
+	  lInsert = lBoxMap[lay].insert(std::pair<int,BigHit>(id,BigHit(iH,lHit.energy(),lHit.energy())));
+	  std::map<int,BigHit>::iterator lEle = lInsert.first;
+	  if (!lInsert.second) {
+	    int & maxidx = lEle->second.index;
+	    double & maxE = lEle->second.Emax;
+	    double & sumE = lEle->second.Esum;
+	    //if (id==7036 && lay==6) std::cout << "already filled with: " << maxidx << " " << maxE << std::endl;
+	    if (maxE < lHit.energy()){
+	      //change element in map
+	      //update hit with sum of energy
+	      maxE = lHit.energy();
+	      sumE += lHit.energy();
+	      lHit.energy(sumE);
+	      (*rechitvec)[maxidx].energy(0);
+	      maxidx = iH;
+	      //if (id==7036 && lay==6) std::cout << "Changed ele in map: " << maxidx << " " << (*rechitvec)[maxidx].energy() << " " << iH << " " << (*rechitvec)[iH].energy() << " maxE " << maxE << " sumE " << sumE << std::endl;
+	    }
+	    else {
+	      //change hit, update element in map
+	      sumE += lHit.energy();
+	      (*rechitvec)[maxidx].energy(sumE);
+	      (*rechitvec)[iH].energy(0);
+	      //if (id==7036 && lay==6) std::cout << "Changed hit: " << maxidx << " " << (*rechitvec)[maxidx].energy() << " " << iH << " " << (*rechitvec)[iH].energy() << std::endl;
+	    }
+	    //(lInsert.first)->second.second += lHit.energy();
+	  }
+	}
+      }
+      /*      std::cout << " Afterwards: " << std::endl;
+      for (unsigned iH(0); iH<(*rechitvec).size(); ++iH){//loop on hits
+	HGCSSRecoHit & lHit = (*rechitvec)[iH];
+	unsigned lay = lHit.layer();
+	if (lay>=nLayers) continue;
+	double posx = lHit.get_x();
+	double posy = lHit.get_y();
+	int id = geomConv.squareMap()->FindBin(posx,posy);
+	if (id==7036 && lay==6) std::cout << " Hit " << iH << " layer " << lHit.layer() << " id " << id << " energy " << lHit.energy() << std::endl;
+	}*/
+
+    }
+
+    //std::cout  << std::endl;
     SignalEnergy.fillEnergies(ievt,(*event),(*genvec),(*ssvec),(*simhitvec),(*rechitvec),nPuVtx);
+    ievtRec++;
 
   }//loop on entries
 
@@ -334,6 +442,7 @@ int main(int argc, char** argv){//main
   outputFile->Write();
   //outputFile->Close();
   
+  std::cout << " - Skipped " << nSkipped << " events." << std::endl;
   std::cout << " - End of egammaResoWithTruth program." << std::endl;
 
   return 0;

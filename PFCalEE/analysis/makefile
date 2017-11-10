@@ -19,7 +19,7 @@ USERLIBS += -Wl,-rpath,$(FASTJET_INSTALL)/lib -lm  -L$(FASTJET_INSTALL)/lib -lfa
 USERLIBS += -L$(BOOSTSYS)/lib -lboost_regex -lboost_program_options -lboost_filesystem
 
 #CXXFLAGS = -Wall -W -Wno-unused-function -Wno-parentheses -Wno-char-subscripts -Wno-unused-parameter -O2 
-CXXFLAGS = -g -Wall -W -O2 -std=c++0x # -std=c++11 
+CXXFLAGS = -Wall -W -O2 -std=c++0x # -std=c++11 
 #CXXFLAGS = -Wall -W -O2 -std=c++11 
 LDFLAGS = -shared -Wall -W
 
@@ -61,6 +61,10 @@ OBJS=$(subst $(SRCDIR), $(OBJDIR),$(subst cc,$(OBJ_EXT),$(SRCS)))
 
 #BINS=$(EXEDIR)/plotParticleDensity $(EXEDIR)/validation $(EXEDIR)/timeResolution $(EXEDIR)/hepmcHggChargedTracks
 
+#BINS=$(EXEDIR)/hepmcChargedTracks
+#BINS=$(EXEDIR)/egammaResoSimple
+#BINS=$(EXEDIR)/quarkHFSimple $(EXEDIR)/egammaResoSimple
+
 #BINS=$(EXEDIR)/mipStudy $(EXEDIR)/mipProfile $(EXEDIR)/mipSelection $(EXEDIR)/ootpuOnHiggsPhotons $(EXEDIR)/higgsResolution $(EXEDIR)/plotNabove100fC
 
 #BINS=$(EXEDIR)/vbfResolution $(EXEDIR)/calibration
@@ -70,9 +74,9 @@ OBJS=$(subst $(SRCDIR), $(OBJDIR),$(subst cc,$(OBJ_EXT),$(SRCS)))
 #BINS=$(EXEDIR)/egammaResolution $(EXEDIR)/higgsResolution
 #BINS= $(EXEDIR)/validation $(EXEDIR)/egammaResoWithTruth $(EXEDIR)/egammaResolution $(EXEDIR)/hadronResolution $(EXEDIR)/plotNabove100fC
 
-#BINS=$(EXEDIR)/egammaResoWithTruth
+BINS=$(EXEDIR)/egammaResoWithTruth $(EXEDIR)/mipAnalysis $(EXEDIR)/mipHistos $(EXEDIR)/mipSelection  $(EXEDIR)/higgsResoWithTruth
 #BINS=$(EXEDIR)/studyOutliers
-BINS=$(EXEDIR)/getAbsorberWeight $(EXEDIR)/egammaResoWithTruth
+#BINS=$(EXEDIR)/getAbsorberWeight $(EXEDIR)/egammaResoWithTruth $(EXEDIR)/studySupportCone
 # $(EXEDIR)/egammaResolution $(EXEDIR)/hadronResolution $(EXEDIR)/plotNabove100fC
 
 SUBDIRS = ../userlib
@@ -96,6 +100,8 @@ $(EXEDIR)/dumpHitRates:  $(TESTDIR)/dumpHitRates.cpp $(LIBDIR)/lib$(LIBNAME).so 
 	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
 
 $(EXEDIR)/hepmcHggChargedTracks:  $(TESTDIR)/hepmcHggChargedTracks.cpp $(wildcard $(BASEDIR)/include/*.h*)
+	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(HEPMC_DIR)lib -lHepMC #-lHepMCfio
+$(EXEDIR)/hepmcChargedTracks:  $(TESTDIR)/hepmcChargedTracks.cpp $(wildcard $(BASEDIR)/include/*.h*)
 	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(HEPMC_DIR)lib -lHepMC #-lHepMCfio
 
 $(EXEDIR)/maxChargeStudy:  $(TESTDIR)/maxChargeStudy.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
@@ -125,6 +131,15 @@ $(EXEDIR)/hadronResolution:  $(TESTDIR)/hadronResolution.cpp $(LIBDIR)/lib$(LIBN
 $(EXEDIR)/egammaResoWithTruth:  $(TESTDIR)/egammaResoWithTruth.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
 	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
 
+$(EXEDIR)/egammaResoSimple:  $(TESTDIR)/egammaResoSimple.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
+	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
+
+$(EXEDIR)/quarkHFSimple:  $(TESTDIR)/quarkHFSimple.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
+	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME) -L$(HEPMC_DIR)lib -lHepMC
+
+$(EXEDIR)/studySupportCone:  $(TESTDIR)/studySupportCone.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
+	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME) -L$(HEPMC_DIR)lib -lHepMC
+
 $(EXEDIR)/vbfResolution:  $(TESTDIR)/vbfResolution.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
 	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
 
@@ -133,6 +148,9 @@ $(EXEDIR)/calibration:  $(TESTDIR)/calibration.cpp $(LIBDIR)/lib$(LIBNAME).so $(
 
 $(EXEDIR)/higgsResolution:  $(TESTDIR)/higgsResolution.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
 	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
+
+$(EXEDIR)/higgsResoWithTruth:  $(TESTDIR)/higgsResoWithTruth.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
+	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME) -L$(HEPMC_DIR)lib -lHepMC
 
 $(EXEDIR)/timeResolution:  $(TESTDIR)/timeResolution.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
 	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
@@ -149,6 +167,12 @@ $(EXEDIR)/mipProfile:  $(TESTDIR)/mipProfile.cpp $(LIBDIR)/lib$(LIBNAME).so $(wi
 $(EXEDIR)/mipSelection:  $(TESTDIR)/mipSelection.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
 	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
 
+$(EXEDIR)/mipAnalysis:  $(TESTDIR)/mipAnalysis.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
+	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
+
+$(EXEDIR)/mipHistos:  $(TESTDIR)/mipHistos.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
+	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
+
 $(EXEDIR)/validation:  $(TESTDIR)/validation.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
 	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
 
@@ -162,6 +186,15 @@ $(LIBDIR)/lib$(LIBNAME).so:  $(OBJS) $(LIBDEPENDS)
 	$(LD) $(LDFLAGS) -o $(LIBDIR)/lib$(LIBNAME).so $(OBJS) $(LIBS)
 
 lib: $(LIBDIR)/lib$(LIBNAME).so
+
+
+#need to put stuff into userlib or it doesn't work....
+#dictionary:
+#	rootcint -v -f src/dict.cc -c include/MipHit.hh include/LinkDef.h
+#	sed "s/include\/Mip/Mip/" src/dict.h > include/dict.h
+#	rm src/dict.h
+
+
 
 # info:
 # 	@echo "LIBS: " $(LIBS)

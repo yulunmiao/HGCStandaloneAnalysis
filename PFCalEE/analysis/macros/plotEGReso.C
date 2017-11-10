@@ -112,12 +112,24 @@ unsigned fitEnergy(TH1F *hist,
   double nRMSp = 2;
   
   TF1 *fitResult = new TF1("fitResult","[0]*TMath::Gaus(x,[1],[2],0)",hist->GetXaxis()->GetXmin(),hist->GetXaxis()->GetXmax());
+  double tmpmean = hist->GetXaxis()->GetBinCenter(hist->GetMaximumBin());
+  /*  if (tmpmean<3) {
+    //find next maximum
+    std::cout << " !!ERROR!! mismatch of events leading to peak at 0 !! " << std::endl;
+    double max = 0;
+    for (unsigned ix(4); ix<hist->GetNbinsX()+1; ++ix){
+      if (hist->GetBinContent(ix)>max) {
+	max = hist->GetBinContent(ix);
+	tmpmean = hist->GetXaxis()->GetBinCenter(ix);
+      }
+    }
+    }*/
   fitResult->SetParameters(hist->Integral(),
-			   hist->GetXaxis()->GetBinCenter(hist->GetMaximumBin()),
+			   tmpmean,
 			   hist->GetRMS());
 
-  //std::cout << " Initial params: "  << fitResult->GetParameter(0) << " "<< fitResult->GetParameter(1) << " " << fitResult->GetParameter(2)
-  //<< std::endl;
+  std::cout << " Initial params: "  << fitResult->GetParameter(0) << " "<< fitResult->GetParameter(1) << " " << fitResult->GetParameter(2)
+  << std::endl;
 
 
   int status = hist->Fit("fitResult","L0QEMI","",
@@ -127,16 +139,16 @@ unsigned fitEnergy(TH1F *hist,
   
   //std::cout << " First fit: " << status << " " << fitResult->GetParameter(1) << " " << fitResult->GetParameter(2)
   //<< std::endl;
-
-  // if ((status != 0 && status != 4000) || fitResult->GetChisquare()/fitResult->GetNDF()>5){
-  //   //std::cout << " -- Bad fit ! Try again..." << std::endl;
-  //   status = hist->Fit("fitResult","L0QEMI","",
-  // 		       fitResult->GetParameter(1)-nRMSm*fitResult->GetParameter(2),
-  // 		       fitResult->GetParameter(1)+nRMSp*fitResult->GetParameter(2));
+  
+  if ((status != 0 && status != 4000) || fitResult->GetChisquare()/fitResult->GetNDF()>20){
+    std::cout << " -- Bad fit ! Try again..." << std::endl;
+    status = hist->Fit("fitResult","L0QEMI","",
+   		       fitResult->GetParameter(1)-1*fitResult->GetParameter(2),
+		       fitResult->GetParameter(1)+2*fitResult->GetParameter(2));
     
-  //   std::cout << " Second fit: " << status << " " << fitResult->GetParameter(1) << " " << fitResult->GetParameter(2)
-  // 	      << std::endl;
-  // }
+    //   std::cout << " Second fit: " << status << " " << fitResult->GetParameter(1) << " " << fitResult->GetParameter(2)
+    // 	      << std::endl;
+  }
   
   // std::cout << " Final fit: " << fitResult->GetParameter(1) << " " << fitResult->GetParameter(2)
   // 	    << std::endl;
@@ -199,7 +211,7 @@ TPad* plotCalibration(TGraphErrors *gr,TPad *pad,bool doRatio, TGraphErrors *grD
   gr->Draw("ap");
 
   if (!doRatio){
-    if (!dovsE) gr->GetXaxis()->SetTitle("E_{T} (GeV)");
+    if (!dovsE) gr->GetXaxis()->SetTitle("p_{T} (GeV)");
     else gr->GetXaxis()->SetTitle("E (GeV)");
   }
   else gr->GetXaxis()->SetTitle("");
@@ -216,7 +228,7 @@ TPad* plotCalibration(TGraphErrors *gr,TPad *pad,bool doRatio, TGraphErrors *grD
   TLatex lat;
   lat.SetTextColor(6);
   lat.SetTextSize(0.1);
-  if (!dovsE) sprintf(buf,"<E> #propto a + b #times E_{T} ");
+  if (!dovsE) sprintf(buf,"<E> #propto a + b #times p_{T} ");
   else sprintf(buf,"<E> #propto a + b #times E ");
   lat.DrawLatexNDC(0.2,0.85,buf);
   sprintf(buf,"a = %3.3f #pm %3.3f %s",fitFunc->GetParameter(0),fitFunc->GetParError(0),unit.c_str());
@@ -269,7 +281,7 @@ TPad* plotCalibration(TGraphErrors *gr,TPad *pad,bool doRatio, TGraphErrors *grD
     
     grDelta->Draw("ap");
     //grDelta->GetYaxis()->SetRangeUser(0,grDelta->GetYaxis()->GetXmax());
-    if (!dovsE) grDelta->GetXaxis()->SetTitle("E_{T} (GeV)");
+    if (!dovsE) grDelta->GetXaxis()->SetTitle("p_{T} (GeV)");
     else grDelta->GetXaxis()->SetTitle("E (GeV)");
     grDelta->GetYaxis()->SetTitle("(#Delta E)/E");
 
@@ -304,9 +316,9 @@ bool plotResolution(TGraphErrors *gr,TPad *pad,
   gr->GetXaxis()->SetTitleOffset(0.7);
   gr->GetYaxis()->SetTitleOffset(0.8);
   gr->SetMinimum(0);
-  gr->SetMaximum(0.13);
+  gr->SetMaximum(0.3);
   gr->Draw("ap");
-  if (!dovsE) gr->GetXaxis()->SetTitle("E_{T} (GeV)");
+  if (!dovsE) gr->GetXaxis()->SetTitle("p_{T} (GeV)");
   else gr->GetXaxis()->SetTitle("E (GeV)");
   gr->GetYaxis()->SetTitle("#sigma/E");
 
@@ -317,21 +329,22 @@ bool plotResolution(TGraphErrors *gr,TPad *pad,
   fitFunc->SetParameter(1,const0);
   fitFunc->SetParLimits(1,0,1);
   fitFunc->SetParameter(2,noise0/2.);
-  fitFunc->SetParLimits(2,0,noise0);
+  //fitFunc->SetParLimits(2,0,noise0);
 
   if (ipu<2) 
     fitFunc->FixParameter(2,noise0);
-  //if (ipu==2) fitFunc->FixParameter(1,const0);
+  if (ipu>=2) fitFunc->FixParameter(1,const0);
   
   std::cout << " Initial params: "  << fitFunc->GetParameter(0) << " "<< fitFunc->GetParameter(1) << " " << fitFunc->GetParameter(2)
 	    << std::endl;
 
   int status = gr->Fit(fitFunc,"BIME0");
 
-  if (fitFunc->GetChisquare()/fitFunc->GetNDF()>20){
+  if (fitFunc->GetChisquare()/fitFunc->GetNDF()>50){
+    fitFunc->ReleaseParameter(1);
     fitFunc->SetParameters(stoch0,const0,noise0);
-    if (!dovsE) status = gr->Fit(fitFunc,"BIME0","",5,100);
-    else status = gr->Fit(fitFunc,"BIME0","",10,500);
+    if (!dovsE) status = gr->Fit(fitFunc,"BIME0");//,"",5,110);
+    else status = gr->Fit(fitFunc,"BIME0");//,"",10,400);
   }
 
   fitFunc->SetLineColor(6);
@@ -348,7 +361,7 @@ bool plotResolution(TGraphErrors *gr,TPad *pad,
   TLatex lat;
   lat.SetTextSize(0.1);
   lat.SetTextColor(6);
-  if (!dovsE) sprintf(buf,"#frac{#sigma}{E} #propto #frac{s}{#sqrt{E_{T}}} #oplus c #oplus #frac{n}{E_{T}}");
+  if (!dovsE) sprintf(buf,"#frac{#sigma}{E} #propto #frac{s}{#sqrt{p_{T}}} #oplus c #oplus #frac{n}{p_{T}}");
   else sprintf(buf,"#frac{#sigma}{E} #propto #frac{s}{#sqrt{E}} #oplus c #oplus #frac{n}{E}");
 
   lat.DrawLatexNDC(0.5,0.85,buf);
@@ -376,7 +389,7 @@ bool retrievePuSigma(TTree *atree, TTree *atreePu,
 		     double * calib,
 		     double etaval){
 
-  unsigned nLayers = 30;
+  unsigned nLayers = 28;
   unsigned nSR=5;
   if (!atree || !atreePu) {
     std::cout << " -- Info, both trees were not found:" << atree << " " << atreePu << std::endl;
@@ -412,10 +425,11 @@ bool retrievePuSigma(TTree *atree, TTree *atreePu,
 
   std::ostringstream label;
   for (unsigned iL(0); iL<nLayers;++iL){
-    label.str("");
-    label << "absweight_" << iL;
-    atree->SetBranchAddress(label.str().c_str(),&absweight[iL]);
-    atreePu->SetBranchAddress(label.str().c_str(),&absweight[iL]);
+    absweight[iL] = 10.0166;
+    //label.str("");
+    //label << "absweight_" << iL;
+    //atree->SetBranchAddress(label.str().c_str(),&absweight[iL]);
+    //atreePu->SetBranchAddress(label.str().c_str(),&absweight[iL]);
 
     for (unsigned iSR(0);iSR<nSR;++iSR){
       label.str("");
@@ -427,6 +441,8 @@ bool retrievePuSigma(TTree *atree, TTree *atreePu,
       atreePu->SetBranchAddress(label.str().c_str(),&subtractedenergySR[iL][iSR]);
     }
   }
+  absweight[0] = 20.3628;
+  absweight[nLayers-1] = 13.0629;
   int nEvtsPu = atreePu->GetEntries();
   int nEvts = atree->GetEntries();
   if (nEvts!=nEvtsPu) {
@@ -444,26 +460,26 @@ bool retrievePuSigma(TTree *atree, TTree *atreePu,
     
     if (ievt%100 == 0) {
       //if (nSkipped < 10) 
-      std::cout << "... Processing entry: " << ievt << " idx=" << evtIndex << " pu " << ievtpu << " idx=" << evtIndexPu << std::endl;
+      //std::cout << "... Processing entry: evt " << ievt << " idx=" << evtIndex << " / pu evt " << ievtpu << " idx=" << evtIndexPu << std::endl;
     }
 
-    if (evtIndex != evtIndexPu) {
-      if (nSkipped < 10 || nSkipped%500 == 0) std::cout << " -- Different events found: " << evtIndex << " " << evtIndexPu;
+    if (evtIndexPu!=evtIndex) {
+      //std::cout << " -- Different events found: " << evtIndex << " " << evtIndexPu;
       if (evtIndexPu<evtIndex) {
-	std::cout << ". Skipping in 140pu tree." << std::endl;
+	//std::cout << ". Skipping in 140pu tree." << std::endl;
 	ievt--;
       }
       else {
-	std::cout << ". Skipping in 0 pu tree." << std::endl;
+	//std::cout << ". Skipping in 0 pu tree." << std::endl;
 	ievtpu--;
       }
       nSkipped++;
       continue;
     }
-    if (energySR[1][14][2]<energySR[0][14][2] && evtIndex<10) {
-      std::cout << "nopu " << ievt << " idx=" << evtIndex << " pu " << ievtpu << " idx=" << evtIndexPu << std::endl
-		<< "SR2 E[14] = " << energySR[0][14][2] << " " << energySR[1][14][2] << std::endl;
-	}
+    //if (energySR[1][14][2]<energySR[0][14][2] && evtIndex<10) {
+    //std::cout << "nopu " << ievt << " idx=" << evtIndex << " pu " << ievtpu << " idx=" << evtIndexPu << std::endl
+    //		<< "SR2 E[14] = " << energySR[0][14][2] << " " << energySR[1][14][2] << std::endl;
+    //	}
 
     double puE[nSR];
     double E[nSR];
@@ -487,7 +503,7 @@ bool retrievePuSigma(TTree *atree, TTree *atreePu,
   }//loop on events
 
   for (unsigned iSR(0); iSR<nSR+1;++iSR){
-    if (p_sigma[iSR]) std::cout << " -- SR " << iSR << " - Found " << p_sigma[iSR]->GetEntries() << " events for pu subtraction sigma! nEvts = " << nEvts << " nEvtsPu=" << nEvtsPu << std::endl;
+    if (p_sigma[iSR]) std::cout << " -- SR " << iSR << " - Found " << p_sigma[iSR]->GetEntries() << " events for pu subtraction sigma! nEvts = " << nEvts << " nEvtsPu=" << nEvtsPu << " nskipped = " << nSkipped << std::endl;
   }
 
   return true;
@@ -498,27 +514,29 @@ int plotEGReso(){//main
 
   SetTdrStyle();
 
-  bool dovsE = true;
+  bool dovsE = false;
   bool processNoFitFiles = false;
 
   const unsigned nIC = 1;
   const unsigned ICval[nIC] = {3};//0,1,2,3,4,5,10,15,20,50};
 
-  const unsigned nPu = 2;//4;
-  unsigned pu[nPu] = {0,0};//,140,200};
+  const unsigned nPu = 4;//4;
+  unsigned pu[nPu] = {0,0,140,200};//,140,200};
 
   const unsigned nS = 1;
   std::string scenario[nS] = {
-    "model3/gamma/"
+    "model2/gamma/"
   };
 
   std::string foutname = "PLOTS/PuSubtraction.root";
   TFile *fout = TFile::Open(foutname.c_str(),"RECREATE");
 
-  const unsigned neta = 1;
-  unsigned eta[neta]={20};
+  const unsigned neta = 3;
+  unsigned eta[neta]={17,20,24};
   //const unsigned neta = 7;
   //unsigned eta[neta]={17,19,21,23,25,27,29};
+
+  int mycolor[7] = {1,2,4,6,7,8,9};
 
   double etaval[neta];
   double etaerr[neta];
@@ -529,11 +547,16 @@ int plotEGReso(){//main
 
   
   const unsigned nV = 1;
-  TString version[nV] = {"100"};//,"0"};
+  TString version[nV] = {"63"};//,"0"};
   
   const unsigned nLayers = 28;
-
   const unsigned nSR = 6;
+  const double radius[nSR] = {13,15,20,23,26,53};
+  double noise100[nSR];
+  double noise200[nSR];
+  double noise300[nSR];
+  unsigned ncellsSmall[nSR] = {7,13,19,31,37,151};
+  unsigned ncellsLarge[nSR] = {7,7,13,19,19,85};
   double fitQual[nSR];
   double srval[nSR];
   double srerr[nSR];
@@ -542,6 +565,10 @@ int plotEGReso(){//main
     srval[iSR] = iSR*1.;
     srerr[iSR] = 0.;
     if (iSR>0) fitQual[iSR] = 30;
+    noise100[iSR] = sqrt(pow(sqrt(10*ncellsSmall[iSR])*0.00192,2)+pow(sqrt(10*ncellsSmall[iSR])*0.00241,2)+pow(sqrt(8*ncellsSmall[iSR])*0.00325,2));
+    noise200[iSR] = sqrt(pow(sqrt(10*ncellsLarge[iSR])*0.00097,2)+pow(sqrt(10*ncellsLarge[iSR])*0.00121,2)+pow(sqrt(8*ncellsLarge[iSR])*0.00164,2));
+    noise300[iSR] = sqrt(pow(sqrt(10*ncellsLarge[iSR])*0.00049,2)+pow(sqrt(10*ncellsLarge[iSR])*0.00062,2)+pow(sqrt(8*ncellsLarge[iSR])*0.00083,2));
+    std::cout << " Noise vals for iSR " << iSR << " = " << noise100[iSR] << " " << noise200[iSR] << " " << noise300[iSR] << " GeV." << std::endl;
   }
 
 
@@ -560,7 +587,7 @@ int plotEGReso(){//main
   std::ostringstream saveName;
 
   //unsigned genEnAll[]={3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200};
-  unsigned genEnAll[]={5,10,20,30,50,70,100};
+  unsigned genEnAll[]={5,10,20,30,40,60,80,100,150,200};
   //unsigned genEnAll[]={7,10,20,30,40};
   const unsigned nGenEnAll=sizeof(genEnAll)/sizeof(unsigned);
 
@@ -588,7 +615,7 @@ int plotEGReso(){//main
     myc[iC]->Divide(2,3);
   }
 
-  TCanvas *mycReso = new TCanvas("mycReso","mycReso",750,500);
+  TCanvas *mycReso = new TCanvas("mycReso","mycReso",750,750);
   TCanvas *mycR = new TCanvas("mycR","Sampling",1500,1000);
   TCanvas *mycC = new TCanvas("mycC","Constant",1500,1000);
   TCanvas *mycN = new TCanvas("mycN","Noise",1500,1000);
@@ -604,18 +631,19 @@ int plotEGReso(){//main
 
   for (unsigned ic(0);ic<nIC;++ic){//loop on intercalib
     
-    TFile *fcalib;
-    std::ostringstream label;
-    label << "PLOTS/CalibReso";
-    if (dovsE) label << "_vsE";
-    label << "_IC" << ICval[ic];
-    label << ".root";
-    fcalib = TFile::Open(label.str().c_str(),"RECREATE");
-    
     for (unsigned iV(0); iV<nV;++iV){//loop on versions
       for (unsigned iS(0); iS<nS;++iS){//loop on scenarios
+	TString plotDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalTDR/gittestV8/version"+version[iV]+"/"+scenario[iS]+"/";
+
+	TFile *fcalib;
+	std::ostringstream label;
+	label << plotDir ;
+	label << "/CalibReso";
+	if (dovsE) label << "_vsE";
+	label << "_IC" << ICval[ic];
+	label << ".root";
+	fcalib = TFile::Open(label.str().c_str(),"RECREATE");
 	
-	TString plotDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalHexa/gittestHexa/version"+version[iV]+"/"+scenario[iS]+"/";
 	TTree *ltree[neta][nPu][nGenEnAll];
 	TGraphErrors *resoRecoFit[nPu][neta][nSR];
 	
@@ -625,593 +653,619 @@ int plotEGReso(){//main
 	  etaerr[ieta] = 0;
 	  
 	  for (unsigned ipu(0); ipu<nPu; ++ipu){//loop on pu
+	    //if (ieta<2 && ipu==2) continue;
 	    unsigned puOption = pu[ipu];
 
-	  std::string unit = "MIPS";
-	  if (ipu>0) unit = "GeV";
-
-	  //identify valid energy values
-	  bool skip[nGenEnAll];
-	  unsigned nValid = 0;
-	  for (unsigned iE(0); iE<nGenEnAll; ++iE){
-	    ltree[ieta][ipu][iE] = 0;
-	    skip[iE] = false;
-	    TFile *inputFile = 0;
-	    std::ostringstream linputStr;
-	    linputStr << plotDir ;
-	    linputStr << "eta" << eta[ieta] << "_et" << genEnAll[iE] << "_pu" << pu[ipu] << "_IC" << ICval[ic] << "_Si2";
-	    if (!processNoFitFiles) linputStr << ".root";
-	    else linputStr << "_nofit.root";
-	    inputFile = TFile::Open(linputStr.str().c_str());
-	    if (!inputFile) {
-	      std::cout << " -- Error, input file " << linputStr.str() << " cannot be opened. Skipping..." << std::endl;
-	      //	    return 1;
-	      skip[iE] = true;
-	    }
-	    else {
-	      inputFile->cd("Energies");
-	      ltree[ieta][ipu][iE] = (TTree*)gDirectory->Get("Ereso");
-	      
-	      if (!ltree[ieta][ipu][iE]){
-		std::cout << " -- File " << inputFile->GetName() << " sucessfully opened but tree Ereso not found! Skipping." << std::endl;
+	    std::string unit = "MIPS";
+	    if (ipu>0) unit = "GeV";
+	    
+	    //identify valid energy values
+	    bool skip[nGenEnAll];
+	    unsigned nValid = 0;
+	    for (unsigned iE(0); iE<nGenEnAll; ++iE){
+	      ltree[ieta][ipu][iE] = 0;
+	      skip[iE] = false;
+	      TFile *inputFile = 0;
+	      std::ostringstream linputStr;
+	      linputStr << plotDir ;
+	      if (ipu>=2 && eta[ieta]==17) linputStr << "300u/";
+	      else if (ipu>=2 && eta[ieta]==20) linputStr << "200u/";
+	      linputStr << "eta" << eta[ieta] << "_et" << genEnAll[iE];// << "_pu" << pu[ipu];
+	      if (ipu>=2) linputStr << "_Pu" << pu[ipu];
+	      linputStr << "_IC" << ICval[ic];// << "_Si2";
+	      if (!processNoFitFiles) linputStr << ".root";
+	      else linputStr << "_nofit.root";
+	      inputFile = TFile::Open(linputStr.str().c_str());
+	      if (!inputFile) {
+		std::cout << " -- Error, input file " << linputStr.str() << " cannot be opened. Skipping..." << std::endl;
+		//	    return 1;
 		skip[iE] = true;
-	      } else { 
-	      std::cout << " -- File " << inputFile->GetName() << " sucessfully opened and tree found." << std::endl;
-	      nValid++;
 	      }
-	    }
-	  }
-	  
-	  unsigned newidx = 0;
-	  const unsigned nGenEn = nValid;
-	  unsigned genEn[nGenEn];
-	  unsigned oldIdx[nGenEn];
-	  for (unsigned iE(0); iE<nGenEnAll; ++iE){	  
-	    if (!skip[iE]) {
-	      genEn[newidx]=genEnAll[iE];
-	      oldIdx[newidx]=iE;
-	      newidx++;
-	    }
-	  }
-	  
-	  TH1F *p_Ereco[nGenEn][nSR];
-	  TGraphErrors *calibRecoFit[nSR];
-	  TGraphErrors *calibRecoDelta[nSR];
-
-	  //draw calibration curves
-	  for (unsigned iSR(0); iSR<nSR;++iSR){//loop on signal region
-	    TString srStr = "";
-	    srStr += iSR;
-	    srStr += "eta";
-	    srStr += eta[ieta];
-	    srStr += "pu";
-	    srStr += ipu;
-	    calibRecoFit[iSR] = new TGraphErrors();
-	    calibRecoFit[iSR]->SetName("calibRecoFit"+srStr);
-	    calibRecoFit[iSR]->SetTitle("");
-	    calibRecoFit[iSR]->SetMarkerStyle(20);
-	    calibRecoFit[iSR]->SetMarkerColor(1);
-	    calibRecoFit[iSR]->SetLineColor(1);
-	    calibRecoDelta[iSR] = (TGraphErrors *) calibRecoFit[iSR]->Clone("calibRecoDelta"+srStr);
-	    resoRecoFit[ipu][ieta][iSR] = (TGraphErrors *) calibRecoFit[iSR]->Clone("resoRecoFit"+srStr);
-	  }
-
-	  //get calib and offset from 0 pu file for each SR.
-	  
-	  std::ostringstream lsave;
-	  lsave << "eta"<< eta[ieta]  << "_pu" << puOption;
-	  fout->mkdir(lsave.str().c_str());
-	  fout->cd(lsave.str().c_str());
-	  gStyle->SetOptStat("eMRuo");
-	  TH1F *p_sigma[nSR];
-	  TH2F *p_subtrEvspuE[nSR];
-	  if (pu[ipu]>0){
-	    for (unsigned iSR(0); iSR<nSR;++iSR){
-	      label.str("");
-	      label << "p_sigma_" << iSR << "_" << lsave.str();
-	      if (iSR<(nSR-1) ) p_sigma[iSR] = new TH1F(label.str().c_str(),";PuE-E (GeV)",500,-20,20);
-	      else p_sigma[iSR] = new TH1F(label.str().c_str(),";PuE-E (GeV)",5000,0,10000);
-	      label.str("");
-	      label << "p_subtrEvspuE_" << iSR << "_" << lsave.str();
-	      p_subtrEvspuE[iSR] = new TH2F(label.str().c_str(),";PuE-E (GeV);PuE-PuEsubtr (GeV)",
-					    500,-20,20,500,-20,20);
-	      //p_sigma[iSR]->StatOverflows();
-	    }
-	  }
-
-	  for (unsigned iE(0); iE<nGenEn; ++iE){
-	    
-	    std::cout << "- Processing energy : " << genEn[iE] 
-		      << std::endl;
-	    
-	    TFile *inputFile = 0;
-	    std::ostringstream linputStr;
-	    linputStr << plotDir ;
-	    linputStr << "eta" << eta[ieta] << "_et" << genEn[iE] << "_pu" << pu[ipu]  << "_IC" << ICval[ic] << "_Si2";
-	    if (!processNoFitFiles) linputStr << ".root" ;
-	    else linputStr << "_nofit.root";
-	    inputFile = TFile::Open(linputStr.str().c_str());
-	    inputFile->cd("Energies");
-
-	    std::cout << " -- Tree entries for eta=" << eta[ieta] << " pu=" << pu[ipu] << " : " << ltree[ieta][ipu][oldIdx[iE]]->GetEntries() << std::endl;
-
-	    for (unsigned iSR(0); iSR<nSR;++iSR){//loop on signal region
-	      std::cout << " --Processing signal region: " << iSR << std::endl;
-
-	      mycE[iE]->cd(iSR+1);
-	      gStyle->SetOptStat(0);
-	      gStyle->SetOptFit(0);
-
-	      std::ostringstream lName;
-	      lName.str("");
-	      lName << std::setprecision(6);
-	      if (ipu>0) lName << "(";
-	      if (iSR<5){
-		for (unsigned iL(0);iL<nLayers;++iL){	      
-		  if (iL==0) lName << "absweight_" << iL  << "*subtractedenergy_" << iL << "_SR" << iSR ;
-		  else lName << "+" << "absweight_" << iL  << "*subtractedenergy_" << iL << "_SR" << iSR ;
+	      else {
+		inputFile->cd("Energies");
+		ltree[ieta][ipu][iE] = (TTree*)gDirectory->Get("Ereso");
+		
+		if (!ltree[ieta][ipu][iE]){
+		  std::cout << " -- File " << inputFile->GetName() << " sucessfully opened but tree Ereso not found! Skipping." << std::endl;
+		  skip[iE] = true;
+		} else { 
+		  std::cout << " -- File " << inputFile->GetName() << " sucessfully opened and tree found." << std::endl;
+		  nValid++;
 		}
 	      }
-	      else lName << "wgtEtotal";///" << tanh(etaval[ieta]);
-	      if (ipu>0) lName << " - " << offset[0][ieta][iSR] << ")/" << calib[0][ieta][iSR];
-	      ltree[ieta][ipu][oldIdx[iE]]->Draw(lName.str().c_str(),"","");
-	      lName.str("");
-	      lName << "energy" << genEn[iE] << "_SR" << iSR ;
-	      p_Ereco[iE][iSR] = (TH1F*)(gPad->GetPrimitive("htemp"))->Clone(lName.str().c_str()); // 1D
-	      //if (iSR==7) p_Ereco[iE][iSR] = (TH1F*)gDirectory->Get("p_wgtEtotal");
-	      if (!p_Ereco[iE][iSR]){
-		std::cout << " -- ERROR, pointer for histogram " << lName.str() << " is null." << std::endl;
-		return 1;
+	    }
+	    
+	    unsigned newidx = 0;
+	    const unsigned nGenEn = nValid;
+	    unsigned genEn[nGenEn];
+	    unsigned oldIdx[nGenEn];
+	    for (unsigned iE(0); iE<nGenEnAll; ++iE){	  
+	      if (!skip[iE]) {
+		genEn[newidx]=genEnAll[iE];
+		oldIdx[newidx]=iE;
+		newidx++;
 	      }
-	      std::cout << " --- Reco E = entries " << p_Ereco[iE][iSR]->GetEntries() 
-			<< " mean " << p_Ereco[iE][iSR]->GetMean() 
-			<< " rms " << p_Ereco[iE][iSR]->GetRMS() 
-			<< " overflows " << p_Ereco[iE][iSR]->GetBinContent(p_Ereco[iE][iSR]->GetNbinsX()+1)
+	    }
+	    
+	    TH1F *p_Ereco[nGenEn][nSR];
+	    TGraphErrors *calibRecoFit[nSR];
+	    TGraphErrors *calibRecoDelta[nSR];
+	    
+	    //draw calibration curves
+	    for (unsigned iSR(0); iSR<nSR;++iSR){//loop on signal region
+	      TString srStr = "";
+	      srStr += iSR;
+	      srStr += "eta";
+	      srStr += eta[ieta];
+	      srStr += "pu";
+	      srStr += ipu;
+	      calibRecoFit[iSR] = new TGraphErrors();
+	      calibRecoFit[iSR]->SetName("calibRecoFit"+srStr);
+	      calibRecoFit[iSR]->SetTitle("");
+	      calibRecoFit[iSR]->SetMarkerStyle(20);
+	      calibRecoFit[iSR]->SetMarkerColor(1);
+	      calibRecoFit[iSR]->SetLineColor(1);
+	      calibRecoDelta[iSR] = (TGraphErrors *) calibRecoFit[iSR]->Clone("calibRecoDelta"+srStr);
+	      resoRecoFit[ipu][ieta][iSR] = (TGraphErrors *) calibRecoFit[iSR]->Clone("resoRecoFit"+srStr);
+	    }
+	    
+	    //get calib and offset from 0 pu file for each SR.
+	    
+	    std::ostringstream lsave;
+	    lsave << "eta"<< eta[ieta]  << "_pu" << puOption;
+	    fout->mkdir(lsave.str().c_str());
+	    fout->cd(lsave.str().c_str());
+	    gStyle->SetOptStat("eMRuo");
+	    TH1F *p_sigma[nSR];
+	    TH2F *p_subtrEvspuE[nSR];
+	    if (pu[ipu]>0){
+	      for (unsigned iSR(0); iSR<nSR;++iSR){
+		label.str("");
+		label << "p_sigma_" << iSR << "_" << lsave.str();
+		//if (iSR<(nSR-1) ) 
+		p_sigma[iSR] = new TH1F(label.str().c_str(),";PuE-E (GeV)",500,-20,20);
+		//else p_sigma[iSR] = new TH1F(label.str().c_str(),";PuE-E (GeV)",5000,0,10000);
+		label.str("");
+		label << "p_subtrEvspuE_" << iSR << "_" << lsave.str();
+		p_subtrEvspuE[iSR] = new TH2F(label.str().c_str(),";PuE-E (GeV);PuE-PuEsubtr (GeV)",
+					      500,-20,20,500,-20,20);
+		//p_sigma[iSR]->StatOverflows();
+	      }
+	    }
+	    
+	    for (unsigned iE(0); iE<nGenEn; ++iE){
+	      
+	      std::cout << "- Processing energy : " << genEn[iE] 
 			<< std::endl;
 	      
+	      TFile *inputFile = 0;
+	      std::ostringstream linputStr;
+	      linputStr << plotDir ;
+	      if (ipu>=2 && eta[ieta]==17) linputStr << "300u/";
+	      else if (ipu>=2 && eta[ieta]==20) linputStr << "200u/";
+	      linputStr << "eta" << eta[ieta] << "_et" << genEn[iE];
+	      // << "_pu" << pu[ipu];
+	      if (ipu>=2) linputStr << "_Pu" << pu[ipu];
+	      linputStr << "_IC" << ICval[ic];// << "_Si2";
+	      if (!processNoFitFiles) linputStr << ".root" ;
+	      else linputStr << "_nofit.root";
+	      inputFile = TFile::Open(linputStr.str().c_str());
+	      inputFile->cd("Energies");
 	      
-	      p_Ereco[iE][iSR]->SetTitle((";E ("+unit+");events").c_str());
-
-	      //take min 20 bins
-	      //if(p_Ereco[iE][iSR]->GetNbinsX()>40) p_Ereco[iE][iSR]->Rebin(2);
-
-	      //skip data with too little stat
-	      if (p_Ereco[iE][iSR]->GetEntries()<nEvtMin) {
-		gPad->Clear();
-		continue;
+	      std::cout << " -- Tree entries for eta=" << eta[ieta] << " pu=" << pu[ipu] << " : " << ltree[ieta][ipu][oldIdx[iE]]->GetEntries() << std::endl;
+	      
+	      for (unsigned iSR(0); iSR<nSR;++iSR){//loop on signal region
+		std::cout << " --Processing signal region: " << iSR << std::endl;
+		
+		mycE[iE]->cd(iSR+1);
+		gStyle->SetOptStat(0);
+		gStyle->SetOptFit(0);
+		
+		std::ostringstream lName;
+		lName.str("");
+		lName << std::setprecision(6);
+		if (ipu>0) lName << "(";
+		if (iSR<6){
+		  for (unsigned iL(0);iL<nLayers;++iL){	      
+		    //if (iL==0) lName << "absweight_" << iL  << "*subtractedenergy_" << iL << "_SR" << iSR ;
+		    //else lName << "+" << "absweight_" << iL  << "*subtractedenergy_" << iL << "_SR" << iSR ;
+		    //if (iL==0) lName << "absweight_" << iL  << "*energy_" << iL << "_SR" << iSR ;
+		    //else lName << "+" << "absweight_" << iL  << "*energy_" << iL << "_SR" << iSR ;
+		    if (iL==0) lName << "20.3628*energy_" << iL << "_SR" << iSR ;
+		    else if (iL==nLayers-1) lName << "+13.0629*energy_" << iL << "_SR" << iSR ;
+		    else lName << "+10.0166*energy_" << iL << "_SR" << iSR ;
+		  }
+		}
+		else lName << "wgtEtotal";///" << tanh(etaval[ieta]);
+		if (iSR==4){
+		  std::cout << lName.str() << std::endl;
+		  return 1;
+		}
+		if (ipu>0) lName << " - " << offset[0][ieta][iSR] << ")/" << calib[0][ieta][iSR];
+		ltree[ieta][ipu][oldIdx[iE]]->Draw(lName.str().c_str(),"","");
+		lName.str("");
+		lName << "energy" << genEn[iE] << "_SR" << iSR ;
+		p_Ereco[iE][iSR] = (TH1F*)(gPad->GetPrimitive("htemp"))->Clone(lName.str().c_str()); // 1D
+		//if (iSR==7) p_Ereco[iE][iSR] = (TH1F*)gDirectory->Get("p_wgtEtotal");
+		if (!p_Ereco[iE][iSR]){
+		  std::cout << " -- ERROR, pointer for histogram " << lName.str() << " is null." << std::endl;
+		  return 1;
+		}
+		std::cout << " --- Reco E = entries " << p_Ereco[iE][iSR]->GetEntries() 
+			  << " mean " << p_Ereco[iE][iSR]->GetMean() 
+			  << " rms " << p_Ereco[iE][iSR]->GetRMS() 
+			  << " overflows " << p_Ereco[iE][iSR]->GetBinContent(p_Ereco[iE][iSR]->GetNbinsX()+1)
+			  << std::endl;
+		
+		
+		p_Ereco[iE][iSR]->SetTitle((";E ("+unit+");events").c_str());
+		
+		//take min 20 bins
+		//if(p_Ereco[iE][iSR]->GetNbinsX()>40) p_Ereco[iE][iSR]->Rebin(2);
+		
+		//skip data with too little stat
+		if (p_Ereco[iE][iSR]->GetEntries()<nEvtMin) {
+		  gPad->Clear();
+		  continue;
+		}
+		
+		TPad *lpad = (TPad*)(mycE[iE]->cd(iSR+1));
+		FitResult lres;
+		if (fitEnergy(p_Ereco[iE][iSR],lpad,unit,lres,iSR)!=0) return 1;
+		lpad->cd();
+		char buf[500];
+		sprintf(buf,"#gamma p_{T}=%d GeV + PU %d",genEn[iE],pu[ipu]);
+		TLatex lat;
+		lat.SetTextSize(0.05);
+		lat.DrawLatexNDC(0.25,0.965,buf);
+		sprintf(buf,"#eta=%3.1f, r = %3.0f mm",etaval[ieta],radius[iSR]);
+		lat.SetTextSize(0.06);
+		lat.DrawLatexNDC(0.15,0.87,buf);
+		if (iSR==4) lat.DrawLatexNDC(0.01,0.01,"HGCAL G4 standalone");
+		p_chi2ndf[iSR]->Fill(lres.chi2/lres.ndf);
+		
+		//filter out bad points
+		if (lres.chi2/lres.ndf > fitQual[iSR]) {
+		  std::cout << " --- INFO! Point Egen=" 
+			    << genEn[iE] 
+			    << " eta=" << etaval[ieta]
+			    << " pu=" << pu[ipu]
+			    << " skipped, chi2/ndf = "
+			    << lres.chi2/lres.ndf
+			    << std::endl;
+		  continue;
+		}
+		
+		Int_t np=calibRecoFit[iSR]->GetN();
+		if (!dovsE) calibRecoFit[iSR]->SetPoint(np,genEn[iE],lres.mean);
+		else calibRecoFit[iSR]->SetPoint(np,E(genEn[iE],eta[ieta]),lres.mean);
+		calibRecoFit[iSR]->SetPointError(np,0.0,lres.meanerr);
+		
+		double reso = fabs(lres.sigma/lres.mean);
+		if (!dovsE) resoRecoFit[ipu][ieta][iSR]->SetPoint(np,genEn[iE],reso);
+		else resoRecoFit[ipu][ieta][iSR]->SetPoint(np,E(genEn[iE],eta[ieta]),reso);
+		double errFit = reso*sqrt(pow(lres.sigmaerr/lres.sigma,2)+pow(lres.meanerr/lres.mean,2));
+		resoRecoFit[ipu][ieta][iSR]->SetPointError(np,0,errFit);
+		
+	      }//loop on SR
+	      
+	      saveName.str("");
+	      saveName << plotDir << "/Ereco_eta" << eta[ieta] << "_pu" << puOption;
+	      if (ipu==0) saveName << "raw";
+	      saveName << "_E" << genEn[iE] << pSuffix;
+	      mycE[iE]->Update();
+	      mycE[iE]->Print((saveName.str().c_str()+pSuffix)+".pdf");
+	      
+	      //fill sigma PU for lower energies
+	      if (ipu>1){// && genEn[iE]>5 && genEn[iE]<40) {
+		bool success = retrievePuSigma(ltree[ieta][1][oldIdx[iE]], ltree[ieta][ipu][oldIdx[iE]],
+					       p_sigma,
+					       p_subtrEvspuE,
+					       calib[0][ieta],
+					       etaval[ieta]);
+		if (!success) return 1;
+		mycSig->cd();
+		p_subtrEvspuE[2]->Draw("colz");
+		
 	      }
+	      
+	      
+	    }//loop on energies
+	    
+	    drawChi2(myc[2],p_chi2ndf);
 
-	      TPad *lpad = (TPad*)(mycE[iE]->cd(iSR+1));
-	      FitResult lres;
-	      if (fitEnergy(p_Ereco[iE][iSR],lpad,unit,lres,iSR)!=0) return 1;
+
+	    //plot and fit calib
+	    for (unsigned iSR(0); iSR<nSR;++iSR){//loop on signal region
+	      //if (pu[ipu]!=0 && iSR==nSR-1) continue;
+	      TPad *lpad = (TPad*)(myc[0]->cd(iSR+1));
+	      TPad *upper = plotCalibration(calibRecoFit[iSR],lpad,
+					    true,calibRecoDelta[iSR],
+					    unit,
+					    calib[ipu][ieta][iSR],
+					    calibErr[ipu][ieta][iSR],
+					    offset[ipu][ieta][iSR],
+					    offsetErr[ipu][ieta][iSR],
+					    eta[ieta],dovsE);
+	      upper->cd();
+	      char buf[500];
+	      sprintf(buf,"#gamma #eta=%3.1f + PU %d",etaval[ieta],pu[ipu]);
+	      TLatex lat;
+	      lat.SetTextSize(0.1);
+	      lat.DrawLatexNDC(0.7,0.15,buf);
+	      sprintf(buf,"r = %3.0f mm",radius[iSR]);
+	      lat.DrawLatexNDC(0.7,0.3,buf);
+	      lat.SetTextSize(0.06);
+	      if (iSR==0) lat.DrawLatexNDC(0.01,0.94,"HGCAL G4 standalone");
+	    
+	    }
+
+	    myc[0]->Update();
+	    lsave.str("");
+	    lsave << plotDir << "/";
+	    if (ipu==0) lsave << "CalibMipToGeV";
+	    else lsave << "Calib";
+	    lsave << "_eta" << eta[ieta] << "_pu" << puOption << pSuffix;
+	    if (dovsE) lsave << "_vsE";
+	    myc[0]->Print((lsave.str()+".pdf").c_str());
+
+	    //plot reso
+	    for (unsigned iSR(0); iSR<nSR;++iSR){//loop on signal region
+	      //if (pu[ipu]!=0 && iSR==nSR-1) continue;
+	      TPad *lpad = (TPad*)(myc[1]->cd(iSR+1));
+
+	      double stoch0 = pu[ipu]==0? (dovsE?0.25 : 0.14) : sigmaStoch[1][ieta][iSR];
+	      double const0 = pu[ipu]==0? 0.01 : sigmaConst[1][ieta][iSR];
+
+	      //limit range to get more realistic RMS ?
+	      //if (pu[ipu]!=0 && iSR<(nSR-1)) p_sigma[iSR]->GetXaxis()->SetRangeUser(-5,15);
+	      double noise0 = pu[ipu]==0? (eta[ieta]==24?noise100[iSR]:eta[ieta]==20?noise200[iSR]:eta[ieta]==17?noise300[iSR]:0) : p_sigma[iSR]->GetRMS();
+	   
+
+	      bool success = plotResolution(resoRecoFit[ipu][ieta][iSR],lpad,
+					    ipu,eta[ieta],
+					    stoch0,const0,noise0,
+					    sigmaStoch[ipu][ieta][iSR],
+					    sigmaStochErr[ipu][ieta][iSR],
+					    sigmaConst[ipu][ieta][iSR],
+					    sigmaConstErr[ipu][ieta][iSR],
+					    sigmaNoise[ipu][ieta][iSR],
+					    sigmaNoiseErr[ipu][ieta][iSR],
+					    dovsE);
 	      lpad->cd();
 	      char buf[500];
-	      sprintf(buf,"#gamma E_{T}=%d GeV + PU %d",genEn[iE],pu[ipu]);
+	      sprintf(buf,"#gamma #eta=%3.1f + PU %d",etaval[ieta],pu[ipu]);
 	      TLatex lat;
-	      lat.SetTextSize(0.05);
-	      lat.DrawLatexNDC(0.25,0.965,buf);
-	      sprintf(buf,"#eta=%3.1f, SR %d",etaval[ieta],iSR);
-	      lat.SetTextSize(0.06);
-	      lat.DrawLatexNDC(0.15,0.87,buf);
-	      if (iSR==4) lat.DrawLatexNDC(0.01,0.01,"HGCAL G4 standalone");
-	      p_chi2ndf[iSR]->Fill(lres.chi2/lres.ndf);
+	      lat.SetTextSize(0.1);
+	      lat.DrawLatexNDC(0.15,0.85,buf);
+	      sprintf(buf,"r = %3.0f mm",radius[iSR]);
+	      lat.DrawLatexNDC(0.15,0.75,buf);
+	      if (iSR==6) lat.DrawLatexNDC(0.01,0.01,"HGCAL G4 standalone");
 
-	      //filter out bad points
-	      if (lres.chi2/lres.ndf > fitQual[iSR]) {
-		std::cout << " --- INFO! Point Egen=" 
-			  << genEn[iE] 
-			  << " eta=" << etaval[ieta]
-			  << " pu=" << pu[ipu]
-			  << " skipped, chi2/ndf = "
-			  << lres.chi2/lres.ndf
-			  << std::endl;
+	      if (!success) {
 		continue;
+		//return 1;	    
 	      }
 
-	      Int_t np=calibRecoFit[iSR]->GetN();
-	      if (!dovsE) calibRecoFit[iSR]->SetPoint(np,genEn[iE],lres.mean);
-	      else calibRecoFit[iSR]->SetPoint(np,E(genEn[iE],eta[ieta]),lres.mean);
-	      calibRecoFit[iSR]->SetPointError(np,0.0,lres.meanerr);
-
-	      double reso = fabs(lres.sigma/lres.mean);
-	      if (!dovsE) resoRecoFit[ipu][ieta][iSR]->SetPoint(np,genEn[iE],reso);
-	      else resoRecoFit[ipu][ieta][iSR]->SetPoint(np,E(genEn[iE],eta[ieta]),reso);
-	      double errFit = reso*sqrt(pow(lres.sigmaerr/lres.sigma,2)+pow(lres.meanerr/lres.mean,2));
-	      resoRecoFit[ipu][ieta][iSR]->SetPointError(np,0,errFit);
+	      lsave.str("");
+	      lsave << "SR" << iSR;
+	      fcalib->mkdir(lsave.str().c_str());
+	      fcalib->cd(lsave.str().c_str());
+	      calibRecoFit[iSR]->Write();
+	      calibRecoDelta[iSR]->Write();
+	      resoRecoFit[ipu][ieta][iSR]->Write();
 
 	    }//loop on SR
 
-	    saveName.str("");
-	    saveName << plotDir << "/Ereco_eta" << eta[ieta] << "_pu" << puOption;
-	    if (ipu==0) saveName << "raw";
-	    saveName << "_E" << genEn[iE] << pSuffix;
-	    mycE[iE]->Update();
-	    mycE[iE]->Print((saveName.str().c_str()+pSuffix)+".pdf");
-	    
-	    //fill sigma PU for lower energies
-	    if (ipu>1 && genEn[iE]>5 && genEn[iE]<40) {
-	      bool success = retrievePuSigma(ltree[ieta][1][oldIdx[iE]], ltree[ieta][ipu][oldIdx[iE]],
-					     p_sigma,
-					     p_subtrEvspuE,
-					     calib[0][ieta],
-					     etaval[ieta]);
-	      if (!success) return 1;
-	      mycSig->cd();
-	      p_subtrEvspuE[2]->Draw("colz");
-
-	    }
+	    myc[1]->Update();
+	    lsave.str("");
+	    lsave << plotDir << "/";
+	    if (ipu==0) lsave << "ResoRaw";
+	    else lsave << "Reso";
+	    lsave << "_eta" << eta[ieta] << "_pu" << puOption << pSuffix;
+	    if (dovsE) lsave << "_vsE";
+	    myc[1]->Print((lsave.str()+".pdf").c_str());
 
 
-	  }//loop on energies
-	 
-	  drawChi2(myc[2],p_chi2ndf);
 
+	  }//loop on pu
+	}//loop on eta
 
-	  //plot and fit calib
+	fout->Write();
+	if (nGenEnAll==1) continue;
+
+	TLatex lat;
+	char buf[500];
+
+      
+	//plot and fit calib parameters vs eta
+	TGraphErrors *grSlope[nPu][nSR];
+	TGraphErrors *grOffset[nPu][nSR];
+
+	gStyle->SetOptStat(0);
+	//gStyle->SetOptFit(1111);
+	gStyle->SetStatX(0.64);//top-right corner
+	gStyle->SetStatY(0.85);
+	gStyle->SetStatW(0.25);
+	gStyle->SetStatH(0.25);
+	gStyle->SetStatColor(0);
+
+	for (unsigned ipu(0); ipu<nPu; ++ipu){//loop on pu
+	  mycCalibEta->Clear();
+	  mycOffsetEta->Clear();
+	  mycCalibEta->Divide(3,2);
+	  mycOffsetEta->Divide(3,2);
+
 	  for (unsigned iSR(0); iSR<nSR;++iSR){//loop on signal region
-	    if (pu[ipu]!=0 && iSR==nSR-1) continue;
-	    TPad *lpad = (TPad*)(myc[0]->cd(iSR+1));
-	    TPad *upper = plotCalibration(calibRecoFit[iSR],lpad,
-					  true,calibRecoDelta[iSR],
-					  unit,
-					  calib[ipu][ieta][iSR],
-					  calibErr[ipu][ieta][iSR],
-					  offset[ipu][ieta][iSR],
-					  offsetErr[ipu][ieta][iSR],
-					  eta[ieta],dovsE);
-	    upper->cd();
-	    char buf[500];
-	    sprintf(buf,"#gamma #eta=%3.1f + PU %d",etaval[ieta],pu[ipu]);
-	    TLatex lat;
-	    lat.SetTextSize(0.1);
-	    lat.DrawLatexNDC(0.7,0.15,buf);
-	    sprintf(buf,"SR %d",iSR);
-	    lat.DrawLatexNDC(0.7,0.3,buf);
+	    //if (pu[ipu]!=0 && iSR==nSR-1) continue;
+	    grSlope[ipu][iSR] = new TGraphErrors();
+	    std::ostringstream llabel;
+	    llabel << "grSlope_" << ipu << "_SR" << iSR;
+	    grSlope[ipu][iSR]->SetName(llabel.str().c_str());
+	    llabel.str("");
+	    llabel << ";#eta;Calib slope (" ;
+	    if (ipu==0) llabel << "MIPs/GeV)";
+	    else llabel << "GeV/GeV)";
+	    grSlope[ipu][iSR]->SetTitle(llabel.str().c_str());
+	    grSlope[ipu][iSR]->SetMarkerStyle(20+iSR);
+	    grSlope[ipu][iSR]->SetMarkerColor(1+iSR);
+	    grSlope[ipu][iSR]->SetLineColor(1+iSR);
+	    llabel.str("");
+	    llabel << "grOffset_" << ipu << "_SR" << iSR;
+	    grOffset[ipu][iSR] = (TGraphErrors *)grSlope[ipu][iSR]->Clone(llabel.str().c_str());
+	    llabel.str("");
+	    llabel << ";#eta;Calib offset (" ;
+	    if (ipu==0) llabel << "MIPs)";
+	    else llabel << "GeV)";
+	    grOffset[ipu][iSR]->SetTitle(llabel.str().c_str());
+
+	    for (unsigned ieta(0);ieta<neta;++ieta){//loop on eta
+	      grSlope[ipu][iSR]->SetPoint(ieta,etaval[ieta],calib[ipu][ieta][iSR]);
+	      grSlope[ipu][iSR]->SetPointError(ieta,0.0,calibErr[ipu][ieta][iSR]);
+
+	      grOffset[ipu][iSR]->SetPoint(ieta,etaval[ieta],offset[ipu][ieta][iSR]);
+	      grOffset[ipu][iSR]->SetPointError(ieta,0.0,offsetErr[ipu][ieta][iSR]);
+	    }//loop on eta
+	    mycCalibEta->cd(iSR+1);
+	    grSlope[ipu][iSR]->Draw();
+	    grSlope[ipu][iSR]->Fit("pol2","","same");
+	     
 	    lat.SetTextSize(0.06);
-	    if (iSR==0) lat.DrawLatexNDC(0.01,0.94,"HGCAL G4 standalone");
-	    
-	  }
+	    sprintf(buf,"pu %d, r = %3.0f mm",pu[ipu],radius[iSR]);
+	    lat.DrawLatexNDC(0.2,0.87,buf);
+	    if (iSR==4) lat.DrawLatexNDC(0.01,0.01,"HGCAL G4 standalone");
 
-	  myc[0]->Update();
-	  lsave.str("");
-	  lsave << plotDir << "/";
-	  if (ipu==0) lsave << "CalibMipToGeV";
-	  else lsave << "Calib";
-	  lsave << "_eta" << eta[ieta] << "_pu" << puOption << pSuffix;
-	  if (dovsE) lsave << "_vsE";
-	  myc[0]->Print((lsave.str()+".pdf").c_str());
+	    mycOffsetEta->cd(iSR+1);
+	    grOffset[ipu][iSR]->Draw();
+	    grOffset[ipu][iSR]->Fit("pol2","","same");
 
-	  //plot reso
-	  for (unsigned iSR(0); iSR<nSR;++iSR){//loop on signal region
-	    if (pu[ipu]!=0 && iSR==nSR-1) continue;
-	    TPad *lpad = (TPad*)(myc[1]->cd(iSR+1));
+	    lat.DrawLatexNDC(0.2,0.87,buf);
+	    if (iSR==4) lat.DrawLatexNDC(0.01,0.01,"HGCAL G4 standalone");
 
-	    double stoch0 = pu[ipu]==0? (dovsE?0.25 : 0.14) : sigmaStoch[1][ieta][iSR];
-	    double const0 = pu[ipu]==0? 0.01 : sigmaConst[1][ieta][iSR];
-
-	    //limit range to get more realistic RMS ?
-	    //if (pu[ipu]!=0 && iSR<(nSR-1)) p_sigma[iSR]->GetXaxis()->SetRangeUser(0,5);
-	    double noise0 = pu[ipu]==0? 0 : p_sigma[iSR]->GetRMS();
-	   
-
-	    bool success = plotResolution(resoRecoFit[ipu][ieta][iSR],lpad,
-					  ipu,eta[ieta],
-					  stoch0,const0,noise0,
-					  sigmaStoch[ipu][ieta][iSR],
-					  sigmaStochErr[ipu][ieta][iSR],
-					  sigmaConst[ipu][ieta][iSR],
-					  sigmaConstErr[ipu][ieta][iSR],
-					  sigmaNoise[ipu][ieta][iSR],
-					  sigmaNoiseErr[ipu][ieta][iSR],
-					  dovsE);
-	    lpad->cd();
-	    char buf[500];
-	    sprintf(buf,"#gamma #eta=%3.1f + PU %d",etaval[ieta],pu[ipu]);
-	    TLatex lat;
-	    lat.SetTextSize(0.1);
-	    lat.DrawLatexNDC(0.15,0.85,buf);
-	    sprintf(buf,"SR %d",iSR);
-	    lat.DrawLatexNDC(0.15,0.7,buf);
-	    if (iSR==6) lat.DrawLatexNDC(0.01,0.01,"HGCAL G4 standalone");
-
-	    if (!success) {
-	      return 1;	    
-	    }
-
+	    std::ostringstream lsave;
 	    lsave.str("");
 	    lsave << "SR" << iSR;
-	    fcalib->mkdir(lsave.str().c_str());
 	    fcalib->cd(lsave.str().c_str());
-	    calibRecoFit[iSR]->Write();
-	    calibRecoDelta[iSR]->Write();
-	    resoRecoFit[ipu][ieta][iSR]->Write();
-
+	    grOffset[ipu][iSR]->Write();
+	    grSlope[ipu][iSR]->Write();
 	  }//loop on SR
-
-	  myc[1]->Update();
-	  lsave.str("");
-	  lsave << plotDir << "/";
-	  if (ipu==0) lsave << "ResoRaw";
-	  else lsave << "Reso";
-	  lsave << "_eta" << eta[ieta] << "_pu" << puOption << pSuffix;
+	  mycCalibEta->Update();
+	  std::ostringstream lsave;
+	  lsave << plotDir << "/CalibSlopevsEta_pu" << ipu;
+	  if (ipu==0) lsave << "raw";
 	  if (dovsE) lsave << "_vsE";
-	  myc[1]->Print((lsave.str()+".pdf").c_str());
-
-
+	  lsave << ".pdf";
+	  mycCalibEta->Print(lsave.str().c_str());
+	  lsave.str("");
+	  lsave << plotDir << "/CalibOffsetvsEta_pu" << ipu;
+	  if (ipu==0) lsave << "raw";
+	  if (dovsE) lsave << "_vsE";
+	  lsave << ".pdf";
+	  mycOffsetEta->Update();
+	  mycOffsetEta->Print(lsave.str().c_str());
 
 	}//loop on pu
-      }//loop on eta
 
-      fout->Write();
-      if (nGenEnAll==1) continue;
-
-      TLatex lat;
-      char buf[500];
-
-      
-      //plot and fit calib parameters vs eta
-      TGraphErrors *grSlope[nPu][nSR];
-      TGraphErrors *grOffset[nPu][nSR];
-
-      gStyle->SetOptStat(0);
-      gStyle->SetOptFit(1111);
-      gStyle->SetStatX(0.64);//top-right corner
-      gStyle->SetStatY(0.85);
-      gStyle->SetStatW(0.25);
-      gStyle->SetStatH(0.25);
-      gStyle->SetStatColor(0);
-
-      for (unsigned ipu(0); ipu<nPu; ++ipu){//loop on pu
-	mycCalibEta->Clear();
-	mycOffsetEta->Clear();
-	mycCalibEta->Divide(3,2);
-	mycOffsetEta->Divide(3,2);
-
-	for (unsigned iSR(0); iSR<nSR;++iSR){//loop on signal region
-	  if (pu[ipu]!=0 && iSR==nSR-1) continue;
-	  grSlope[ipu][iSR] = new TGraphErrors();
-	  std::ostringstream llabel;
-	  llabel << "grSlope_" << ipu << "_SR" << iSR;
-	  grSlope[ipu][iSR]->SetName(llabel.str().c_str());
-	  llabel.str("");
-	  llabel << ";#eta;Calib slope (" ;
-	  if (ipu==0) llabel << "MIPs/GeV)";
-	  else llabel << "GeV/GeV)";
-	  grSlope[ipu][iSR]->SetTitle(llabel.str().c_str());
-	  grSlope[ipu][iSR]->SetMarkerStyle(20+iSR);
-	  grSlope[ipu][iSR]->SetMarkerColor(1+iSR);
-	  grSlope[ipu][iSR]->SetLineColor(1+iSR);
-	  llabel.str("");
-	  llabel << "grOffset_" << ipu << "_SR" << iSR;
-	  grOffset[ipu][iSR] = (TGraphErrors *)grSlope[ipu][iSR]->Clone(llabel.str().c_str());
-	  llabel.str("");
-	  llabel << ";#eta;Calib offset (" ;
-	  if (ipu==0) llabel << "MIPs)";
-	  else llabel << "GeV)";
-	  grOffset[ipu][iSR]->SetTitle(llabel.str().c_str());
-
-	  for (unsigned ieta(0);ieta<neta;++ieta){//loop on eta
-	    grSlope[ipu][iSR]->SetPoint(ieta,etaval[ieta],calib[ipu][ieta][iSR]);
-	    grSlope[ipu][iSR]->SetPointError(ieta,0.0,calibErr[ipu][ieta][iSR]);
-
-	    grOffset[ipu][iSR]->SetPoint(ieta,etaval[ieta],offset[ipu][ieta][iSR]);
-	    grOffset[ipu][iSR]->SetPointError(ieta,0.0,offsetErr[ipu][ieta][iSR]);
-	  }//loop on eta
-	  mycCalibEta->cd(iSR+1);
-	  grSlope[ipu][iSR]->Draw();
-	  grSlope[ipu][iSR]->Fit("pol2","","same");
-	     
-	  lat.SetTextSize(0.06);
-	  sprintf(buf,"pu %d, SR %d",pu[ipu],iSR);
-	  lat.DrawLatexNDC(0.2,0.87,buf);
-	  if (iSR==4) lat.DrawLatexNDC(0.01,0.01,"HGCAL G4 standalone");
-
-	  mycOffsetEta->cd(iSR+1);
-	  grOffset[ipu][iSR]->Draw();
-	  grOffset[ipu][iSR]->Fit("pol2","","same");
-
-	  lat.DrawLatexNDC(0.2,0.87,buf);
-	  if (iSR==4) lat.DrawLatexNDC(0.01,0.01,"HGCAL G4 standalone");
-
-	  std::ostringstream lsave;
-	  lsave.str("");
-	  lsave << "SR" << iSR;
-	  fcalib->cd(lsave.str().c_str());
-	  grOffset[ipu][iSR]->Write();
-	  grSlope[ipu][iSR]->Write();
-	}//loop on SR
-	mycCalibEta->Update();
-	std::ostringstream lsave;
-	lsave << plotDir << "/CalibSlopevsEta_pu" << ipu;
-	if (ipu==0) lsave << "raw";
-	if (dovsE) lsave << "_vsE";
-	lsave << ".pdf";
-	mycCalibEta->Print(lsave.str().c_str());
-	lsave.str("");
-	lsave << plotDir << "/CalibOffsetvsEta_pu" << ipu;
-	if (ipu==0) lsave << "raw";
-	if (dovsE) lsave << "_vsE";
-	lsave << ".pdf";
-	mycOffsetEta->Update();
-	mycOffsetEta->Print(lsave.str().c_str());
-
-      }//loop on pu
-
-      TGraph *grDummy = new TGraph();
-      grDummy->SetName("grDummy");
-      if (dovsE){
-	grDummy->SetPoint(0,E(genEnAll[0],eta[0]),0.1);
-	grDummy->SetPoint(1,E(genEnAll[nGenEnAll-1],eta[neta-1]),0.1);
-      } else {
-	grDummy->SetPoint(0,genEnAll[0],0.1);
-	grDummy->SetPoint(1,genEnAll[nGenEnAll-1],0.1);
-      }
-      grDummy->SetLineColor(10);
-      grDummy->SetMarkerColor(10);
-      grDummy->SetMinimum(0);
-      if (!dovsE) grDummy->GetXaxis()->SetTitle("E_{T} (GeV)");
-      else grDummy->GetXaxis()->SetTitle("E (GeV)");
-      grDummy->GetYaxis()->SetTitle("#sigma/E");
-      grDummy->GetYaxis()->SetTitleOffset(1.2);
-      gStyle->SetOptStat(0);
-      gStyle->SetOptFit(0);
-      for (unsigned ipu(1); ipu<nPu; ++ipu){//loop on pu
-	if (pu[ipu]==0) grDummy->SetMaximum(0.12);
-	else grDummy->SetMaximum(0.16);
-	for (unsigned iSR(0); iSR<nSR;++iSR){//loop on signal region
-	  if (pu[ipu]!=0 && iSR==nSR-1) continue;
-	  
-	  mycReso->cd();
-	  gPad->SetLogx(1);
-	  gPad->SetGridx(1);
-	  gPad->SetGridy(1);
-	  TLegend *legeta =  new TLegend(0.8,0.5,0.94,0.94);
-	  legeta->SetFillColor(10);
-	  grDummy->Draw("AP");
-	  for (unsigned ieta(0);ieta<neta;++ieta){//loop on eta
-	    resoRecoFit[ipu][ieta][iSR]->SetLineColor(ieta+1);
-	    resoRecoFit[ipu][ieta][iSR]->SetMarkerColor(ieta+1);
-	    resoRecoFit[ipu][ieta][iSR]->SetMarkerStyle(ieta+20);
-	    resoRecoFit[ipu][ieta][iSR]->Draw("PLsame");
-	    label.str("");
-	    label << "#eta = " << etaval[ieta];
-	    legeta->AddEntry(resoRecoFit[ipu][ieta][iSR],label.str().c_str(),"P");
-	  }//loop on eta
-	  //add ref pu=0 curve
-	  if (pu[ipu]!=0) {
-	    resoRecoFit[1][0][iSR]->SetLineWidth(2);
-	    resoRecoFit[1][0][iSR]->SetLineStyle(2);
-	    resoRecoFit[1][0][iSR]->Draw("Lsame");
-	    legeta->AddEntry(resoRecoFit[1][0][iSR],"Ref pu=0","L");
-	  }
-	  legeta->Draw("same");
-	  sprintf(buf,"#gamma + PU %d",pu[ipu]);
-	  //lat.SetTextSize(0.1);
-	  lat.DrawLatexNDC(0.45,0.85,buf);
-	  sprintf(buf,"SR %d",iSR);
-	  lat.DrawLatexNDC(0.75,0.5,buf);
-	  lat.DrawLatexNDC(0.01,0.01,"HGCAL G4 standalone");
-	  mycReso->Update();
-	  std::ostringstream lsave;
-	  lsave << plotDir << "/Resolution_pu" << pu[ipu] << "_SR" << iSR;
-	  if (dovsE) lsave << "_vsE";
-	  mycReso->Print((lsave.str()+".pdf").c_str());
-	  mycReso->Print((lsave.str()+".C").c_str());
-	  
+	TGraph *grDummy = new TGraph();
+	grDummy->SetName("grDummy");
+	if (dovsE){
+	  grDummy->SetPoint(0,E(genEnAll[0],eta[0]),0.1);
+	  grDummy->SetPoint(1,E(genEnAll[nGenEnAll-1],eta[neta-1]),0.1);
+	} else {
+	  grDummy->SetPoint(0,genEnAll[0],0.1);
+	  grDummy->SetPoint(1,genEnAll[nGenEnAll-1],0.1);
 	}
-      }
-
-
-      TLegend *leg = new TLegend(0.75,0.8,0.94,0.94);
-      leg->SetFillColor(10);
-
-      TPad *mypad[3][neta];
-
-      if (neta>1){
-	mycR->Divide(2,1);
-	mycC->Divide(2,1);
-	mycN->Divide(2,1);
-	TPad *left[3];
-	TPad *right[3];
-	left[0] = (TPad*)mycR->cd(1);
-	right[0] = (TPad*)mycR->cd(2);
-	left[1] = (TPad*)mycC->cd(1);
-	right[1] = (TPad*)mycC->cd(2);
-	left[2] = (TPad*)mycN->cd(1);
-	right[2] = (TPad*)mycN->cd(2);
-	for (unsigned iC(0);iC<3;++iC){
-	  left[iC]->Divide(1,4);
-	  right[iC]->Divide(1,3);
-	  for (unsigned ieta=0; ieta<neta;++ieta){//loop on pt values
-	    if (ieta<4) mypad[iC][ieta] = (TPad*)left[iC]->GetPad(ieta+1);
-	    else mypad[iC][ieta] = (TPad*)right[iC]->GetPad((ieta-4)+1);
+	grDummy->SetLineColor(10);
+	grDummy->SetMarkerColor(10);
+	grDummy->SetMinimum(0);
+	if (!dovsE) grDummy->GetXaxis()->SetTitle("p_{T} (GeV)");
+	else grDummy->GetXaxis()->SetTitle("E (GeV)");
+	grDummy->GetYaxis()->SetTitle("#sigma/E");
+	grDummy->GetYaxis()->SetTitleOffset(1.2);
+	gStyle->SetOptStat(0);
+	gStyle->SetOptFit(0);
+	for (unsigned ipu(1); ipu<nPu; ++ipu){//loop on pu
+	  //if (pu[ipu]==0) 
+	  grDummy->SetMaximum(0.12);
+	  if (!dovsE) {
+	    grDummy->SetMaximum(0.09);
 	  }
-	}
-      }
-      else {
-	mypad[0][0] = (TPad*)mycR->cd();
-	mypad[1][0] = (TPad*)mycC->cd();
-	mypad[2][0] = (TPad*)mycN->cd();
-      }
-
-      TGraphErrors *grStoch[nPu-1][neta];
-      TGraphErrors *grConst[nPu-1][neta];
-      TGraphErrors *grNoise[nPu-1][neta];
-      for (unsigned ieta(0); ieta<neta;++ieta){
-	
-	for (unsigned ipu(0); ipu<( (nPu>1)?(nPu-1):nPu ); ++ipu){//loop on pu
+	  for (unsigned iSR(0); iSR<nSR;++iSR){//loop on signal region
+	    //if (pu[ipu]!=0 && iSR==nSR-1) continue;
+	    //if (!dovsE && iSR==nSR-1) grDummy->SetMaximum(0.15);
+	    if (!dovsE) grDummy->SetMaximum(0.15);
 	  
-	  grStoch[ipu][ieta] = new TGraphErrors(nSR,srval,sigmaStoch[ipu+1][ieta],srerr,sigmaStochErr[ipu+1][ieta]);
-	  grConst[ipu][ieta] = new TGraphErrors(nSR,srval,sigmaConst[ipu+1][ieta],srerr,sigmaConstErr[ipu+1][ieta]);
-	  grNoise[ipu][ieta] = new TGraphErrors(nSR,srval,sigmaNoise[ipu+1][ieta],srerr,sigmaNoiseErr[ipu+1][ieta]);
-
-	  TGraphErrors *gr=0;
-	  for (unsigned iP(0);iP<3;++iP){
-	    gr = (iP==0) ? grStoch[ipu][ieta] : (iP==1) ? grConst[ipu][ieta] : grNoise[ipu][ieta];
-	    if (!gr) continue;
-	    if (iP==0) mypad[0][ieta]->cd();
-	    else if (iP==1) mypad[1][ieta]->cd();
-	    else mypad[2][ieta]->cd();
+	    mycReso->cd();
+	    if (dovsE) gPad->SetLogx(1);
+	    gPad->SetGridx(1);
 	    gPad->SetGridy(1);
-	    gr->SetLineColor(ipu+1);
-	    gr->SetMarkerColor(ipu+1);
-	    gr->SetMarkerStyle(ipu+21);
-	    gr->SetMinimum(0);
-	    if (iP<2) gr->SetMaximum(iP==0?0.5:0.06);
-	    else gr->SetMaximum(5);
-	    if (iP==0) gr->SetTitle(";SR;sampling term (GeV^{#frac{1}{2}})");
-	    else if (iP==1) gr->SetTitle(";SR;constant term");
-	    else gr->SetTitle(";SR;noise term (GeV)");
-	    gr->Draw( (ipu==0) ? "APEL" : "PEL");
-	    label.str("");
-	    if (ieta==0 && iP==0){
+	    TLegend *legeta =  new TLegend(0.7,0.7-0.07*neta,0.94,0.94);
+	    legeta->SetFillColor(10);
+	    grDummy->Draw("AP");
+	    for (unsigned ieta(0);ieta<neta;++ieta){//loop on eta
+	      resoRecoFit[ipu][ieta][iSR]->SetLineColor(mycolor[ieta]);
+	      resoRecoFit[ipu][ieta][iSR]->SetMarkerColor(mycolor[ieta]);
+	      resoRecoFit[ipu][ieta][iSR]->SetMarkerStyle(ieta+20);
+	      resoRecoFit[ipu][ieta][iSR]->Draw("PLsame");
 	      label.str("");
-	      label << "PU " << pu[ipu+1];
-	      leg->AddEntry(gr,label.str().c_str(),"P");
-	    }
-	    if (ipu==nPu-2){
-	      label.str("");
-	      label << "#eta=" << etaval[ieta];
-	      lat.SetTextSize(0.06);
-	      lat.DrawLatexNDC(0.2,0.85,label.str().c_str());
-	      leg->Draw("same");
-	    }
-	    if (ieta==3 && ipu==0) lat.DrawLatexNDC(0.01,0.01,"HGCAL G4 standalone");
+	      label << "#eta = " << etaval[ieta];
+	      legeta->AddEntry(resoRecoFit[ipu][ieta][iSR],label.str().c_str(),"P");
+	      //add ref pu=0 curve
+	      if (pu[ipu]!=0) {
+		resoRecoFit[1][ieta][iSR]->SetLineWidth(2);
+		resoRecoFit[1][ieta][iSR]->SetLineStyle(2);
+		resoRecoFit[1][ieta][iSR]->SetLineColor(mycolor[ieta]);
+		resoRecoFit[1][ieta][iSR]->Draw("Lsame");
+		legeta->AddEntry(resoRecoFit[1][ieta][iSR],"Ref pu=0","L");
+	      }
+	    }//loop on eta
+	    legeta->Draw("same");
+	    sprintf(buf,"#gamma + PU %d",pu[ipu]);
+	    //lat.SetTextSize(0.1);
+	    lat.DrawLatexNDC(0.45,0.85,buf);
+	    sprintf(buf,"r = %3.0f mm",radius[iSR]);
+	    lat.DrawLatexNDC(0.45,0.75,buf);
+	    lat.DrawLatexNDC(0.01,0.01,"HGCAL G4 standalone");
+	    mycReso->Update();
+	    std::ostringstream lsave;
+	    lsave << plotDir << "/Resolution_pu" << pu[ipu] << "_SR" << iSR;
+	    if (dovsE) lsave << "_vsE";
+	    mycReso->Print((lsave.str()+".pdf").c_str());
+	    mycReso->Print((lsave.str()+".C").c_str());
+	  
 	  }
 	}
-      }
-      
-      mycR->Update();
-      std::ostringstream lsave;
-      lsave << plotDir << "/SamplingTerm_vsSR" << pSuffix;
-      if (dovsE) lsave << "_vsE";
-      mycR->Print((lsave.str()+".pdf").c_str());
-      mycR->Print((lsave.str()+".png").c_str());
 
-      mycC->Update();
-      lsave.str("");
-      lsave << plotDir << "/ConstantTerm_vsSR" << pSuffix;
-      if (dovsE) lsave << "_vsE";
-      mycC->Print((lsave.str()+".pdf").c_str());
-      mycC->Print((lsave.str()+".png").c_str());
-      
-      mycN->Update();
-      lsave.str("");
-      lsave << plotDir << "/NoiseTerm_vsSR" << pSuffix;
-      if (dovsE) lsave << "_vsE";
-      mycN->Print((lsave.str()+".pdf").c_str());
-      mycN->Print((lsave.str()+".png").c_str());
-      
-      
-    }//loop on scenarios
-    
-  }//loop on versions
 
-    fcalib->Write();
+	TLegend *leg = new TLegend(0.75,0.8,0.94,0.94);
+	leg->SetFillColor(10);
+
+	TPad *mypad[3][neta];
+
+	if (neta>1){
+	  mycR->Divide(2,1);
+	  mycC->Divide(2,1);
+	  mycN->Divide(2,1);
+	  TPad *left[3];
+	  TPad *right[3];
+	  left[0] = (TPad*)mycR->cd(1);
+	  right[0] = (TPad*)mycR->cd(2);
+	  left[1] = (TPad*)mycC->cd(1);
+	  right[1] = (TPad*)mycC->cd(2);
+	  left[2] = (TPad*)mycN->cd(1);
+	  right[2] = (TPad*)mycN->cd(2);
+	  for (unsigned iC(0);iC<3;++iC){
+	    left[iC]->Divide(1,4);
+	    right[iC]->Divide(1,3);
+	    for (unsigned ieta=0; ieta<neta;++ieta){//loop on pt values
+	      if (ieta<4) mypad[iC][ieta] = (TPad*)left[iC]->GetPad(ieta+1);
+	      else mypad[iC][ieta] = (TPad*)right[iC]->GetPad((ieta-4)+1);
+	    }
+	  }
+	}
+	else {
+	  mypad[0][0] = (TPad*)mycR->cd();
+	  mypad[1][0] = (TPad*)mycC->cd();
+	  mypad[2][0] = (TPad*)mycN->cd();
+	}
+
+	TGraphErrors *grStoch[nPu-1][neta];
+	TGraphErrors *grConst[nPu-1][neta];
+	TGraphErrors *grNoise[nPu-1][neta];
+	for (unsigned ieta(0); ieta<neta;++ieta){
+	
+	  for (unsigned ipu(0); ipu<( (nPu>1)?(nPu-1):nPu ); ++ipu){//loop on pu
+	  
+	    grStoch[ipu][ieta] = new TGraphErrors(nSR,srval,sigmaStoch[ipu+1][ieta],srerr,sigmaStochErr[ipu+1][ieta]);
+	    grConst[ipu][ieta] = new TGraphErrors(nSR,srval,sigmaConst[ipu+1][ieta],srerr,sigmaConstErr[ipu+1][ieta]);
+	    grNoise[ipu][ieta] = new TGraphErrors(nSR,srval,sigmaNoise[ipu+1][ieta],srerr,sigmaNoiseErr[ipu+1][ieta]);
+
+	    TGraphErrors *gr=0;
+	    for (unsigned iP(0);iP<3;++iP){
+	      gr = (iP==0) ? grStoch[ipu][ieta] : (iP==1) ? grConst[ipu][ieta] : grNoise[ipu][ieta];
+	      if (!gr) continue;
+	      if (iP==0) mypad[0][ieta]->cd();
+	      else if (iP==1) mypad[1][ieta]->cd();
+	      else mypad[2][ieta]->cd();
+	      gPad->SetGridy(1);
+	      gr->SetLineColor(ipu+1);
+	      gr->SetMarkerColor(ipu+1);
+	      gr->SetMarkerStyle(ipu+21);
+	      gr->SetMinimum(0);
+	      if (iP<2) gr->SetMaximum(iP==0?0.5:0.06);
+	      else gr->SetMaximum(5);
+	      if (iP==0) gr->SetTitle(";SR;sampling term (GeV^{#frac{1}{2}})");
+	      else if (iP==1) gr->SetTitle(";SR;constant term");
+	      else gr->SetTitle(";SR;noise term (GeV)");
+	      gr->Draw( (ipu==0) ? "APEL" : "PEL");
+	      label.str("");
+	      if (ieta==0 && iP==0){
+		label.str("");
+		label << "PU " << pu[ipu+1];
+		leg->AddEntry(gr,label.str().c_str(),"P");
+	      }
+	      if (ipu==nPu-2){
+		label.str("");
+		label << "#eta=" << etaval[ieta];
+		lat.SetTextSize(0.06);
+		lat.DrawLatexNDC(0.2,0.85,label.str().c_str());
+		leg->Draw("same");
+	      }
+	      if (ieta==3 && ipu==0) lat.DrawLatexNDC(0.01,0.01,"HGCAL G4 standalone");
+	    }
+	  }
+	}
+      
+	mycR->Update();
+	std::ostringstream lsave;
+	lsave << plotDir << "/SamplingTerm_vsSR" << pSuffix;
+	if (dovsE) lsave << "_vsE";
+	mycR->Print((lsave.str()+".pdf").c_str());
+	mycR->Print((lsave.str()+".png").c_str());
+
+	mycC->Update();
+	lsave.str("");
+	lsave << plotDir << "/ConstantTerm_vsSR" << pSuffix;
+	if (dovsE) lsave << "_vsE";
+	mycC->Print((lsave.str()+".pdf").c_str());
+	mycC->Print((lsave.str()+".png").c_str());
+      
+	mycN->Update();
+	lsave.str("");
+	lsave << plotDir << "/NoiseTerm_vsSR" << pSuffix;
+	if (dovsE) lsave << "_vsE";
+	mycN->Print((lsave.str()+".pdf").c_str());
+	mycN->Print((lsave.str()+".png").c_str());
+      
+      
+	fcalib->Write();
+      }//loop on scenarios
+      
+    }//loop on versions
     
   }//loop on IC vals
-
-
+  
+  
   return 0;
   
 }//main

@@ -92,7 +92,9 @@ public:
 	      const double& vtxx=0,
 	      const double& vtxy=0);
 
-  ~PositionFit(){};
+  ~PositionFit(){
+
+  };
 
   double getW0(const unsigned layer);
 

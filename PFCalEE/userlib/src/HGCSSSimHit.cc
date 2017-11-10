@@ -7,7 +7,8 @@
 HGCSSSimHit::HGCSSSimHit(const G4SiHit & aSiHit, 
 			 const unsigned & asilayer, 
 			 TH2Poly* map, 
-			 const float ){
+			 const float ,
+			 const bool etaphimap){
   energy_ = aSiHit.energy;
   //energy weighted time
   //PS: need to call calculateTime() after all hits 
@@ -26,8 +27,12 @@ HGCSSSimHit::HGCSSSimHit(const G4SiHit & aSiHit,
   //GetMaximumBin doesn't work :(
 
   assert(map);
-  cellid_ = map->FindBin(x,y);
-
+  if (etaphimap){
+    ROOT::Math::XYZPoint pos = ROOT::Math::XYZPoint(x,y,zpos_);
+    cellid_ = map->FindBin(pos.eta(),pos.phi());
+  }
+  else cellid_ = map->FindBin(x,y);
+  
   //for (int ix(1);ix<map->GetNumberOfBins()+1; ++ix){
   //if (map->GetBinContent(ix)!=0)
     //cellid_ = ix;
@@ -126,33 +131,56 @@ void HGCSSSimHit::Add(const G4SiHit & aSiHit){
 
 
 
-std::pair<double,double> HGCSSSimHit::get_xy(const bool isScintillator,
-					     const HGCSSGeometryConversion & aGeom) const {
-  if (isScintillator) return aGeom.squareGeom.find(cellid_)->second;
-  else return aGeom.hexaGeom.find(cellid_)->second;
+std::pair<double,double> HGCSSSimHit::get_xy(const HGCSSSubDetector & subdet,
+					     const HGCSSGeometryConversion & aGeom,
+					     const unsigned shape) const {
+  if (subdet.isScint){
+    std::pair<double,double> etaphi = subdet.type==DetectorEnum::BHCAL1?aGeom.squareGeom1.find(cellid_)->second : aGeom.squareGeom2.find(cellid_)->second;
+    //convert back to x-y
+    double theta = 2*atan(exp(-1.*etaphi.first));
+    double r = zpos_/cos(theta);
+    double x = r*sin(theta)*cos(etaphi.second);
+    double y = r*sin(theta)*sin(etaphi.second);
+    return std::pair<double,double>(x,y);
+  }
+  else if (shape==4) return aGeom.squareGeom.find(cellid_)->second;
+  else {
+    if (shape==2) return aGeom.diamGeom.find(cellid_)->second;
+    else if (shape==3) return aGeom.triangleGeom.find(cellid_)->second;
+    else return aGeom.hexaGeom.find(cellid_)->second;
+  }
 
 }
 
-ROOT::Math::XYZPoint HGCSSSimHit::position(const bool isScintillator,
-					   const HGCSSGeometryConversion & aGeom) const{
-  std::pair<double,double> xy = get_xy(isScintillator,aGeom);
+ROOT::Math::XYZPoint HGCSSSimHit::position(const HGCSSSubDetector & subdet,
+					   const HGCSSGeometryConversion & aGeom,
+					   const unsigned shape) const{
+  std::pair<double,double> xy = get_xy(subdet,aGeom,shape);
   return ROOT::Math::XYZPoint(xy.first/10.,xy.second/10.,zpos_/10.);
 }
 
-double HGCSSSimHit::theta(const bool isScintillator,
-			  const HGCSSGeometryConversion & aGeom) const {
-  return 2*atan(exp(-1.*eta(isScintillator,aGeom)));
+double HGCSSSimHit::theta(const HGCSSSubDetector & subdet,
+			  const HGCSSGeometryConversion & aGeom,
+			  const unsigned shape) const {
+  return 2*atan(exp(-1.*eta(subdet,aGeom,shape)));
 }
 
-double HGCSSSimHit::eta(const bool isScintillator,
-			const HGCSSGeometryConversion & aGeom) const {
-  return position(isScintillator,aGeom).eta();
+double HGCSSSimHit::eta(const HGCSSSubDetector & subdet,
+			const HGCSSGeometryConversion & aGeom,
+			const unsigned shape) const {
+  return position(subdet,aGeom,shape).eta();
 }
 
-double HGCSSSimHit::phi(const bool isScintillator,
-			const HGCSSGeometryConversion & aGeom) const {
-  return position(isScintillator,aGeom).phi();
+double HGCSSSimHit::phi(const HGCSSSubDetector & subdet,
+			const HGCSSGeometryConversion & aGeom,
+			const unsigned shape) const {
+  return position(subdet,aGeom,shape).phi();
 }
+
+
+
+
+
 
 void HGCSSSimHit::Print(std::ostream & aOs) const{
   aOs << "====================================" << std::endl

@@ -39,29 +39,32 @@ int main(int argc,char** argv)
 
   // Set mandatory initialization classes
   //int version=DetectorConstruction::v_HGCAL_2016TB;
-  int version=33;
+  int version=63;
   //int version=DetectorConstruction::v_HGCALEE_TB;
   int model=DetectorConstruction::m_FULLSECTION;
   //int model=DetectorConstruction::m_BOXWITHCRACK_100;
   //int model=DetectorConstruction::m_2016TB;
   //int model=DetectorConstruction::m_SIMPLE_100;
 
+  int shape = 4;
+
   double eta=0;
 
   if(argc>2) version=atoi(argv[2]);
   if(argc>3) model=atoi(argv[3]);
   if(argc>4) eta=atof(argv[4]);
+  if(argc>5) shape=atoi(argv[5]);
 
-  std::cout << "-- Running version " << version << " model " << model << std::endl;
+  std::cout << "-- Running version " << version << " model " << model << " shape " << shape << std::endl;
 
   std::string absThickW="1.75,1.75,1.75,1.75,1.75,2.8,2.8,2.8,2.8,2.8,4.2,4.2,4.2,4.2,4.2";
   std::string absThickPb="1,1,1,1,1,2.1,2.1,2.1,2.1,2.1,4.4,4.4,4.4,4.4";
   std::string dropLayers="";
-  if(argc>5) absThickW = argv[5];
-  if(argc>6) absThickPb = argv[6];
-  if(argc>7) dropLayers = argv[7];
+  if(argc>6) absThickW = argv[6];
+  if(argc>7) absThickPb = argv[7];
+  if(argc>8) dropLayers = argv[8];
 
-  runManager->SetUserInitialization(new DetectorConstruction(version,model,absThickW,absThickPb,dropLayers));
+  runManager->SetUserInitialization(new DetectorConstruction(version,model,shape,absThickW,absThickPb,dropLayers));
   runManager->SetUserInitialization(new PhysicsList);
 
   // Set user action classes

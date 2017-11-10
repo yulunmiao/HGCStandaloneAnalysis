@@ -88,7 +88,7 @@ PrimaryGeneratorAction::PrimaryGeneratorAction(G4int mod, double eta)
   G4double position = -0.5*(Detector->GetWorldSizeZ());
   particleGun->SetParticlePosition(G4ThreeVector(0.*cm,0.*cm,position));
   
-  G4cout << " -- Gun position set to: 0,0," << position << G4endl;
+  //G4cout << " -- Gun position set to: 0,0," << position << G4endl;
 
   rndmFlag = "off";
 
@@ -120,7 +120,7 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
   case 4:
     x0 = (G4RandFlat::shoot(0.,460)-170)*mm; break;
     //y0 = (G4RandFlat::shoot(0.,10.)-5)*mm;
-  case 3:
+    //case 3:
   case 5:
     //x0 = (G4RandFlat::shoot(0.,30)-15)*mm;
     //y0 = (G4RandFlat::shoot(0.,30.)-15)*mm;

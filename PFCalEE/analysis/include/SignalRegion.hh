@@ -30,9 +30,10 @@ class SignalRegion{
 
 public:
     SignalRegion(const std::string inputFolder, 
-                 const unsigned nLayers, 
+                 const unsigned nLayers,
+		 const std::vector<double> & zpos,
                  const unsigned nevt,
-                 const HGCSSGeometryConversion & geomConv,
+                 HGCSSGeometryConversion & geomConv,
                  const HGCSSPUenergy & puDensity,
 		 const bool applyPuMixFix,
 		 const unsigned versionNumber=12,
@@ -86,6 +87,10 @@ public:
   void initialiseHistograms();
   void fillHistograms();
   
+  bool setTruthInfo(const std::vector<HGCSSGenParticle> & genvec,
+		    const HGCSSEvent & event, 
+		    const int G4TrackID);
+
   inline void setOutputFile(TFile* outputFile){
     outputFile_ = outputFile;
     outputFile_->mkdir(outputDir_.c_str());
@@ -117,11 +122,44 @@ public:
     return Exy_;
   };
 
+  inline void setTruthInfo(const double & E,
+			   const double & eta,
+			   const double & phi){
+    trueE_ = E;
+    trueEta_ = eta;
+    truePhi_ = phi;
+  };
+
+  inline void setTruthDir(double tanx,double tany){
+    truthDir_ = Direction(tanx,tany);
+  };
+
+  inline void setTruthVtx(const ROOT::Math::XYZPoint & truthVtx){
+    truthVtx_ = ROOT::Math::XYZPoint(truthVtx.x(),truthVtx.y(),truthVtx.z());
+    vtxX_ = truthVtx.x();
+    vtxY_ = truthVtx.y();
+    vtxZ_ = truthVtx.z();
+
+  };
+
+  inline const Direction & truthDir() const{
+    return truthDir_;
+  };
+
+  inline const ROOT::Math::XYZPoint & truthVtx() const{
+    return truthVtx_;
+  };
+
+  inline double truthE() const{
+    return trueE_;
+  };
+
 private:
   
   unsigned g4trackID_;
   bool doHexa_;
   unsigned nSR_;
+  double radius_[6];
   unsigned nevt_;
   std::string inputFolder_;
   unsigned nLayers_;    
@@ -140,6 +178,9 @@ private:
 
   unsigned nSkipped_;
   bool firstEvent_;
+
+  Direction truthDir_;
+  ROOT::Math::XYZPoint truthVtx_;
 
   //for tree
   std::vector<double> zPos_;
