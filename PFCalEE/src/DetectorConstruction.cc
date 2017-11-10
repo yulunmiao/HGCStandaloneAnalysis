@@ -31,11 +31,21 @@ using namespace std;
 
 //
 DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
+					   G4int shape,
 					   std::string absThickW,
 					   std::string absThickPb,
 					   std::string dropLayer) : 
-  version_(ver), model_(mod), addPrePCB_(false)
+  version_(ver), model_(mod), shape_(shape), addPrePCB_(false)
 {
+
+  doHF_ = false;
+  firstHFlayer_ = 9999;
+  firstMixedlayer_ = 9999;
+  firstScintlayer_ = 9999;
+
+  m_minEta0 = 1.4;
+  m_maxEta0 = 3.0;
+
   SetWThick(absThickW);
   SetPbThick(absThickPb);
   SetDropLayers(dropLayer);
@@ -183,7 +193,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 	break;
       }//TB setup
 
-    case v_HGCALEE_v6: case v_HGCAL_v6: case v_HGCALEE_v624: case v_HGCALEE_v618: case v_HGCAL_v624: case v_HGCAL_v618:
+    case v_HGCALEE_v6: case v_HGCAL_v6: case v_HGCALEE_v7: case v_HGCAL_v7: case v_HGCAL_v7_HF: case v_HGCALEE_v624: case v_HGCALEE_v618: case v_HGCAL_v624: case v_HGCAL_v618:
       {
 	G4cout << "[DetectorConstruction] starting v_HGCALEE_v6"<< G4endl;
 	G4double airThick = 2*mm;
@@ -294,6 +304,12 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 	  buildHGCALFHE(6);
 	  buildHGCALBHE(6);
 	}
+	else if(version_==v_HGCAL_v7 || version_==v_HGCAL_v7_HF){
+	  //add HCAL
+	  buildHGCALFHE(7);
+	  buildHGCALBHE(7);
+	  if (version_==v_HGCAL_v7_HF) buildHF();
+	}
 	else if(version_==v_HGCAL_v624){
 	  //add HCAL
 	  buildHGCALFHE(624);
@@ -307,6 +323,96 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 
 	break;
       }
+
+    case v_HGCALEE_v8: case v_HGCAL_v8:
+      {
+
+	G4cout << "[DetectorConstruction] starting v_HGCAL(EE)_v8"<< G4endl;
+	G4double airThick = 1.5*mm;
+	G4double pcbThick = 1.6*mm;
+	G4double pbThick = 2.1*mm;
+	G4double wcuThick = 1.4*mm;
+
+	std::vector<G4double> lThickL;
+	std::vector<std::string> lEleL;
+	//in front of first layer
+	lThickL.push_back(2.*mm);lEleL.push_back("Al");
+	lThickL.push_back(36.*mm);lEleL.push_back("Foam");
+	lThickL.push_back(2.*mm);lEleL.push_back("Al");
+	lThickL.push_back(10*mm);lEleL.push_back("Air");
+        lThickL.push_back(157.*mm);lEleL.push_back("NeutMod");
+	lThickL.push_back(3.5*mm);lEleL.push_back("Air");
+
+	//cassette structure
+
+	lThickL.push_back(0.3*mm);lEleL.push_back("SSteel");
+	lThickL.push_back(pbThick);lEleL.push_back("Pb");
+	lThickL.push_back(0.3*mm);lEleL.push_back("SSteel");
+	lThickL.push_back(0.1*mm);lEleL.push_back("Cu");
+	lThickL.push_back(pcbThick);lEleL.push_back("PCB");
+
+	lThickL.push_back(airThick);lEleL.push_back("Air");
+	lThickL.push_back(pcbThick);lEleL.push_back("PCB");
+	lThickL.push_back(0.1*mm);lEleL.push_back("Si");
+	lThickL.push_back(0.1*mm);lEleL.push_back("Si");
+	lThickL.push_back(0.1*mm);lEleL.push_back("Si");
+
+	std::vector<G4double> lThickR;
+	std::vector<std::string> lEleR;
+	lThickR.push_back(wcuThick);lEleR.push_back("WCu");
+	lThickR.push_back(6*mm);lEleR.push_back("Cu");
+	lThickR.push_back(wcuThick);lEleR.push_back("WCu");
+	lThickR.push_back(0.1*mm);lEleR.push_back("Si");
+	lThickR.push_back(0.1*mm);lEleR.push_back("Si");
+	lThickR.push_back(0.1*mm);lEleR.push_back("Si");
+
+	//first cassette
+	m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
+	m_minEta.push_back(m_minEta0);m_maxEta.push_back(m_maxEta0);
+	m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
+	m_minEta.push_back(m_minEta0);m_maxEta.push_back(m_maxEta0);
+
+	lThickL.clear();
+	lEleL.clear();
+	lThickL.push_back(pcbThick);lEleL.push_back("PCB");
+	lThickL.push_back(airThick);lEleL.push_back("Air");
+	lThickL.push_back(pcbThick);lEleL.push_back("PCB");
+	lThickL.push_back(0.1*mm);lEleL.push_back("Cu");
+	lThickL.push_back(0.3*mm);lEleL.push_back("SSteel");
+	lThickL.push_back(pbThick);lEleL.push_back("Pb");
+	lThickL.push_back(0.3*mm);lEleL.push_back("SSteel");
+	lThickL.push_back(0.3*mm);lEleL.push_back("SSteel");
+	lThickL.push_back(pbThick);lEleL.push_back("Pb");
+	lThickL.push_back(0.3*mm);lEleL.push_back("SSteel");
+	lThickL.push_back(0.1*mm);lEleL.push_back("Cu");
+	lThickL.push_back(pcbThick);lEleL.push_back("PCB");
+
+	lThickL.push_back(airThick);lEleL.push_back("Air");
+	lThickL.push_back(pcbThick);lEleL.push_back("PCB");
+	lThickL.push_back(0.1*mm);lEleL.push_back("Si");
+	lThickL.push_back(0.1*mm);lEleL.push_back("Si");
+	lThickL.push_back(0.1*mm);lEleL.push_back("Si");
+
+
+	for(unsigned i=0; i<13; i++) {
+	  m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
+	  m_minEta.push_back(m_minEta0);m_maxEta.push_back(m_maxEta0);
+	  m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
+	  m_minEta.push_back(m_minEta0);m_maxEta.push_back(m_maxEta0);
+	}
+	
+	if(version_==v_HGCAL_v8){
+	  //add HCAL
+	  //FH = FH+BH silicon version = 24 layers
+	  buildHGCALFHE(8);
+	  //BH = FH+BH scintillator version = 16 layers
+	  buildHGCALBHE(8);
+	}
+	break;
+      }
+
+
+
 
     case v_HGCALEE_v5: case v_HGCALEE_v5_gap4: case v_HGCAL_v5: case v_HGCAL_v5_gap4:
       {
@@ -494,7 +600,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 	}
 	break;
       }
-    case v_HGCALHE: case v_HGCALHE_CMSSWv4: case v_HGCALHE_v5: case v_HGCALHE_v6: case v_HGCALHE_v624: case v_HGCALHE_v618:
+    case v_HGCALHE: case v_HGCALHE_CMSSWv4: case v_HGCALHE_v5: case v_HGCALHE_v6: case v_HGCALHE_v7: case v_HGCALHE_v624: case v_HGCALHE_v618:
       {
 	//add HCAL
 	if (version_== v_HGCALHE_CMSSWv4) {
@@ -508,6 +614,10 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 	else if (version_== v_HGCALHE_v6) {
 	  buildHGCALFHE(6);
 	  buildHGCALBHE(6);
+	}
+	else if (version_== v_HGCALHE_v7) {
+	  buildHGCALFHE(7);
+	  buildHGCALBHE(7);
 	}
 	else if (version_== v_HGCALHE_v624) {
 	  buildHGCALFHE(624);
@@ -523,6 +633,12 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 	}
 	break;
       }
+    case v_HGCALHE_v8:
+      {
+	buildHGCALFHE(8);
+	buildHGCALBHE(8);
+	break;
+      }
     case v_HGCALHEScint:
       {
 	buildHGCALBHE(4);
@@ -536,6 +652,11 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
     case v_HGCALBE_v6:
       {
 	buildHGCALBHE(6);
+	break;
+      }
+    case v_HGCALBE_v8:
+      {
+	buildHGCALBHE(8);
 	break;
       }
     case v_HGCALHE_CALICE:
@@ -570,8 +691,22 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 	break;
       }
 
-    }
+    case v_HGCALHF: case v_HGCALCu_HF:
+      {
+	std::vector<G4double> lThick;
+	std::vector<std::string> lEle;
+	//lThick.push_back(1644*mm);lEle.push_back("Cu");
+	//lThick.push_back(1067*mm);lEle.push_back("W");
+	lThick.push_back(18*mm);lEle.push_back("W");
+	for(unsigned i=0; i<60; i++){
+	  m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+	}
+	buildHF();
+	break;
+      }
 
+    }
+  
   DefineMaterials();
   SetMagField(0);
   m_detectorMessenger = new DetectorMessenger(this);
@@ -579,79 +714,185 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 }
 
 void DetectorConstruction::buildHGCALFHE(const unsigned aVersion){
-  G4double airThick = 2*mm;
-  if(version_==v_HGCAL_v5_gap4) airThick = 4*mm;
   std::vector<G4double> lThick;
   std::vector<std::string> lEle;
-  if(aVersion==6 || aVersion==624 || aVersion==618) {
-    airThick = 2*mm;
-    G4double pcbthick = 2*mm;
-    G4double brassthick = aVersion==618? 62*mm : 35*mm;
-    //putting all absorber in front of each Si layer to have correct reweighting
-    lThick.push_back(0.5*mm); lEle.push_back("Cu");
-    lThick.push_back(15.*mm);lEle.push_back("SSteel");
-    lThick.push_back(brassthick);lEle.push_back("Brass");
-    lThick.push_back(0.5*mm); lEle.push_back("Cu");
-    lThick.push_back(airThick);lEle.push_back("Air");
-    lThick.push_back(pcbthick);lEle.push_back("PCB");
+  if (aVersion==8){
+    G4double airThick = 1.5*mm;
+    G4double pcbThick = 1.6*mm;
+    if (version_==v_HGCAL_v8){
+      //back of ecal
+      lThick.push_back(pcbThick);lEle.push_back("PCB");
+      lThick.push_back(airThick);lEle.push_back("Air");
+      lThick.push_back(pcbThick);lEle.push_back("PCB");
+      lThick.push_back(0.1*mm);lEle.push_back("Cu");
+      lThick.push_back(1*mm);lEle.push_back("SSteel");
+    }
+    //CE-H layers 1
+    lThick.push_back(40*mm);lEle.push_back("SSteel");
+    lThick.push_back(6*mm);lEle.push_back("Cu");
+    lThick.push_back(1*mm);lEle.push_back("SSteel");
     lThick.push_back(0.1*mm);lEle.push_back("Si");
     lThick.push_back(0.1*mm);lEle.push_back("Si");
     lThick.push_back(0.1*mm);lEle.push_back("Si");
     m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+    m_minEta.push_back(m_minEta0);m_maxEta.push_back(m_maxEta0);
 
+    //CE-H layers 2-9
     lThick.clear();
     lEle.clear();
-    lThick.push_back(1.);lEle.push_back("CFMix");
-    lThick.push_back(6.); lEle.push_back("Cu");
-    lThick.push_back(brassthick);lEle.push_back("Brass");
-    lThick.push_back(0.5*mm); lEle.push_back("Cu");
+    lThick.push_back(pcbThick);lEle.push_back("PCB");
     lThick.push_back(airThick);lEle.push_back("Air");
-    lThick.push_back(pcbthick);lEle.push_back("PCB");
+    lThick.push_back(pcbThick);lEle.push_back("PCB");
+    lThick.push_back(1*mm);lEle.push_back("Cu");
+    lThick.push_back(1*mm);lEle.push_back("Air");
+    lThick.push_back(35*mm);lEle.push_back("SSteel");
+    lThick.push_back(6*mm);lEle.push_back("Cu");
+    lThick.push_back(1*mm);lEle.push_back("SSteel");
     lThick.push_back(0.1*mm);lEle.push_back("Si");
     lThick.push_back(0.1*mm);lEle.push_back("Si");
     lThick.push_back(0.1*mm);lEle.push_back("Si");
-    for(unsigned i=0; i<5; i++) {
+    //layers 2-8
+    for(unsigned i=0; i<7; i++) {
+      m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+      m_minEta.push_back(m_minEta0);m_maxEta.push_back(m_maxEta0);
+    }
+    //layer 9
+    firstMixedlayer_ = m_caloStruct.size();
+    m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+    m_minEta.push_back(getEtaFromRZ(1450,3920.7));m_maxEta.push_back(m_maxEta0);
+    //CE-H layers 10-12
+    lThick.clear();
+    lEle.clear();
+    lThick.push_back(pcbThick);lEle.push_back("PCB");
+    lThick.push_back(airThick);lEle.push_back("Air");
+    lThick.push_back(pcbThick);lEle.push_back("PCB");
+    //added in layer 9 but after Si so belongs to layer10 here...
+    lThick.push_back(1.9*mm);lEle.push_back("Air");
+    lThick.push_back(1*mm);lEle.push_back("Cu");
+    lThick.push_back(1*mm);lEle.push_back("Air");
+    lThick.push_back(35*mm);lEle.push_back("SSteel");
+    lThick.push_back(6*mm);lEle.push_back("Cu");
+    lThick.push_back(1*mm);lEle.push_back("SSteel");
+    lThick.push_back(0.1*mm);lEle.push_back("Si");
+    lThick.push_back(0.1*mm);lEle.push_back("Si");
+    lThick.push_back(0.1*mm);lEle.push_back("Si");
+    for(unsigned i=0; i<3; i++) {
       m_caloStruct.push_back( SamplingSection(lThick,lEle) );
     }
-    unsigned nLay = aVersion==618? 3 : aVersion==624 ? 5 : 6;
-    lThick[2] = aVersion==624 ? 55*mm : brassthick;
-    for(unsigned i=0; i<nLay; i++) {
+    m_minEta.push_back(getEtaFromRZ(1325,3969.7));m_maxEta.push_back(m_maxEta0);
+    m_minEta.push_back(getEtaFromRZ(1325,4020.6));m_maxEta.push_back(m_maxEta0);
+    m_minEta.push_back(getEtaFromRZ(1225,4071.5));m_maxEta.push_back(m_maxEta0);
+
+    //CE-H layers 13-24
+    lThick[6] = 68*mm;
+    for(unsigned i=0; i<12; i++) {
       m_caloStruct.push_back( SamplingSection(lThick,lEle) );
     }
+    m_minEta.push_back(getEtaFromRZ(1110,4122.4));m_maxEta.push_back(m_maxEta0);
+    m_minEta.push_back(getEtaFromRZ(1050,4206.3));m_maxEta.push_back(m_maxEta0);
+    m_minEta.push_back(getEtaFromRZ(950,4290.2));m_maxEta.push_back(m_maxEta0);
+
+    m_minEta.push_back(getEtaFromRZ(900,4374.1));m_maxEta.push_back(m_maxEta0);
+    m_minEta.push_back(getEtaFromRZ(900,4458));m_maxEta.push_back(m_maxEta0);
+    m_minEta.push_back(getEtaFromRZ(900,4541.9));m_maxEta.push_back(m_maxEta0);
+    m_minEta.push_back(getEtaFromRZ(900,4625.8));m_maxEta.push_back(m_maxEta0);
+    m_minEta.push_back(getEtaFromRZ(900,4709.7));m_maxEta.push_back(m_maxEta0);
+    m_minEta.push_back(getEtaFromRZ(900,4793.6));m_maxEta.push_back(m_maxEta0);
+    m_minEta.push_back(getEtaFromRZ(900,4877.5));m_maxEta.push_back(m_maxEta0);
+    m_minEta.push_back(getEtaFromRZ(900,4961.4));m_maxEta.push_back(m_maxEta0);
+    m_minEta.push_back(getEtaFromRZ(900,5045.3));m_maxEta.push_back(m_maxEta0);
 
 
+    //end of last layer
+    lThick.clear();
+    lEle.clear();
+    lThick.push_back(pcbThick);lEle.push_back("PCB");
+    lThick.push_back(airThick);lEle.push_back("Air");
+    lThick.push_back(pcbThick);lEle.push_back("PCB");
+    lThick.push_back(1.9*mm);lEle.push_back("Air");
+    lThick.push_back(1*mm);lEle.push_back("Cu");
+    lThick.push_back(1*mm);lEle.push_back("Air");
+    //back disk
+    lThick.push_back(93.9*mm);lEle.push_back("SSteel");
+    m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+    m_minEta.push_back(m_minEta0);m_maxEta.push_back(m_maxEta0);
   }
   else {
-    G4double pcbthick = (aVersion==4)? 2*mm : 1.2*mm;
-    //add last ECAL layer structure
-    lThick.push_back(3*mm);lEle.push_back("Cu");
-    lThick.push_back(1*mm);lEle.push_back("Pb");
-    lThick.push_back(15.*mm);lEle.push_back("SSteel");
-    if (aVersion==41) {lThick.push_back(52.*mm);lEle.push_back("Pb");}
-    else {lThick.push_back(40.*mm);lEle.push_back("Brass");}
-    lThick.push_back(0.5*mm); lEle.push_back("Cu");
-    lThick.push_back(airThick);lEle.push_back("Air");
-    lThick.push_back(pcbthick);lEle.push_back("PCB");
-    lThick.push_back(0.1*mm);lEle.push_back("Si");
-    lThick.push_back(0.1*mm);lEle.push_back("Si");
-    lThick.push_back(0.1*mm);lEle.push_back("Si");
-    m_caloStruct.push_back( SamplingSection(lThick,lEle) );
-
-    //next 11 layers
-    lThick.clear(); lEle.clear();
-    lThick.push_back(3*mm); lEle.push_back("Cu");
-    lThick.push_back(1*mm); lEle.push_back("Pb");
-    if (aVersion==41) {lThick.push_back(52.*mm);lEle.push_back("Pb");}
-    else {lThick.push_back(40.*mm);lEle.push_back("Brass");}
-    lThick.push_back(0.5*mm); lEle.push_back("Cu");
-    lThick.push_back(airThick);lEle.push_back("Air");
-    lThick.push_back(pcbthick);lEle.push_back("PCB");
-    lThick.push_back(0.1*mm);lEle.push_back("Si");
-    lThick.push_back(0.1*mm);lEle.push_back("Si");
-    lThick.push_back(0.1*mm);lEle.push_back("Si");
-    
-    for(unsigned i=0; i<11; i++) {
+    G4double airThick = 2*mm;
+    if(version_==v_HGCAL_v5_gap4) airThick = 4*mm;
+    if(aVersion==6 || aVersion==624 || aVersion==618 || aVersion==7) {
+      bool isBrass = aVersion!=7;
+      airThick = 2*mm;
+      G4double pcbthick = 2*mm;
+      G4double brassthick = aVersion==618? 62*mm : 35*mm;
+      //putting all absorber in front of each Si layer to have correct reweighting
+      lThick.push_back(0.5*mm); lEle.push_back("Cu");
+      lThick.push_back(15.*mm);lEle.push_back("SSteel");
+      if (isBrass) {lThick.push_back(brassthick);lEle.push_back("Brass");}
+      else {lThick.push_back(brassthick);lEle.push_back("SSteel");}
+      lThick.push_back(0.5*mm); lEle.push_back("Cu");
+      lThick.push_back(airThick);lEle.push_back("Air");
+      lThick.push_back(pcbthick);lEle.push_back("PCB");
+      lThick.push_back(0.1*mm);lEle.push_back("Si");
+      lThick.push_back(0.1*mm);lEle.push_back("Si");
+      lThick.push_back(0.1*mm);lEle.push_back("Si");
       m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+      
+      lThick.clear();
+      lEle.clear();
+      lThick.push_back(1.);lEle.push_back("CFMix");
+      lThick.push_back(6.); lEle.push_back("Cu");
+      if (isBrass) {lThick.push_back(brassthick);lEle.push_back("Brass");}
+      else {lThick.push_back(brassthick);lEle.push_back("SSteel");}
+      lThick.push_back(0.5*mm); lEle.push_back("Cu");
+      lThick.push_back(airThick);lEle.push_back("Air");
+      lThick.push_back(pcbthick);lEle.push_back("PCB");
+      lThick.push_back(0.1*mm);lEle.push_back("Si");
+      lThick.push_back(0.1*mm);lEle.push_back("Si");
+      lThick.push_back(0.1*mm);lEle.push_back("Si");
+      for(unsigned i=0; i<5; i++) {
+	m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+      }
+      unsigned nLay = aVersion==618? 3 : aVersion==624 ? 5 : 6;
+      lThick[2] = aVersion==624 ? 55*mm : brassthick;
+      for(unsigned i=0; i<nLay; i++) {
+	m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+      }
+      
+      
+    }
+    else {
+      G4double pcbthick = (aVersion==4)? 2*mm : 1.2*mm;
+      //add last ECAL layer structure
+      lThick.push_back(3*mm);lEle.push_back("Cu");
+      lThick.push_back(1*mm);lEle.push_back("Pb");
+      lThick.push_back(15.*mm);lEle.push_back("SSteel");
+      if (aVersion==41) {lThick.push_back(52.*mm);lEle.push_back("Pb");}
+      else {lThick.push_back(40.*mm);lEle.push_back("Brass");}
+      lThick.push_back(0.5*mm); lEle.push_back("Cu");
+      lThick.push_back(airThick);lEle.push_back("Air");
+      lThick.push_back(pcbthick);lEle.push_back("PCB");
+      lThick.push_back(0.1*mm);lEle.push_back("Si");
+      lThick.push_back(0.1*mm);lEle.push_back("Si");
+      lThick.push_back(0.1*mm);lEle.push_back("Si");
+      m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+      
+      //next 11 layers
+      lThick.clear(); lEle.clear();
+      lThick.push_back(3*mm); lEle.push_back("Cu");
+      lThick.push_back(1*mm); lEle.push_back("Pb");
+      if (aVersion==41) {lThick.push_back(52.*mm);lEle.push_back("Pb");}
+      else {lThick.push_back(40.*mm);lEle.push_back("Brass");}
+      lThick.push_back(0.5*mm); lEle.push_back("Cu");
+      lThick.push_back(airThick);lEle.push_back("Air");
+      lThick.push_back(pcbthick);lEle.push_back("PCB");
+      lThick.push_back(0.1*mm);lEle.push_back("Si");
+      lThick.push_back(0.1*mm);lEle.push_back("Si");
+      lThick.push_back(0.1*mm);lEle.push_back("Si");
+      
+      for(unsigned i=0; i<11; i++) {
+	m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+      }
     }
   }
 }
@@ -659,48 +900,176 @@ void DetectorConstruction::buildHGCALFHE(const unsigned aVersion){
 void DetectorConstruction::buildHGCALBHE(const unsigned aVersion){
   std::vector<G4double> lThick;
   std::vector<std::string> lEle;
-  //first layer
-  if (aVersion==6){
-    lThick.push_back(1.*mm);lEle.push_back("CFMix");
-    lThick.push_back(6.*mm); lEle.push_back("Cu");
-  } else {
-    lThick.push_back(3*mm); lEle.push_back("Cu");
-    lThick.push_back(1*mm); lEle.push_back("Pb");
-  }
-  lThick.push_back(2.*mm);lEle.push_back("Al");
-  lThick.push_back(16.*mm);lEle.push_back("Foam");
-  lThick.push_back(2.*mm);lEle.push_back("Al");
-  lThick.push_back(65.*mm);lEle.push_back("Air");
-  lThick.push_back(78.*mm);lEle.push_back("Brass");
-  if (aVersion==6) {
-    lThick.push_back(2.6*mm);lEle.push_back("Air");
-    lThick.push_back(3.8*mm);lEle.push_back("Scintillator");
-    lThick.push_back(2.6*mm);lEle.push_back("Air");
-  }
-  else {
-    lThick.push_back(9.*mm);lEle.push_back("Scintillator");
-  }
-  m_caloStruct.push_back( SamplingSection(lThick,lEle) );
 
-  //other layers
-  lThick.clear();lEle.clear();
-  lThick.push_back(78.*mm);lEle.push_back("Brass");
-  if (aVersion==6) {
-    lThick.push_back(2.6*mm);lEle.push_back("Air");
-    lThick.push_back(3.8*mm);lEle.push_back("Scintillator");
-    lThick.push_back(2.6*mm);lEle.push_back("Air");
-  }
-  else {
-    lThick.push_back(9.*mm);lEle.push_back("Scintillator");
-  }
+  if (aVersion==8){
+    firstScintlayer_ = m_caloStruct.size();
 
-  unsigned maxi = (aVersion==4)?9:11;
-  for(unsigned i=0; i<maxi; i++) {
+    G4double airThick = 1.5*mm;
+    G4double pcbThick = 1.6*mm;
+    //back of layer 8+layer9 scint.
+    lThick.push_back(pcbThick);lEle.push_back("PCB");
+    lThick.push_back(airThick);lEle.push_back("Air");
+    lThick.push_back(pcbThick);lEle.push_back("PCB");
+    lThick.push_back(1*mm);lEle.push_back("Cu");
+    lThick.push_back(1*mm);lEle.push_back("Air");
+    lThick.push_back(35*mm);lEle.push_back("SSteel");
+    lThick.push_back(6*mm);lEle.push_back("Cu");
+    lThick.push_back(pcbThick);lEle.push_back("PCB");
+    lThick.push_back(1.2*mm);lEle.push_back("Air");
+    lThick.push_back(3.0*mm);lEle.push_back("Scintillator");
     m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(1450,3920.7));
+
+    //CE-H-scint layers 10-12
+    lThick.clear();
+    lEle.clear();
+    lThick.push_back(0.5*mm);lEle.push_back("Air");
+    lThick.push_back(pcbThick);lEle.push_back("PCB");
+    lThick.push_back(1*mm);lEle.push_back("Cu");
+    lThick.push_back(1*mm);lEle.push_back("Air");
+    lThick.push_back(35*mm);lEle.push_back("SSteel");
+    lThick.push_back(6*mm);lEle.push_back("Cu");
+    lThick.push_back(pcbThick);lEle.push_back("PCB");
+    lThick.push_back(1.2*mm);lEle.push_back("Air");
+    lThick.push_back(3.0*mm);lEle.push_back("Scintillator");
+    for(unsigned i=0; i<3; i++) {
+      m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+    }
+    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(1325,3969.7));
+    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(1325,4020.6));
+    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(1225,4071.5));
+
+    //CE-H-scint layers 13-24
+    lThick[4] = 68*mm;
+    for(unsigned i=0; i<12; i++) {
+      m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+    }
+    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(1110,4122.4));
+    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(1050,4206.3));
+    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(950,4290.2));
+
+    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(900,4374.1));
+    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(900,4458));
+    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(900,4541.9));
+    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(900,4625.8));
+    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(900,4709.7));
+    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(900,4793.6));
+    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(900,4877.5));
+    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(900,4961.4));
+    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(900,5045.3));
+
+
+
+    //end of last layer - only if building BH only
+    if (version_ == v_HGCALBE_v8){
+      lThick.clear();
+      lEle.clear();
+      lThick.push_back(0.5*mm);lEle.push_back("Air");
+      lThick.push_back(pcbThick);lEle.push_back("PCB");
+      lThick.push_back(1*mm);lEle.push_back("Cu");
+      lThick.push_back(1*mm);lEle.push_back("Air");
+      //back disk
+      lThick.push_back(93.9*mm);lEle.push_back("SSteel");
+      m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+      m_minEta.push_back(m_minEta0);m_maxEta.push_back(m_maxEta0);
+    }
+  }
+  else {
+    //first layer
+    bool isBrass = aVersion!=7;
+    
+    if (aVersion==6 || aVersion==7){
+      lThick.push_back(1.*mm);lEle.push_back("CFMix");
+      lThick.push_back(6.*mm); lEle.push_back("Cu");
+    } else {
+      lThick.push_back(3*mm); lEle.push_back("Cu");
+      lThick.push_back(1*mm); lEle.push_back("Pb");
+    }
+    lThick.push_back(2.*mm);lEle.push_back("Al");
+    lThick.push_back(16.*mm);lEle.push_back("Foam");
+    lThick.push_back(2.*mm);lEle.push_back("Al");
+    lThick.push_back(65.*mm);lEle.push_back("Air");
+    if (isBrass) {lThick.push_back(78.*mm);lEle.push_back("Brass");}
+    else {lThick.push_back(78.*mm);lEle.push_back("SSteel");}
+    if (aVersion==6 || aVersion==7) {
+      lThick.push_back(2.6*mm);lEle.push_back("Air");
+      lThick.push_back(3.8*mm);lEle.push_back("Scintillator");
+      lThick.push_back(2.6*mm);lEle.push_back("Air");
+    }
+    else {
+      lThick.push_back(9.*mm);lEle.push_back("Scintillator");
+    }
+    m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+    
+    //other layers
+    lThick.clear();lEle.clear();
+    if (isBrass) {lThick.push_back(78.*mm);lEle.push_back("Brass");}
+    else {lThick.push_back(78.*mm);lEle.push_back("SSteel");}
+    if (aVersion==6 || aVersion==7) {
+      lThick.push_back(2.6*mm);lEle.push_back("Air");
+      lThick.push_back(3.8*mm);lEle.push_back("Scintillator");
+      lThick.push_back(2.6*mm);lEle.push_back("Air");
+    }
+    else {
+      lThick.push_back(9.*mm);lEle.push_back("Scintillator");
+    }
+    
+    unsigned maxi = (aVersion==4)?9:11;
+    for(unsigned i=0; i<maxi; i++) {
+      m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+    }
   }
 }
+
+void DetectorConstruction::buildHF(){
+  firstHFlayer_ = m_caloStruct.size();
+  G4double airThick = 4*mm;
+  std::vector<G4double> lThick;
+  std::vector<std::string> lEle;
+  G4double pcbthick = 2*mm;
+  lThick.clear();
+  lEle.clear();
+  //"ECAL" part
+  //first layer without bit after Si
+  lThick.push_back(0.); lEle.push_back("Cu");
+  lThick.push_back(1.);lEle.push_back("CFMix");
+  lThick.push_back(25*mm);lEle.push_back("Pb");
+  lThick.push_back(0.5*mm); lEle.push_back("Cu");
+  lThick.push_back(airThick);lEle.push_back("Air");
+  lThick.push_back(pcbthick);lEle.push_back("PCB");
+  lThick.push_back(0.2*mm);lEle.push_back("Si");
+  m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+  //put back bit after Si in next layer
+  lThick[0] = 5*mm;
+  for(unsigned i=0; i<5; i++) {
+    m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+  }
+  //"HCAL" part
+  lThick[2] = 65*mm;
+  lEle[2] = "SSteel";
+  m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+  lThick.push_back(5.*mm); lEle.push_back("Cu");
+  m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+
+  //add HF as of now
+  //+11.1m from IP
+  lThick.clear();
+  lEle.clear();
+  lThick.push_back(1*mm);lEle.push_back("Air");
+  lThick.push_back(1650*mm); lEle.push_back("Cu");
+  m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+  
+}//buildHF
+
+
 //
 DetectorConstruction::~DetectorConstruction() { delete m_detectorMessenger;}
+
+
+double DetectorConstruction::getEtaFromRZ(const double & r, const double & z){
+  double theta = atan(r/z);
+  return -log(tan(theta/2.));
+}
 
 //
 void DetectorConstruction::DefineMaterials()
@@ -826,10 +1195,12 @@ void DetectorConstruction::DefineMaterials()
 void DetectorConstruction::UpdateCalorSize(){  
 
   m_CalorSizeZ=0;
-  
+  double HFsize = 0;
   for(size_t i=0; i<m_caloStruct.size(); i++){
+    if (i>=firstHFlayer_) HFsize += m_caloStruct[i].Total_thick;
     m_CalorSizeZ=m_CalorSizeZ+m_caloStruct[i].Total_thick;
   }
+  std::cout << m_CalorSizeZ << std::endl;
 
   m_nSectors = 1;
   m_interSectorWidth = 0;
@@ -863,13 +1234,23 @@ void DetectorConstruction::UpdateCalorSize(){
     m_CalorSizeXY=2800*2;//use full length for making hexagon map
     m_minRadius = 150;
     m_maxRadius = m_CalorSizeXY;
-    m_minEta = 1.4;
-    m_maxEta = 3.7;
+    if (version_ != v_HGCAL_v8 && version_ != v_HGCALEE_v8) {
+      m_minEta.resize(m_caloStruct.size(),m_minEta0);
+      m_maxEta.resize(m_caloStruct.size(),m_maxEta0);
+    }
+    m_minEtaHF = 3.0;
+    m_maxEtaHF = 4.3;
     m_sectorWidth = 2.*pi;//2.*pi/m_nSectors;
     m_interSectorWidth = 0;//0.2*pi/180.;
     m_z0pos = 2990;//3170;
     if (version_ == v_HGCALEE_v5 || version_ == v_HGCAL_v5 || version_ == v_HGCALEE_v5_gap4 || version_ == v_HGCAL_v5_gap4) m_z0pos = 2990;//3170;
-    else if (version_ == v_HGCALEE_v6 || version_ == v_HGCAL_v6 || version_ == v_HGCALEE_v624 || version_ == v_HGCALEE_v618) m_z0pos = 3070;
+    else if (version_ == v_HGCALEE_v6 || version_ == v_HGCAL_v6 || version_ == v_HGCALEE_v7 || version_ == v_HGCAL_v7 || version_ == v_HGCAL_v7_HF ||version_ == v_HGCALEE_v624 || version_ == v_HGCALEE_v618) m_z0pos = 3070;
+    else if (version_ == v_HGCALEE_v8 || version_ == v_HGCAL_v8) m_z0pos = 2980;
+    if (doHF_){
+      m_z0HF=11100;
+      m_CalorSizeZ=m_z0HF-m_z0pos+HFsize;
+    }
+    else m_CalorSizeZ+=m_z0pos;
   }
   else {
     m_CalorSizeXY=200;
@@ -882,15 +1263,27 @@ void DetectorConstruction::UpdateCalorSize(){
   if (m_nSectors>1) m_WorldSizeXY=(m_CalorSizeXY+2*m_sectorWidth)*1.1;
   else m_WorldSizeXY=m_CalorSizeXY*1.1;
 
-  if (model_ == DetectorConstruction::m_FULLSECTION || model_ == DetectorConstruction::m_2016TB) 
+  if (model_ == DetectorConstruction::m_FULLSECTION || model_ == DetectorConstruction::m_2016TB) {
     G4cout << "[DetectorConstruction][UpdateCalorSize] Z x minR * maxR = " 
 	   << m_CalorSizeZ << " x " 
 	   << m_minRadius << " x " 
 	   << m_maxRadius 
 	   << " mm, eta range "
-	   << m_minEta << " - " 
-	   << m_maxEta << " nsectors = " << m_nSectors
+	   << m_minEta0 << " - " 
+	   << m_maxEta0 ;
+    if (doHF_) G4cout << " eta range HF "
+		      << m_minEtaHF << " - " 
+		      << m_maxEtaHF; 
+    G4cout << " nsectors = " << m_nSectors
 	   << G4endl;
+    G4cout << "[DetectorConstruction][UpdateCalorSize] Eta ranges: " << G4endl;
+    double tmpz=m_z0pos;
+    G4cout << "check sizes: calostruct " << m_caloStruct.size() << " etamin " << m_minEta.size() << " etamax " << m_maxEta.size() << std::endl;
+    for (unsigned il(0); il<m_caloStruct.size(); ++il){
+      G4cout << "Layer #" << il << " z0= " << tmpz << " eta " << m_minEta[il] << " " << m_maxEta[il]<< G4endl;
+      tmpz += m_caloStruct[il].Total_thick;
+    }
+  }
   else G4cout << "[DetectorConstruction][UpdateCalorSize] Z x XY = " 
 	      << m_CalorSizeZ << " x " 
 	      << m_CalorSizeXY << " mm " 
@@ -910,7 +1303,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   G4SolidStore::GetInstance()->Clean();
 
   //world
-  G4double expHall_z = model_ == DetectorConstruction::m_2016TB? 0.5*m : 6*m;
+  G4double expHall_z = model_ == DetectorConstruction::m_2016TB? 0.5*m : 14*m;
   G4double expHall_x = model_ == DetectorConstruction::m_2016TB? 20*cm : 3*m;
   G4double expHall_y = model_ == DetectorConstruction::m_2016TB? 20*cm : 3*m;
 
@@ -937,7 +1330,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   }
 
   if (model_ == DetectorConstruction::m_FULLSECTION){
-    m_solidWorld = new G4Tubs("Wbox",m_minRadius*1.1,m_maxRadius*1.1,m_WorldSizeZ/2,0,2*pi);
+    m_solidWorld = new G4Tubs("Wbox",m_minRadius*0.9,m_maxRadius*1.1,m_WorldSizeZ/2,0,2*pi);
   }
   else {
     m_solidWorld = new G4Box("Wbox",m_WorldSizeXY/2,m_WorldSizeXY/2,m_WorldSizeZ/2);
@@ -967,9 +1360,10 @@ void DetectorConstruction::buildSectorStack(const unsigned sectorNum,
 
 
   //build the stack
-  G4double zOffset(-m_CalorSizeZ/2), zOverburden(0.);
-  char nameBuf[10];
+  G4double zOffset(-m_CalorSizeZ/2), zOverburden(0.), zOverburdenRef(0.);
+  char nameBuf[100];
   G4VSolid *solid;
+  G4VSolid *supportcone;
 
   G4double totalLengthX0 = 0;
   G4double totalLengthL0 = 0;
@@ -981,12 +1375,19 @@ void DetectorConstruction::buildSectorStack(const unsigned sectorNum,
 
       //std::cout << " sector " << sectorNum << " layer " << i << " offset " << crackOffset  << std::endl;
       if (model_ == DetectorConstruction::m_FULLSECTION) {
+	//for HF
+	if (i==firstHFlayer_) {
+	  zOffset+=m_z0HF-m_z0pos;
+	  zOverburden=0;
+	}
 	crackOffset=0;
+	if (i==firstMixedlayer_) zOverburdenRef = zOverburden;
+	if (i==firstScintlayer_) zOverburden = zOverburdenRef;
       }
       const unsigned nEle = m_caloStruct[i].n_elements;
       //index for counting Si sensitive layers
       unsigned idx = 0;
-
+      double totalThicknessLayer = 0;
       for (unsigned ie(0); ie<nEle;++ie){
 	std::string eleName = m_caloStruct[i].ele_name[ie];
 	if (m_nSectors==1) sprintf(nameBuf,"%s%d",eleName.c_str(),int(i+1));
@@ -998,6 +1399,7 @@ void DetectorConstruction::buildSectorStack(const unsigned sectorNum,
 	}
 	std::string baseName(nameBuf);
 	G4double thick = m_caloStruct[i].ele_thick[ie];
+	totalThicknessLayer += thick;
 	//
 	G4double extraWidth = 0;
 	if (m_nSectors>1 && eleName=="W" && model_ != DetectorConstruction::m_FULLSECTION){
@@ -1011,16 +1413,21 @@ void DetectorConstruction::buildSectorStack(const unsigned sectorNum,
 	       <<",angOffset+minL="<<angOffset+minL
 	       <<",width+extraWidth="<<width+extraWidth<<");"<<endl;
 #endif
-	  solid = constructSolid(baseName,thick,zOffset+zOverburden,angOffset+minL,width+extraWidth);
+	  solid = constructSolid(i,baseName,thick,zOffset+zOverburden,angOffset+minL,width+extraWidth,i>=firstHFlayer_);
+
 	  G4LogicalVolume *logi = new G4LogicalVolume(solid, m_materials[eleName], baseName+"log");
 	  m_caloStruct[i].ele_X0[ie]   = m_materials[eleName]->GetRadlen();
 	  m_caloStruct[i].ele_dEdx[ie] = m_dEdx[eleName];
 	  m_caloStruct[i].ele_L0[ie]   = m_materials[eleName]->GetNuclearInterLength();
 	  if (sectorNum==0 || sectorNum==m_nSectors-1) {
-	    G4cout << "************ " << eleName ;
+	    G4cout << "************ " << eleName;
 	    if (m_nSectors>1) G4cout << " sector " << sectorNum;
 	    G4cout << " layer " << i << " dEdx=" << m_caloStruct[i].ele_dEdx[ie] << " X0=" << m_caloStruct[i].ele_X0[ie]
-		   << " L0=" << m_caloStruct[i].ele_L0[ie] << " zpos=" << m_z0pos+zOverburden << "mm w=" << m_caloStruct[i].ele_thick[ie] << "mm";
+		   << " L0=" << m_caloStruct[i].ele_L0[ie] << " zpos=" ;
+
+	    if (i>=firstHFlayer_) G4cout << m_z0HF+zOverburden ;
+	    else G4cout << m_z0pos+zOverburden ;
+	    G4cout << "mm w=" << m_caloStruct[i].ele_thick[ie] << "mm";
 	    //G4cout << " d=" << m_materials[eleName]->GetDensity();
 	  //G4cout << G4endl;
 	  //G4cout << *(m_materials[eleName]->GetMaterialTable()) << G4endl;
@@ -1028,7 +1435,12 @@ void DetectorConstruction::buildSectorStack(const unsigned sectorNum,
 	    totalLengthL0 += m_caloStruct[i].ele_thick[ie]/m_caloStruct[i].ele_L0[ie]; G4cout << " TotLambda=" << totalLengthL0 << G4endl;
 	  }
 
-	  if (m_caloStruct[i].isSensitiveElement(ie)) m_logicSi.push_back(logi);
+	  if (m_caloStruct[i].isSensitiveElement(ie)){
+	    if (idx<=1) m_caloStruct[i].sensitiveZ = ((i>=firstHFlayer_)?m_z0HF+zOverburden:m_z0pos+zOverburden);
+	    
+	    m_logicSi.push_back(logi);
+	    //if (i==m_caloStruct.size()-1 && version_ == v_HGCALHF) m_logicSi.push_back(logi);
+	  }
 	  
 	  G4double xpvpos = -m_CalorSizeXY/2.+minL+width/2+crackOffset;
 	  if (model_ == DetectorConstruction::m_FULLSECTION) xpvpos=0;
@@ -1040,8 +1452,8 @@ void DetectorConstruction::buildSectorStack(const unsigned sectorNum,
 #endif
 	  m_caloStruct[i].ele_vol[nEle*sectorNum+ie]=
 	    new G4PVPlacement(0, G4ThreeVector(xpvpos,0.,zOffset+zOverburden+thick/2), logi, baseName+"phys", m_logicWorld, false, 0);
-	  //std::cout << " positionning layer at " << xpvpos << " 0 " << zOffset+zOverburden+thick/2 << std::endl;
-
+	  //std::cout << " **** positionning layer " <<  m_caloStruct[i].ele_vol[nEle*sectorNum+ie]->GetName() << " at " << xpvpos << " 0 " << zOffset+zOverburden+thick/2 << std::endl;
+ 
 	  G4VisAttributes *simpleBoxVisAtt= new G4VisAttributes(m_caloStruct[i].g4Colour(ie));
 	  simpleBoxVisAtt->SetVisibility(true);
 	  logi->SetVisAttributes(simpleBoxVisAtt);
@@ -1058,7 +1470,66 @@ void DetectorConstruction::buildSectorStack(const unsigned sectorNum,
 	}
 
       }//loop on elements
+
+      //add support cone, for EE only
+      if (i<28 && (version_ == v_HGCALEE_v6 || version_ ==  v_HGCAL_v6 || version_ == v_HGCALEE_v7 || version_ ==  v_HGCAL_v7 || version_ == v_HGCALEE_v8 || version_ ==  v_HGCAL_v8)) {
+	//remove support cone for moderator
+	//if (i==0) {
+	//totalThicknessLayer -= 100;
+	//}
+	std::string eleName = "SupportCone";
+	if (m_nSectors==1) sprintf(nameBuf,"%s%d",eleName.c_str(),int(i+1));
+	else sprintf(nameBuf,"%s%d_%d",eleName.c_str(),int(sectorNum),int(i+1));
+	
+	std::string baseName(nameBuf);
+	G4double extraWidth = 0;
+#if 1
+	cout << "solid = constructSupportCone("<<baseName
+	     <<",thick="<<totalThicknessLayer
+	     <<",zOffset+zOverburden="<<zOffset+zOverburden-totalThicknessLayer
+	     <<",angOffset+minL="<<angOffset+minL
+	     <<",width+extraWidth="<<width+extraWidth<<");"<<endl;
+#endif
+	
+	supportcone = constructSupportCone(baseName,totalThicknessLayer,zOffset+zOverburden-totalThicknessLayer,angOffset+minL,width+extraWidth);
+	G4LogicalVolume *logi = new G4LogicalVolume(supportcone, m_materials["Al"], baseName+"log");
+	m_logicAl.push_back(logi);
+	G4double xpvpos = -m_CalorSizeXY/2.+minL+width/2+crackOffset;
+	if (model_ == DetectorConstruction::m_FULLSECTION) xpvpos=0;
+	m_caloStruct[i].supportcone_vol=
+	new G4PVPlacement(0, G4ThreeVector(xpvpos,0.,zOffset+zOverburden-totalThicknessLayer/2), logi, baseName+"phys", m_logicWorld, false, 0);
+	G4VisAttributes *simpleBoxVisAtt= new G4VisAttributes(G4Colour::Red());
+	simpleBoxVisAtt->SetVisibility(true);
+	logi->SetVisAttributes(simpleBoxVisAtt);
+	unsigned nlogical = m_logicAl.size();
+	G4Region* aRegion = new G4Region(baseName+"Reg");
+	m_logicAl[nlogical-1]->SetRegion(aRegion);
+	aRegion->AddRootLogicalVolume(m_logicAl[nlogical-1]);
+      }
     }//loop on layers
+  std::cout << " Z positions of sensitive layers: " << std::endl;
+  for (size_t i=0; i<m_caloStruct.size(); i++) {
+    std::cout << "sensitiveZ_[" << i << "] = " << m_caloStruct[i].sensitiveZ << ";" << std::endl;
+  }
+  
+  //dummy layer to get genparticles
+  std::string eleName = "DummyLayer";
+  G4VSolid *dummylayer;
+  if (model_ == DetectorConstruction::m_FULLSECTION) dummylayer = constructSolid(eleName,1.,-m_CalorSizeZ/2-1,0,m_CalorSizeXY,1.3,5);
+  else dummylayer = constructSolid(0,eleName,1.,-m_CalorSizeZ/2-1,0,m_CalorSizeXY);
+  G4LogicalVolume *logi = new G4LogicalVolume(dummylayer, m_materials["Air"], eleName+"log");
+  G4double xpvpos = model_ == DetectorConstruction::m_FULLSECTION?-m_CalorSizeXY/2. : 0;
+  if (model_ == DetectorConstruction::m_FULLSECTION) xpvpos=0;
+  m_caloStruct[0].dummylayer_vol=
+    new G4PVPlacement(0, G4ThreeVector(xpvpos,0.,-m_CalorSizeZ/2-1+0.5), logi, eleName+"phys", m_logicWorld, false, 0);
+  std::cout << "Adding dummy layer at (local coord): " << xpvpos << " 0 " << -m_CalorSizeZ/2-1+0.5 << std::endl;
+
+  G4VisAttributes *simpleBoxVisAtt= new G4VisAttributes(G4Colour::Blue());
+  simpleBoxVisAtt->SetVisibility(true);
+  logi->SetVisAttributes(simpleBoxVisAtt);
+
+
+
 
 }//buildstack
 
@@ -1068,7 +1539,7 @@ void DetectorConstruction::fillInterSectorSpace(const unsigned sectorNum,
 {
 
   //build the stack
-  G4double zOffset(-m_CalorSizeZ/2), zOverburden(0.);
+  G4double zOffset(-m_CalorSizeZ/2), zOverburden(0.), zOverburdenRef(0.);
   char nameBuf[10];
   G4VSolid *solid;
 
@@ -1079,6 +1550,8 @@ void DetectorConstruction::fillInterSectorSpace(const unsigned sectorNum,
 
       if (model_ == DetectorConstruction::m_FULLSECTION) {
 	crackOffset=0;
+	if (i==firstMixedlayer_) zOverburdenRef = zOverburden;
+	if (i==firstScintlayer_) zOverburden = zOverburdenRef;
       }
       const unsigned nEle = m_caloStruct[i].n_elements;
       for (unsigned ie(0); ie<nEle;++ie){
@@ -1094,7 +1567,7 @@ void DetectorConstruction::fillInterSectorSpace(const unsigned sectorNum,
 	sprintf(nameBuf,"%s%d_%d",eleName.c_str(),int(sectorNum),int(i+1));
 	std::string baseName(nameBuf);
 	if(thick>0){
-	  solid = constructSolid(baseName,thick,zOffset+zOverburden,angOffset+minL,width+extraWidth);
+	  solid = constructSolid(i,baseName,thick,zOffset+zOverburden,angOffset+minL,width+extraWidth);
 	  G4LogicalVolume *logi = new G4LogicalVolume(solid, m_materials[eleName], baseName+"log");
 	  G4double xpvpos = -m_CalorSizeXY/2.+minL+width/2+crackOffset;
 	  if (model_ == DetectorConstruction::m_FULLSECTION) xpvpos=0;
@@ -1201,14 +1674,12 @@ void DetectorConstruction::SetDropLayers(std::string layers)
   std::cout << std::endl;
 }
 
-G4VSolid *DetectorConstruction::constructSolid (std::string baseName, G4double thick, G4double zpos,const G4double & minL, const G4double & width){
+G4VSolid *DetectorConstruction::constructSolid (const unsigned layer, std::string baseName, G4double thick, G4double zpos,const G4double & minL, const G4double & width, const bool isHF){
   
   G4VSolid *solid;
   if (model_ == DetectorConstruction::m_FULLSECTION){
-    double minR = tan(2*atan(exp(-m_maxEta)))*(zpos+m_z0pos+m_CalorSizeZ/2);
-    double maxR = tan(2*atan(exp(-m_minEta)))*(zpos+m_z0pos+m_CalorSizeZ/2);
-    //std::cout << " zpos = " << zpos+m_z0pos+m_CalorSizeZ/2 << " radius range " << minR << " " << maxR << std::endl;
-    solid = new G4Tubs(baseName+"box",minR,maxR,thick/2,minL,width);
+    if (isHF) solid=constructSolid(baseName,thick,zpos,minL,width,m_minEtaHF,m_maxEtaHF);
+    else solid=constructSolid(baseName,thick,zpos,minL,width,m_minEta[layer],m_maxEta[layer]);
   }
   else if (model_ == DetectorConstruction::m_2016TB){
     std::cout << " zpos = " << zpos << "-" << zpos+thick << " hexagon with side " << m_maxRadius << std::endl;
@@ -1220,5 +1691,36 @@ G4VSolid *DetectorConstruction::constructSolid (std::string baseName, G4double t
   else{
     solid = new G4Box(baseName+"box", width/2, m_CalorSizeXY/2, thick/2 );
   }
+  return solid;
+}
+
+G4VSolid *DetectorConstruction::constructSolid (std::string baseName, G4double thick, G4double zpos,const G4double & minL, const G4double & width, const double & etamin, const double & etamax){
+  
+  G4VSolid *solid=0;
+  if (model_ == DetectorConstruction::m_FULLSECTION){
+    double minR = tan(2*atan(exp(-etamax)))*(zpos+m_z0pos+m_CalorSizeZ/2);
+    double maxR = tan(2*atan(exp(-etamin)))*(zpos+m_z0pos+m_CalorSizeZ/2);
+    //std::cout << " zpos = " << zpos+m_z0pos+m_CalorSizeZ/2 << " radius range " << minR << " " << maxR << std::endl;
+    solid = new G4Tubs(baseName+"box",minR,maxR,thick/2,minL,width); 
+  }
+  return solid;
+}
+
+G4VSolid *DetectorConstruction::constructSupportCone (std::string baseName, G4double thick, G4double zpos,const G4double & minL, const G4double & width){
+
+ return constructSupportCone(baseName,thick,zpos,minL,width,3.00,3.05);
+
+}
+
+G4VSolid *DetectorConstruction::constructSupportCone (std::string baseName, G4double thick, G4double zpos,const G4double & minL, const G4double & width, const double & etamin, const double & etamax){
+
+  G4VSolid *solid;
+  double maxR = tan(2*atan(exp(-1.*etamin)))*(zpos+m_z0pos+m_CalorSizeZ/2);
+  //double minR = tan(2*atan(exp(-1.*etamax)))*(zpos+m_z0pos+m_CalorSizeZ/2);
+  //use fix radius but one edge always at eta=3
+  double minR = maxR-10;
+  std::cout << " SupportCone zpos = " << zpos+m_z0pos+m_CalorSizeZ/2 << " radius range " << minR << " " << maxR << std::endl;
+  solid = new G4Tubs(baseName+"box",minR,maxR,thick/2,minL,width);
+
   return solid;
 }

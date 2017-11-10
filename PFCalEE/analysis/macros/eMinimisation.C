@@ -27,14 +27,16 @@
 
 int eMinimisation(){
 
-  bool doHgg = true;
+  bool doPi = true;
+  bool doHgg = false;
 
-  bool addCst = true;
+  bool addCst = false;
 
   TFile *output = 0;
   std::ostringstream outname;
   outname << "Eminimisation";
-  if (doHgg) outname << "_Hgg";
+  if (doPi) outname << "_pi";
+  else if (doHgg) outname << "_Hgg";
   if (addCst) outname << "_extraCstForFit";
   outname << ".root";
   output = TFile::Open(outname.str().c_str(),"RECREATE");
@@ -61,10 +63,14 @@ int eMinimisation(){
   //factory->AddVariable( "(energy_20_SR5+energy_22_SR5+energy_24_SR5+energy_26_SR5)", "E3even", "Mips" );
   //factory->AddVariable( "(energy_21_SR5+energy_23_SR5+energy_25_SR5+energy_27_SR5)", "E3odd", "Mips" );
 
-  const unsigned nL = 28;
-  const unsigned nE = doHgg? 1 : 7;
-  const unsigned E[7] = {5,10,20,30,50,70,100};
-  const double max[7] = {3000,5000,10000,20000,30000,40000,50000};
+  const unsigned nL = doPi ? 52 : 28;
+  const unsigned nE = (doHgg || doPi)? 1 : 7;
+  unsigned E[7] = {5,10,20,30,50,70,100};
+  double max[7] = {3000,5000,10000,20000,30000,40000,50000};
+  if (doPi) {
+    E[0] = 50;
+    max[0] = 30000;
+  }
   const double eta = 2.0;
 
   const unsigned nFit = addCst ? nL+1 : nL;
@@ -92,6 +98,8 @@ int eMinimisation(){
   TH1F *p_optEoverEtrue[nE];
   TH2F *p_optE2D[nE];
 
+  TH2F *p_EperLayer[nE];
+
   TGraphErrors *grLin[3];
   TGraphErrors *grReso[3];
   TGraphErrors *grSigmaEff[3];
@@ -118,13 +126,13 @@ int eMinimisation(){
     p_wgtEtotal[iE] = new TH1F(label.str().c_str(),";E_{absW} (Mips)",1000,0,doHgg?100000:max[iE]);
     label.str("");
     label << "p_wgtEtotalCaliboverEtrue_" << E[iE];
-    p_wgtEtotalCaliboverEtrue[iE] = new TH1F(label.str().c_str(),";E_{absW} (GeV)",100,0.8,1.2);
+    p_wgtEtotalCaliboverEtrue[iE] = new TH1F(label.str().c_str(),";E_{absW} (GeV)",100,0,2);//0.8,1.2);
     label.str("");
     label << "p_wgtEtotalValeriCaliboverEtrue_" << E[iE];
-    p_wgtEtotalValeriCaliboverEtrue[iE] = new TH1F(label.str().c_str(),";E_{absW}(Valeri) (GeV)",100,0.8,1.2);
+    p_wgtEtotalValeriCaliboverEtrue[iE] = new TH1F(label.str().c_str(),";E_{absW}(Valeri) (GeV)",100,0,2);//0.8,1.2);
     label.str("");
     label << "p_optEoverEtrue_" << E[iE];
-    p_optEoverEtrue[iE] = new TH1F(label.str().c_str(),";E_{opt}/E_{true}",100,0.8,1.2);
+    p_optEoverEtrue[iE] = new TH1F(label.str().c_str(),";E_{opt}/E_{true}",100,0,2);//0.8,1.2);
 
     label.str("");
     label << "p_wgtEtotalValeri_" << E[iE];
@@ -139,6 +147,9 @@ int eMinimisation(){
     label.str("");
     label << "p_optE2D_" << E[iE];
     p_optE2D[iE] = new TH2F(label.str().c_str(),";E_{opt} (GeV); E_{true} (GeV)",100,0,1000,100,0,1000);
+    label.str("");
+    label << "p_EperLayer_" << E[iE];
+    p_EperLayer[iE] = new TH2F(label.str().c_str(),";layer;E_{layer} (Mips)",nL,0,nL,1000,0,5000);
 
     label.str("");
     label << "p_wgts_" << E[iE];
@@ -149,6 +160,7 @@ int eMinimisation(){
 
     label.str("");
     if (doHgg) label  << "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalHexa/githexaV03-01-01/version30/Hgg/pu0_gamma1.root";
+    else if (doPi) label  << "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalHexa/githexaV03-01-01/version33/model2/pi-/eta20_et" << E[iE] << "_pu0_IC3.root";
     else label << "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalHexa/gittestHexa/version100/model3/gamma/eta20_et" << E[iE] << "_pu0_IC3_Si2.root";
     fin[iE]  = TFile::Open(label.str().c_str());
     fin[iE]->cd("Energies");  
@@ -158,6 +170,7 @@ int eMinimisation(){
       label.str("");
       label << "energy_" << iL;
       if (doHgg) label << "_SR4";
+      //else if (doPi) label << "_SR5";
       else label << "_SR5";
       tree[iE]->SetBranchAddress(label.str().c_str(),&eLayer[iE][iL]);
       label.str("");
@@ -187,6 +200,7 @@ int eMinimisation(){
 	  double valVal = iL<(nL-1) ? (absw[iL]+absw[iL+1])/2. : absw[iL];
 	  Evaleri += eLayer[iE][iL]*valVal;
 	  Etot += eLayer[iE][iL]*absw[iL];
+	  p_EperLayer[iE]->Fill(iL,eLayer[iE][iL]);
 	}
 	for (unsigned jL(0); jL<nFit; ++jL){//loop on layers
 	  matrix[iL][jL] += eLayer[iE][iL]*eLayer[iE][jL]*1./nEvts;
@@ -198,7 +212,7 @@ int eMinimisation(){
 	p_wgtEtotalValeri2D[iE]->Fill(Evaleri,trueE[iE]);
       }
       if (!doHgg) {
-	p_wgtEtotal[iE]->Fill(wgtEtotal[iE]);
+	p_wgtEtotal[iE]->Fill(doPi?Etot : wgtEtotal[iE]);
 	p_wgtEtotalValeri[iE]->Fill(Evaleri);
       }
 
@@ -213,6 +227,7 @@ int eMinimisation(){
   }
   
   myc->cd(4);
+  gPad->SetLogz(1);
   p_Matrix->SetStats(0);
   p_Matrix->Draw("colz");
   myc->Update();
@@ -232,12 +247,12 @@ int eMinimisation(){
       p_wgtEtotal[iE]->Draw();
       p_wgtEtotal[iE]->Fit("gaus","","same");
       TF1 *fit = p_wgtEtotal[iE]->GetFunction("gaus");
-      calib[iE] = fit->GetParameter(1);
+      if (fit) calib[iE] = fit->GetParameter(1);
       myc->cd(2);
       p_wgtEtotalValeri[iE]->Draw();
       p_wgtEtotalValeri[iE]->Fit("gaus","","same");
       fit = p_wgtEtotalValeri[iE]->GetFunction("gaus");
-      calibValeri[iE] = fit->GetParameter(1);
+      if (fit) calibValeri[iE] = fit->GetParameter(1);
       std::cout << " -- E = " << E[iE] << ", Gaussian mean = " << calib[iE] << " Valeri's method " << calibValeri[iE] << std::endl;
     }
     else {
@@ -303,9 +318,10 @@ int eMinimisation(){
 	  double val = iL<(nL-1) ? (absw[iL]+absw[iL+1])/2. : absw[iL];
 	  Evaleri += eLayer[iE][iL]*val;
 	  Etot += eLayer[iE][iL]*absw[iL];
+	  p_EperLayer[iE]->Fill(iL,eLayer[iE][iL]);
 	}
       }
-      p_wgtEtotalCaliboverEtrue[iE]->Fill(doHgg?Etot*calib[iE]/trueE[iE]:wgtEtotal[iE]/calib[iE]);
+      p_wgtEtotalCaliboverEtrue[iE]->Fill(doHgg?Etot*calib[iE]/trueE[iE]:(doPi?Etot:wgtEtotal[iE])/calib[iE]);
 
       p_wgtEtotalValeriCaliboverEtrue[iE]->Fill(doHgg?Evaleri*calibValeri[iE]/trueE[iE]:Evaleri/calibValeri[iE]);
       p_optEoverEtrue[iE]->Fill(Eopt/trueE[iE]);
@@ -321,28 +337,31 @@ int eMinimisation(){
     mycR->cd(1);
     p_optEoverEtrue[iE]->Fit("gaus");
     TF1 *fit = p_optEoverEtrue[iE]->GetFunction("gaus");
-    fit->SetLineColor(3);
-    grReso[2]->SetPoint(iE,Etrue,fit->GetParameter(2)/fit->GetParameter(1));
-    grReso[2]->SetPointError(iE,0,fit->GetParError(2)/fit->GetParameter(1));
-    grLin[2]->SetPoint(iE,Etrue,fit->GetParameter(1));
-    grLin[2]->SetPointError(iE,0,fit->GetParError(1));
-
+    if (fit){
+      fit->SetLineColor(3);
+      grReso[2]->SetPoint(iE,Etrue,fit->GetParameter(2)/fit->GetParameter(1));
+      grReso[2]->SetPointError(iE,0,fit->GetParError(2)/fit->GetParameter(1));
+      grLin[2]->SetPoint(iE,Etrue,fit->GetParameter(1));
+      grLin[2]->SetPointError(iE,0,fit->GetParError(1));
+    }
     p_wgtEtotalCaliboverEtrue[iE]->Fit("gaus");
     fit = p_wgtEtotalCaliboverEtrue[iE]->GetFunction("gaus");
-    fit->SetLineColor(1);
-    grReso[0]->SetPoint(iE,Etrue,fit->GetParameter(2)/fit->GetParameter(1));
-    grReso[0]->SetPointError(iE,0,fit->GetParError(2)/fit->GetParameter(1));
-    grLin[0]->SetPoint(iE,Etrue,fit->GetParameter(1));
-    grLin[0]->SetPointError(iE,0,fit->GetParError(1));
-
+    if (fit){
+      fit->SetLineColor(1);
+      grReso[0]->SetPoint(iE,Etrue,fit->GetParameter(2)/fit->GetParameter(1));
+      grReso[0]->SetPointError(iE,0,fit->GetParError(2)/fit->GetParameter(1));
+      grLin[0]->SetPoint(iE,Etrue,fit->GetParameter(1));
+      grLin[0]->SetPointError(iE,0,fit->GetParError(1));
+    }
     p_wgtEtotalValeriCaliboverEtrue[iE]->Fit("gaus");
     fit = p_wgtEtotalValeriCaliboverEtrue[iE]->GetFunction("gaus");
-    fit->SetLineColor(2);
-    grReso[1]->SetPoint(iE,Etrue,fit->GetParameter(2)/fit->GetParameter(1));
-    grReso[1]->SetPointError(iE,0,fit->GetParError(2)/fit->GetParameter(1));
-    grLin[1]->SetPoint(iE,Etrue,fit->GetParameter(1));
-    grLin[1]->SetPointError(iE,0,fit->GetParError(1));
-
+    if (fit){
+      fit->SetLineColor(2);
+      grReso[1]->SetPoint(iE,Etrue,fit->GetParameter(2)/fit->GetParameter(1));
+      grReso[1]->SetPointError(iE,0,fit->GetParError(2)/fit->GetParameter(1));
+      grLin[1]->SetPoint(iE,Etrue,fit->GetParameter(1));
+      grLin[1]->SetPointError(iE,0,fit->GetParError(1));
+    }
 
     double sigmaeff_ref = effSigmaMacro(p_wgtEtotalCaliboverEtrue[iE]);
     double sigmaeff_ref_valeri = effSigmaMacro(p_wgtEtotalValeriCaliboverEtrue[iE]);
@@ -350,11 +369,11 @@ int eMinimisation(){
 
     std::cout << "E " << Etrue << " sigma_eff=" <<  sigmaeff_ref << " " << sigmaeff_ref_valeri << " " << sigmaeff_opt << std::endl;
 
-    if (doHgg){
-      mycR->cd(4);
-      p_optEoverEtrue[iE]->SetLineColor(3);
-      p_optEoverEtrue[iE]->Draw();
-      p_wgtEtotalCaliboverEtrue[iE]->SetLineColor(1);
+    //if (doHgg){
+    mycR->cd(4);
+    p_optEoverEtrue[iE]->SetLineColor(3);
+    p_optEoverEtrue[iE]->Draw();
+    p_wgtEtotalCaliboverEtrue[iE]->SetLineColor(1);
       p_wgtEtotalCaliboverEtrue[iE]->Draw("same");
       p_wgtEtotalValeriCaliboverEtrue[iE]->SetLineColor(2);
       p_wgtEtotalValeriCaliboverEtrue[iE]->Draw("same");
@@ -372,7 +391,7 @@ int eMinimisation(){
 		<< " " << p_wgtEtotalValeriCaliboverEtrue[iE]->GetBinContent(p_wgtEtotalValeriCaliboverEtrue[iE]->GetNbinsX()+1)
 		<< std::endl;
 
-    }
+      //}
 
 
     grSigmaEff[0]->SetPoint(iE,Etrue,sigmaeff_ref);
@@ -396,6 +415,14 @@ int eMinimisation(){
     for (unsigned iE(0); iE<nE; ++iE){//loop on energies
       p_wgtEtotalValeri[iE]->Draw("same");
     }
+    myc->cd(3);
+    gPad->SetLogz(1);
+    p_EperLayer[0]->Draw("colz");
+    p_EperLayer[0]->ProfileX();//"_pfx",1,-1,"d");
+    TProfile *tmp = (TProfile*)gDirectory->Get("p_EperLayer_50_pfx");
+    tmp->SetMarkerStyle(22);
+    p_EperLayer[0]->GetYaxis()->SetRangeUser(0,350);
+    tmp->Draw("PEsame");
     myc->Update();
   }
 
@@ -403,6 +430,7 @@ int eMinimisation(){
   std::ostringstream lsave;
   lsave << "Optimisation";
   if (doHgg) lsave << "_Hgg";
+  else if (doPi) lsave << "_pi";
   if (addCst) lsave << "_extraCstForFit";
   lsave << ".pdf";
 
@@ -419,7 +447,8 @@ int eMinimisation(){
     grSigmaEff[iG]->SetLineColor(iG+1);
     grSigmaEff[iG]->SetMarkerColor(iG+1);
     grSigmaEff[iG]->SetMarkerStyle(20+iG);
-    grSigmaEff[iG]->GetYaxis()->SetRangeUser(0.018,0.022);
+    if (!doPi) grSigmaEff[iG]->GetYaxis()->SetRangeUser(0.018,0.022);
+    else grSigmaEff[iG]->GetYaxis()->SetRangeUser(0.,0.1);
     grSigmaEff[iG]->Draw(iG==0?"APE":"PE");
   }
   leg->Draw("same");
@@ -433,7 +462,7 @@ int eMinimisation(){
     grLin[iG]->SetMarkerStyle(20+iG);
     grLin[iG]->GetYaxis()->SetRangeUser(0.95,1.05);
     grLin[iG]->Draw(iG==0?"APE":"PE");
-    grLin[iG]->Fit("pol1","BIME0","same");
+    if (!doHgg && !doPi) grLin[iG]->Fit("pol1","BIME0","same");
   }
   leg->Draw("same");
 
@@ -445,9 +474,10 @@ int eMinimisation(){
     grReso[iG]->SetLineColor(iG+1);
     grReso[iG]->SetMarkerColor(iG+1);
     grReso[iG]->SetMarkerStyle(20+iG);
-    grReso[iG]->GetYaxis()->SetRangeUser(0.018,0.022);
+    if (!doPi) grReso[iG]->GetYaxis()->SetRangeUser(0.018,0.022);
+    else grReso[iG]->GetYaxis()->SetRangeUser(0.,0.1);
     grReso[iG]->Draw(iG==0?"APE":"PE");
-    if (!doHgg){
+    if (!doHgg && !doPi){
       grReso[iG]->Fit(fitFunc[iG],"BIME0");
       fitFunc[iG]->SetLineColor(1+iG);
       fitFunc[iG]->Draw("same");
@@ -463,6 +493,7 @@ int eMinimisation(){
   lsave.str("");
   lsave << "OptimReso";
   if (doHgg) lsave << "_Hgg";
+  else if (doPi) lsave << "_pi";
   if (addCst) lsave << "_extraCstForFit";
   lsave << ".pdf";
   mycR->Print(lsave.str().c_str());
@@ -474,7 +505,7 @@ int eMinimisation(){
     p_wgts[iE]->SetLineColor(iE+1);
     p_wgts[iE]->SetMarkerColor(iE+1);
     p_wgts[iE]->SetMarkerStyle(20+iE);
-    p_wgts[iE]->GetYaxis()->SetRangeUser(0,3.7);
+    p_wgts[iE]->GetYaxis()->SetRangeUser(-1,doPi ? 3 : 10);
     p_wgts[iE]->Draw(iE==0?"PL":"PLsame");
   }
   mycW->cd(2);
@@ -483,7 +514,7 @@ int eMinimisation(){
     p_wgtsValeri[iE]->SetLineColor(iE+1);
     p_wgtsValeri[iE]->SetMarkerColor(iE+1);
     p_wgtsValeri[iE]->SetMarkerStyle(20+iE);
-    p_wgtsValeri[iE]->GetYaxis()->SetRangeUser(0,3.7);
+    p_wgtsValeri[iE]->GetYaxis()->SetRangeUser(-1,doPi ? 3 : 10);
     p_wgtsValeri[iE]->Draw(iE==0?"PL":"PLsame");
   }
   mycW->Update();
@@ -491,6 +522,7 @@ int eMinimisation(){
   lsave.str("");
   lsave << "OptimWeights";
   if (doHgg) lsave << "_Hgg";
+  else if (doPi) lsave << "_pi";
   if (addCst) lsave << "_extraCstForFit";
   lsave << ".pdf";
 

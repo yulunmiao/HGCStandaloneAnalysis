@@ -49,6 +49,24 @@ void SamplingSection::add(G4double den, G4double dl,
     
   }//loop on available materials
   
+  //support cone
+  char nameBuf[100];
+  sprintf(nameBuf,"%s%d","SupportCone",int(layerId+1));
+  if (lstr.find(nameBuf)!=lstr.npos){
+    //add hit
+    G4SiHit lHit;
+    lHit.energy = den;
+    lHit.time = globalTime;
+    lHit.pdgId = pdgId;
+    lHit.layer = layerId;
+    lHit.hit_x = position.x();
+    lHit.hit_y = position.y();
+    lHit.hit_z = position.z();
+    lHit.trackId = trackID;
+    lHit.parentId = parentID;
+    supportcone_HitVec.push_back(lHit);
+  }
+
 }
 
 //
@@ -208,6 +226,11 @@ G4double SamplingSection::getTotalEnergy()
 const G4SiHitVec & SamplingSection::getSiHitVec(const unsigned & idx) const
 {
   return sens_HitVec[idx];
+}
+
+const G4SiHitVec & SamplingSection::getAlHitVec() const
+{
+  return supportcone_HitVec;
 }
 
 void SamplingSection::trackParticleHistory(const unsigned & idx, const G4SiHitVec & incoming)

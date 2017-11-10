@@ -24,35 +24,46 @@ EventAction::EventAction()
 
   double xysize = ((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->GetCalorSizeXY();
 
+  shape_ = ((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->getShape();
+
   //save some info
   HGCSSInfo *info = new HGCSSInfo();
   info->calorSizeXY(xysize);
   info->cellSize(CELL_SIZE_X);
   info->model(((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->getModel());
   info->version(((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->getVersion());
-  
+  info->shape(shape_);
   std::cout << " -- check Info: version = " << info->version()
-	    << " model = " << info->model() << std::endl;
+	    << " model = " << info->model()
+	    << " shape = " << shape_
+	    << std::endl;
   outF_->WriteObjectAny(info,"HGCSSInfo","Info");
 
-  //honeycomb
+  //honeycomb or diamond or triangles
   geomConv_ = new HGCSSGeometryConversion(info->model(),CELL_SIZE_X);
-  geomConv_->initialiseHoneyComb(xysize,CELL_SIZE_X);
-  //square map for BHCAL
-  geomConv_->initialiseSquareMap(xysize,10.);
-
+  if (shape_==2) geomConv_->initialiseDiamondMap(xysize,10.);
+  else if (shape_==3) geomConv_->initialiseTriangleMap(xysize,10.*sqrt(2.));
+  else if (shape_==1) geomConv_->initialiseHoneyComb(xysize,CELL_SIZE_X);
+  else if (shape_==4) geomConv_->initialiseSquareMap(xysize,100.);
+  //square map for FHCAL Scint + BH Scint
+  double etamin = ((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->GetMinEta();
+  double etamax = ((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->GetMaxEta();
+  geomConv_->initialiseSquareMap1(etamin,etamax,0,2*TMath::Pi(),0.01745);//eta phi segmentation
+  geomConv_->initialiseSquareMap2(etamin,etamax,0,2*TMath::Pi(),0.02182);//eta phi segmentation
+  
 
   tree_=new TTree("HGCSSTree","HGC Standalone simulation tree");
   tree_->Branch("HGCSSEvent","HGCSSEvent",&event_);
   tree_->Branch("HGCSSSamplingSectionVec","std::vector<HGCSSSamplingSection>",&ssvec_);
   tree_->Branch("HGCSSSimHitVec","std::vector<HGCSSSimHit>",&hitvec_);
+  tree_->Branch("HGCSSAluSimHitVec","std::vector<HGCSSSimHit>",&alhitvec_);
   tree_->Branch("HGCSSGenParticleVec","std::vector<HGCSSGenParticle>",&genvec_);
 
-  //fout_.open("momentum_list_layer51.dat");
+  //fout_.open("ProcessDepAbove5MeV.dat");
   //if (!fout_.is_open()){
   //std::cout << " -- Output file could not be opened..." << std::endl;
   //exit(1);
-  // }
+  //}
 }
 
 //
@@ -90,9 +101,10 @@ void EventAction::Detect(G4double edep, G4double stepl,G4double globalTime,
 bool EventAction::isFirstVolume(const std::string volname) const{
   if (detector_->size()>0 && (*detector_)[0].n_elements>0){
     bool found = false;
-    for (unsigned iS(0); iS<(*detector_)[0].n_sectors;++iS){
-      if ((((*detector_)[0].ele_vol[(*detector_)[0].n_elements*iS])->GetName())==volname.c_str()) found = true;
-    }
+    //for (unsigned iS(0); iS<(*detector_)[0].n_sectors;++iS){
+      //if ((((*detector_)[0].ele_vol[(*detector_)[0].n_elements*iS])->GetName())==volname.c_str() || (*detector_)[0].supportcone_vol->GetName()==volname.c_str()) found = true;
+      //}
+    if ((*detector_)[0].dummylayer_vol->GetName()==volname.c_str()) found = true;
     return found;
   }
   return "";
@@ -126,6 +138,7 @@ void EventAction::EndOfEventAction(const G4Event* g4evt)
     {
       HGCSSSamplingSection lSec;
       lSec.volNb(i);
+      lSec.sensitiveZ((*detector_)[i].sensitiveZ);
       lSec.volX0trans((*detector_)[i].getAbsorberX0());
       lSec.voldEdx((*detector_)[i].getAbsorberdEdx());
       lSec.volLambdatrans((*detector_)[i].getAbsorberLambda());
@@ -155,7 +168,7 @@ void EventAction::EndOfEventAction(const G4Event* g4evt)
 
 	for (unsigned iSiHit(0); iSiHit<(*detector_)[i].getSiHitVec(idx).size();++iSiHit){
 	  G4SiHit lSiHit = (*detector_)[i].getSiHitVec(idx)[iSiHit];
-	  HGCSSSimHit lHit(lSiHit,idx,is_scint?geomConv_->squareMap() : geomConv_->hexagonMap());
+	  HGCSSSimHit lHit(lSiHit,idx,is_scint? (i<57?geomConv_->squareMap1():geomConv_->squareMap2()): (shape_==4 ?geomConv_->squareMap() : shape_==2?geomConv_->diamondMap():shape_==3?geomConv_->triangleMap():geomConv_->hexagonMap()));
 	  
 	  isInserted = lHitMap.insert(std::pair<unsigned,HGCSSSimHit>(lHit.cellid(),lHit));
 	  if (!isInserted.second) isInserted.first->second.Add(lSiHit);
@@ -169,15 +182,33 @@ void EventAction::EndOfEventAction(const G4Event* g4evt)
 
       }//loop on sensitive layers
 
+      //support cone
+      std::map<unsigned,HGCSSSimHit> lHitMap;
+      std::pair<std::map<unsigned,HGCSSSimHit>::iterator,bool> isInserted;
+      for (unsigned iAlHit(0); iAlHit<(*detector_)[i].getAlHitVec().size();++iAlHit){
+	G4SiHit lAlHit = (*detector_)[i].getAlHitVec()[iAlHit];
+	HGCSSSimHit lHit(lAlHit,0,geomConv_->squareMap());
+	isInserted = lHitMap.insert(std::pair<unsigned,HGCSSSimHit>(0,lHit));
+	if (!isInserted.second) isInserted.first->second.Add(lAlHit);
+      }
+      std::map<unsigned,HGCSSSimHit>::iterator lIter = lHitMap.begin();
+      alhitvec_.reserve(alhitvec_.size()+lHitMap.size());
+      for (; lIter != lHitMap.end(); ++lIter){
+	(lIter->second).calculateTime();
+	alhitvec_.push_back(lIter->second);
+      }
+
       if(debug) {
 	(*detector_)[i].report( (i==0) );
       }
       //if (i==0) G4cout << " ** evt " << evt->GetEventID() << G4endl;
       (*detector_)[i].resetCounters();
+
     }
   if(debug){
     G4cout << " -- Number of truth particles = " << genvec_.size() << G4endl
 	   << " -- Number of simhits = " << hitvec_.size() << G4endl
+	   << " -- Number of aluminium simhits = " << alhitvec_.size() << G4endl
 	   << " -- Number of sampling sections = " << ssvec_.size() << G4endl;
     
   }
@@ -187,5 +218,6 @@ void EventAction::EndOfEventAction(const G4Event* g4evt)
   //reset vectors
   genvec_.clear();
   hitvec_.clear();
+  alhitvec_.clear();
   ssvec_.clear();
 }

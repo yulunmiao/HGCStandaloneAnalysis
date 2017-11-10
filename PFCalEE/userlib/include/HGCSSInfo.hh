@@ -15,6 +15,7 @@ public:
     version_ = -1;
     model_ = -1;
     cellsize_ = 2.5;//mm
+    shape_ = 1;
   };
   
   ~HGCSSInfo(){};
@@ -33,6 +34,14 @@ public:
   
   inline int model() const{
     return model_;
+  };
+
+  inline void shape(const unsigned & aVal){
+    shape_ = aVal;
+  };
+  
+  inline unsigned shape() const{
+    return shape_;
   };
 
   inline void cellSize(const double & aVal){
@@ -57,8 +66,9 @@ private:
   int model_;
   double cellsize_;
   double calorSizeXY_;
+  unsigned shape_;
 
-  ClassDef(HGCSSInfo,1);
+  ClassDef(HGCSSInfo,2);
 
 
 

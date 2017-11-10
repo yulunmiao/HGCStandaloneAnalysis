@@ -17,6 +17,7 @@ struct MergeCells {
   //double z;
 };
 
+
 class HGCSSGeometryConversion{
   
 public:
@@ -25,22 +26,111 @@ public:
 
   ~HGCSSGeometryConversion();
 
-  TH2Poly *hexagonMap(){
+  static void convertFromEtaPhi(std::pair<double,double> & xy, const double & z);
+
+  inline void setVersion(const unsigned aV){
+    version_ = aV;
+  };
+
+  inline TH2Poly *hexagonMap(){
     static TH2Poly hc;
     return &hc;
   };
 
-  TH2Poly *squareMap(){
+  inline TH2Poly *diamondMap(){
+    static TH2Poly hc;
+    return &hc;
+  };
+
+  inline TH2Poly *triangleMap(){
+    static TH2Poly hc;
+    return &hc;
+  };
+
+  inline TH2Poly *squareMap(){
     static TH2Poly hsq;
     return &hsq;
   };
 
+  inline TH2Poly *squareMap1(){
+    static TH2Poly hsq1;
+    return &hsq1;
+  };
+
+  inline TH2Poly *squareMap2(){
+    static TH2Poly hsq2;
+    return &hsq2;
+  };
+
+  inline TH2Poly *hexagonMap(TH2Poly & hc){
+    return &hc;
+  };
+
+  inline TH2Poly *diamondMap(TH2Poly & hc){
+    return &hc;
+  };
+
+  inline TH2Poly *triangleMap(TH2Poly & hc){
+    return &hc;
+  };
+
+  inline TH2Poly *squareMap(TH2Poly & hc){
+    return &hc;
+  };
+
+  inline TH2Poly *squareMap1(TH2Poly & hc){
+    return &hc;
+  };
+
+  inline TH2Poly *squareMap2(TH2Poly & hc){
+    return &hc;
+  };
+
   std::map<int,std::pair<double,double> > hexaGeom;
+  std::map<int,std::pair<double,double> > diamGeom;
+  std::map<int,std::pair<double,double> > triangleGeom;
   std::map<int,std::pair<double,double> > squareGeom;
+  std::map<int,std::pair<double,double> > squareGeom1;
+  std::map<int,std::pair<double,double> > squareGeom2;
+
+  inline void copyhexaGeom(const std::map<int,std::pair<double,double> > & ageom) {
+    hexaGeom = ageom;
+  };
+
+  inline void copydiamGeom(const std::map<int,std::pair<double,double> > &ageom){
+    diamGeom = ageom;
+  };
+
+  inline void copytriangleGeom(const std::map<int,std::pair<double,double> > &ageom){
+    triangleGeom = ageom;
+  };
+
+  inline void copysquareGeom(const std::map<int,std::pair<double,double> > &ageom){
+    squareGeom = ageom;
+  };
+
+  inline void copysquareGeom1(const std::map<int,std::pair<double,double> > &ageom){
+    squareGeom1 = ageom;
+  };
+
+  inline void copysquareGeom2(const std::map<int,std::pair<double,double> > &ageom){
+    squareGeom2 = ageom;
+  };
 
   void initialiseSquareMap(const double xymin, const double side);
+  void initialiseSquareMap1(const double xmin, const double xmax, const double ymin, const double ymax, const double side);
+  void initialiseSquareMap2(const double xmin, const double xmax, const double ymin, const double ymax, const double side);
 
   void initialiseSquareMap(TH2Poly *map, const double xymin, const double side, bool print);
+  void initialiseSquareMap(TH2Poly *map, const double xmin, const double xmax, const double ymin, const double ymax, const double side, bool print);
+
+  void initialiseDiamondMap(const double xymin, const double side);
+
+  void initialiseDiamondMap(TH2Poly *map, const double xymin, const double side, bool print);
+
+  void initialiseTriangleMap(const double xymin, const double side);
+
+  void initialiseTriangleMap(TH2Poly *map, const double xymin, const double side, bool print);
 
   void initialiseHoneyComb(const double xymin, const double side);
 
@@ -62,6 +152,10 @@ public:
   
   inline double cellSize() const{
     return cellSize_;
+  };
+
+  inline void setCellSize(double size){
+    cellSize_=size;
   };
 
   //hardcode fine granularity at high eta ?
@@ -145,13 +239,13 @@ public:
 
 private:
 
-void myHoneycomb(TH2Poly* map,
-		 Double_t xstart,
-		 Double_t ystart,
-		 Double_t a,  // side length
-		 Int_t k,     // # hexagons in a column
-		 Int_t s);    // # columns
-
+  void myHoneycomb(TH2Poly* map,
+		   Double_t xstart,
+		   Double_t ystart,
+		   Double_t a,  // side length
+		   Int_t k,     // # hexagons in a column
+		   Int_t s);    // # columns
+  
   bool dopatch_;
   double width_;
   double cellSize_;
@@ -159,6 +253,7 @@ void myHoneycomb(TH2Poly* map,
   unsigned model_;
   bool bypassRadius_;
   unsigned nSiLayers_;
+  unsigned version_;
   //std::map<DetectorEnum,std::vector<TH2Poly *> > HistMapE_;
   //std::map<DetectorEnum,std::vector<TH2Poly *> > HistMapTime_;
   //std::map<DetectorEnum,std::vector<TH2Poly *> > HistMapZ_;
@@ -167,7 +262,6 @@ void myHoneycomb(TH2Poly* map,
   std::map<unsigned,std::map<unsigned,MergeCells> > HistMap_;
   std::map<unsigned,double> avgMapZ_;
   std::map<unsigned,double> avgMapE_;
-
 
 
 };

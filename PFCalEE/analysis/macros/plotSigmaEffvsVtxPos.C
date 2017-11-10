@@ -70,7 +70,8 @@ int plotSigmaEffvsVtxPos(){//main
   const double pT = 60;
   const double Egen = pT*cosh(eta);
 
-  const std::string version = "V06b-03-05";
+  //const std::string version = "V06b-03-05";
+  const std::string version = "V06d-04-06";
   std::string label[nF] = {"phi90","phi79"};
 
   bool linedup = (version=="V06-03-04");
@@ -79,9 +80,9 @@ int plotSigmaEffvsVtxPos(){//main
     label[0] = "V06aphi90";
     label[1] = "V06aphi79";
   }
-  else if (version=="V06b-03-05") {
-    label[0] = "V06bphi90";
-    label[1] = "V06bphi79";
+  else if (version.find("V06d")!=version.npos) {
+    label[0] = "V06dphi90";
+    label[1] = "V06dphi79";
   }
 
   TFile *fin[nF];
@@ -323,7 +324,7 @@ int plotSigmaEffvsVtxPos(){//main
     grMean[iF] = new TGraphErrors(nP,vtx,meandiff,errvtx,errmeandiff);
     grMean[iF]->SetMarkerStyle(22);
     grMean[iF]->SetMinimum(linedup?-0.04:-0.02);
-    grMean[iF]->SetMaximum(linedup?0.16:0.05);
+    //grMean[iF]->SetMaximum(linedup?0.16:0.05);
     grMean[iF]->SetTitle(";vtx x (mm); (Egen-Epeak)/E_{gen}");
     myc[4+iF]->cd();
     gStyle->SetOptStat(0);

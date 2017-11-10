@@ -24,7 +24,8 @@ public:
     neutronFrac_(0),
     hadFrac_(0),
     avgTime_(0),
-    nSiHits_(0)
+    nSiHits_(0),
+    sensitiveZ_(0)
  {
     
   };
@@ -76,7 +77,9 @@ public:
   inline unsigned nSiHits() const{
     return nSiHits_;
   };
-
+  inline double sensitiveZ() const{
+    return sensitiveZ_;
+  };
   //setters
   inline void volNb(const unsigned & aVal){
     volNb_ = aVal;
@@ -120,6 +123,9 @@ public:
   inline void nSiHits(const unsigned & aVal){
     nSiHits_ = aVal;
   };
+  inline void sensitiveZ(const unsigned & aVal){
+    sensitiveZ_ = aVal;
+  };
 
 private:
   unsigned volNb_;
@@ -136,8 +142,9 @@ private:
   double hadFrac_;
   double avgTime_;
   unsigned nSiHits_;
+  double sensitiveZ_;
 
-  ClassDef(HGCSSSamplingSection,1);
+  ClassDef(HGCSSSamplingSection,2);
 
 
 

@@ -60,6 +60,17 @@ public:
     v_HGCAL_v618=37,
     v_HGCALHE_v624=38,
     v_HGCALHE_v618=39,
+    v_HGCALEE_v7=40,
+    v_HGCALHE_v7=41,
+    v_HGCALBE_v7=42,
+    v_HGCAL_v7=43,
+    v_HGCALHF=50,
+    v_HGCAL_v7_HF=51,
+    v_HGCALCu_HF=52,
+    v_HGCALEE_v8=60,
+    v_HGCALHE_v8=61,
+    v_HGCALBE_v8=62,
+    v_HGCAL_v8=63,
     v_HGCALEE_TB=100,
     v_HGCALEE_TB_gap0=101,
     v_HGCALEE_TB_allW=102,
@@ -81,12 +92,14 @@ public:
    */
   DetectorConstruction(G4int ver=DetectorConstruction::v_CALICE, 
 		       G4int mod=DetectorConstruction::m_SIMPLE_20,
+		       G4int shape=1,
 		       std::string absThickW="1.75,1.75,1.75,1.75,1.75,2.8,2.8,2.8,2.8,2.8,4.2,4.2,4.2,4.2,4.2",
 		       std::string absThickPb="1,1,1,1,1,2.1,2.1,2.1,2.1,2.1,4.4,4.4,4.4,4.4",
 		       std::string dropLayer="");
 
   void buildHGCALFHE(const unsigned aVersion);
   void buildHGCALBHE(const unsigned aVersion);
+  void buildHF();
   /**
      @short calorimeter structure (sampling sections)
    */
@@ -95,8 +108,12 @@ public:
 
   int getModel() const { return model_; }
   int getVersion() const { return version_; }
+  unsigned getShape() const { return shape_; }
+
+
 
   const std::vector<G4LogicalVolume*>  & getSiLogVol() {return m_logicSi; }
+  const std::vector<G4LogicalVolume*>  & getAlLogVol() {return m_logicAl; }
   const std::vector<G4LogicalVolume*>  & getAbsLogVol() {return m_logicAbs; }
 
 
@@ -138,6 +155,9 @@ public:
   G4double GetWorldSizeXY() { return m_WorldSizeXY; }
   G4double GetWorldSizeZ()  { return m_WorldSizeZ; }
 
+  G4double GetMinEta() { return m_minEta0; }
+  G4double GetMaxEta() { return m_maxEta0; }
+
   /**
      @short build the detector
    */
@@ -150,13 +170,22 @@ private:
   int version_;
   //integer to define detector model
   int model_;
+  //integer to define shape of simhits: 1=hexa, 2=diamonds, 3=triangles, 4=squares
+  unsigned shape_;
 
   //add a pre PCB plate
   bool addPrePCB_;
 
+  bool doHF_;
+  unsigned firstHFlayer_;
+  unsigned firstMixedlayer_;
+  unsigned firstScintlayer_;
+
   std::vector<G4double> absThickW_;
   std::vector<G4double> absThickPb_;
   std::vector<G4bool> dropLayer_;
+
+  double getEtaFromRZ(const double & r, const double & z);
 
   /**
      @short compute the calor dimensions
@@ -179,15 +208,22 @@ private:
   G4double getCrackOffset(size_t layer);
   G4double getAngOffset(size_t layer);
 
-  G4VSolid *constructSolid (std::string baseName, G4double thick, G4double zpos,const G4double & minL, const G4double & width);
-  
+  G4VSolid *constructSolid (const unsigned layer, std::string baseName, G4double thick, G4double zpos,const G4double & minL, const G4double & width, const bool isHF=false);
+  G4VSolid *constructSolid (std::string baseName, G4double thick, G4double zpos,const G4double & minL, const G4double & width, const double & etamin, const double & etamax);
+
+  G4VSolid *constructSupportCone (std::string baseName, G4double thick, G4double zpos,const G4double & minL, const G4double & width, const double & etamin, const double & etamax);
+  G4VSolid *constructSupportCone (std::string baseName, G4double thick, G4double zpos,const G4double & minL, const G4double & width);
 
   std::vector<G4Material* > m_SensitiveMaterial;
   
   G4double           m_CalorSizeXY, m_CalorSizeZ;
   G4double           m_minRadius,m_maxRadius;
-  G4double           m_minEta,m_maxEta;
-  G4double           m_z0pos;
+  G4double           m_minRadiusHF,m_maxRadiusHF;
+  //define per layer
+  std::vector<G4double>           m_minEta,m_maxEta;
+  G4double           m_minEta0,m_maxEta0;
+  G4double           m_minEtaHF,m_maxEtaHF;
+  G4double           m_z0pos, m_z0HF;
   G4double           m_WorldSizeXY, m_WorldSizeZ;
   G4double m_nSectors,m_sectorWidth,m_interSectorWidth;
             
@@ -196,6 +232,7 @@ private:
   G4VPhysicalVolume* m_physWorld;     //pointer to the physical World  
   
   std::vector<G4LogicalVolume*>   m_logicSi;    //pointer to the logical Si volumes
+  std::vector<G4LogicalVolume*>   m_logicAl;    //pointer to the logical Si volumes
   std::vector<G4LogicalVolume*>   m_logicAbs;    //pointer to the logical absorber volumes situated just before the si
 
   DetectorMessenger* m_detectorMessenger;  //pointer to the Messenger

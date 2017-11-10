@@ -8,8 +8,9 @@
 
 SignalRegion::SignalRegion(const std::string inputFolder,
 			   const unsigned nLayers,
+			   const std::vector<double> & zpos,
 			   const unsigned nevt,
-			   const HGCSSGeometryConversion & geomConv,
+			   HGCSSGeometryConversion & geomConv,
 			   const HGCSSPUenergy & puDensity,
 			   const bool applyPuMixFix,
 			   const unsigned versionNumber,
@@ -19,34 +20,33 @@ SignalRegion::SignalRegion(const std::string inputFolder,
   g4trackID_ = g4trackID;
   doHexa_ = doHexa;
   nSR_ = 6;
+  radius_[0] = 13;
+  radius_[1] = 15;
+  radius_[2] = 20;
+  radius_[3] = 23;
+  radius_[4] = 26;
+  radius_[5] = 53;
   nevt_ = nevt;
   inputFolder_ = inputFolder;
   nLayers_ = nLayers;
-  geomConv_ = geomConv;
+  //geomConv_ = geomConv;
+  geomConv_.setCellSize(geomConv.cellSize());
+  geomConv_.hexagonMap(*geomConv.hexagonMap());
+  geomConv_.diamondMap(*geomConv.diamondMap());
+  geomConv_.triangleMap(*geomConv.triangleMap());
+  geomConv_.squareMap(*geomConv.squareMap());
+  
+  geomConv_.copyhexaGeom(geomConv.hexaGeom);
+  geomConv_.copydiamGeom(geomConv.diamGeom);
+  geomConv_.copytriangleGeom(geomConv.triangleGeom);
+  geomConv_.copysquareGeom(geomConv.squareGeom);
+
   puDensity_ = puDensity;
   fixForPuMixBug_ = applyPuMixFix;
   firstEvent_ = true;
   nSkipped_ = 0;
 
-  double zpos(0);
-  int layerIndex(0);
-  
-  std::ifstream fzpos;
-  std::ostringstream finname;
-  finname << "data/zPositions_v" << versionNumber << ".dat";
-  fzpos.open(finname.str());
-  if (!fzpos.is_open()){
-    std::cout << " Cannot open input file " << finname.str() << "! Exiting..." << std::endl;
-    exit(1);
-  }
-  else {
-    std::cout << " -- z positions taken from file " << finname.str() << std::endl;
-  }
-
-  for(unsigned iL(0);iL<nLayers_;iL++){
-    fzpos >> layerIndex >> zpos;
-    zPos_.push_back(zpos);
-  }
+  zPos_ = zpos;
 }
 
 SignalRegion::~SignalRegion(){
@@ -132,6 +132,53 @@ ROOT::Math::XYZPoint SignalRegion::getAccuratePos(const FitResult& fit, const un
 Direction SignalRegion::getAccurateDirection(const unsigned ievt) const{
   return Direction(accurateFit_[ievt].tanangle_x,accurateFit_[ievt].tanangle_y);
 }
+
+
+bool SignalRegion::setTruthInfo(const std::vector<HGCSSGenParticle> & genvec,
+				const HGCSSEvent & event,
+				const int G4TrackID){
+
+  bool found = false;
+  for (unsigned iP(0); iP<genvec.size(); ++iP){//loop on gen particles    
+    //if (debug_>1 && genvec.size()!= 1) 
+    if (genvec[iP].pdgid()==22 && genvec[iP].trackID()<500) {
+      std::cout << " iP " <<  iP << " ";
+      genvec[iP].Print(std::cout);
+    }
+    else continue;
+    if (genvec[iP].trackID()==G4TrackID){
+      found = true;
+      //set direction
+      truthDir_ = Direction(genvec[iP].px()/genvec[iP].pz(),genvec[iP].py()/genvec[iP].pz());
+      double xvtx=event.vtx_x(),yvtx=event.vtx_y();
+      double zvtx = event.vtx_z();//genvec[iP].z()-( (genvec[iP].x()+genvec[iP].y()-xvtx-yvtx)/(truthDir_.tanangle_x+truthDir_.tanangle_y) );
+      //double xvtx = genvec[iP].x()-((genvec[iP].z()-zvtx)*truthDir_.tanangle_x);
+      truthVtx_ = ROOT::Math::XYZPoint(xvtx,yvtx,zvtx);
+      //in GeV
+      trueE_ = genvec[iP].E()/1000.;
+      //if (debug_) 
+      std::cout << " Found truth vertex for particle pdgid " << genvec[iP].pdgid() << " pos at: x=" 
+		<< xvtx << ", y" << yvtx << ", z=" << zvtx 
+		<< " x,ypos was: " 
+		<< genvec[iP].x() 
+		<< " " << genvec[iP].y() 
+		<< std::endl;
+      
+      break;
+    }
+    
+  }
+  if (!found){
+    std::cout << " - Info: no photon G4trackID=" << G4TrackID << " found, already converted or outside of acceptance ..." << std::endl;
+    //std::cout << " -- Number of genparticles: " << genvec.size() << std::endl;
+    //for (unsigned iP(0); iP<genvec.size(); ++iP){//loop on gen particles 
+    //std::cout << " --- particle " << iP << std::endl;
+    //genvec[iP].Print(std::cout);
+    //}
+  }
+  return found;
+}
+
 
 bool SignalRegion::fillEnergies(const unsigned ievt,
 				const HGCSSEvent & event,
@@ -220,11 +267,15 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
     std::cout << " -- Absorber weights used for total energy:" << std::endl;
     for(unsigned iL(0); iL<nLayers_; iL++){
       //double w = absWeight(iL);
-      double w = ssvec[iL].voldEdx()/ssvec[1].voldEdx();
+      //double w = ssvec[iL].voldEdx()/ssvec[1].voldEdx();
       //double w = ssvec[iL].volX0trans()/ssvec[1].volX0trans();
-      std::cout << " - Layer " << iL << " w=" << w << std::endl;
-      absweight_[iL]=w;
+      absweight_[iL] = 10.0166;
+      //absweight_[iL]=iL<(nLayers_-1) ? (ssvec[iL].voldEdx()+ssvec[iL+1].voldEdx())/2. : ssvec[iL].voldEdx();;
+      std::cout << " - Layer " << iL << " wdEdx=" << ssvec[iL].voldEdx()  << " Wx0=" << ssvec[iL].volX0trans() << " W valeri scheme " << absweight_[iL] << std::endl;
     }
+    absweight_[0] = 20.3628;
+    absweight_[nLayers_-1] = 13.0629;
+    
     firstEvent_=false;
   }
 
@@ -300,6 +351,13 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
   
   
   // Define different signal region and sum over energy
+  //double maxE[nLayers_];
+  //double maxH[nLayers_];
+  //for (unsigned iL(0);iL<nLayers_;++iL){
+  //maxE[iL] = 0;
+  //maxH[iL] = 0;
+  //}
+
   for (unsigned iH(0); iH<rechitvec.size(); ++iH){//loop on hits
     const HGCSSRecoHit & lHit = rechitvec[iH];
     
@@ -318,8 +376,13 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
     double posy = lHit.get_y();
     if (fixForPuMixBug_) posy-=1.25;
     double energy = lHit.energy();
-
+    //bool notNoiseOnly = fabs(lHit.noiseFraction()-1)>0.001;
     //double etacor = fabs(1./tanh(leta));
+
+    //if (energy>maxE[layer]) {
+    //maxE[layer] = energy;
+    //maxH[layer] = iH;
+    //}
 
     totalE_ += energy;
     wgttotalE_ += energy*absweight_[layer];    
@@ -328,30 +391,37 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
     double puE = puDensity_.getDensity(leta,layer,geomConv_.cellSizeInCm(layer,lradius),nPuVtx);
     double subtractedenergy = std::max(0.,energy - puE);
     //double halfCell = 0.5*geomConv_.cellSize(layer,lradius);
-    double distance = sqrt(3.)*geomConv_.cellSize(layer,lradius);
-    double halfCellx = 0.5*distance;
-    double halfCelly = doHexa_?geomConv_.cellSize(layer,lradius):geomConv_.cellSize(layer,lradius)/2.;
+    //hexagons are side up....
+    double distance = sqrt(3.)*6.496345;//geomConv_.cellSize(layer,lradius);
+    double halfCelly = 0.5*distance;
+    //double halfCellx = doHexa_?geomConv_.cellSize(layer,lradius):geomConv_.cellSize(layer,lradius)/2.;
+    double halfCellx = doHexa_?6.496345:5;
     //std::cout << " halfcell = " << halfCell << std::endl;
     //SR0-4
     for (unsigned isr(0); isr<nSR_;++isr){
-      double dx = isr%2==0? posx-refx[layer] : posx-eventPos[layer].x();
-      double dy = isr%2==0? posy-refy[layer] : posy-eventPos[layer].y();
+      //double dx = isr%2==0? posx-refx[layer] : posx-eventPos[layer].x();
+      //double dy = isr%2==0? posy-refy[layer] : posy-eventPos[layer].y();
+      double dx = posx-refx[layer];
+      double dy = posy-refy[layer];
       double dr = sqrt(dx*dx+dy*dy);
-      if (isr==nSR_-1){
+      /*if (isr==nSR_-1 && dr<50. ){
 	energySR_[layer][isr] += energy;
 	subtractedenergySR_[layer][isr] += subtractedenergy;
-      }
-      else if ( (doHexa_ && ((isr%2==0 && dr<(isr*halfCelly+0.1)) || (isr%2==1 && dr <= ((isr+1)*halfCellx) && (fabs(dx) <= ((isr+1)*halfCellx)) && (fabs(dy) <= ((isr+1)*halfCelly))))) || 
-		(!doHexa_ && (fabs(dx) <= ((isr+1)*halfCelly)) && (fabs(dy) <= ((isr+1)*halfCelly))) ){
-	energySR_[layer][isr] += energy;//*absweight_[layer]*etacor;
-	subtractedenergySR_[layer][isr] += subtractedenergy;//*absweight_[layer];//*etacor;
+	}
+	else if ( (doHexa_ && ((isr%2==0 && dr<(isr*halfCellx+0.1)) || (isr%2==1 && dr <= ((isr+1)*halfCelly) && (fabs(dx) <= ((isr+1)*halfCellx)) && (fabs(dy) <= ((isr+1)*halfCelly))))) || 
+	(!doHexa_ && (fabs(dx) <= ((isr+1)*halfCelly)) && (fabs(dy) <= ((isr+1)*halfCelly))) )*/
+      if ((doHexa_ && nSR_<=6 && dr<radius_[isr]) || 
+	(!doHexa_ && (fabs(dx) <= ((isr+1)*halfCelly)) && (fabs(dy) <= ((isr+1)*halfCelly))) )
+	{
+	  energySR_[layer][isr] += energy;//*absweight_[layer]*etacor;
+	  subtractedenergySR_[layer][isr] += subtractedenergy;//*absweight_[layer];//*etacor;
 	//save energy in 1+6 cells
-	if (isr==2){
+	  if (isr== (doHexa_?0:2) ){
 	  int ix = doHexa_ ? dx/halfCellx : dx/(2*halfCelly);
 	  int iy = doHexa_ ? dy/(1.5*halfCelly) : dy/(2*halfCelly);
 	  unsigned idx = 0;
 	  if (((doHexa_ && (ix > 2 || ix < -2)) || (!doHexa_ && (ix > 1 || ix < -1))) || (iy>1 || iy<-1)) {
-	    std::cout << " error, check ix=" << ix << " iy=" << iy << " posx,y-max=" << dx << " " << dy << " step " ;
+	    std::cout << " error, isr = " << isr << " check ix=" << ix << " iy=" << iy << " posx,y-max=" << dx << " " << dy << " step " ;
 	    if (!doHexa_) std::cout << (isr+1)*halfCelly;
 	    else std::cout << isr*halfCelly+0.1;
 	    std::cout << std::endl;
@@ -378,7 +448,17 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
       }
     }//loop on SR
   }//loop on hits
-  
+
+  /*for (unsigned iL(0);iL<nLayers_;++iL){
+    const HGCSSRecoHit & lmaxHit = rechitvec[maxH[iL]];
+    std::cout << "max hit layer " << iL << " x=" 
+	      << lmaxHit.get_x() << " y="
+	      << lmaxHit.get_y() << " eta="
+	      << lmaxHit.eta() << " E="
+	      << lmaxHit.energy()
+	      << std::endl;
+	      }*/
+
   outputFile_->cd(outputDir_.c_str());
   fillHistograms();
   outtree_->Fill();
@@ -416,8 +496,8 @@ void SignalRegion::initialiseHistograms(){
     maxhitEoutside_.resize(nLayers_,emptyvec);
     absweight_.resize(nLayers_,1);
 
-    if (zPos_.size()!=nLayers_) {
-      std::cout << " -- ERROR! z positions not filled properly. Exiting..." << std::endl;
+    if (zPos_.size()<nLayers_) {
+      std::cout << " -- ERROR! z positions not filled properly. Size of vector " << zPos_.size() << " nLayers_= " << nLayers_ << ". Exiting..." << std::endl;
       exit(1);
     }
 

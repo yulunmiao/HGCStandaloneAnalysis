@@ -21,6 +21,7 @@ parser.add_option('-p', '--phi'         ,    dest='phi'                , help='i
 parser.add_option('-b', '--Bfield'      ,    dest='Bfield'             , help='B field value in Tesla'       , default=0,      type=float)
 parser.add_option('-d', '--datatype'    ,    dest='datatype'           , help='data type or particle to shoot', default='e-')
 parser.add_option('-f', '--datafile'    ,    dest='datafile'           , help='full path to HepMC input file', default='data/example_MyPythia.dat')
+parser.add_option('-F', '--datafileeos'    ,    dest='datafileeos'           , help='EOS path to HepMC input file', default='/eos/cms/store/cmst3/group/hgcal/HGCalMinbias/Pythia8/')
 parser.add_option('-n', '--nevts'       ,    dest='nevts'              , help='number of events to generate' , default=1000,    type=int)
 parser.add_option('-o', '--out'         ,    dest='out'                , help='output directory'             , default=os.getcwd() )
 parser.add_option('-e', '--eos'         ,    dest='eos'                , help='eos path to save root file to EOS',         default='')
@@ -28,12 +29,18 @@ parser.add_option('-g', '--gun'         ,    action="store_true",  dest='dogun' 
 parser.add_option('-S', '--no-submit'   ,    action="store_true",  dest='nosubmit'           , help='Do not submit batch job.')
 (opt, args) = parser.parse_args()
 
+#for run in `seq 0 19`; do ./submitProd.py -s 2nd -q 1nw -g -S -t testV8 -r $run -v 63 -m 2 -a 1.7 -b 3.8 -d gamma -n 250 -o /afs/cern.ch/work/a/amagnan/public/HGCalTDR/ -e /store/cmst3/group/hgcal/HGCalTDR; done
+
+#1 = hexagons, 2=diamonds, 3=triangles, 4=squares
+shape=1
+
 enlist=[0]
 if opt.dogun : 
+    # list of Etransverse, not energy...
     #enlist=[3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200]
-    #enlist=[2,5,10,20,40,60,80,100,150,200]
-    #enlist=[3,5,10,30,50,70,100,200]
-    enlist=[50]
+    enlist=[5,10,20,30,40,60,80,100,150,200]
+    #enlist=[5,10,20,30,50,70,100]
+    #enlist=[10]
 
 #hgg seeds
 #for seed in 1417791355 1417791400 1417791462 1417791488 1417791672 1417791741 1417791747 1417791766 1417791846
@@ -68,21 +75,23 @@ label=''
 for et in enlist :
 
     nevents=opt.nevts
-    #if en>150: nevents=nevents/2
-    
+    #if et>25 and et<70: nevents=nevents/2
+    #if et>=70: nevents=200
+
     myqueue=opt.lqueue
-    if et>0 and et<60 : myqueue=opt.squeue
+    if et>0 and et<20 : myqueue="1nd"
+    if et>=20 and et<60 : myqueue=opt.squeue
     
     bval="BOFF"
     if opt.Bfield>0 : bval="BON" 
     
-    outDir='%s/git_%s/version_%d/model_%d/%s/%s'%(opt.out,opt.gittag,opt.version,opt.model,opt.datatype,bval)
-    outDir='%s/%s'%(outDir,label) 
+    outDir='%sgit_%s/version_%d/model_%d/%s/%s'%(opt.out,opt.gittag,opt.version,opt.model,opt.datatype,bval)
+    if len(label)>0: outDir='%s/%s'%(outDir,label) 
     if et>0 : outDir='%s/et_%d'%(outDir,et)
-    eosDir='%s/git%s/%s'%(opt.eos,opt.gittag,opt.datatype)
-    if opt.eta>0 : outDir='%s/eta_%3.3f/'%(outDir,opt.eta)
-    if opt.phi!=0.5 : outDir='%s/phi_%3.3fpi/'%(outDir,opt.phi) 
-    if (opt.run>=0) : outDir='%s/run_%d/'%(outDir,opt.run)
+    eosDir='/eos/cms%s/git%s/%s'%(opt.eos,opt.gittag,opt.datatype)
+    if opt.eta>0 : outDir='%s/eta_%3.3f'%(outDir,opt.eta)
+    if opt.phi!=0.5 : outDir='%s/phi_%3.3fpi'%(outDir,opt.phi) 
+    if (opt.run>=0) : outDir='%s/run_%d'%(outDir,opt.run)
 
     os.system('mkdir -p %s'%outDir)
 
@@ -91,8 +100,13 @@ for et in enlist :
     scriptFile.write('#!/bin/bash\n')
     scriptFile.write('source %s/g4env.sh\n'%(os.getcwd()))
     #scriptFile.write('cd %s\n'%(outDir))
+
+
+    if len(opt.datafileeos)>0:
+        scriptFile.write('eos cp %s/%s %s\n'%(opt.datafileeos,opt.datafile,opt.datafile))
+
     scriptFile.write('cp %s/g4steer.mac .\n'%(outDir))
-    scriptFile.write('PFCalEE g4steer.mac %d %d %f %s %s %s | tee g4.log\n'%(opt.version,opt.model,opt.eta,wthick,pbthick,droplayers))
+    scriptFile.write('PFCalEE g4steer.mac %d %d %f %d %s %s %s | tee g4.log\n'%(opt.version,opt.model,opt.eta,shape,wthick,pbthick,droplayers))
     outTag='%s_version%d_model%d_%s'%(label,opt.version,opt.model,bval)
     if et>0 : outTag='%s_et%d'%(outTag,et)
     if opt.eta>0 : outTag='%s_eta%3.3f'%(outTag,opt.eta) 
@@ -101,18 +115,18 @@ for et in enlist :
     scriptFile.write('mv PFcal.root HGcal_%s.root\n'%(outTag))
     scriptFile.write('localdir=`pwd`\n')
     scriptFile.write('echo "--Local directory is " $localdir >> g4.log\n')
-    scriptFile.write('ls * >> g4.log\n')
+    scriptFile.write('ls -ltrh * >> g4.log\n')
     if len(opt.eos)>0:
-        scriptFile.write('grep "alias eos=" /afs/cern.ch/project/eos/installation/cms/etc/setup.sh | sed "s/alias /export my/" > eosenv.sh\n')
-        scriptFile.write('source eosenv.sh\n')
-        scriptFile.write('$myeos mkdir -p %s\n'%eosDir)
-        scriptFile.write('cmsStage -f HGcal_%s.root %s/HGcal_%s.root\n'%(outTag,eosDir,outTag))
+        #scriptFile.write('grep "alias eos=" /afs/cern.ch/project/eos/installation/cms/etc/setup.sh | sed "s/alias /export my/" > eosenv.sh\n')
+        #scriptFile.write('source eosenv.sh\n')
+        scriptFile.write('eos mkdir -p %s\n'%eosDir)
+        scriptFile.write('eos cp HGcal_%s.root %s/HGcal_%s.root\n'%(outTag,eosDir,outTag))
         scriptFile.write('if (( "$?" != "0" )); then\n')
         scriptFile.write('echo " --- Problem with copy of file PFcal.root to EOS. Keeping locally." >> g4.log\n')
         scriptFile.write('else\n')
-        scriptFile.write('eossize=`$myeos ls -l %s/HGcal_%s.root | awk \'{print $5}\'`\n'%(eosDir,outTag))
+        scriptFile.write('eossize=`eos ls -l %s/HGcal_%s.root | awk \'{print $5}\'`\n'%(eosDir,outTag))
         scriptFile.write('localsize=`ls -l HGcal_%s.root | awk \'{print $5}\'`\n'%(outTag))
-        scriptFile.write('if (( "$eossize" != "$localsize" )); then\n')
+        scriptFile.write('if [ $eossize != $localsize ]; then\n')
         scriptFile.write('echo " --- Copy of sim file to eos failed. Localsize = $localsize, eossize = $eossize. Keeping locally..." >> g4.log\n')
         scriptFile.write('else\n')
         scriptFile.write('echo " --- Size check done: Localsize = $localsize, eossize = $eossize" >> g4.log\n')
@@ -121,8 +135,10 @@ for et in enlist :
         scriptFile.write('fi\n')
         scriptFile.write('fi\n')
 
-    scriptFile.write('echo "--deleting core files: too heavy!!"\n')
+    scriptFile.write('echo "--deleting core files and hepmc files: too heavy!!"\n')
     scriptFile.write('rm core.*\n')
+    if len(opt.datafileeos)>0:
+        scriptFile.write('rm %s\n'%(opt.datafile))
     scriptFile.write('cp * %s/\n'%(outDir))
     scriptFile.write('echo "All done"\n')
     scriptFile.close()

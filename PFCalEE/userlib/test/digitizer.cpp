@@ -200,20 +200,23 @@ void processHist(const unsigned iL,
 		 std::vector<PseudoJet> & lParticles
 		 ){
 
-  bool doSaturation=true;
+  bool doSaturation=false;//true;
 
   DetectorEnum adet = subdet.type;
   bool isScint = subdet.isScint;
   bool isSi = subdet.isSi;
-
   //double rLim = subdet.radiusLim;
-  for (unsigned iB(0); iB<histE.size();++iB){//loop on bins
-    std::pair<double,double> xy = geom[iB+1];
-    
+  std::map<unsigned,MergeCells>::iterator lIter = histE.begin();
+  for (; lIter!=histE.end();++lIter){//loop on elements of the map
+    //bin numbering starts at 1....
+    //get bin number of map element iele
+    unsigned iB = lIter->first;
+    std::pair<double,double> xy = geom[iB];
+    if (isScint) HGCSSGeometryConversion::convertFromEtaPhi(xy,meanZpos);
     double digiE = 0;
-    double simE = histE[iB].energy;
+    double simE = lIter->second.energy;
     //double time = 0;
-    //if (simE>0) time = histE[iB].time/simE;
+    //if (simE>0) time = histE[iele].time/simE;
     
     //fill vector with neighbours and calculate cross-talk
     double xtalkE = simE;
@@ -261,8 +264,8 @@ void processHist(const unsigned iL,
       digiE = myDigitiser.adcToMIP(adc,adet);
     }
     bool aboveThresh = //digiE > 0.5;
-      (isSi && adc > pThreshInADC[iL]) ||
-      (isScint && digiE > pThreshInADC[iL]*myDigitiser.adcToMIP(1,adet,false));
+      (isSi && adc >= pThreshInADC[iL]) ||
+      (isScint && digiE >= pThreshInADC[iL]*myDigitiser.adcToMIP(1,adet,false));
     //histE->SetBinContent(iX,iY,digiE);
     if ((!pSaveDigis && aboveThresh) ||
 	pSaveDigis)
@@ -295,7 +298,7 @@ void processHist(const unsigned iL,
 
 
 int main(int argc, char** argv){//main  
-
+  const unsigned evtmin = 0;//100;
   /////////////////////////////////////////////////////////////
   //parameters
   /////////////////////////////////////////////////////////////
@@ -314,6 +317,8 @@ int main(int argc, char** argv){//main
               << "<number of PU>" << std::endl
               << "<full path to MinBias file if nPU!=0>" << std::endl
               << std::endl
+              << "<optional: etamean (default=no eta sel)> "  << std::endl
+              << "<optional: deta (default=no eta sel)>" << std::endl
               << "<optional: randomSeed (default=0)> "  << std::endl
               << "<optional: debug (default=0)>" << std::endl
               << "<optional: save sim hits (default=0)> " << std::endl
@@ -356,7 +361,10 @@ int main(int argc, char** argv){//main
 	    << " -- pu file path: " << puPath << std::endl
     ;
 
-	    
+  double etamean;
+  double deta;
+  bool doEtaSel = false;
+
   //std::string pModel = "model2";
   unsigned debug = 0;
   unsigned pSeed = 0;
@@ -364,14 +372,23 @@ int main(int argc, char** argv){//main
   bool pSaveSims = 0;
   bool pMakeJets = false;
   //if (nPar > nReqA-1) pModel = argv[nReqA];
-  if (nPar > nReqA) std::istringstream(argv[nReqA])>>pSeed;
-  if (nPar > nReqA+1) {
-    debug = atoi(argv[nReqA+1]);
+  if (nPar > nReqA+1){
+    std::istringstream(argv[nReqA])>>etamean;
+    std::istringstream(argv[nReqA+1])>>deta;
+
+    std::cout << " -- Eta selection: " << etamean << " +/- " << deta << std::endl;
+    doEtaSel = true;
+  }
+  if (etamean < 1.4) doEtaSel = false;
+
+  if (nPar > nReqA+2) std::istringstream(argv[nReqA+2])>>pSeed;
+  if (nPar > nReqA+3) {
+    debug = atoi(argv[nReqA+3]);
     std::cout << " -- DEBUG output is set to " << debug << std::endl;
   }
-  if (nPar > nReqA+2) std::istringstream(argv[nReqA+2])>>pSaveDigis;
-  if (nPar > nReqA+3) std::istringstream(argv[nReqA+3])>>pSaveSims;
-  if (nPar > nReqA+4) std::istringstream(argv[nReqA+4])>>pMakeJets;
+  if (nPar > nReqA+4) std::istringstream(argv[nReqA+4])>>pSaveDigis;
+  if (nPar > nReqA+5) std::istringstream(argv[nReqA+5])>>pSaveSims;
+  if (nPar > nReqA+6) std::istringstream(argv[nReqA+6])>>pMakeJets;
   
   //try to get model automatically
   //if (inFilePath.find("model0")!=inFilePath.npos) pModel = "model0";
@@ -440,7 +457,7 @@ int main(int argc, char** argv){//main
      ofstream myscript;
      myscript.open("eosls.sh");
      myscript<<"#!/bin/bash" << std::endl;
-     myscript<<"/afs/cern.ch/project/eos/installation/0.3.15/bin/eos.select ls " << puPath << std::endl; 
+     myscript<<"/afs/cern.ch/project/eos/installation/0.3.15/bin/eos.select ls " << puPath << " | grep HGcal" << std::endl; 
      myscript.close();
      FILE *script = popen("bash eosls.sh", "r");
      char eoslsName[100];
@@ -472,12 +489,18 @@ int main(int argc, char** argv){//main
   HGCSSInfo * info=(HGCSSInfo*)inputFile->Get("Info");
 
   assert(info);
+  //info->Print();
 
-  const double calorSizeXY = info->calorSizeXY();
-  const double cellSize = info->cellSize();
   const unsigned versionNumber = info->version();
   const unsigned model = info->model();
-  
+  //CAMM-dirty fix
+  //const unsigned shape = inputStr.find("Diamond")!=inputStr.npos? 2: inputStr.find("Triangle")!=inputStr.npos?3 :1 ;//info->shape();
+  const unsigned shape = info->shape();
+  //const double cellSize = 6.496345;//info->cellSize();
+  //const double calorSizeXY = 2800*2;//info->calorSizeXY();
+  const double cellSize = info->cellSize();
+  const double calorSizeXY = info->calorSizeXY();
+
   bool isTBsetup = (model != 2);
   if (isTBsetup) std::cout << " -- Number of Si layers: " << nSiLayers << std::endl;
   else std::cout << " -- Number of Si layers ignored: hardcoded as a function of radius in HGCSSGeometryConversion class." << std::endl;
@@ -504,6 +527,7 @@ int main(int argc, char** argv){//main
 	    << ", version number = " << versionNumber 
 	    << ", model = " << model
 	    << ", cellSize = " << cellSize
+	    << ", shape = " << shape
 	    << std::endl;
 
   bool bypassR = false;
@@ -517,12 +541,22 @@ int main(int argc, char** argv){//main
 
   HGCSSGeometryConversion geomConv(model,cellSize,bypassR,nSiLayers);
   geomConv.setXYwidth(calorSizeXY);
+  geomConv.setVersion(versionNumber);
   //const double xWidth = geomConv.getXYwidth();
-  geomConv.initialiseHoneyComb(calorSizeXY,cellSize);
+
+  if (shape==2) geomConv.initialiseDiamondMap(calorSizeXY,10.);
+  else if (shape==3) geomConv.initialiseTriangleMap(calorSizeXY,10.*sqrt(2.));
+  else if (shape==1) geomConv.initialiseHoneyComb(calorSizeXY,cellSize);
+  else if (shape==4) geomConv.initialiseSquareMap(calorSizeXY,10.);
+
   //square map for BHCAL
-  geomConv.initialiseSquareMap(calorSizeXY/2.,10.);
+  geomConv.initialiseSquareMap1(1.4,3.0,0,2*TMath::Pi(),0.01745);//eta phi segmentation
+  geomConv.initialiseSquareMap2(1.4,3.0,0,2*TMath::Pi(),0.02182);//eta phi segmentation
+  //geomConv.initialiseSquareMap2(1.4,3.0,0,2*TMath::Pi(),0.02618);//eta phi segmentation
 
   HGCSSDigitisation myDigitiser;
+  myDigitiser.setIntercalibrationFactor(interCalib);
+  std::cout << " -- Intercalibration factor set to (%): " << interCalib << std::endl;
 
   std::vector<unsigned> granularity;
   granularity.resize(nLayers,1);
@@ -536,6 +570,13 @@ int main(int argc, char** argv){//main
   extractParameterFromStr<std::vector<unsigned> >(threshStr,pThreshInADC);
 
   //unsigned nbCells = 0;
+
+  if (doEtaSel){
+    for (unsigned iL(0); iL<nLayers; ++iL){
+      pNoiseInMips[iL] = 0;
+      pThreshInADC[iL] = 0;
+    }
+  }
 
   std::cout << " -- Granularities and noise are setup like this:" << std::endl;
   for (unsigned iL(0); iL<nLayers; ++iL){
@@ -559,7 +600,6 @@ int main(int argc, char** argv){//main
   std::cout << " -- Random3 seed = " << lRndm->GetSeed() << std::endl
 	    << " ----------------------------------------" << std::endl;
 
-  myDigitiser.setIntercalibrationFactor(interCalib);
 
   /////////////////////////////////////////////////////////////
   //output
@@ -567,6 +607,9 @@ int main(int argc, char** argv){//main
 
   std::ostringstream outputStr;
   outputStr << outFilePath << "/DigiPFcal" ;
+  //if (doEtaSel) {
+  //outputStr << "_eta" << (etamean-deta) << "_" << (etamean+deta);
+  //}
   if (pSaveDigis)  outputStr << "_withDigiHits";
   if (pSaveSims)  outputStr << "_withSimHits";
   outputStr << ".root";
@@ -586,7 +629,7 @@ int main(int argc, char** argv){//main
   lInfo->cellSize(cellSize);
   lInfo->version(versionNumber);
   lInfo->model(model);
-
+  lInfo->shape(shape);
   TTree *outputTree = new TTree("RecoTree","HGC Standalone simulation reco tree");
   HGCSSSimHitVec lSimHits;
   HGCSSRecoHitVec lDigiHits;
@@ -615,7 +658,7 @@ int main(int argc, char** argv){//main
 
   std::vector<PseudoJet> lParticles;
 
-  for (unsigned ievt(0); ievt<nEvts; ++ievt){//loop on entries
+  for (unsigned ievt(evtmin); ievt<evtmin+nEvts; ++ievt){//loop on entries
 
     inputTree->GetEntry(ievt);
     lEvent.eventNumber(event->eventNumber());
@@ -632,29 +675,28 @@ int main(int argc, char** argv){//main
     else if (ievt%50 == 0) std::cout << "... Processing event: " << ievt << std::endl;
     
 
-    unsigned prevLayer = 10000;
-    DetectorEnum type = DetectorEnum::FECAL;
-    unsigned subdetLayer=0;
-    bool isScint = false;
     for (unsigned iH(0); iH<(*hitvec).size(); ++iH){//loop on hits
       HGCSSSimHit lHit = (*hitvec)[iH];
-
+      if (lHit.energy()<=0) continue;
+      
       //do not save hits with 0 energy...
       if (lHit.energy()>0 && pSaveSims) lSimHits.push_back(lHit);
+      
       unsigned layer = lHit.layer();
-      if (layer != prevLayer){
-	const HGCSSSubDetector & subdet = myDetector.subDetectorByLayer(layer);
-	isScint = subdet.isScint;
-	type = subdet.type;
-	subdetLayer = layer-subdet.layerIdMin;
-	prevLayer = layer;
-	if (debug > 1) std::cout << " - layer " << layer << " " << subdet.name << " " << subdetLayer << std::endl;
+      const HGCSSSubDetector & subdet = myDetector.subDetectorByLayer(layer);
+      DetectorEnum type = subdet.type;
+      if (debug > 1) std::cout << " - layer " << layer << " " << subdet.name << " " << layer-subdet.layerIdMin << std::endl;
+
+      if (doEtaSel){
+	bool passeta = fabs(lHit.eta(subdet,geomConv,shape)-etamean)<deta;
+	if (!passeta) continue;
       }
-      std::pair<double,double> xy = lHit.get_xy(isScint,geomConv);
+
+      std::pair<double,double> xy = lHit.get_xy(subdet,geomConv,shape);
       double posx = xy.first;//lHit.get_x(cellSize);
       double posy = xy.second;//lHit.get_y(cellSize);
-      double radius = sqrt(pow(posx,2)+pow(posy,2));
       double posz = lHit.get_z();
+      double radius = sqrt(pow(posx,2)+pow(posy,2));
       double energy = lHit.energy()*mycalib.MeVToMip(layer,radius); // if (energy > 0) std::cout << "sim energy = "<<lHit.energy()<<", reco energy = "<<energy<<std::endl;
       double realtime = mycalib.correctTime(lHit.time(),posx,posy,posz);
       bool passTime = myDigitiser.passTimeCut(type,realtime);
@@ -700,46 +742,41 @@ int main(int argc, char** argv){//main
 	//std::cout << " ---- adding evt " << ipuevt << std::endl;
 	
         puTree->GetEntry(ipuevt);
-        //lRecoHits.reserve(lRecoHits.size()+(*puhitvec).size());
-        prevLayer = 10000;
-        type = DetectorEnum::FECAL;
-        subdetLayer=0;
-	isScint = false;
         for (unsigned iH(0); iH<(*puhitvec).size(); ++iH){//loop on hits
           HGCSSSimHit lHit = (*puhitvec)[iH];
-	  if (lHit.energy()>0){
-	    unsigned layer = lHit.layer();
-	    if (layer != prevLayer){
-	      const HGCSSSubDetector & subdet = myDetector.subDetectorByLayer(layer);
-	      isScint = subdet.isScint;
-	      type = subdet.type;
-	      subdetLayer = layer-subdet.layerIdMin;
-	      prevLayer = layer;
-	      //std::cout << " - layer " << layer << " " << subdet.name << " " << subdetLayer << std::endl;
-	    }
-	    std::pair<double,double> xy = lHit.get_xy(isScint,geomConv);
-	    double posx = xy.first;//lHit.get_x(cellSize);
-	    double posy = xy.second;//lHit.get_y(cellSize);
-	    double posz = lHit.get_z();
-	    double radius = sqrt(pow(posx,2)+pow(posy,2));
-	    if (lHit.silayer() < geomConv.getNumberOfSiLayers(type,radius)){
-	      double energy = lHit.energy()*mycalib.MeVToMip(layer,radius);
-	      double realtime = mycalib.correctTime(lHit.time(),posx,posy,posz);
-	      bool passTime = myDigitiser.passTimeCut(type,realtime);
-	      if (!passTime) continue;
-	      
-	      if (debug > 1) std::cout << " hit " << iH
-				       << " lay " << layer
-				       << " x " << posx
-				       << " y " << posy
-				       << " z " << posz
-				       << " t " << lHit.time() << " " << realtime
-				       << std::endl;
-	      //geomConv.fill(type,subdetLayer,energy,realtime,posx,posy,posz);
-	      geomConv.fill(layer,energy,realtime,lHit.cellid(),posz);
-	    }
-	  }
+	  if (lHit.energy()<=0) continue;
 
+	  unsigned layer = lHit.layer();
+	  const HGCSSSubDetector & subdet = myDetector.subDetectorByLayer(layer);
+	  DetectorEnum type = subdet.type;
+
+	  if (doEtaSel){
+	    bool passeta = fabs(lHit.eta(subdet,geomConv,shape)-etamean)<deta;
+	    if (!passeta) continue;
+	  }
+	  
+	  std::pair<double,double> xy = lHit.get_xy(subdet,geomConv,shape);
+	  double posx = xy.first;//lHit.get_x(cellSize);
+	  double posy = xy.second;//lHit.get_y(cellSize);
+	  double posz = lHit.get_z();
+	  double radius = sqrt(pow(posx,2)+pow(posy,2));
+	  if (lHit.silayer() < geomConv.getNumberOfSiLayers(type,radius)){
+	    double energy = lHit.energy()*mycalib.MeVToMip(layer,radius);
+	    double realtime = mycalib.correctTime(lHit.time(),posx,posy,posz);
+	    bool passTime = myDigitiser.passTimeCut(type,realtime);
+	    if (!passTime) continue;
+	    
+	    if (debug > 1) std::cout << " hit " << iH
+				     << " lay " << layer
+				     << " x " << posx
+				     << " y " << posy
+				     << " z " << posz
+				     << " t " << lHit.time() << " " << realtime
+				     << std::endl;
+	    //geomConv.fill(type,subdetLayer,energy,realtime,posx,posy,posz);
+	    geomConv.fill(layer,energy,realtime,lHit.cellid(),posz);
+	  }
+	  
         }//loop on hits
       }//loop on interactions
     }//add PU
@@ -761,21 +798,34 @@ int main(int argc, char** argv){//main
       const HGCSSSubDetector & subdet = myDetector.subDetectorByLayer(iL);
       bool isScint = subdet.isScint;
       //nTotBins += histE->GetNumberOfBins();
-      unsigned nBins = isScint?geomConv.squareMap()->GetNumberOfBins() : geomConv.hexagonMap()->GetNumberOfBins();
+
+      std::map<int,std::pair<double,double> > & geom = isScint?(subdet.type==DetectorEnum::BHCAL1?geomConv.squareGeom1:geomConv.squareGeom2): shape==4?geomConv.squareGeom:shape==2?geomConv.diamGeom:shape==3?geomConv.triangleGeom:geomConv.hexaGeom;
+
+      unsigned nBins = geom.size();//isScint||shape==4?geomConv.squareMap()->GetNumberOfBins() : shape==2?geomConv.diamondMap()->GetNumberOfBins() : shape==3? geomConv.triangleMap()->GetNumberOfBins() : geomConv.hexagonMap()->GetNumberOfBins();
       nTotBins += nBins;
       if (pSaveDigis) lDigiHits.reserve(nTotBins);
       
-      double meanZpos = geomConv.getAverageZ(iL);
+      //double meanZpos = geomConv.getAverageZ(iL);
+      double meanZpos = myDetector.sensitiveZ(iL);
       
-      //extend map to include all cells
+      //extend map to include all cells in eta=1.4-3 region
+      //in eta ring if saving only one eta ring....
       for (unsigned iB(1); iB<nBins+1;++iB){
+	std::pair<double,double> xy = geom[iB];
+	if (isScint) {
+	  HGCSSGeometryConversion::convertFromEtaPhi(xy,meanZpos);
+	}
+	ROOT::Math::XYZPoint lpos = ROOT::Math::XYZPoint(xy.first,xy.second,meanZpos);
+	double eta = lpos.eta();
+	bool passeta = doEtaSel?fabs(eta-etamean)<deta : eta>1.4 && eta<3.0;
+	if (!passeta) continue;
 	MergeCells tmpCell;
 	tmpCell.energy = 0;
 	tmpCell.time = 0;
 	histE.insert(std::pair<unsigned,MergeCells>(iB,tmpCell));
       }
 
-      //std::cout << iL << " " << meanZpos << std::endl;
+      //std::cout << iL << " " << meanZpos << " map size " << histE.size() << std::endl;
 
       if (debug>0){
 	std::cout << " -- Layer " << iL << " " << subdet.name << " z=" << meanZpos
@@ -785,14 +835,15 @@ int main(int argc, char** argv){//main
       //cell-to-cell cross-talk for scintillator
       if (isScint){
 	//2.5% per 30-mm edge
-	myDigitiser.setIPCrossTalk(0.025*10.*granularity[iL]/30.);
+	//myDigitiser.setIPCrossTalk(0.025*geomConv.cellSize(iL,0)/30.);
       }
       else {
 	myDigitiser.setIPCrossTalk(0);
       }
 
       //processHist(iL,histE,myDigitiser,p_noise,histZ,meanZpos,isTBsetup,subdet,pThreshInADC,pSaveDigis,lDigiHits,lRecoHits,pMakeJets,lParticles);
-      processHist(iL,histE,isScint?geomConv.squareGeom:geomConv.hexaGeom,myDigitiser,p_noise,meanZpos,isTBsetup,subdet,pThreshInADC,pSaveDigis,lDigiHits,lRecoHits,pMakeJets,lParticles);
+
+      processHist(iL,histE,geom,myDigitiser,p_noise,meanZpos,isTBsetup,subdet,pThreshInADC,pSaveDigis,lDigiHits,lRecoHits,pMakeJets,lParticles);
  
     }//loop on layers
 

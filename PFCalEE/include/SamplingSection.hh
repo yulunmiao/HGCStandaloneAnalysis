@@ -54,6 +54,7 @@ public:
       }
     }
     sens_HitVec_size_max = 0;
+    sc_HitVec_size_max = 0;
     resetCounters();
 
     std::cout << " -- End of sampling section initialisation. Input " << aThicknessVec.size() << " elements, constructing " << n_elements << " elements with " << n_sens_elements << " sensitive elements." << std::endl;
@@ -125,6 +126,10 @@ public:
   {
     ele_den.resize(n_elements,0);
     ele_dl.resize(n_elements,0);
+    for (unsigned idx(0); idx<n_elements; ++idx){
+      ele_den[idx] = 0;
+      ele_dl[idx] = 0;
+    }
     sens_time.resize(n_sens_elements,0);
     sens_gFlux.resize(n_sens_elements,0);
     sens_eFlux.resize(n_sens_elements,0);
@@ -133,6 +138,12 @@ public:
     sens_hadFlux.resize(n_sens_elements,0);
     //reserve some space based on first event....
     for (unsigned idx(0); idx<n_sens_elements; ++idx){
+      sens_time[idx]=0;
+      sens_gFlux[idx]=0;
+      sens_eFlux[idx]=0;
+      sens_muFlux[idx]=0;
+      sens_neutronFlux[idx]=0;
+      sens_hadFlux[idx]=0;
       if (sens_HitVec[idx].size() > sens_HitVec_size_max) {
 	sens_HitVec_size_max = 2*sens_HitVec[idx].size();
 	G4cout << "-- SamplingSection::resetCounters(), space reserved for HitVec vector increased to " << sens_HitVec_size_max << G4endl;
@@ -140,7 +151,14 @@ public:
       sens_HitVec[idx].clear();
       sens_HitVec[idx].reserve(sens_HitVec_size_max);
     }
-  }
+
+    if (supportcone_HitVec.size() > sc_HitVec_size_max) {
+      sc_HitVec_size_max = 2*supportcone_HitVec.size();
+      G4cout << "-- SamplingSection::resetCounters(), space reserved for AluHitVec vector increased to " << sc_HitVec_size_max << G4endl;
+    }
+    supportcone_HitVec.clear();
+    supportcone_HitVec.reserve(sc_HitVec_size_max);
+  };
   
   //
   G4double getMeasuredEnergy(bool weighted=true);
@@ -159,12 +177,13 @@ public:
   G4double getTotalSensE();
 
   const G4SiHitVec & getSiHitVec(const unsigned & idx) const;
+  const G4SiHitVec & getAlHitVec() const;
   void trackParticleHistory(const unsigned & idx,const G4SiHitVec & incoming);
 
   //
   void report(bool header=false);
 
-  //members
+  //members, all public
   unsigned n_elements;
   unsigned n_sectors;
   unsigned n_sens_elements;
@@ -176,11 +195,16 @@ public:
   std::vector<G4double>           ele_den;
   std::vector<G4double>           ele_dl;
   std::vector<G4VPhysicalVolume*> ele_vol;
+  G4VPhysicalVolume* supportcone_vol;
+  G4VPhysicalVolume* dummylayer_vol;
   std::vector<G4double>           sens_gFlux, sens_eFlux, sens_muFlux, sens_neutronFlux, sens_hadFlux, sens_time;
   G4double Total_thick;
   std::vector<G4SiHitVec> sens_HitVec;
+  G4SiHitVec supportcone_HitVec;
   unsigned sens_HitVec_size_max;
+  unsigned sc_HitVec_size_max;
   bool hasScintillator;
+  double sensitiveZ;
 
 
 };

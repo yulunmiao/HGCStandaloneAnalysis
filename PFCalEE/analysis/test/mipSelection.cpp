@@ -204,12 +204,12 @@ int main(int argc, char** argv){//main
   //hardcoded
   /////////////////////////////////////////////////////////////
 
-  const double cell_size = 10;//mm
+  const double cell_size = 5;//mm
 
   const unsigned nEta = 1;
-  const unsigned nNoise = 1;//0;
+  const unsigned nNoise = 5;//0;
 
-  const double noise[nNoise] = {0};//,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5};
+  const double noise[nNoise] = {0,0.6,0.7,0.8,0.9};//,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5};
   const double eta[nEta] = {etamean};//1.7,2.0,2.5};
 
   const double deta = 0.05;
@@ -231,7 +231,7 @@ int main(int argc, char** argv){//main
   else {
     inputbase << inFilePath //<< "/MipStudy.root";
 	      << "_run";
-    nTrees = 21;
+    nTrees = 2;
   }
   for (unsigned i(0); i<nTrees;++i){
     if (nTrees>1){

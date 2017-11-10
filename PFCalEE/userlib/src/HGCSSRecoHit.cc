@@ -6,8 +6,9 @@
 
 
 HGCSSRecoHit::HGCSSRecoHit(const HGCSSSimHit & aSimHit, 
-			   const bool isScintillator,
-			   const HGCSSGeometryConversion & aGeom){
+			   const HGCSSSubDetector & subdet,
+			   const HGCSSGeometryConversion & aGeom,
+			   const unsigned & shape){
   energy_ = aSimHit.energy();
   adcCounts_ = 0;
   zpos_ = aSimHit.get_z();
@@ -16,7 +17,8 @@ HGCSSRecoHit::HGCSSRecoHit(const HGCSSSimHit & aSimHit,
   layer_ = aSimHit.layer();
   noiseFrac_ = 0;
 
-  std::pair<double,double> xy = aSimHit.get_xy(isScintillator,aGeom);
+  std::pair<double,double> xy = aSimHit.get_xy(subdet,aGeom,shape);
+
   xpos_ = xy.first;
   ypos_ = xy.second;
 

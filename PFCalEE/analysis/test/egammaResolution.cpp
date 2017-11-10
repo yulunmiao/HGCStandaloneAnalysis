@@ -272,13 +272,16 @@ int main(int argc, char** argv){//main
   PositionFit lChi2Fit(nSR,residualMax,nLayers,nSiLayers,applyPuMixFix,debug);
   lChi2Fit.initialise(outputFile,"PositionFit",outFolder,geomConv,puDensity);
 
-  //try getting z position from input file, if doesn't exit,
-  //perform first loop over simhits to find z positions of layers
-  if ((redoStep<2 && !lChi2Fit.getZpositions(versionNumber)) || redoStep>1)
-    lChi2Fit.getZpositions(versionNumber,lSimTree,nEvts);
+
+  std::vector<double> zpos;
+  zpos.resize(myDetector.nLayers(),0);
+  for (unsigned iL(0); iL<myDetector.nLayers(); ++iL){//loop on layers
+    zpos[iL] = myDetector.sensitiveZ(iL);
+  }
+
   
-  //perform second loop over events to find positions to fit and get energies
-  SignalRegion SignalEnergy(outFolder, nLayers, nEvts, geomConv, puDensity,applyPuMixFix,versionNumber);
+  //perform loop over events to find positions to fit and get energies
+  SignalRegion SignalEnergy(outFolder, nLayers, zpos, nEvts, geomConv, puDensity,applyPuMixFix,versionNumber);
   SignalEnergy.initialise(outputFile,"Energies");
 
   //initialise

@@ -104,31 +104,37 @@ void SteppingAction::UserSteppingAction(const G4Step* aStep)
 
 
   //bit for particles study
-  /*
-  if (abs(pdgId)==11 && 
+  
+  /*if (abs(pdgId)==11 && 
       ((thePrePVname=="Si11_0phys" || thePrePVname=="Si11_1phys" || thePrePVname=="Si11_2phys" || thePrePVname=="PCB12phys") && 
       (thePostPVname=="WCu11phys" || thePostPVname=="Si11_0phys"|| thePostPVname=="Si11_1phys"|| thePostPVname=="Si11_2phys" || (thePostPVname=="PCB12phys" && thePrePVname=="Si11_2phys"))) ||
       ((thePrePVname=="Si18_0phys" || thePrePVname=="Si18_1phys" || thePrePVname=="Si18_2phys" || thePrePVname=="WCu19phys") && 
        (thePostPVname=="PCB18phys" || thePostPVname=="Si18_0phys"|| thePostPVname=="Si18_1phys"|| thePostPVname=="Si18_2phys" || (thePostPVname=="WCu18phys" && thePrePVname=="Si18_2phys")))
-      )
+       )*/
+  /*if (edep>1.)
     {
-      eventAction_->fout() << thePrePVname
-			   << " " << thePostPVname
-			   << " " << pdgId
-			   << " " << globalTime  
-			   << " " << lTrack->GetMomentum().mag();
-      if (abs(pdgId)>1000000000) eventAction_->fout() << " " << lTrack->GetTrackStatus()
-						      << " " << stepl
-						      << " " << aStep->GetTotalEnergyDeposit()
-						      << " " << aStep->GetNonIonizingEnergyDeposit()
-						      << " " << lTrack->GetCreatorProcess()->GetProcessName()
-						      << " " << lTrack->GetKineticEnergy()
-				   ;
-      eventAction_->fout() << std::endl;
-    }
+      std::ostringstream lss;
+      lss << thePrePVname
+	  << " " << thePostPVname
+	  << " e " << edep
+	  << " pdg " << pdgId
+	  << " t " << globalTime  
+	  << " p " << lTrack->GetMomentum().mag();
+      //if (abs(pdgId)>1000000000) 
+      lss << " status " << lTrack->GetTrackStatus()
+	  << " l " << stepl
+	  << " Edep " << aStep->GetTotalEnergyDeposit()
+	  << " nonion. " << aStep->GetNonIonizingEnergyDeposit()
+	  << " " << lTrack->GetCreatorProcess()->GetProcessName()
+	  << " Ekin " << lTrack->GetKineticEnergy()
+	;
+      lss << std::endl;
+      std::cout << lss.str();
+      eventAction_->fout() << lss.str();
+      }*/
   
-  return;
-  */
+  //return;
+  //*/
 
   //if (thePrePVname=="Wphys") std::cout << "-- debug: " << thePrePVname << " " << thePostPVname << " " << eventAction_->isFirstVolume(thePostPVname) << " time " << globalTime << " trackid=" << trackID << std::endl;
   //if (abs(pdgId)==11 && 
@@ -138,11 +144,11 @@ void SteppingAction::UserSteppingAction(const G4Step* aStep)
   //(thePrePVname=="Si18_1phys" && thePostPVname=="Si18_0phys"))
 //)
   if (globalTime < timeLimit_ && 
-      thePrePVname=="Wphys"
-      && eventAction_->isFirstVolume(thePostPVname))
+      (thePrePVname=="Wphys"
+	&& eventAction_->isFirstVolume(thePostPVname))
+      )
     {
     //if (pdgId == 2112) 
-    //std::cout << "-- found incoming: " << thePrePVname << " " << thePostPVname << " " << globalTime << std::endl;
     //const G4ThreeVector & preposition = thePreStepPoint->GetPosition();
     const G4ThreeVector & postposition = thePostStepPoint->GetPosition();
     //std::cout << "pre " << preposition[0] << " " << preposition[1] << " " << postposition[2]
@@ -158,9 +164,12 @@ void SteppingAction::UserSteppingAction(const G4Step* aStep)
     genPart.pdgid(pdgId);
     genPart.charge(pd->GetPDGCharge());
     genPart.trackID(trackID);
+    //double tmpE = sqrt(pd->GetPDGMass()*pd->GetPDGMass()+(p[0]*p[0]+p[1]*p[1]+p[2]*p[2]));
+    //std::cout << "-- found incoming: " << thePrePVname << " " << thePostPVname << " " << trackID << " id=" << pdgId << " t=" << globalTime << " E=" << tmpE << std::endl;
     //if (pdgId == 2112) genPart.Print(G4cout);
   }
 
+  //if (globalTime < 10) //timeLimit_) 
   eventAction_->Detect(edep,stepl,globalTime,pdgId,volume,position,trackID,parentID,genPart);
   //eventAction_->Detect(edep,stepl,globalTime,pdgId,volume,iyiz);
 }
