@@ -23,6 +23,7 @@ parser.add_option('-d', '--datatype'    ,    dest='datatype'           , help='d
 parser.add_option('-f', '--datafile'    ,    dest='datafile'           , help='full path to HepMC input file', default='data/example_MyPythia.dat')
 parser.add_option('-n', '--nevts'       ,    dest='nevts'              , help='number of events to generate' , default=1000,    type=int)
 parser.add_option('-o', '--out'         ,    dest='out'                , help='output directory'             , default=os.getcwd() )
+parser.add_option(      '--nPuVtx'      ,    dest='nPuVtx'             , help='pileup scenarios (csv) [%h]',   default='0,140,200')
 parser.add_option('-e', '--eos'         ,    dest='eos'                , help='eos path to save root file to EOS',         default='')
 parser.add_option('-E', '--eosin'       ,    dest='eosin'              , help='eos path to read input root file from EOS',  default='')
 parser.add_option('-g', '--gun'         ,    action="store_true",  dest='dogun'              , help='use particle gun.')
@@ -75,7 +76,7 @@ elif opt.version==63:
 
 
 #nPuVtxlist=[0,140,200]
-nPuVtxlist=[0,200,140]
+nPuVtxlist=[int(x) for x in opt.nPuVtx.split(',')]
 
 #in %
 interCalibList=[3];#0,1,2,3,4,5,10,15,20,50]
