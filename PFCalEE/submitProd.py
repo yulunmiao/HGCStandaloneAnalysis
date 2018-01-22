@@ -6,8 +6,6 @@ import commands
 import math
 import random
 
-random.seed()
-
 usage = 'usage: %prog [options]'
 parser = optparse.OptionParser(usage)
 parser.add_option('-s', '--short-queue' ,    dest='squeue'             , help='short batch queue'            , default='1nd')
@@ -28,6 +26,10 @@ parser.add_option('-e', '--eos'         ,    dest='eos'                , help='e
 parser.add_option('-g', '--gun'         ,    action="store_true",  dest='dogun'              , help='use particle gun.')
 parser.add_option('-S', '--no-submit'   ,    action="store_true",  dest='nosubmit'           , help='Do not submit batch job.')
 (opt, args) = parser.parse_args()
+
+
+random.seed()
+if opt.run: random.seed(opt.run)
 
 #for run in `seq 0 19`; do ./submitProd.py -s 2nd -q 1nw -g -S -t testV8 -r $run -v 63 -m 2 -a 1.7 -b 3.8 -d gamma -n 250 -o /afs/cern.ch/work/a/amagnan/public/HGCalTDR/ -e /store/cmst3/group/hgcal/HGCalTDR; done
 #for run in `seq 0 49`; do ./submitProd.py -s 2nd -q 2nd  -t testV8 -r $run -v 63 -m 2  -b 3.8 -d HggLarge -n 100 -o /afs/cern.ch/work/a/amagnan/public/HGCalTDR/ -e /store/group/dpg_hgcal/comm_hgcal/amagnan/HGCalTDR -f /afs/cern.ch/work/a/amagnan/public/HepMCFiles/ggHgg_run$run.dat -F ""; done
