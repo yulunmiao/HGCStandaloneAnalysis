@@ -51,8 +51,11 @@ if opt.dogun :
 
 #if opt.dogun : enlist=[2,5,10,20,40,60,80,100,150,200]#,300,400,500]
 
+#No label: for 100um Si->will use small cell PU production!
 #label=''
+#for using Si noise values for 300um and large hexagon cells
 #label='300u'
+#for using Si noise values for 200um and large hexagon cells
 label='200u'
 #label='v5_30'
 #label='v5_28'
@@ -72,7 +75,7 @@ elif opt.version==63:
     if (label==''):
         INPATHPU="root://eoscms//eos/cms/store/cmst3/group/hgcal/HGCalTDR/gittestV8/MinBiasSmall/"
     else :
-        INPATHPU="root://eoscms//eos/cms/store/group/dpg_hgcal/comm_hgcal/amagnan/HGCalTDR/gittestV8/MinBiasLarge/"
+        INPATHPU="root://eoscms//eos/cms/store/group/dpg_hgcal/comm_hgcal/amagnan/HGCalTDR/gitV08-01-00/MinBiasLarge/"
 
 
 #nPuVtxlist=[0,140,200]
