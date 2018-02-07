@@ -17,6 +17,9 @@
 #include "TRandom3.h"
 #include "Math/Vector4D.h"
 
+#include "TSystemDirectory.h"
+#include "TSystemFile.h"
+
 #include "fastjet/ClusterSequence.hh"
 
 #include "HGCSSEvent.hh"
@@ -456,31 +459,32 @@ int main(int argc, char** argv){//main
   unsigned nPuEvts = 0;
   std::vector<HGCSSSimHit> * puhitvec = 0;
   if(nPU!=0){
-     ofstream myscript;
-     myscript.open("eosls.sh");
-     myscript<<"#!/bin/bash" << std::endl;
-     myscript<<"/afs/cern.ch/project/eos/installation/0.3.15/bin/eos.select ls " << puPath << " | grep HGcal" << std::endl; 
-     myscript.close();
-     FILE *script = popen("bash eosls.sh", "r");
-     char eoslsName[100];
-     while(fgets(eoslsName, 100, script)) {
-        std::ostringstream puInput;
-        std::string temp = std::string(eoslsName).substr(0,strlen(eoslsName)-1);
-        if(temp.find("Digi")!=temp.npos)continue;
-        puInput << puPath << temp;
-	if (puInput.str()==inFilePath) {
-	  std::cout << " -- duplicate: file already used as signal. Removing." << std::endl; 
-	  signalIsPu = true;
-	  continue;
-	}
-        puTree->AddFile(puInput.str().c_str());
-        std::cout << "Adding MinBias file:" << puInput.str().c_str() << std::endl;
-     }
-     pclose(script);  
-     system("rm ./eosls.sh");
+    
+    TString localMountPuPath(puPath.c_str());
+    localMountPuPath.ReplaceAll("root://eoscms/","");
+    if(localMountPuPath.BeginsWith("/store")) localMountPuPath="/eos/cms"+localMountPuPath;
+    
+    TSystemDirectory dir(localMountPuPath.Data(),localMountPuPath.Data());
+    TList *files = dir.GetListOfFiles();
+    TSystemFile *file;
+    TIter next(files);
+    while ((file=(TSystemFile*)next())) {
+      if( file->IsDirectory() ) continue;
+      TString fname( file->GetName() );
+      if( !fname.Contains(".root") ) continue;
+      if( !fname.Contains("HGcal") ) continue;
+      if(  fname.Contains("Digi") ) continue;
+      TString puInput(localMountPuPath+"/"+fname);
+      if (puInput==inFilePath.c_str()) {
+        std::cout << " -- duplicate: file already used as signal. Removing." << std::endl; 
+        signalIsPu = true;
+        continue;
+      }
+      puTree->AddFile(puInput);
+      std::cout << "Adding MinBias file:" << puInput << std::endl;
+    }
 
     puTree->SetBranchAddress("HGCSSSimHitVec",&puhitvec);
-
     nPuEvts = puTree->GetEntries();
     std::cout << "- Number of PU events available: " << nPuEvts  << std::endl;
   }
