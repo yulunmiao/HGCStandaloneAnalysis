@@ -74,15 +74,17 @@ int main(int argc, char** argv){//main
   else std::cout << pNevts << " events per run." << std::endl;
 
   const unsigned nNoise = 8;//5;//10;
-  const double noise[nNoise] = {0,0.13,0.2,0.27,0.35,0.4,0.45,0.5};
+  //const double noise[nNoise] = {0,0.13,0.2,0.27,0.35,0.4,0.45,0.5};
+  //for eta 2.7-3
+  const double noise[nNoise] = {0,0.13,0.2,0.27,0.35,0.4,0.5,0.6};
   //const double noise[nNoise] = {0,0.07,0.13,0.2,0.27,0.35,0.4,0.5,0.6,0.65};
 
   double threshBeforeAfterMin[nNoise];
-  const double threshBeforeAfterMax = 5;
+  const double threshBeforeAfterMax = 2;
   std::cout << " ---- Selection settings: ---- " << std::endl
 	    << " -------threshBeforeAfterMin ";
   for (unsigned iN(0); iN<nNoise;++iN){
-    threshBeforeAfterMin[iN] = std::max(0.9,2*noise[iN]);
+    threshBeforeAfterMin[iN] = std::max(0.9,2.2*noise[iN]);
     std::cout << threshBeforeAfterMin[iN] << " ";
   }
   std::cout << std::endl

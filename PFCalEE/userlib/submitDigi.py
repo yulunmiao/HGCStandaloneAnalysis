@@ -40,6 +40,9 @@ parser.add_option('--deta'    , dest='deta'    , help='width of eta ring'       
 #for run in `seq 0 19`; do ./submitDigi.py -s 1nw -q 1nw -g -t testV8 -r $run -v 63 -m 2 -a 2.0 -b 3.8 -d gamma -n 100 -o /afs/cern.ch/work/a/amagnan/public/HGCalTDR/ -e /store/group/dpg_hgcal/comm_hgcal/amagnan/HGCalTDR -E /store/cmst3/group/hgcal/HGCalTDR ; done
 #for run in `seq 0 19`; do ./submitDigi.py -s 1nw -q 1nw -g -t testV8 -r $run -v 63 -m 2 -a 1.7 -b 3.8 -d gamma -n 100 -o /afs/cern.ch/work/a/amagnan/public/HGCalTDR/ -e /store/group/dpg_hgcal/comm_hgcal/amagnan/HGCalTDR -E /store/cmst3/group/hgcal/HGCalTDR ; done
 
+
+
+
 nSiLayers=2
 
 enlist=[0]

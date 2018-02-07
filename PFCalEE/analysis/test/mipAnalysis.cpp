@@ -136,6 +136,12 @@ int main(int argc, char** argv){//main
   const double noise[nNoise] = {0,0.13,0.2,0.27,0.35,0.4,0.45,0.5};
   //double eta[nEta];// = {2.85};//1.7,2.0,2.5};
 
+  std::cout << "Noise values: " ;
+  for (unsigned iN(0); iN<nNoise;++iN){
+    std::cout << noise[iN] << " ";
+  }
+  std::cout << std::endl;
+
   //eta[0] = etamean;
 
   //const double deta = etamean>=2.7?0.05:0.02;
@@ -213,8 +219,8 @@ int main(int argc, char** argv){//main
 
   //square map for BHCAL
   //square map for BHCAL
-  geomConv.initialiseSquareMap1(1.4,3.0,0,2*TMath::Pi(),sizeFH);//eta phi segmentation
-  geomConv.initialiseSquareMap2(1.4,3.0,0,2*TMath::Pi(),sizeBH);//eta phi segmentation
+  geomConv.initialiseSquareMap1(1.4,3.0,-1.*TMath::Pi(),1.*TMath::Pi(),sizeFH);//eta phi segmentation
+  geomConv.initialiseSquareMap2(1.4,3.0,-1.*TMath::Pi(),1.*TMath::Pi(),sizeBH);//eta phi segmentation
   std::vector<unsigned> granularity;
   granularity.resize(myDetector.nLayers(),1);
   geomConv.setGranularity(granularity);

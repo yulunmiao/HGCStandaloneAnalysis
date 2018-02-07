@@ -211,6 +211,8 @@ void processHist(const unsigned iL,
     //bin numbering starts at 1....
     //get bin number of map element iele
     unsigned iB = lIter->first;
+    //cut overflows: very large IDs from the TH2Poly.
+    if(iB>4000000000) continue;
     std::pair<double,double> xy = geom[iB];
     if (isScint) HGCSSGeometryConversion::convertFromEtaPhi(xy,meanZpos);
     double digiE = 0;

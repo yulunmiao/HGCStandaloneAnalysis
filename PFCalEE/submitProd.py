@@ -41,9 +41,9 @@ enlist=[0]
 if opt.dogun : 
     # list of Etransverse, not energy...
     #enlist=[3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200]
-    enlist=[5,10,20,30,40,60,80,100,150,200]
+    #enlist=[5,10,20,30,40,60,80,100,150,200]
     #enlist=[5,10,20,30,50,70,100]
-    #enlist=[10]
+    enlist=[0.26,1]
 
 #hgg seeds
 #for seed in 1417791355 1417791400 1417791462 1417791488 1417791672 1417791741 1417791747 1417791766 1417791846
@@ -82,8 +82,8 @@ for et in enlist :
     #if et>=70: nevents=200
 
     myqueue=opt.lqueue
-    if et>0 and et<20 : myqueue="1nd"
-    if et>=20 and et<60 : myqueue=opt.squeue
+    if et>0 and et<60 : myqueue=opt.squeue
+    if et>=60 : myqueue=opt.lqueue
     
     bval="BOFF"
     if opt.Bfield>0 : bval="BON" 
