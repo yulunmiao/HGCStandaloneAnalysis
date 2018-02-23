@@ -518,7 +518,7 @@ int plotEGReso(){//main
   bool dovsE = true;
   bool processNoFitFiles = false;
 
-  bool doBackLeakCor = false;
+  bool doBackLeakCor = true;
 
   const unsigned nIC = 1;
   const unsigned ICval[nIC] = {3};//0,1,2,3,4,5,10,15,20,50};
@@ -815,9 +815,9 @@ int plotEGReso(){//main
 		    else if (iL==nLayers-1) lNameTot << "+13.0629*energy_" << iL << "_SR" << iSR ;
 		    else lNameTot << "+10.0166*energy_" << iL << "_SR" << iSR ;
 		    //use always largest area for correction
-		    if (iL==nLayers-4) lNameBack << "10.0166*energy_" << iL << "_SR" << iSR ;
+		    if (iL==nLayers-2) lNameBack << "10.0166*energy_" << iL << "_SR" << iSR ;
 		    else if (iL==nLayers-1) lNameBack << "+13.0629*energy_" << iL << "_SR" << iSR ;
-		    else if (iL>nLayers-4) lNameBack << "+10.0166*energy_" << iL << "_SR" << iSR ;
+		    else if (iL>nLayers-2) lNameBack << "+10.0166*energy_" << iL << "_SR" << iSR ;
 		  }
 		}
 		else lNameTot << "wgtEtotal";///" << tanh(etaval[ieta]);
@@ -844,7 +844,7 @@ int plotEGReso(){//main
 		    return 1;
 		  }
 
-		  p_ErecovsEback[iE][iSR]->SetTitle(";E_{24-27}/E_{tot};E_{tot} (GeV)");
+		  p_ErecovsEback[iE][iSR]->SetTitle(";E_{26-27}/E_{tot};E_{tot} (GeV)");
 		  lName << "_pfx";
 		  TProfile *tmpProf = p_ErecovsEback[iE][iSR]->ProfileX(lName.str().c_str());
 		  tmpProf->SetMarkerStyle(20);

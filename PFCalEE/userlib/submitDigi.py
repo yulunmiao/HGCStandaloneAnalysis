@@ -28,10 +28,10 @@ parser.add_option('-e', '--eos'         ,    dest='eos'                , help='e
 parser.add_option('-E', '--eosin'       ,    dest='eosin'              , help='eos path to read input root file from EOS',  default='')
 parser.add_option('-g', '--gun'         ,    action="store_true",  dest='dogun'              , help='use particle gun.')
 parser.add_option('-S', '--no-submit'   ,    action="store_true",  dest='nosubmit'           , help='Do not submit batch job.')
-
+parser.add_option(      '--enList'      ,    dest='enList'              , help='E_T list to use with gun [%default]', default='5,10,20,30,40,60,80,100,150,200')
 parser.add_option('--etamean' , dest='etamean' , help='mean value of eta ring to save' , default=0,  type=float)
 parser.add_option('--deta'    , dest='deta'    , help='width of eta ring'              , default=0,  type=float)
-
+parser.add_option('--inPathPU'    , dest='inPathPU'    , help='input path for PU files (overrides defaults) [%default]'              , default=None,  type='string')
 
 (opt, args) = parser.parse_args()
 
@@ -40,6 +40,9 @@ parser.add_option('--deta'    , dest='deta'    , help='width of eta ring'       
 #for run in `seq 0 19`; do ./submitDigi.py -s 1nw -q 1nw -g -t testV8 -r $run -v 63 -m 2 -a 2.0 -b 3.8 -d gamma -n 100 -o /afs/cern.ch/work/a/amagnan/public/HGCalTDR/ -e /store/group/dpg_hgcal/comm_hgcal/amagnan/HGCalTDR -E /store/cmst3/group/hgcal/HGCalTDR ; done
 #for run in `seq 0 19`; do ./submitDigi.py -s 1nw -q 1nw -g -t testV8 -r $run -v 63 -m 2 -a 1.7 -b 3.8 -d gamma -n 100 -o /afs/cern.ch/work/a/amagnan/public/HGCalTDR/ -e /store/group/dpg_hgcal/comm_hgcal/amagnan/HGCalTDR -E /store/cmst3/group/hgcal/HGCalTDR ; done
 
+
+
+
 nSiLayers=2
 
 enlist=[0]
@@ -47,7 +50,8 @@ enlist=[0]
 if opt.dogun : 
     #enlist=[50]
     #enlist=[5,10,20,30,50,70,100]
-    enlist=[5,10,20,30,40,60,80,100,150,200]
+    #enlist=[5,10,20,30,40,60,80,100,150,200]
+    enlist=[float(x) for x in opt.enList.split(',')]
 
 #if opt.dogun : enlist=[2,5,10,20,40,60,80,100,150,200]#,300,400,500]
 
@@ -77,6 +81,9 @@ elif opt.version==63:
     else :
         INPATHPU="root://eoscms//eos/cms/store/group/dpg_hgcal/comm_hgcal/amagnan/HGCalTDR/gitV08-01-00/MinBiasLarge/"
 
+if opt.inPathPU:
+    INPATHPU='root://eoscms//eos/cms/%s'%opt.inPathPU
+    print 'Default value for INPATHPU overriden with',INPATHPU
 
 #nPuVtxlist=[0,140,200]
 nPuVtxlist=[int(x) for x in opt.nPuVtx.split(',')]

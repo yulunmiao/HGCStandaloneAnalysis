@@ -50,7 +50,7 @@ TEST_EXT=cpp
 # Build a list of srcs and bins to build
 SRCS=$(wildcard $(BASEDIR)/src/*.cc)
 EXES=$(wildcard $(BASEDIR)/test/*.cpp)
-OBJS=$(subst $(SRCDIR), $(OBJDIR),$(subst cc,$(OBJ_EXT),$(SRCS)))
+OBJS=$(subst $(SRCDIR), $(OBJDIR),$(subst .cc,.$(OBJ_EXT),$(SRCS)))
 BINS=$(subst $(TESTDIR), $(EXEDIR),$(subst .$(TEST_EXT),,$(EXES)))
 
 all: lib $(BINS)
