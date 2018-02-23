@@ -1246,7 +1246,7 @@ void DetectorConstruction::UpdateCalorSize(){
     if (version_ == v_HGCALEE_v5 || version_ == v_HGCAL_v5 || version_ == v_HGCALEE_v5_gap4 || version_ == v_HGCAL_v5_gap4) m_z0pos = 2990;//3170;
     else if (version_ == v_HGCALEE_v6 || version_ == v_HGCAL_v6 || version_ == v_HGCALEE_v7 || version_ == v_HGCAL_v7 || version_ == v_HGCAL_v7_HF ||version_ == v_HGCALEE_v624 || version_ == v_HGCALEE_v618) m_z0pos = 3070;
     else if (version_ == v_HGCALEE_v8 || version_ == v_HGCAL_v8) m_z0pos = 2980;
-    else if(version_ == v_HGCALBE_v8) m_z0pos=3920.7;
+    //else if(version_ == v_HGCALBE_v8) m_z0pos=3920.7; //not needed as the eta ranges are maintained
     if (doHF_){
       m_z0HF=11100;
       m_CalorSizeZ=m_z0HF-m_z0pos+HFsize;
