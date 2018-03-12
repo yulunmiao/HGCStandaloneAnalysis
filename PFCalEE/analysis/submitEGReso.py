@@ -32,9 +32,9 @@ parser.add_option('-S', '--no-submit'   ,    action="store_true",  dest='nosubmi
 (opt, args) = parser.parse_args()
 
 redofit=1
-label=''
+#label=''
 #label='200u'
-#label='300u'
+label='300u'
 #label='Large'
 #label='v5_30_'
 #label='v5_28_'
@@ -57,14 +57,14 @@ if opt.dogun :
 
 #alphaset=[0.361,0.297,0.244,0.200,0.164,0.134,0.110]
 #alphaset=[0.361,0.244,0.164,0.110]
-alphaset=[2.400]
+alphaset=[1.700]
 #alphaset=[1.700,2.000]
 #alphaset=[0.297,0.244,0.200,0.134,0.110]
 #nPuVtxset=[0,140]
 nPuVtxset=[200]
 #etaset=[17,19,21,23,25,27,29]
 #etaset=[17,21,25,29]
-etaset=[24]
+etaset=[17]
 #etaset=[17,20]
 #etaset=[17,21,23,25,27,29]
 

@@ -386,12 +386,12 @@ bool plotResolution(TGraphErrors *gr,TPad *pad,
 
 bool retrievePuSigma(TTree *atree, TTree *atreePu, 
 		     TH1F **p_sigma,
-		     TH2F **p_subtrEvspuE,
+		     TH2F **p_EvspuE,
 		     double * calib,
 		     double etaval){
 
   unsigned nLayers = 28;
-  unsigned nSR=5;
+  unsigned nSR=6;
   if (!atree || !atreePu) {
     std::cout << " -- Info, both trees were not found:" << atree << " " << atreePu << std::endl;
     return true;
@@ -494,8 +494,16 @@ bool retrievePuSigma(TTree *atree, TTree *atreePu,
 	subtrE[iSR]   += absweight[iL]*subtractedenergySR[iL][iSR];
 	puE[iSR] += absweight[iL]*energySR[1][iL][iSR];
       }//loop on layers
+
+      if (iSR==4 && E[iSR]>puE[iSR] && evtIndex<100){
+	std::cout << "nopu " << ievt << " idx=" << evtIndex << " pu " << ievtpu << " idx=" << evtIndexPu << std::endl
+		  << "noPU E = " << E[iSR]
+		  << " PU E = " << puE[iSR]
+		  << std::endl;
+      }
+
       p_sigma[iSR]->Fill((puE[iSR]-E[iSR])/calib[iSR]);
-      p_subtrEvspuE[iSR]->Fill((puE[iSR]-E[iSR])/calib[iSR],(puE[iSR]-subtrE[iSR])/calib[iSR]);
+      p_EvspuE[iSR]->Fill(puE[iSR]/calib[iSR],E[iSR]/calib[iSR]);
     }//loop on SR
 
     //p_sigma[nSR+2]->Fill((totalEpu-totalE)/tanh(etaval)*1./calib[nSR+2]);
@@ -523,8 +531,8 @@ int plotEGReso(){//main
   const unsigned nIC = 1;
   const unsigned ICval[nIC] = {3};//0,1,2,3,4,5,10,15,20,50};
 
-  const unsigned nPu = 4;//4;
-  unsigned pu[nPu] = {0,0,140,200};//,140,200};
+  const unsigned nPu = 3;//4;
+  unsigned pu[nPu] = {0,0,200};//,140,200};
 
   const unsigned nS = 1;
   std::string scenario[nS] = {
@@ -756,7 +764,7 @@ int plotEGReso(){//main
 	    fout->cd(lsave.str().c_str());
 	    gStyle->SetOptStat("eMRuo");
 	    TH1F *p_sigma[nSR];
-	    TH2F *p_subtrEvspuE[nSR];
+	    TH2F *p_EvspuE[nSR];
 	    if (pu[ipu]>0){
 	      for (unsigned iSR(0); iSR<nSR;++iSR){
 		label.str("");
@@ -765,8 +773,8 @@ int plotEGReso(){//main
 		p_sigma[iSR] = new TH1F(label.str().c_str(),";PuE-E (GeV)",500,-20,20);
 		//else p_sigma[iSR] = new TH1F(label.str().c_str(),";PuE-E (GeV)",5000,0,10000);
 		label.str("");
-		label << "p_subtrEvspuE_" << iSR << "_" << lsave.str();
-		p_subtrEvspuE[iSR] = new TH2F(label.str().c_str(),";PuE-E (GeV);PuE-PuEsubtr (GeV)",
+		label << "p_EvspuE_" << iSR << "_" << lsave.str();
+		p_EvspuE[iSR] = new TH2F(label.str().c_str(),";PuE-E (GeV);PuE-PuEsubtr (GeV)",
 					      500,-20,20,500,-20,20);
 		//p_sigma[iSR]->StatOverflows();
 	      }
@@ -984,12 +992,12 @@ int plotEGReso(){//main
 	      if (ipu>1){// && genEn[iE]>5 && genEn[iE]<40) {
 		bool success = retrievePuSigma(ltree[ieta][1][oldIdx[iE]], ltree[ieta][ipu][oldIdx[iE]],
 					       p_sigma,
-					       p_subtrEvspuE,
+					       p_EvspuE,
 					       calib[0][ieta],
 					       etaval[ieta]);
 		if (!success) return 1;
 		mycSig->cd();
-		p_subtrEvspuE[2]->Draw("colz");
+		p_EvspuE[2]->Draw("colz");
 		
 	      }
 	      

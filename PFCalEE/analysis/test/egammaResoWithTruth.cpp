@@ -72,7 +72,7 @@ bool testInputFile(std::string input, TFile* & file){
 
 int main(int argc, char** argv){//main  
 
-  bool doPaul = true;
+  bool doPaul = false;
 
   //Input output and config options
   std::string cfg;

@@ -199,9 +199,12 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
        fit.pos_z = genvec[iP].z();
        trueEta_ = genvec[iP].eta();
        truePhi_ = genvec[iP].phi();
-
+       
        fit.tanangle_x = genvec[iP].px()/genvec[iP].pz();
        fit.tanangle_y = genvec[iP].py()/genvec[iP].pz();
+       //to do in opposite region to get pile-up only...
+       //fit.tanangle_x = -1.*genvec[iP].px()/genvec[iP].pz();
+       //fit.tanangle_y = -1.*genvec[iP].py()/genvec[iP].pz();
        fit.found = true;
        //std::cout << " True particle pdgid=" << genvec[iP].pdgid() << " z eta phi = " << genvec[iP].z() << " " << genvec[iP].eta() << " " << genvec[iP].phi() << std::endl;
      }
