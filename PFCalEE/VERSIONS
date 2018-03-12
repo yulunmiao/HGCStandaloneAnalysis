@@ -8,6 +8,16 @@
 #####################
 Nothing for the moment
 
+V08-03-00
+----------
+* fix in z0 position when simulating BH only, to be place where it should be starting from 3.9m. This is important to have the eta-phi granularity correctly set.
+* add protection against outliers in digitizer (hits with crazy cellid from overflow bins of the TH2Poly)
+* several improvements to submit scripts from Pedro.
+
+V08-02-00
+----------
+* fix bug in phi range: should be -pi to pi when initialising the eta-phi map.
+
 V08-01-00
 ----------
 * debug Scintillator part of Si-Scint divide for back of FH and BH: fix non-sense cellid and x,y positions.
