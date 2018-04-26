@@ -74,11 +74,16 @@ void SteppingAction::UserSteppingAction(const G4Step* aStep)
 
   // get local hit position using touchable with theGlobalPos
   //G4ThreeVector LocalHitPos = theTouchable->GetHistory()->GetTopTransform().TransformPoint(position);
- 
-  //G4cout << " -- debug Pre   position " << volume->GetName() << " " << position << G4endl;
-  //G4cout << " -- debug Post  position " << aStep->GetPostStepPoint()->GetTouchableHandle()->GetVolume()->GetName() << " " << aStep->GetPostStepPoint()->GetPosition() << G4endl;
-  //G4cout << "Local position " << LocalHitPos << G4endl;
 
+  /*if ( thePrePVname.find("Wphys")!=thePrePVname.npos &&
+       thePostPVname.find("CuExtra")!=thePostPVname.npos){
+    G4cout << " -- debug Pre   position " << volume->GetName() << " " << position << " " ;
+    //G4cout << " -- debug Post  position " << aStep->GetPostStepPoint()->GetTouchableHandle()->GetVolume()->GetName() << " " << aStep->GetPostStepPoint()->GetPosition() << G4endl;
+    G4cout << thePreStepPoint->GetMaterial()->GetName()
+	   << " " << thePostStepPoint->GetMaterial()->GetName()
+	   << G4endl;
+    //G4cout << "Local position " << LocalHitPos << G4endl;
+    }*/
 
   HGCSSGenParticle genPart;
   //record truth particles

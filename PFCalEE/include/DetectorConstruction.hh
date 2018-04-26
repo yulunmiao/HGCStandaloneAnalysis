@@ -10,6 +10,7 @@
 #include <string>
 
 class G4VSolid;
+class G4SubtractionSolid;
 class G4Box;
 class G4LogicalVolume;
 class G4VPhysicalVolume;
@@ -71,11 +72,15 @@ public:
     v_HGCALHE_v8=61,
     v_HGCALBE_v8=62,
     v_HGCAL_v8=63,
+    v_HGCALEE_v8_air3=64,
+    v_HGCALEE_v8_Cu=65,
+    v_HGCALEE_v8_Cu_12=66,
     v_HGCALEE_TB=100,
     v_HGCALEE_TB_gap0=101,
     v_HGCALEE_TB_allW=102,
     v_HGCALEE_TB_samedEdx=103,
-    v_HGCAL_2016TB=110
+    v_HGCAL_2016TB=110,
+    v_testCu=200
   };
 
   enum DetectorModel {
@@ -93,8 +98,10 @@ public:
   DetectorConstruction(G4int ver=DetectorConstruction::v_CALICE, 
 		       G4int mod=DetectorConstruction::m_SIMPLE_20,
 		       G4int shape=1,
-		       std::string absThickW="1.75,1.75,1.75,1.75,1.75,2.8,2.8,2.8,2.8,2.8,4.2,4.2,4.2,4.2,4.2",
-		       std::string absThickPb="1,1,1,1,1,2.1,2.1,2.1,2.1,2.1,4.4,4.4,4.4,4.4",
+		       //std::string absThickW="1.75,1.75,1.75,1.75,1.75,2.8,2.8,2.8,2.8,2.8,4.2,4.2,4.2,4.2,4.2",
+		       //std::string absThickPb="1,1,1,1,1,2.1,2.1,2.1,2.1,2.1,4.4,4.4,4.4,4.4",
+		       std::string absThickW="",
+		       std::string absThickPb="",
 		       std::string dropLayer="");
 
   void buildHGCALFHE(const unsigned aVersion);
@@ -208,10 +215,11 @@ private:
   G4double getCrackOffset(size_t layer);
   G4double getAngOffset(size_t layer);
 
+  G4SubtractionSolid* constructSolidWithHoles (std::string baseName, G4double thick, const G4double & width);
   G4VSolid *constructSolid (const unsigned layer, std::string baseName, G4double thick, G4double zpos,const G4double & minL, const G4double & width, const bool isHF=false);
   G4VSolid *constructSolid (std::string baseName, G4double thick, G4double zpos,const G4double & minL, const G4double & width, const double & etamin, const double & etamax);
 
-  G4VSolid *constructSupportCone (std::string baseName, G4double thick, G4double zpos,const G4double & minL, const G4double & width, const double & etamin, const double & etamax);
+  G4VSolid *constructSupportCone (std::string baseName, G4double thick, G4double zpos,const G4double & minL, const G4double & width, const double & etamin);
   G4VSolid *constructSupportCone (std::string baseName, G4double thick, G4double zpos,const G4double & minL, const G4double & width);
 
   std::vector<G4Material* > m_SensitiveMaterial;

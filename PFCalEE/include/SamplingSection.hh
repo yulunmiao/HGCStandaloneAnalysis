@@ -101,17 +101,19 @@ public:
 
   inline G4Colour g4Colour(const unsigned & aEle){
     if (isSensitiveElement(aEle)) return G4Colour::Red();
-    if (ele_name[aEle] == "Cu") return G4Colour::Black();
-    if (isAbsorberElement(aEle)) return G4Colour::Gray();
-    if (ele_name[aEle] == "PCB") return G4Colour::Blue();
-    if (ele_name[aEle] == "Air") return G4Colour::Cyan();
+    else if (ele_name[aEle] == "Cu") return G4Colour::Black();
+    else if (ele_name[aEle] == "CuExtra") return G4Colour::Magenta();
+    else if (isAbsorberElement(aEle)) return G4Colour::Gray();
+    else if (ele_name[aEle] == "PCB") return G4Colour::Blue();
+    else if (ele_name[aEle] == "Air") return G4Colour::Cyan();
     return G4Colour::Yellow();
   };
 
   inline bool isAbsorberElement(const unsigned & aEle){
     if (aEle < n_elements && 
 	(
-	 ele_name[aEle] == "Pb" || ele_name[aEle] == "Cu" || 
+	 ele_name[aEle] == "Pb" || ele_name[aEle] == "Cu" ||
+	 ele_name[aEle] == "CuExtra" || 
 	 ele_name[aEle] == "W" || ele_name[aEle] == "Brass" ||
 	 ele_name[aEle] == "Fe" || ele_name[aEle] == "Steel" || 
 	 ele_name[aEle] == "SSteel" || ele_name[aEle] == "Al" ||

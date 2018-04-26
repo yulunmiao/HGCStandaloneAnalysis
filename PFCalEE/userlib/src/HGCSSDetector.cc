@@ -10,13 +10,14 @@ HGCSSDetector & theDetector(){
 }
 
 void HGCSSDetector::buildDetector(const unsigned versionNumber,
+				  const unsigned model,
 				  bool concept,
 				  bool isCaliceHcal,
 				  bool bypassR){
   
   bypassRadius_ = bypassR;
   reset();
-  initialiseIndices(versionNumber);
+  initialiseIndices(versionNumber,model);
   HGCSSSubDetector FECAL;
   FECAL.type = DetectorEnum::FECAL;
   FECAL.name = "FECAL";

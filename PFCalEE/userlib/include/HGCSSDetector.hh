@@ -59,7 +59,7 @@ class HGCSSDetector {
 public:
   friend HGCSSDetector & theDetector();
 
-  inline void initialiseIndices(const unsigned versionNumber){
+  inline void initialiseIndices(const unsigned versionNumber, const unsigned model=2){
     
     indices_.clear();
     indices_.resize(7,0);
@@ -151,9 +151,152 @@ public:
       sensitiveZ_[25] = 3499.9;
       sensitiveZ_[26] = 3515.2;
       sensitiveZ_[27] = 3524.3;
+      if (model==3){
+	sensitiveZ_[0] = -54.3;
+	sensitiveZ_[1] = -45.2;
+	sensitiveZ_[2] = -29.9;
+	sensitiveZ_[3] = -20.8;
+	sensitiveZ_[4] = -5.5;
+	sensitiveZ_[5] = 3.6;
+	sensitiveZ_[6] = 18.9;
+	sensitiveZ_[7] = 28;
+	sensitiveZ_[8] = 43.3;
+	sensitiveZ_[9] = 52.4;
+	sensitiveZ_[10] = 67.7;
+	sensitiveZ_[11] = 76.8;
+	sensitiveZ_[12] = 92.1;
+	sensitiveZ_[13] = 101.2;
+	sensitiveZ_[14] = 116.5;
+	sensitiveZ_[15] = 125.6;
+	sensitiveZ_[16] = 140.9;
+	sensitiveZ_[17] = 150;
+	sensitiveZ_[18] = 165.3;
+	sensitiveZ_[19] = 174.4;
+	sensitiveZ_[20] = 189.7;
+	sensitiveZ_[21] = 198.8;
+	sensitiveZ_[22] = 214.1;
+	sensitiveZ_[23] = 223.2;
+	sensitiveZ_[24] = 238.5;
+	sensitiveZ_[25] = 247.6;
+	sensitiveZ_[26] = 262.9;
+	sensitiveZ_[27] = 272;
+      }
 
+    } 
+    else if (versionNumber == 64){
+      indices_[0] = 0;
+      indices_[1] = 10;
+      indices_[2] = 20;
+      indices_[3] = 28;
+      indices_[4] = indices_[3];
+      indices_[5] = indices_[3];
+      indices_[6] = indices_[3];
+
+      sensitiveZ_.resize(indices_[3],0);
+      sensitiveZ_[0] = -73.05;
+      sensitiveZ_[1] = -63.95;
+      sensitiveZ_[2] = -45.65;
+      sensitiveZ_[3] = -36.55;
+      sensitiveZ_[4] = -18.25;
+      sensitiveZ_[5] = -9.15;
+      sensitiveZ_[6] = 9.15;
+      sensitiveZ_[7] = 18.25;
+      sensitiveZ_[8] = 36.55;
+      sensitiveZ_[9] = 45.65;
+      sensitiveZ_[10] = 63.95;
+      sensitiveZ_[11] = 73.05;
+      sensitiveZ_[12] = 91.35;
+      sensitiveZ_[13] = 100.45;
+      sensitiveZ_[14] = 118.75;
+      sensitiveZ_[15] = 127.85;
+      sensitiveZ_[16] = 146.15;
+      sensitiveZ_[17] = 155.25;
+      sensitiveZ_[18] = 173.55;
+      sensitiveZ_[19] = 182.65;
+      sensitiveZ_[20] = 200.95;
+      sensitiveZ_[21] = 210.05;
+      sensitiveZ_[22] = 228.35;
+      sensitiveZ_[23] = 237.45;
+      sensitiveZ_[24] = 255.75;
+      sensitiveZ_[25] = 264.85;
+      sensitiveZ_[26] = 283.15;
+      sensitiveZ_[27] = 292.25;
     }
-    else if (versionNumber == 33){
+     else if (versionNumber == 65){
+      indices_[0] = 0;
+      indices_[1] = 10;
+      indices_[2] = 20;
+      indices_[3] = 28;
+      indices_[4] = indices_[3];
+      indices_[5] = indices_[3];
+      indices_[6] = indices_[3];
+
+      sensitiveZ_.resize(indices_[3],0);
+      sensitiveZ_[0] = -78.7;
+      sensitiveZ_[1] = -70.4;
+      sensitiveZ_[2] = -50.3;
+      sensitiveZ_[3] = -42;
+      sensitiveZ_[4] = -21.9;
+      sensitiveZ_[5] = -13.6;
+      sensitiveZ_[6] = 6.5;
+      sensitiveZ_[7] = 14.8;
+      sensitiveZ_[8] = 34.9;
+      sensitiveZ_[9] = 43.2;
+      sensitiveZ_[10] = 63.3;
+      sensitiveZ_[11] = 71.6;
+      sensitiveZ_[12] = 91.7;
+      sensitiveZ_[13] = 100;
+      sensitiveZ_[14] = 120.1;
+      sensitiveZ_[15] = 128.4;
+      sensitiveZ_[16] = 148.5;
+      sensitiveZ_[17] = 156.8;
+      sensitiveZ_[18] = 176.9;
+      sensitiveZ_[19] = 185.2;
+      sensitiveZ_[20] = 205.3;
+      sensitiveZ_[21] = 213.6;
+      sensitiveZ_[22] = 233.7;
+      sensitiveZ_[23] = 242;
+      sensitiveZ_[24] = 262.1;
+      sensitiveZ_[25] = 270.4;
+      sensitiveZ_[26] = 290.5;
+      sensitiveZ_[27] = 298.8;
+     }
+     else if (versionNumber == 66){
+      indices_[0] = 0;
+      indices_[1] = 10;
+      indices_[2] = 20;
+      indices_[3] = 24;
+      indices_[4] = indices_[3];
+      indices_[5] = indices_[3];
+      indices_[6] = indices_[3];
+
+      sensitiveZ_.resize(indices_[3],0);
+      sensitiveZ_[0] = -59.3;
+      sensitiveZ_[1] = -50.2;
+      sensitiveZ_[2] = -29.3;
+      sensitiveZ_[3] = -20.2;
+      sensitiveZ_[4] = 0.7;
+      sensitiveZ_[5] = 9.8;
+      sensitiveZ_[6] = 30.7;
+      sensitiveZ_[7] = 39.8;
+      sensitiveZ_[8] = 60.7;
+      sensitiveZ_[9] = 69.8;
+      sensitiveZ_[10] = 90.7;
+      sensitiveZ_[11] = 99.8;
+      sensitiveZ_[12] = 120.7;
+      sensitiveZ_[13] = 129.8;
+      sensitiveZ_[14] = 150.7;
+      sensitiveZ_[15] = 159.8;
+      sensitiveZ_[16] = 180.7;
+      sensitiveZ_[17] = 189.8;
+      sensitiveZ_[18] = 210.7;
+      sensitiveZ_[19] = 219.8;
+      sensitiveZ_[20] = 240.7;
+      sensitiveZ_[21] = 249.8;
+      sensitiveZ_[22] = 270.7;
+      sensitiveZ_[23] = 279.8;
+     }
+   else if (versionNumber == 33){
       indices_[0] = 0;
       indices_[1] = 10;
       indices_[2] = 20;
@@ -465,6 +608,7 @@ public:
   };
 
   void buildDetector(const unsigned versionNumber,
+		     const unsigned model=2,
 		     bool concept=true,
 		     bool isCaliceHcal=false,
 		     bool bypassR=false);
@@ -535,9 +679,10 @@ public:
   };
 
   inline double etaBoundary(const unsigned layer){
+    if (etaBoundary_.size()==0) return 0;
     if (layer<etaBoundary_.size()) return etaBoundary_[layer];
     else {
-      std::cout << " ERROR! Trying to access layer " << layer << " outside of range: " << etaBoundary_.size() << " nLayers " << nLayers_ << std::endl;
+      std::cout << " ERROR! Trying to access layer " << layer << " outside of eta range: " << etaBoundary_.size() << " nLayers " << nLayers_ << std::endl;
       exit(1);
     }
   };

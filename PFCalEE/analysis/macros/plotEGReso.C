@@ -531,19 +531,19 @@ int plotEGReso(){//main
   const unsigned nIC = 1;
   const unsigned ICval[nIC] = {3};//0,1,2,3,4,5,10,15,20,50};
 
-  const unsigned nPu = 3;//4;
-  unsigned pu[nPu] = {0,0,200};//,140,200};
+  const unsigned nPu = 2;//4;
+  unsigned pu[nPu] = {0,0};//,140,200};
 
   const unsigned nS = 1;
   std::string scenario[nS] = {
-    "model2/gamma/"
+    "model3/gamma/200u/"
   };
 
   std::string foutname = "PLOTS/PuSubtraction.root";
   TFile *fout = TFile::Open(foutname.c_str(),"RECREATE");
 
-  const unsigned neta = 3;
-  unsigned eta[neta]={17,20,24};
+  const unsigned neta = 1;
+  unsigned eta[neta]={20};
   //const unsigned neta = 7;
   //unsigned eta[neta]={17,19,21,23,25,27,29};
 
@@ -557,10 +557,11 @@ int plotEGReso(){//main
   TString pSuffix = doBackLeakCor?"backLeakCor":"";
 
   
-  const unsigned nV = 1;
-  TString version[nV] = {"63"};//,"0"};
+  const unsigned nV = 2;
+  //TString version[nV] = {"60","64","65","66"};//,"0"};
+  TString version[nV] = {"65","66"};//,"0"};
   
-  const unsigned nLayers = 28;
+  unsigned nLayers = 28;
   const unsigned nSR = 6;
   const double radius[nSR] = {13,15,20,23,26,53};
   double noise100[nSR];
@@ -652,8 +653,10 @@ int plotEGReso(){//main
   for (unsigned ic(0);ic<nIC;++ic){//loop on intercalib
     
     for (unsigned iV(0); iV<nV;++iV){//loop on versions
+      if (iV==nV-1) nLayers = 24;
+
       for (unsigned iS(0); iS<nS;++iS){//loop on scenarios
-	TString plotDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalTDR/gittestV8/version"+version[iV]+"/"+scenario[iS]+"/";
+	TString plotDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalTDR/gittestCuHoles/version"+version[iV]+"/"+scenario[iS]+"/";
 
 	TFile *fcalib;
 	std::ostringstream label;
@@ -690,11 +693,11 @@ int plotEGReso(){//main
 	      TFile *inputFile = 0;
 	      std::ostringstream linputStr;
 	      linputStr << plotDir ;
-	      if (ipu>=2 && eta[ieta]==17) linputStr << "300u/";
-	      else if (ipu>=2 && eta[ieta]==20) linputStr << "200u/";
+	      //if (ipu>=2 && eta[ieta]==17) linputStr << "300u/";
+	      //else if (ipu>=2 && eta[ieta]==20) linputStr << "200u/";
 	      linputStr << "eta" << eta[ieta] << "_et" << genEnAll[iE];// << "_pu" << pu[ipu];
 	      if (ipu>=2) linputStr << "_Pu" << pu[ipu];
-	      linputStr << "_IC" << ICval[ic];// << "_Si2";
+	      linputStr << "_IC" << ICval[ic] << "_Si2";
 	      if (!processNoFitFiles) linputStr << ".root";
 	      else linputStr << "_nofit.root";
 	      inputFile = TFile::Open(linputStr.str().c_str());
@@ -712,7 +715,11 @@ int plotEGReso(){//main
 		  skip[iE] = true;
 		} else { 
 		  std::cout << " -- File " << inputFile->GetName() << " sucessfully opened and tree found." << std::endl;
-		  nValid++;
+		  if (ltree[ieta][ipu][iE]->GetEntries()<nEvtMin) {
+		    std::cout << " -- Tree has only " << ltree[ieta][ipu][iE]->GetEntries() << " entries, skipping..." << std::endl;
+		    skip[iE] = true;
+		  } 
+		  else nValid++;
 		}
 	      }
 	    }
@@ -788,12 +795,12 @@ int plotEGReso(){//main
 	      TFile *inputFile = 0;
 	      std::ostringstream linputStr;
 	      linputStr << plotDir ;
-	      if (ipu>=2 && eta[ieta]==17) linputStr << "300u/";
-	      else if (ipu>=2 && eta[ieta]==20) linputStr << "200u/";
+	      //if (ipu>=2 && eta[ieta]==17) linputStr << "300u/";
+	      //else if (ipu>=2 && eta[ieta]==20) linputStr << "200u/";
 	      linputStr << "eta" << eta[ieta] << "_et" << genEn[iE];
 	      // << "_pu" << pu[ipu];
 	      if (ipu>=2) linputStr << "_Pu" << pu[ipu];
-	      linputStr << "_IC" << ICval[ic];// << "_Si2";
+	      linputStr << "_IC" << ICval[ic] << "_Si2";
 	      if (!processNoFitFiles) linputStr << ".root" ;
 	      else linputStr << "_nofit.root";
 	      inputFile = TFile::Open(linputStr.str().c_str());
@@ -817,15 +824,19 @@ int plotEGReso(){//main
 		  for (unsigned iL(0);iL<nLayers;++iL){	      
 		    //if (iL==0) lName << "absweight_" << iL  << "*subtractedenergy_" << iL << "_SR" << iSR ;
 		    //else lName << "+" << "absweight_" << iL  << "*subtractedenergy_" << iL << "_SR" << iSR ;
-		    //if (iL==0) lName << "absweight_" << iL  << "*energy_" << iL << "_SR" << iSR ;
-		    //else lName << "+" << "absweight_" << iL  << "*energy_" << iL << "_SR" << iSR ;
-		    if (iL==0) lNameTot << "20.3628*energy_" << iL << "_SR" << iSR ;
-		    else if (iL==nLayers-1) lNameTot << "+13.0629*energy_" << iL << "_SR" << iSR ;
-		    else lNameTot << "+10.0166*energy_" << iL << "_SR" << iSR ;
+		    if (iL==0) lNameTot << "absweight_" << iL  << "*energy_" << iL << "_SR" << iSR ;
+		    else lNameTot << "+absweight_" << iL  << "*energy_" << iL << "_SR" << iSR ;
+		    //if (iL==0) lNameTot << "20.3628*energy_" << iL << "_SR" << iSR ;
+		    //else if (iL==nLayers-1) lNameTot << "+13.0629*energy_" << iL << "_SR" << iSR ;
+		    //else lNameTot << "+10.0166*energy_" << iL << "_SR" << iSR ;
+
 		    //use always largest area for correction
-		    if (iL==nLayers-2) lNameBack << "10.0166*energy_" << iL << "_SR" << iSR ;
-		    else if (iL==nLayers-1) lNameBack << "+13.0629*energy_" << iL << "_SR" << iSR ;
-		    else if (iL>nLayers-2) lNameBack << "+10.0166*energy_" << iL << "_SR" << iSR ;
+		    //if (iL==nLayers-2) lNameBack << "10.0166*energy_" << iL << "_SR" << iSR ;
+		    //else if (iL==nLayers-1) lNameBack << "+13.0629*energy_" << iL << "_SR" << iSR ;
+		    //else if (iL>nLayers-2) lNameBack << "+10.0166*energy_" << iL << "_SR" << iSR ;
+		    if (iL==nLayers-2) lNameBack << "absweight_" << iL << "*energy_" << iL << "_SR" << iSR ;
+		    else if (iL==nLayers-1) lNameBack << "+absweight_" << iL << "*energy_" << iL << "_SR" << iSR ;
+		    else if (iL>nLayers-2) lNameBack  << "+absweight_" << iL<< "*energy_" << iL << "_SR" << iSR ;
 		  }
 		}
 		else lNameTot << "wgtEtotal";///" << tanh(etaval[ieta]);

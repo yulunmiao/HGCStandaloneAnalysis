@@ -18,8 +18,10 @@ parser.add_option('-a', '--eta'         ,    dest='eta'                , help='i
 parser.add_option('-p', '--phi'         ,    dest='phi'                , help='incidence phi angle in pi unit' , default=0.5,      type=float)
 parser.add_option('-b', '--Bfield'      ,    dest='Bfield'             , help='B field value in Tesla'       , default=0,      type=float)
 parser.add_option('-d', '--datatype'    ,    dest='datatype'           , help='data type or particle to shoot', default='e-')
-parser.add_option('-f', '--datafile'    ,    dest='datafile'           , help='full path to HepMC input file', default='data/example_MyPythia.dat')
-parser.add_option('-F', '--datafileeos'    ,    dest='datafileeos'           , help='EOS path to HepMC input file', default='/eos/cms/store/cmst3/group/hgcal/HGCalMinbias/Pythia8/')
+parser.add_option('-f', '--datafile'    ,    dest='datafile'           , help='full path to HepMC input file', default='')
+#data/example_MyPythia.dat')
+parser.add_option('-F', '--datafileeos'    ,    dest='datafileeos'           , help='EOS path to HepMC input file', default='')
+#/eos/cms/store/cmst3/group/hgcal/HGCalMinbias/Pythia8/')
 parser.add_option('-n', '--nevts'       ,    dest='nevts'              , help='number of events to generate' , default=1000,    type=int)
 parser.add_option('-o', '--out'         ,    dest='out'                , help='output directory'             , default=os.getcwd() )
 parser.add_option('-e', '--eos'         ,    dest='eos'                , help='eos path to save root file to EOS',         default='')
@@ -35,7 +37,7 @@ if opt.run: random.seed(opt.run)
 #for run in `seq 0 19`; do ./submitProd.py -s 2nd -q 1nw -g -S -t testV8 -r $run -v 63 -m 2 -a 1.7 -b 3.8 -d gamma -n 250 -o /afs/cern.ch/work/a/amagnan/public/HGCalTDR/ -e /store/cmst3/group/hgcal/HGCalTDR; done
 #for run in `seq 0 49`; do ./submitProd.py -s 2nd -q 2nd  -t testV8 -r $run -v 63 -m 2  -b 3.8 -d HggLarge -n 100 -o /afs/cern.ch/work/a/amagnan/public/HGCalTDR/ -e /store/group/dpg_hgcal/comm_hgcal/amagnan/HGCalTDR -f /afs/cern.ch/work/a/amagnan/public/HepMCFiles/ggHgg_run$run.dat -F ""; done
 #for run in `seq 0 1999`; do ./submitProd.py -s 2nd -q 2nd  -t V08-01-00 -r $run -v 63 -m 2 -b 3.8 -d MinBiasLarge -n 1000 -o /afs/cern.ch/work/a/amagnan/public/HGCalTDR/ -e /store/group/dpg_hgcal/comm_hgcal/amagnan/HGCalTDR -f MinBias_run$run.dat; done
-
+#for run in `seq 0 9`; do ./submitProd.py -s 1nd -q 2nd -g -t testCu -r $run -v 65 -m 3 -a 2.0 -b 0 -d gamma -n 500 -o /afs/cern.ch/work/a/amagnan/public/HGCalTDR/ -e /store/group/dpg_hgcal/comm_hgcal/amagnan/HGCalTDR; done
 
 #1 = hexagons, 2=diamonds, 3=triangles, 4=squares
 shape=1
@@ -56,8 +58,10 @@ if opt.dogun :
 #for seed in 1420833683 1420833689 1420833693 1420833695 1420833696 1420833717
 
 ##30
-wthick='1.75,1.75,1.75,1.75,1.75,2.8,2.8,2.8,2.8,2.8,4.2,4.2,4.2,4.2,4.2'
-pbthick='1,1,1,1,1,2.1,2.1,2.1,2.1,2.1,4.4,4.4,4.4,4.4'
+wthick=''
+#1.75,1.75,1.75,1.75,1.75,2.8,2.8,2.8,2.8,2.8,4.2,4.2,4.2,4.2,4.2'
+pbthick=''
+#1,1,1,1,1,2.1,2.1,2.1,2.1,2.1,4.4,4.4,4.4,4.4'
 droplayers=''
 label=''
 #label='v5_30'

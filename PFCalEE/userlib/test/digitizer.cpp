@@ -538,7 +538,7 @@ int main(int argc, char** argv){//main
 
   bool bypassR = false;
   if (isTBsetup) bypassR = true;
-  myDetector.buildDetector(versionNumber,concept,isCaliceHcal,bypassR);
+  myDetector.buildDetector(versionNumber,model,concept,isCaliceHcal,bypassR);
 
   //initialise calibration class
   HGCSSCalibration mycalib(inFilePath,bypassR,nSiLayers);
@@ -825,7 +825,7 @@ int main(int argc, char** argv){//main
 	double eta = lpos.eta();
 	bool passeta = eta>1.4 && eta<3.0;
 	if (doEtaSel) passeta = fabs(eta-etamean)<deta;
-	else {
+	else if (model==2){
 	  if (isScint) passeta = eta>1.4 && eta<=etaBoundary;
 	  else passeta = eta>etaBoundary && eta<3.0;
 	}

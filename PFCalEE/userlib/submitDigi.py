@@ -23,7 +23,7 @@ parser.add_option('-d', '--datatype'    ,    dest='datatype'           , help='d
 parser.add_option('-f', '--datafile'    ,    dest='datafile'           , help='full path to HepMC input file', default='data/example_MyPythia.dat')
 parser.add_option('-n', '--nevts'       ,    dest='nevts'              , help='number of events to generate' , default=1000,    type=int)
 parser.add_option('-o', '--out'         ,    dest='out'                , help='output directory'             , default=os.getcwd() )
-parser.add_option(      '--nPuVtx'      ,    dest='nPuVtx'             , help='pileup scenarios (csv) [%h]',   default='0,140,200')
+parser.add_option(      '--nPuVtx'      ,    dest='nPuVtx'             , help='pileup scenarios (csv) [%h]',   default='0')
 parser.add_option('-e', '--eos'         ,    dest='eos'                , help='eos path to save root file to EOS',         default='')
 parser.add_option('-E', '--eosin'       ,    dest='eosin'              , help='eos path to read input root file from EOS',  default='')
 parser.add_option('-g', '--gun'         ,    action="store_true",  dest='dogun'              , help='use particle gun.')
@@ -161,10 +161,14 @@ elif (opt.version==39):
     granularity='0-8:4,9-20:8'
     noise='0-8:0.14,9-20:0.2'
     threshold='0-20:5'
-elif (opt.version==60):
+elif (opt.version==60 or opt.version==64 or opt.version==65):
     granularity='0-27:1'
     noise='0-27:0.12'
     threshold='0-27:5'
+elif (opt.version==66):
+    granularity='0-23:1'
+    noise='0-23:0.12'
+    threshold='0-23:5'
 elif (opt.version==61):
     granularity='0-39:1'
     noise='0-23:0.12,24-39:0.15'

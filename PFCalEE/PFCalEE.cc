@@ -39,14 +39,14 @@ int main(int argc,char** argv)
 
   // Set mandatory initialization classes
   //int version=DetectorConstruction::v_HGCAL_2016TB;
-  int version=63;
+  int version=200;
   //int version=DetectorConstruction::v_HGCALEE_TB;
-  int model=DetectorConstruction::m_FULLSECTION;
+  //int model=DetectorConstruction::m_FULLSECTION;
   //int model=DetectorConstruction::m_BOXWITHCRACK_100;
   //int model=DetectorConstruction::m_2016TB;
-  //int model=DetectorConstruction::m_SIMPLE_100;
+  int model=DetectorConstruction::m_SIMPLE_100;
 
-  int shape = 4;
+  int shape = 1;
 
   double eta=0;
 
@@ -57,8 +57,8 @@ int main(int argc,char** argv)
 
   std::cout << "-- Running version " << version << " model " << model << " shape " << shape << std::endl;
 
-  std::string absThickW="1.75,1.75,1.75,1.75,1.75,2.8,2.8,2.8,2.8,2.8,4.2,4.2,4.2,4.2,4.2";
-  std::string absThickPb="1,1,1,1,1,2.1,2.1,2.1,2.1,2.1,4.4,4.4,4.4,4.4";
+  std::string absThickW="";//1.75,1.75,1.75,1.75,1.75,2.8,2.8,2.8,2.8,2.8,4.2,4.2,4.2,4.2,4.2";
+  std::string absThickPb="";//1,1,1,1,1,2.1,2.1,2.1,2.1,2.1,4.4,4.4,4.4,4.4";
   std::string dropLayers="";
   if(argc>6) absThickW = argv[6];
   if(argc>7) absThickPb = argv[7];
