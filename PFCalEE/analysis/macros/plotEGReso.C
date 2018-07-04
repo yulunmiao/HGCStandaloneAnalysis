@@ -21,6 +21,7 @@
 #include "TGaxis.h"
 
 #include "TDRStyle.h"
+#include "effSigmaMacro.C"
 
 struct FitResult{
   double chi2;
@@ -100,7 +101,8 @@ unsigned fitEnergy(TH1F *hist,
 		   TPad *pad,
 		   std::string unitStr,
 		   FitResult & lres,
-		   unsigned isr){
+		   unsigned isr,
+		   const bool useSigmaEff){
   
   pad->cd();
   //double eMin = hist->GetMean()-5*hist->GetRMS();
@@ -108,6 +110,7 @@ unsigned fitEnergy(TH1F *hist,
   //hist->GetXaxis()->SetRangeUser(eMin,eMax);
   hist->Draw("PE");
 
+  double sigmaeff = effSigmaMacro(hist);
 
   double nRMSm = isr<1? 1 : 2;
   double nRMSp = 2;
@@ -174,18 +177,20 @@ unsigned fitEnergy(TH1F *hist,
   lat.DrawLatex(latx,laty*0.9,buf);
   sprintf(buf,"RMSfit = %3.3f +/- %3.3f %s",fitResult->GetParameter(2),fitResult->GetParError(2),unitStr.c_str());
   lat.DrawLatex(latx,laty*0.8,buf);
-  sprintf(buf,"RMS/meanfit = %3.3f",fitResult->GetParameter(2)/fitResult->GetParameter(1));
+  sprintf(buf,"#sigma_{eff} = %3.3f +/- %3.3f %s",sigmaeff,hist->GetRMSError(),unitStr.c_str());
   lat.DrawLatex(latx,laty*0.7,buf);
+  sprintf(buf,"RMS/meanfit = %3.3f",fitResult->GetParameter(2)/fitResult->GetParameter(1));
+  lat.DrawLatex(latx,laty*0.6,buf);
   
   sprintf(buf,"#chi^{2}/N = %3.3f/%d = %3.3f",fitResult->GetChisquare(),fitResult->GetNDF(),fitResult->GetChisquare()/fitResult->GetNDF());
-  lat.DrawLatex(latx,laty*0.6,buf);
+  lat.DrawLatex(latx,laty*0.5,buf);
   
   lres.chi2 = fitResult->GetChisquare();
   lres.ndf = fitResult->GetNDF();
   lres.mean = fitResult->GetParameter(1);
   lres.meanerr = fitResult->GetParError(1);
-  lres.sigma = fitResult->GetParameter(2);
-  lres.sigmaerr = fitResult->GetParError(2);
+  lres.sigma = useSigmaEff ? sigmaeff : fitResult->GetParameter(2);
+  lres.sigmaerr = useSigmaEff ? hist->GetRMSError() : fitResult->GetParError(2);
 
   return 0;
 };
@@ -523,10 +528,11 @@ int plotEGReso(){//main
 
   SetTdrStyle();
 
-  bool dovsE = true;
-  bool processNoFitFiles = false;
+  const bool useSigmaEff = true;
+  const bool dovsE = true;
+  const bool processNoFitFiles = false;
 
-  bool doBackLeakCor = true;
+  const bool doBackLeakCor = true;
 
   const unsigned nIC = 1;
   const unsigned ICval[nIC] = {3};//0,1,2,3,4,5,10,15,20,50};
@@ -557,9 +563,9 @@ int plotEGReso(){//main
   TString pSuffix = doBackLeakCor?"backLeakCor":"";
 
   
-  const unsigned nV = 2;
-  //TString version[nV] = {"60","64","65","66"};//,"0"};
-  TString version[nV] = {"65","66"};//,"0"};
+  const unsigned nV = 4;
+  TString version[nV] = {"60","64","65","66"};//,"0"};
+  //TString version[nV] = {"65","66"};//,"0"};
   
   unsigned nLayers = 28;
   const unsigned nSR = 6;
@@ -656,7 +662,7 @@ int plotEGReso(){//main
       if (iV==nV-1) nLayers = 24;
 
       for (unsigned iS(0); iS<nS;++iS){//loop on scenarios
-	TString plotDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalTDR/gittestCuHoles/version"+version[iV]+"/"+scenario[iS]+"/";
+	TString plotDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalTDR/gittestCu/version"+version[iV]+"/"+scenario[iS]+"/";
 
 	TFile *fcalib;
 	std::ostringstream label;
@@ -907,7 +913,7 @@ int plotEGReso(){//main
 		}
 
 		std::ostringstream lcut;
-		lcut << lName.str() << ">0.5*";
+		lcut << lName.str() << ">0.7*";
 		lcut << E(genEn[iE],eta[ieta]);
 
 		ltree[ieta][ipu][oldIdx[iE]]->Draw(lName.str().c_str(),lcut.str().c_str(),"");
@@ -940,7 +946,7 @@ int plotEGReso(){//main
 
 		TPad *lpad = (TPad*)(mycE[iE]->cd(iSR+1));
 		FitResult lres;
-		if (fitEnergy(p_Ereco[iE][iSR],lpad,unit,lres,iSR)!=0) return 1;
+		if (fitEnergy(p_Ereco[iE][iSR],lpad,unit,lres,iSR,useSigmaEff)!=0) return 1;
 		lpad->cd();
 		char buf[500];
 		sprintf(buf,"#gamma p_{T}=%d GeV + PU %d",genEn[iE],pu[ipu]);

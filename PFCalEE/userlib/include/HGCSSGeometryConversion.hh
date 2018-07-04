@@ -124,17 +124,22 @@ public:
   void initialiseSquareMap(TH2Poly *map, const double xymin, const double side, bool print);
   void initialiseSquareMap(TH2Poly *map, const double xmin, const double xmax, const double ymin, const double ymax, const double side, bool print);
 
-  void initialiseDiamondMap(const double xymin, const double side);
+  void initialiseDiamondMap(const double & xmin, const double & ymin, const double side);
 
-  void initialiseDiamondMap(TH2Poly *map, const double xymin, const double side, bool print);
+  void initialiseDiamondMap(const double & xymin, const double side);
+
+  void initialiseDiamondMap(TH2Poly *map, const double & xmin, const double & ymin, const double side, const unsigned nhexa, bool print);
 
   void initialiseTriangleMap(const double xymin, const double side);
 
   void initialiseTriangleMap(TH2Poly *map, const double xymin, const double side, bool print);
 
   void initialiseHoneyComb(const double xymin, const double side);
+  void initialiseHoneyComb(const double xymin, const double side, double & xstart, double & ystart);
 
   void initialiseHoneyComb(TH2Poly *map, const double xymin, const double side, bool print);
+
+  void initialiseHoneyComb(TH2Poly *map, const double xymin, const double side, bool print, double & xstart, double & ystart);
 
   void fillXY(TH2Poly* hist, std::map<int,std::pair<double,double> > & geom);
 

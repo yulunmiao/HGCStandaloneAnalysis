@@ -16,7 +16,8 @@
 #include "Math/Point3Dfwd.h"
 #include "TH2Poly.h"
 
-
+//tiny for shower size studies
+//static const float CELL_SIZE_X=0.5;
 //for hexagons: side size.
 static const float CELL_SIZE_X=6.496345; //2.5;//mm
 //small hexagons
