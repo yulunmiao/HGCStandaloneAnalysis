@@ -43,9 +43,16 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
   firstMixedlayer_ = 9999;
   firstScintlayer_ = 9999;
 
-  m_minEta0 = 1.4;
+  m_minEta0 = 1.306;
   m_maxEta0 = 3.0;
-
+  // min Eta per layer, 0-27 for EE, 28-35 FH, 36-51 BH
+  double minEta[52] = { 1.461, 1.464, 1.463, 1.466, 1.465, 1.468, 1.467, 1.469, 1.469, 1.471,
+			1.471, 1.473, 1.472, 1.475, 1.474, 1.477, 1.476, 1.478, 1.478, 1.480,
+			1.479, 1.482, 1.481, 1.483, 1.483, 1.485, 1.484, 1.487,
+			1.487, 1.490, 1.494, 1.497, 1.500, 1.503, 1.506, 1.493,
+			1.474, 1.455, 1.437, 1.420, 1.403, 1.376, 1.351, 1.327, 1.306, 1.316,
+			1.332, 1.348, 1.364, 1.379, 1.395, 1.410 };
+  
   SetWThick(absThickW);
   SetPbThick(absThickPb);
   SetDropLayers(dropLayer);
@@ -368,9 +375,9 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 
 	//first cassette
 	m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
-	m_minEta.push_back(m_minEta0);m_maxEta.push_back(m_maxEta0);
+	m_minEta.push_back(minEta[0]);m_maxEta.push_back(m_maxEta0);
 	m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
-	m_minEta.push_back(m_minEta0);m_maxEta.push_back(m_maxEta0);
+	m_minEta.push_back(minEta[1]);m_maxEta.push_back(m_maxEta0);
 
 	lThickL.clear();
 	lEleL.clear();
@@ -396,9 +403,9 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 
 	for(unsigned i=0; i<13; i++) {
 	  m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
-	  m_minEta.push_back(m_minEta0);m_maxEta.push_back(m_maxEta0);
+	  m_minEta.push_back(minEta[2+2*i]);m_maxEta.push_back(m_maxEta0);
 	  m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
-	  m_minEta.push_back(m_minEta0);m_maxEta.push_back(m_maxEta0);
+	  m_minEta.push_back(minEta[2+2*i+1]);m_maxEta.push_back(m_maxEta0);
 	}
 	
 	if(version_==v_HGCAL_v8){
@@ -716,6 +723,15 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 void DetectorConstruction::buildHGCALFHE(const unsigned aVersion){
   std::vector<G4double> lThick;
   std::vector<std::string> lEle;
+
+  // min Eta per layer, 0-27 for EE, 28-35 FH, 36-51 BH
+  double minEta[52] = { 1.461, 1.464, 1.463, 1.466, 1.465, 1.468, 1.467, 1.469, 1.469, 1.471,
+			1.471, 1.473, 1.472, 1.475, 1.474, 1.477, 1.476, 1.478, 1.478, 1.480,
+			1.479, 1.482, 1.481, 1.483, 1.483, 1.485, 1.484, 1.487,
+			1.487, 1.490, 1.494, 1.497, 1.500, 1.503, 1.506, 1.493,
+			1.474, 1.455, 1.437, 1.420, 1.403, 1.376, 1.351, 1.327, 1.306, 1.316,
+			1.332, 1.348, 1.364, 1.379, 1.395, 1.410 };
+
   if (aVersion==8){
     G4double airThick = 1.5*mm;
     G4double pcbThick = 1.6*mm;
@@ -735,7 +751,7 @@ void DetectorConstruction::buildHGCALFHE(const unsigned aVersion){
     lThick.push_back(0.1*mm);lEle.push_back("Si");
     lThick.push_back(0.1*mm);lEle.push_back("Si");
     m_caloStruct.push_back( SamplingSection(lThick,lEle) );
-    m_minEta.push_back(m_minEta0);m_maxEta.push_back(m_maxEta0);
+    m_minEta.push_back(minEta[28]);m_maxEta.push_back(m_maxEta0);
 
     //CE-H layers 2-9
     lThick.clear();
@@ -752,9 +768,11 @@ void DetectorConstruction::buildHGCALFHE(const unsigned aVersion){
     lThick.push_back(0.1*mm);lEle.push_back("Si");
     lThick.push_back(0.1*mm);lEle.push_back("Si");
     //layers 2-8
+    
+          
     for(unsigned i=0; i<7; i++) {
       m_caloStruct.push_back( SamplingSection(lThick,lEle) );
-      m_minEta.push_back(m_minEta0);m_maxEta.push_back(m_maxEta0);
+      m_minEta.push_back(minEta[29+i]);m_maxEta.push_back(m_maxEta0);
     }
     //layer 9
     firstMixedlayer_ = m_caloStruct.size();
@@ -815,7 +833,7 @@ void DetectorConstruction::buildHGCALFHE(const unsigned aVersion){
     //back disk
     lThick.push_back(93.9*mm);lEle.push_back("SSteel");
     m_caloStruct.push_back( SamplingSection(lThick,lEle) );
-    m_minEta.push_back(m_minEta0);m_maxEta.push_back(m_maxEta0);
+    m_minEta.push_back(minEta[51]);m_maxEta.push_back(m_maxEta0);
   }
   else {
     G4double airThick = 2*mm;
@@ -901,6 +919,14 @@ void DetectorConstruction::buildHGCALBHE(const unsigned aVersion){
   std::vector<G4double> lThick;
   std::vector<std::string> lEle;
 
+  // min Eta per layer, 0-27 for EE, 28-35 FH, 36-51 BH
+  double minEta[52] = { 1.461, 1.464, 1.463, 1.466, 1.465, 1.468, 1.467, 1.469, 1.469, 1.471,
+			1.471, 1.473, 1.472, 1.475, 1.474, 1.477, 1.476, 1.478, 1.478, 1.480,
+			1.479, 1.482, 1.481, 1.483, 1.483, 1.485, 1.484, 1.487,
+			1.487, 1.490, 1.494, 1.497, 1.500, 1.503, 1.506, 1.493,
+			1.474, 1.455, 1.437, 1.420, 1.403, 1.376, 1.351, 1.327, 1.306, 1.316,
+			1.332, 1.348, 1.364, 1.379, 1.395, 1.410 };
+
   if (aVersion==8){
     firstScintlayer_ = m_caloStruct.size();
 
@@ -918,7 +944,7 @@ void DetectorConstruction::buildHGCALBHE(const unsigned aVersion){
     lThick.push_back(1.2*mm);lEle.push_back("Air");
     lThick.push_back(3.0*mm);lEle.push_back("Scintillator");
     m_caloStruct.push_back( SamplingSection(lThick,lEle) );
-    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(1450,3920.7));
+    m_minEta.push_back(minEta[36]);m_maxEta.push_back(getEtaFromRZ(1450,3920.7));
 
     //CE-H-scint layers 10-12
     lThick.clear();
@@ -935,28 +961,28 @@ void DetectorConstruction::buildHGCALBHE(const unsigned aVersion){
     for(unsigned i=0; i<3; i++) {
       m_caloStruct.push_back( SamplingSection(lThick,lEle) );
     }
-    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(1325,3969.7));
-    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(1325,4020.6));
-    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(1225,4071.5));
+    m_minEta.push_back(minEta[37]);m_maxEta.push_back(getEtaFromRZ(1325,3969.7));
+    m_minEta.push_back(minEta[38]);m_maxEta.push_back(getEtaFromRZ(1325,4020.6));
+    m_minEta.push_back(minEta[39]);m_maxEta.push_back(getEtaFromRZ(1225,4071.5));
 
     //CE-H-scint layers 13-24
     lThick[4] = 68*mm;
     for(unsigned i=0; i<12; i++) {
       m_caloStruct.push_back( SamplingSection(lThick,lEle) );
     }
-    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(1110,4122.4));
-    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(1050,4206.3));
-    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(950,4290.2));
+    m_minEta.push_back(minEta[40]);m_maxEta.push_back(getEtaFromRZ(1110,4122.4));
+    m_minEta.push_back(minEta[41]);m_maxEta.push_back(getEtaFromRZ(1050,4206.3));
+    m_minEta.push_back(minEta[42]);m_maxEta.push_back(getEtaFromRZ(950,4290.2));
 
-    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(900,4374.1));
-    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(900,4458));
-    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(900,4541.9));
-    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(900,4625.8));
-    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(900,4709.7));
-    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(900,4793.6));
-    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(900,4877.5));
-    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(900,4961.4));
-    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(900,5045.3));
+    m_minEta.push_back(minEta[43]);m_maxEta.push_back(getEtaFromRZ(900,4374.1));
+    m_minEta.push_back(minEta[44]);m_maxEta.push_back(getEtaFromRZ(900,4458));
+    m_minEta.push_back(minEta[45]);m_maxEta.push_back(getEtaFromRZ(900,4541.9));
+    m_minEta.push_back(minEta[46]);m_maxEta.push_back(getEtaFromRZ(900,4625.8));
+    m_minEta.push_back(minEta[47]);m_maxEta.push_back(getEtaFromRZ(900,4709.7));
+    m_minEta.push_back(minEta[48]);m_maxEta.push_back(getEtaFromRZ(900,4793.6));
+    m_minEta.push_back(minEta[49]);m_maxEta.push_back(getEtaFromRZ(900,4877.5));
+    m_minEta.push_back(minEta[50]);m_maxEta.push_back(getEtaFromRZ(900,4961.4));
+    m_minEta.push_back(minEta[51]);m_maxEta.push_back(getEtaFromRZ(900,5045.3));
 
 
 
@@ -971,7 +997,7 @@ void DetectorConstruction::buildHGCALBHE(const unsigned aVersion){
       //back disk
       lThick.push_back(93.9*mm);lEle.push_back("SSteel");
       m_caloStruct.push_back( SamplingSection(lThick,lEle) );
-      m_minEta.push_back(m_minEta0);m_maxEta.push_back(m_maxEta0);
+      m_minEta.push_back(minEta[51]);m_maxEta.push_back(m_maxEta0);
     }
   }
   else {
