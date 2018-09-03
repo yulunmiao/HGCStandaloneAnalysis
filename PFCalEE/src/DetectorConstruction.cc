@@ -46,13 +46,19 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
   m_minEta0 = 1.306;
   m_maxEta0 = 3.0;
   // min Eta per layer, 0-27 for EE, 28-35 FH, 36-51 BH
-  double minEta[52] = { 1.461, 1.464, 1.463, 1.466, 1.465, 1.468, 1.467, 1.469, 1.469, 1.471,
+  //double minEta[52] = 
+  double minEta_local[52] = { 1.461, 1.464, 1.463, 1.466, 1.465, 1.468, 1.467, 1.469, 1.469, 1.471,
 			1.471, 1.473, 1.472, 1.475, 1.474, 1.477, 1.476, 1.478, 1.478, 1.480,
 			1.479, 1.482, 1.481, 1.483, 1.483, 1.485, 1.484, 1.487,
 			1.487, 1.490, 1.494, 1.497, 1.500, 1.503, 1.506, 1.493,
 			1.474, 1.455, 1.437, 1.420, 1.403, 1.376, 1.351, 1.327, 1.306, 1.316,
 			1.332, 1.348, 1.364, 1.379, 1.395, 1.410 };
-  
+  //std::cout << "DetectorConstruction constructor:" << std::endl;
+  for (int i=0; i<52; i++){
+    minEta.push_back(minEta_local[i]);
+    //std::cout << minEta[i] << std::endl;
+  }
+
   SetWThick(absThickW);
   SetPbThick(absThickPb);
   SetDropLayers(dropLayer);
@@ -403,9 +409,9 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 
 	for(unsigned i=0; i<13; i++) {
 	  m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
-	  m_minEta.push_back(minEta[2+2*i]);m_maxEta.push_back(m_maxEta0);
+	  m_minEta.push_back(minEta[2+2*i]);m_maxEta.push_back(m_maxEta0); // minEta index: 2,4,...,26
 	  m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
-	  m_minEta.push_back(minEta[2+2*i+1]);m_maxEta.push_back(m_maxEta0);
+	  m_minEta.push_back(minEta[2+2*i+1]);m_maxEta.push_back(m_maxEta0); // minEta index: 3,5,...,27
 	}
 	
 	if(version_==v_HGCAL_v8){
@@ -725,12 +731,16 @@ void DetectorConstruction::buildHGCALFHE(const unsigned aVersion){
   std::vector<std::string> lEle;
 
   // min Eta per layer, 0-27 for EE, 28-35 FH, 36-51 BH
+  /*
   double minEta[52] = { 1.461, 1.464, 1.463, 1.466, 1.465, 1.468, 1.467, 1.469, 1.469, 1.471,
 			1.471, 1.473, 1.472, 1.475, 1.474, 1.477, 1.476, 1.478, 1.478, 1.480,
 			1.479, 1.482, 1.481, 1.483, 1.483, 1.485, 1.484, 1.487,
 			1.487, 1.490, 1.494, 1.497, 1.500, 1.503, 1.506, 1.493,
 			1.474, 1.455, 1.437, 1.420, 1.403, 1.376, 1.351, 1.327, 1.306, 1.316,
 			1.332, 1.348, 1.364, 1.379, 1.395, 1.410 };
+  std::cout << "DetectorConstruction::buildHGCALFHE " << std::endl;
+  for (int i=0; i<minEta.size(); i++) std::cout << minEta[i] << std::endl;
+  */
 
   if (aVersion==8){
     G4double airThick = 1.5*mm;
@@ -772,7 +782,7 @@ void DetectorConstruction::buildHGCALFHE(const unsigned aVersion){
           
     for(unsigned i=0; i<7; i++) {
       m_caloStruct.push_back( SamplingSection(lThick,lEle) );
-      m_minEta.push_back(minEta[29+i]);m_maxEta.push_back(m_maxEta0);
+      m_minEta.push_back(minEta[29+i]);m_maxEta.push_back(m_maxEta0); // minEta index: 29,30,...,35
     }
     //layer 9
     firstMixedlayer_ = m_caloStruct.size();
@@ -920,12 +930,16 @@ void DetectorConstruction::buildHGCALBHE(const unsigned aVersion){
   std::vector<std::string> lEle;
 
   // min Eta per layer, 0-27 for EE, 28-35 FH, 36-51 BH
+  /*
   double minEta[52] = { 1.461, 1.464, 1.463, 1.466, 1.465, 1.468, 1.467, 1.469, 1.469, 1.471,
 			1.471, 1.473, 1.472, 1.475, 1.474, 1.477, 1.476, 1.478, 1.478, 1.480,
 			1.479, 1.482, 1.481, 1.483, 1.483, 1.485, 1.484, 1.487,
 			1.487, 1.490, 1.494, 1.497, 1.500, 1.503, 1.506, 1.493,
 			1.474, 1.455, 1.437, 1.420, 1.403, 1.376, 1.351, 1.327, 1.306, 1.316,
 			1.332, 1.348, 1.364, 1.379, 1.395, 1.410 };
+  std::cout << "DetectorConstruction::buildHGCALBHE " << std::endl;
+  for (int i=0; i<minEta.size(); i++) std::cout << minEta[i] << std::endl;
+  */
 
   if (aVersion==8){
     firstScintlayer_ = m_caloStruct.size();
