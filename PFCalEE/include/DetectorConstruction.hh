@@ -158,6 +158,8 @@ public:
   G4double GetMinEta() { return m_minEta0; }
   G4double GetMaxEta() { return m_maxEta0; }
 
+  G4double GetMinEtaLayer(int i) { return minEta[i]; } // etaMin for each layer 0:51
+
   /**
      @short build the detector
    */
@@ -221,6 +223,7 @@ private:
   G4double           m_minRadiusHF,m_maxRadiusHF;
   //define per layer
   std::vector<G4double>           m_minEta,m_maxEta;
+  std::vector<G4double>           minEta; // used to define input eta boundaries in constructor
   G4double           m_minEta0,m_maxEta0;
   G4double           m_minEtaHF,m_maxEtaHF;
   G4double           m_z0pos, m_z0HF;
