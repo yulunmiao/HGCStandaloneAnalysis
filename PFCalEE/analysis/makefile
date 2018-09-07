@@ -74,7 +74,7 @@ OBJS=$(subst $(SRCDIR), $(OBJDIR),$(subst cc,$(OBJ_EXT),$(SRCS)))
 #BINS=$(EXEDIR)/egammaResolution $(EXEDIR)/higgsResolution
 #BINS= $(EXEDIR)/validation $(EXEDIR)/egammaResoWithTruth $(EXEDIR)/egammaResolution $(EXEDIR)/hadronResolution $(EXEDIR)/plotNabove100fC
 
-BINS=$(EXEDIR)/egammaResoWithTruth $(EXEDIR)/mipAnalysis $(EXEDIR)/mipHistos $(EXEDIR)/mipSelection  $(EXEDIR)/higgsResoWithTruth $(EXEDIR)/mipDeposit
+BINS=$(EXEDIR)/egammaResoWithTruth $(EXEDIR)/mipAnalysis $(EXEDIR)/mipHistos $(EXEDIR)/mipSelection $(EXEDIR)/mipDeposit $(EXEDIR)/simpleBH
 #BINS=$(EXEDIR)/studyOutliers
 #BINS=$(EXEDIR)/getAbsorberWeight $(EXEDIR)/egammaResoWithTruth $(EXEDIR)/studySupportCone
 # $(EXEDIR)/egammaResolution $(EXEDIR)/hadronResolution $(EXEDIR)/plotNabove100fC
@@ -149,8 +149,8 @@ $(EXEDIR)/calibration:  $(TESTDIR)/calibration.cpp $(LIBDIR)/lib$(LIBNAME).so $(
 $(EXEDIR)/higgsResolution:  $(TESTDIR)/higgsResolution.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
 	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
 
-$(EXEDIR)/higgsResoWithTruth:  $(TESTDIR)/higgsResoWithTruth.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
-	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME) -L$(HEPMC_DIR)lib -lHepMC
+#KH $(EXEDIR)/higgsResoWithTruth:  $(TESTDIR)/higgsResoWithTruth.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
+#KH	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME) -L$(HEPMC_DIR)lib -lHepMC
 
 $(EXEDIR)/timeResolution:  $(TESTDIR)/timeResolution.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
 	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
@@ -180,6 +180,9 @@ $(EXEDIR)/validation:  $(TESTDIR)/validation.cpp $(LIBDIR)/lib$(LIBNAME).so $(wi
 	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
 
 $(EXEDIR)/studyOutliers:  $(TESTDIR)/studyOutliers.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
+	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
+
+$(EXEDIR)/simpleBH:  $(TESTDIR)/simpleBH.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
 	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
 
 $(OBJDIR)/%.$(OBJ_EXT):  $(SRCDIR)/%.cc $(BASEDIR)/include/%.h*

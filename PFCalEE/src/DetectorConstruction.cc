@@ -43,11 +43,11 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
   firstMixedlayer_ = 9999;
   firstScintlayer_ = 9999;
 
-  m_minEta0 = 1.306;
+  m_minEta0 = 1.3;
   m_maxEta0 = 3.0;
   // min Eta per layer, 0-27 for EE, 28-35 FH, 36-51 BH
   //double minEta[52] = 
-  double minEta_local[52] = { 1.461, 1.464, 1.463, 1.466, 1.465, 1.468, 1.467, 1.469, 1.469, 1.471,
+  double minEta_tmp[52] = { 1.461, 1.464, 1.463, 1.466, 1.465, 1.468, 1.467, 1.469, 1.469, 1.471,
 			1.471, 1.473, 1.472, 1.475, 1.474, 1.477, 1.476, 1.478, 1.478, 1.480,
 			1.479, 1.482, 1.481, 1.483, 1.483, 1.485, 1.484, 1.487,
 			1.487, 1.490, 1.494, 1.497, 1.500, 1.503, 1.506, 1.493,
@@ -55,7 +55,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 			1.332, 1.348, 1.364, 1.379, 1.395, 1.410 };
   //std::cout << "DetectorConstruction constructor:" << std::endl;
   for (int i=0; i<52; i++){
-    minEta.push_back(minEta_local[i]);
+    minEta.push_back(minEta_tmp[i]);
     //std::cout << minEta[i] << std::endl;
   }
 
