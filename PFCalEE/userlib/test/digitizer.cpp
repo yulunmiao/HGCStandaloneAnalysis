@@ -558,8 +558,8 @@ int main(int argc, char** argv){//main
   //square map for BHCAL
   //geomConv.initialiseSquareMap1(1.4,3.0,-1.*TMath::Pi(),TMath::Pi(),0.01745);//eta phi segmentation
   //geomConv.initialiseSquareMap2(1.4,3.0,-1.*TMath::Pi(),TMath::Pi(),0.02182);//eta phi segmentation
-  geomConv.initialiseSquareMap1(1.3,3.0,-1.*TMath::Pi(),TMath::Pi(),TMath::Pi()*2./360.);//eta phi segmentation
-  geomConv.initialiseSquareMap2(1.3,3.0,-1.*TMath::Pi(),TMath::Pi(),TMath::Pi()*2./288.);//eta phi segmentation
+  geomConv.initialiseSquareMap1(1.3,3.0,-1.*TMath::Pi(),TMath::Pi(),TMath::Pi()*2./360.);//eta phi segmentation, hardcoded '1.3' to include outer edge fo BH
+  geomConv.initialiseSquareMap2(1.3,3.0,-1.*TMath::Pi(),TMath::Pi(),TMath::Pi()*2./288.);//eta phi segmentation, hardcoded '1.3' to include outer edge fo BH
   //geomConv.initialiseSquareMap2(1.4,3.0,0,2*TMath::Pi(),0.02618);//eta phi segmentation
 
   HGCSSDigitisation myDigitiser;
@@ -838,7 +838,7 @@ int main(int argc, char** argv){//main
 	bool passeta = eta>1.4 && eta<3.0;
 	if (doEtaSel) passeta = fabs(eta-etamean)<deta;
 	else {
-	  if (isScint) passeta = eta>outerScintBoundary[iL] && eta<=etaBoundary;
+	  if (isScint) passeta = eta>outerScintBoundary[iL] && eta<=etaBoundary; // only simulate noise within the physical bounds of the detector
 	  else passeta = eta>etaBoundary && eta<3.0;
 	}
 	if (!passeta) continue;
