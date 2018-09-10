@@ -558,8 +558,8 @@ int main(int argc, char** argv){//main
   //square map for BHCAL
   //geomConv.initialiseSquareMap1(1.4,3.0,-1.*TMath::Pi(),TMath::Pi(),0.01745);//eta phi segmentation
   //geomConv.initialiseSquareMap2(1.4,3.0,-1.*TMath::Pi(),TMath::Pi(),0.02182);//eta phi segmentation
-  geomConv.initialiseSquareMap1(1.4,3.0,-1.*TMath::Pi(),TMath::Pi(),TMath::Pi()*2./360.);//eta phi segmentation
-  geomConv.initialiseSquareMap2(1.4,3.0,-1.*TMath::Pi(),TMath::Pi(),TMath::Pi()*2./288.);//eta phi segmentation
+  geomConv.initialiseSquareMap1(1.3,3.0,-1.*TMath::Pi(),TMath::Pi(),TMath::Pi()*2./360.);//eta phi segmentation, hardcoded '1.3' to include outer edge fo BH
+  geomConv.initialiseSquareMap2(1.3,3.0,-1.*TMath::Pi(),TMath::Pi(),TMath::Pi()*2./288.);//eta phi segmentation, hardcoded '1.3' to include outer edge fo BH
   //geomConv.initialiseSquareMap2(1.4,3.0,0,2*TMath::Pi(),0.02618);//eta phi segmentation
 
   HGCSSDigitisation myDigitiser;
@@ -818,6 +818,16 @@ int main(int argc, char** argv){//main
       double etaBoundary = myDetector.etaBoundary(iL);
       //extend map to include all cells in eta=1.4-3 region
       //in eta ring if saving only one eta ring....
+      // define the outer edge of the scint layers
+      double outerScintBoundary [69] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					 0, 0, 0,
+					 1.474, 1.455, 1.437, 1.420, 1.403, 1.376, 1.351, 1.327, 
+					 1.306, 1.316, 1.332, 1.348, 1.364, 1.379, 1.395, 1.410};
+
       for (unsigned iB(1); iB<nBins+1;++iB){
 	std::pair<double,double> xy = geom[iB];
 	if (isScint) {
@@ -828,7 +838,7 @@ int main(int argc, char** argv){//main
 	bool passeta = eta>1.4 && eta<3.0;
 	if (doEtaSel) passeta = fabs(eta-etamean)<deta;
 	else {
-	  if (isScint) passeta = eta>1.4 && eta<=etaBoundary;
+	  if (isScint) passeta = eta>outerScintBoundary[iL] && eta<=etaBoundary; // only simulate noise within the physical bounds of the detector
 	  else passeta = eta>etaBoundary && eta<3.0;
 	}
 	if (!passeta) continue;
