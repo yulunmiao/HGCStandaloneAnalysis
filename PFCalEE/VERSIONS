@@ -8,6 +8,10 @@
 #####################
 Nothing for the moment
 
+V08-04-00
+----------
+* fix outer boundary as a function of layer number -> PR#23 from Bryan 
+
 V08-03-00
 ----------
 * fix in z0 position when simulating BH only, to be place where it should be starting from 3.9m. This is important to have the eta-phi granularity correctly set.
