@@ -21,6 +21,7 @@
 #include "TGaxis.h"
 
 #include "TDRStyle.h"
+#include "effSigmaMacro.C"
 
 struct FitResult{
   double chi2;
@@ -100,7 +101,8 @@ unsigned fitEnergy(TH1F *hist,
 		   TPad *pad,
 		   std::string unitStr,
 		   FitResult & lres,
-		   unsigned isr){
+		   unsigned isr,
+		   const bool useSigmaEff){
   
   pad->cd();
   //double eMin = hist->GetMean()-5*hist->GetRMS();
@@ -108,6 +110,7 @@ unsigned fitEnergy(TH1F *hist,
   //hist->GetXaxis()->SetRangeUser(eMin,eMax);
   hist->Draw("PE");
 
+  double sigmaeff = effSigmaMacro(hist);
 
   double nRMSm = isr<1? 1 : 2;
   double nRMSp = 2;
@@ -174,18 +177,20 @@ unsigned fitEnergy(TH1F *hist,
   lat.DrawLatex(latx,laty*0.9,buf);
   sprintf(buf,"RMSfit = %3.3f +/- %3.3f %s",fitResult->GetParameter(2),fitResult->GetParError(2),unitStr.c_str());
   lat.DrawLatex(latx,laty*0.8,buf);
-  sprintf(buf,"RMS/meanfit = %3.3f",fitResult->GetParameter(2)/fitResult->GetParameter(1));
+  sprintf(buf,"#sigma_{eff} = %3.3f +/- %3.3f %s",sigmaeff,hist->GetRMSError(),unitStr.c_str());
   lat.DrawLatex(latx,laty*0.7,buf);
+  sprintf(buf,"RMS/meanfit = %3.3f",fitResult->GetParameter(2)/fitResult->GetParameter(1));
+  lat.DrawLatex(latx,laty*0.6,buf);
   
   sprintf(buf,"#chi^{2}/N = %3.3f/%d = %3.3f",fitResult->GetChisquare(),fitResult->GetNDF(),fitResult->GetChisquare()/fitResult->GetNDF());
-  lat.DrawLatex(latx,laty*0.6,buf);
+  lat.DrawLatex(latx,laty*0.5,buf);
   
   lres.chi2 = fitResult->GetChisquare();
   lres.ndf = fitResult->GetNDF();
   lres.mean = fitResult->GetParameter(1);
   lres.meanerr = fitResult->GetParError(1);
-  lres.sigma = fitResult->GetParameter(2);
-  lres.sigmaerr = fitResult->GetParError(2);
+  lres.sigma = useSigmaEff ? sigmaeff : fitResult->GetParameter(2);
+  lres.sigmaerr = useSigmaEff ? hist->GetRMSError() : fitResult->GetParError(2);
 
   return 0;
 };
@@ -523,27 +528,28 @@ int plotEGReso(){//main
 
   SetTdrStyle();
 
-  bool dovsE = true;
-  bool processNoFitFiles = false;
+  const bool useSigmaEff = true;
+  const bool dovsE = true;
+  const bool processNoFitFiles = false;
 
-  bool doBackLeakCor = true;
+  const bool doBackLeakCor = true;
 
   const unsigned nIC = 1;
   const unsigned ICval[nIC] = {3};//0,1,2,3,4,5,10,15,20,50};
 
-  const unsigned nPu = 3;//4;
-  unsigned pu[nPu] = {0,0,200};//,140,200};
+  const unsigned nPu = 2;//4;
+  unsigned pu[nPu] = {0,0};//,140,200};
 
   const unsigned nS = 1;
   std::string scenario[nS] = {
-    "model2/gamma/"
+    "model3/gamma/200u/"
   };
 
   std::string foutname = "PLOTS/PuSubtraction.root";
   TFile *fout = TFile::Open(foutname.c_str(),"RECREATE");
 
-  const unsigned neta = 3;
-  unsigned eta[neta]={17,20,24};
+  const unsigned neta = 1;
+  unsigned eta[neta]={20};
   //const unsigned neta = 7;
   //unsigned eta[neta]={17,19,21,23,25,27,29};
 
@@ -557,10 +563,11 @@ int plotEGReso(){//main
   TString pSuffix = doBackLeakCor?"backLeakCor":"";
 
   
-  const unsigned nV = 1;
-  TString version[nV] = {"63"};//,"0"};
+  const unsigned nV = 4;
+  TString version[nV] = {"60","64","65","66"};//,"0"};
+  //TString version[nV] = {"65","66"};//,"0"};
   
-  const unsigned nLayers = 28;
+  unsigned nLayers = 28;
   const unsigned nSR = 6;
   const double radius[nSR] = {13,15,20,23,26,53};
   double noise100[nSR];
@@ -652,8 +659,10 @@ int plotEGReso(){//main
   for (unsigned ic(0);ic<nIC;++ic){//loop on intercalib
     
     for (unsigned iV(0); iV<nV;++iV){//loop on versions
+      if (iV==nV-1) nLayers = 24;
+
       for (unsigned iS(0); iS<nS;++iS){//loop on scenarios
-	TString plotDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalTDR/gittestV8/version"+version[iV]+"/"+scenario[iS]+"/";
+	TString plotDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalTDR/gittestCu/version"+version[iV]+"/"+scenario[iS]+"/";
 
 	TFile *fcalib;
 	std::ostringstream label;
@@ -690,11 +699,11 @@ int plotEGReso(){//main
 	      TFile *inputFile = 0;
 	      std::ostringstream linputStr;
 	      linputStr << plotDir ;
-	      if (ipu>=2 && eta[ieta]==17) linputStr << "300u/";
-	      else if (ipu>=2 && eta[ieta]==20) linputStr << "200u/";
+	      //if (ipu>=2 && eta[ieta]==17) linputStr << "300u/";
+	      //else if (ipu>=2 && eta[ieta]==20) linputStr << "200u/";
 	      linputStr << "eta" << eta[ieta] << "_et" << genEnAll[iE];// << "_pu" << pu[ipu];
 	      if (ipu>=2) linputStr << "_Pu" << pu[ipu];
-	      linputStr << "_IC" << ICval[ic];// << "_Si2";
+	      linputStr << "_IC" << ICval[ic] << "_Si2";
 	      if (!processNoFitFiles) linputStr << ".root";
 	      else linputStr << "_nofit.root";
 	      inputFile = TFile::Open(linputStr.str().c_str());
@@ -712,7 +721,11 @@ int plotEGReso(){//main
 		  skip[iE] = true;
 		} else { 
 		  std::cout << " -- File " << inputFile->GetName() << " sucessfully opened and tree found." << std::endl;
-		  nValid++;
+		  if (ltree[ieta][ipu][iE]->GetEntries()<nEvtMin) {
+		    std::cout << " -- Tree has only " << ltree[ieta][ipu][iE]->GetEntries() << " entries, skipping..." << std::endl;
+		    skip[iE] = true;
+		  } 
+		  else nValid++;
 		}
 	      }
 	    }
@@ -788,12 +801,12 @@ int plotEGReso(){//main
 	      TFile *inputFile = 0;
 	      std::ostringstream linputStr;
 	      linputStr << plotDir ;
-	      if (ipu>=2 && eta[ieta]==17) linputStr << "300u/";
-	      else if (ipu>=2 && eta[ieta]==20) linputStr << "200u/";
+	      //if (ipu>=2 && eta[ieta]==17) linputStr << "300u/";
+	      //else if (ipu>=2 && eta[ieta]==20) linputStr << "200u/";
 	      linputStr << "eta" << eta[ieta] << "_et" << genEn[iE];
 	      // << "_pu" << pu[ipu];
 	      if (ipu>=2) linputStr << "_Pu" << pu[ipu];
-	      linputStr << "_IC" << ICval[ic];// << "_Si2";
+	      linputStr << "_IC" << ICval[ic] << "_Si2";
 	      if (!processNoFitFiles) linputStr << ".root" ;
 	      else linputStr << "_nofit.root";
 	      inputFile = TFile::Open(linputStr.str().c_str());
@@ -817,15 +830,19 @@ int plotEGReso(){//main
 		  for (unsigned iL(0);iL<nLayers;++iL){	      
 		    //if (iL==0) lName << "absweight_" << iL  << "*subtractedenergy_" << iL << "_SR" << iSR ;
 		    //else lName << "+" << "absweight_" << iL  << "*subtractedenergy_" << iL << "_SR" << iSR ;
-		    //if (iL==0) lName << "absweight_" << iL  << "*energy_" << iL << "_SR" << iSR ;
-		    //else lName << "+" << "absweight_" << iL  << "*energy_" << iL << "_SR" << iSR ;
-		    if (iL==0) lNameTot << "20.3628*energy_" << iL << "_SR" << iSR ;
-		    else if (iL==nLayers-1) lNameTot << "+13.0629*energy_" << iL << "_SR" << iSR ;
-		    else lNameTot << "+10.0166*energy_" << iL << "_SR" << iSR ;
+		    if (iL==0) lNameTot << "absweight_" << iL  << "*energy_" << iL << "_SR" << iSR ;
+		    else lNameTot << "+absweight_" << iL  << "*energy_" << iL << "_SR" << iSR ;
+		    //if (iL==0) lNameTot << "20.3628*energy_" << iL << "_SR" << iSR ;
+		    //else if (iL==nLayers-1) lNameTot << "+13.0629*energy_" << iL << "_SR" << iSR ;
+		    //else lNameTot << "+10.0166*energy_" << iL << "_SR" << iSR ;
+
 		    //use always largest area for correction
-		    if (iL==nLayers-2) lNameBack << "10.0166*energy_" << iL << "_SR" << iSR ;
-		    else if (iL==nLayers-1) lNameBack << "+13.0629*energy_" << iL << "_SR" << iSR ;
-		    else if (iL>nLayers-2) lNameBack << "+10.0166*energy_" << iL << "_SR" << iSR ;
+		    //if (iL==nLayers-2) lNameBack << "10.0166*energy_" << iL << "_SR" << iSR ;
+		    //else if (iL==nLayers-1) lNameBack << "+13.0629*energy_" << iL << "_SR" << iSR ;
+		    //else if (iL>nLayers-2) lNameBack << "+10.0166*energy_" << iL << "_SR" << iSR ;
+		    if (iL==nLayers-2) lNameBack << "absweight_" << iL << "*energy_" << iL << "_SR" << iSR ;
+		    else if (iL==nLayers-1) lNameBack << "+absweight_" << iL << "*energy_" << iL << "_SR" << iSR ;
+		    else if (iL>nLayers-2) lNameBack  << "+absweight_" << iL<< "*energy_" << iL << "_SR" << iSR ;
 		  }
 		}
 		else lNameTot << "wgtEtotal";///" << tanh(etaval[ieta]);
@@ -896,7 +913,7 @@ int plotEGReso(){//main
 		}
 
 		std::ostringstream lcut;
-		lcut << lName.str() << ">0.5*";
+		lcut << lName.str() << ">0.7*";
 		lcut << E(genEn[iE],eta[ieta]);
 
 		ltree[ieta][ipu][oldIdx[iE]]->Draw(lName.str().c_str(),lcut.str().c_str(),"");
@@ -929,7 +946,7 @@ int plotEGReso(){//main
 
 		TPad *lpad = (TPad*)(mycE[iE]->cd(iSR+1));
 		FitResult lres;
-		if (fitEnergy(p_Ereco[iE][iSR],lpad,unit,lres,iSR)!=0) return 1;
+		if (fitEnergy(p_Ereco[iE][iSR],lpad,unit,lres,iSR,useSigmaEff)!=0) return 1;
 		lpad->cd();
 		char buf[500];
 		sprintf(buf,"#gamma p_{T}=%d GeV + PU %d",genEn[iE],pu[ipu]);

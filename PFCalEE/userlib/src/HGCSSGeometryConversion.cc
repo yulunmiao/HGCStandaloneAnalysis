@@ -189,42 +189,53 @@ void HGCSSGeometryConversion::initialiseSquareMap(TH2Poly *map, const double xmi
   
 }
 
-void HGCSSGeometryConversion::initialiseDiamondMap(const double xymin, const double side){
-  initialiseDiamondMap(diamondMap(),xymin,side,true);
+void HGCSSGeometryConversion::initialiseDiamondMap(const double & xymin, const double side){
+  initialiseDiamondMap(xymin,xymin,side);
+}
+
+void HGCSSGeometryConversion::initialiseDiamondMap(const double & xmin, const double & ymin, const double side){
+  //side = real diamond size, convert to hexagon size to fit 2x2 hexagons inside
+  //by default method below side is side of hexagon component...
+  double tmpside = side/(2.*sqrt(3.));
+  initialiseDiamondMap(diamondMap(),xmin,ymin,tmpside,2,true);
   fillXY(diamondMap(),diamGeom);
 }
 
-void HGCSSGeometryConversion::initialiseDiamondMap(TH2Poly *map, const double xymin, const double side, bool print){
-  double h = sqrt(3.)/2.*side;
-  unsigned nx=static_cast<unsigned>(xymin*2./h);
-  unsigned ny=static_cast<unsigned>(xymin*4./side);
+void HGCSSGeometryConversion::initialiseDiamondMap(TH2Poly *map, const double & xmin, const double & ymin, const double side, const unsigned nhexa, bool print){
+  //side = hexagon side to have nhexa hexagons inside...
+  //i.e. real diamond size = nhexa*h = nhexa*sqrt(3.)*side
+  double h = sqrt(3.)*side;
+  Double_t dy=nhexa*h, dx=nhexa*3*side;
+  unsigned nx=static_cast<unsigned>(fabs(xmin)*4./dx);
+  unsigned ny=static_cast<unsigned>(fabs(ymin)*2./dy);
   unsigned i,j;
   Double_t x[4],y[4];
-  Double_t dx=h, dy=side/2.;
-  x[0] = -1.*xymin;
+  x[0] = xmin+2.5*side;
 
   for (i = 0; i<nx; i++) {
-    x[1] = x[0]+dx;
-    x[2] = x[1]+dx;
-    x[3] = x[0]+dx;
-    y[0] = -1.*xymin;
+    x[1] = x[0]+dx/2;
+    x[2] = x[0];
+    x[3] = x[0]-dx/2.;
+    y[0] = (ymin+h/2.)-i%2*dy/2.;
     for (j = 0; j<ny; j++) {
-      y[1] = y[0]+dy;
-      y[2] = y[0];
-      y[3] = y[0]-dy;
+      y[1] = y[0]+dy/2.;
+      y[2] = y[0]+dy;
+      y[3] = y[0]+dy/2.;
       map->AddBin(4, x, y);
-      y[0] = y[1];
+      y[0] = y[2];
     }
     x[0] = x[1];
   }
     
   if (print) {
     std::cout <<  " -- Initialising diamondMap with parameters: " << std::endl
-	      << " ---- xymin = " << -1.*xymin << ", side = " << side
+	      << " ---- xmin = " << xmin
+	      << ", ymin = " << ymin
+	      << ", side = " << side
 	      << ", nx = " << nx << ", ny=" << ny
 	      << std::endl;
   }
-  
+
 }
 
 void HGCSSGeometryConversion::initialiseTriangleMap(const double xymin, const double side){
@@ -280,7 +291,18 @@ void HGCSSGeometryConversion::initialiseHoneyComb(const double width, const doub
   fillXY(hexagonMap(),hexaGeom);
 }
 
+void HGCSSGeometryConversion::initialiseHoneyComb(const double width, const double side,double & xstart, double & ystart){
+  initialiseHoneyComb(hexagonMap(),width,side,true,xstart,ystart);
+  fillXY(hexagonMap(),hexaGeom);
+}
+
 void HGCSSGeometryConversion::initialiseHoneyComb(TH2Poly *map, const double width, const double side, bool print){
+  //xstart,ystart,side length,
+  double xstart=0,ystart=0;
+  initialiseHoneyComb(map,width,side,print,xstart,ystart);
+}
+
+void HGCSSGeometryConversion::initialiseHoneyComb(TH2Poly *map, const double width, const double side, bool print,double & xstart, double & ystart){
   //xstart,ystart,side length,
 
   // Center a cell at (x,y)=(0,0) and ensure coverage up to/past width/2 in all 4 directions,
@@ -293,7 +315,6 @@ void HGCSSGeometryConversion::initialiseHoneyComb(TH2Poly *map, const double wid
   if (nx%2==0) nx+=1;
   if (ny%2==0) ny+=1;
 
-  double xstart=0,ystart=0;
 
   //check whether even or odd number on each side to decide where to put the starting point
   if (static_cast<unsigned>((nx-1)/4)%2==0) {

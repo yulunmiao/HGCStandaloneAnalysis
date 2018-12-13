@@ -272,12 +272,12 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
       //double w = absWeight(iL);
       //double w = ssvec[iL].voldEdx()/ssvec[1].voldEdx();
       //double w = ssvec[iL].volX0trans()/ssvec[1].volX0trans();
-      absweight_[iL] = 10.0166;
-      //absweight_[iL]=iL<(nLayers_-1) ? (ssvec[iL].voldEdx()+ssvec[iL+1].voldEdx())/2. : ssvec[iL].voldEdx();;
+      //absweight_[iL] = 10.0166;
+      absweight_[iL]=iL<(nLayers_-1) ? (ssvec[iL].voldEdx()+ssvec[iL+1].voldEdx())/2. : ssvec[iL].voldEdx();
       std::cout << " - Layer " << iL << " wdEdx=" << ssvec[iL].voldEdx()  << " Wx0=" << ssvec[iL].volX0trans() << " W valeri scheme " << absweight_[iL] << std::endl;
     }
-    absweight_[0] = 20.3628;
-    absweight_[nLayers_-1] = 13.0629;
+    //absweight_[0] = 20.3628;
+    //absweight_[nLayers_-1] = 13.0629;
     
     firstEvent_=false;
   }
@@ -291,8 +291,15 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
   evtIdx_ = ievt;
   totalE_ = 0;
   wgttotalE_ = 0;
+  mR68_ = 0;
+  mR90_ = 0;
 
   for (unsigned iL(0); iL<nLayers_;++iL){
+    dR68_[iL] = 0;
+    dR90_[iL] = 0;
+    E68_[iL] = 0;
+    E90_[iL] = 0;
+    E100_[iL] = 0;
     for (unsigned iSR(0);iSR<nSR_;++iSR){
       energySR_[iL][iSR] = 0;
       subtractedenergySR_[iL][iSR] = 0;
@@ -361,6 +368,9 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
   //maxH[iL] = 0;
   //}
 
+  std::vector<MyRecoHit> lhitvec[nLayers_];
+  std::vector<MyRecoHit> lhitvectotal;
+
   for (unsigned iH(0); iH<rechitvec.size(); ++iH){//loop on hits
     const HGCSSRecoHit & lHit = rechitvec[iH];
     
@@ -400,13 +410,24 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
     //double halfCellx = doHexa_?geomConv_.cellSize(layer,lradius):geomConv_.cellSize(layer,lradius)/2.;
     double halfCellx = doHexa_?6.496345:5;
     //std::cout << " halfcell = " << halfCell << std::endl;
+
     //SR0-4
+
+    double dx = posx-refx[layer];
+    double dy = posy-refy[layer];
+    double dr = sqrt(dx*dx+dy*dy);
+
+    MyRecoHit ltmpHit;
+    ltmpHit.dR = dr;
+    ltmpHit.E = energy*absweight_[layer];
+    lhitvec[layer].push_back(ltmpHit);
+    lhitvectotal.push_back(ltmpHit);
+    E100_[layer] += energy*absweight_[layer];
+    
+
     for (unsigned isr(0); isr<nSR_;++isr){
       //double dx = isr%2==0? posx-refx[layer] : posx-eventPos[layer].x();
       //double dy = isr%2==0? posy-refy[layer] : posy-eventPos[layer].y();
-      double dx = posx-refx[layer];
-      double dy = posy-refy[layer];
-      double dr = sqrt(dx*dx+dy*dy);
       /*if (isr==nSR_-1 && dr<50. ){
 	energySR_[layer][isr] += energy;
 	subtractedenergySR_[layer][isr] += subtractedenergy;
@@ -452,6 +473,38 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
     }//loop on SR
   }//loop on hits
 
+  //fill 68 and 90% containment radius
+  for (unsigned iL(0);iL<nLayers_;++iL){
+    std::sort(lhitvec[iL].begin(), lhitvec[iL].end(), customdRsort);
+    double Esum = 0;
+    for (unsigned iH(0); iH<lhitvec[iL].size(); ++iH){
+      //std::cout << iL << " " << iH << " " << lhitvec[iL][iH].dR << std::endl;
+      Esum += lhitvec[iL][iH].E;
+      if (Esum<0.68*E100_[iL]) {
+	dR68_[iL] = lhitvec[iL][iH].dR;
+	E68_[iL] = Esum;
+      }
+      if (Esum<0.9*E100_[iL]){
+	dR90_[iL] = lhitvec[iL][iH].dR;
+	E90_[iL] = Esum;
+      }
+    }
+  }
+
+  //fill moliere radius total
+  std::sort(lhitvectotal.begin(), lhitvectotal.end(), customdRsort);
+  double Esum = 0;
+  for (unsigned iH(0); iH<lhitvectotal.size(); ++iH){
+    //std::cout << iL << " " << iH << " " << lhitvec[iL][iH].dR << std::endl;
+    Esum += lhitvectotal[iH].E;
+    if (Esum<0.68*wgttotalE_) {
+      mR68_ = lhitvectotal[iH].dR;
+    }
+    if (Esum<0.9*wgttotalE_){
+      mR90_ = lhitvectotal[iH].dR;
+    }
+  }
+
   /*for (unsigned iL(0);iL<nLayers_;++iL){
     const HGCSSRecoHit & lmaxHit = rechitvec[maxH[iL]];
     std::cout << "max hit layer " << iL << " x=" 
@@ -491,6 +544,8 @@ void SignalRegion::initialiseHistograms(){
     outtree_->Branch("vtxZ",&vtxZ_);
     outtree_->Branch("trueEta",&trueEta_);
     outtree_->Branch("truePhi",&truePhi_);
+    outtree_->Branch("mR68",&mR68_);
+    outtree_->Branch("mR90",&mR90_);
 
     std::vector<double> emptyvec;
     emptyvec.resize(nSR_,0);
@@ -498,6 +553,11 @@ void SignalRegion::initialiseHistograms(){
     subtractedenergySR_.resize(nLayers_,emptyvec);
     maxhitEoutside_.resize(nLayers_,emptyvec);
     absweight_.resize(nLayers_,1);
+    dR68_.resize(nLayers_,1);
+    dR90_.resize(nLayers_,1);
+    E68_.resize(nLayers_,1);
+    E90_.resize(nLayers_,1);
+    E100_.resize(nLayers_,1);
 
     if (zPos_.size()<nLayers_) {
       std::cout << " -- ERROR! z positions not filled properly. Size of vector " << zPos_.size() << " nLayers_= " << nLayers_ << ". Exiting..." << std::endl;
@@ -518,6 +578,22 @@ void SignalRegion::initialiseHistograms(){
       label << "zpos_" << iL;
       outtree_->Branch(label.str().c_str(),&zPos_[iL]);
 
+      label.str("");
+      label << "rho68_" << iL;
+      outtree_->Branch(label.str().c_str(),&dR68_[iL]);
+      label.str("");
+      label << "rho90_" << iL;
+      outtree_->Branch(label.str().c_str(),&dR90_[iL]);
+
+      label.str("");
+      label << "E68_" << iL;
+      outtree_->Branch(label.str().c_str(),&E68_[iL]);
+      label.str("");
+      label << "E90_" << iL;
+      outtree_->Branch(label.str().c_str(),&E90_[iL]);
+      label.str("");
+      label << "E100_" << iL;
+      outtree_->Branch(label.str().c_str(),&E100_[iL]);
 
       for (unsigned iSR(0);iSR<nSR_;++iSR){
 	label.str("");

@@ -559,7 +559,7 @@ int main(int argc, char** argv){//main
 
   bool bypassR = false;
   if (isTBsetup) bypassR = true;
-  myDetector.buildDetector(versionNumber,concept,isCaliceHcal,bypassR);
+  myDetector.buildDetector(versionNumber,model,concept,isCaliceHcal,bypassR);
 
   //initialise calibration class
   HGCSSCalibration mycalib(inFilePath,bypassR,nSiLayers);
@@ -839,7 +839,6 @@ int main(int argc, char** argv){//main
       double etaBoundary = myDetector.etaBoundary(iL);
       //extend map to include all cells in eta=1.4-3 region
       //in eta ring if saving only one eta ring....
-
       if (addNoiseHits) {
 	for (unsigned iB(1); iB<nBins+1;++iB){
 	  std::pair<double,double> xy = geom[iB];

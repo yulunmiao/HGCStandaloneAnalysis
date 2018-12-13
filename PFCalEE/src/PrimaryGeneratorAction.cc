@@ -120,7 +120,11 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
   case 4:
     x0 = (G4RandFlat::shoot(0.,460)-170)*mm; break;
     //y0 = (G4RandFlat::shoot(0.,10.)-5)*mm;
-    //case 3:
+  case 3:
+    x0 = (G4RandFlat::shoot(0.,250.)-125)*mm;
+    //start from near the bottom in y to have enough space for all layers when shooting with an angle...
+    y0 = (G4RandFlat::shoot(0.,200.)-250)*mm;
+    break;
   case 5:
     //x0 = (G4RandFlat::shoot(0.,30)-15)*mm;
     //y0 = (G4RandFlat::shoot(0.,30.)-15)*mm;

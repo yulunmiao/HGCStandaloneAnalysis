@@ -256,10 +256,10 @@ int main(int argc, char** argv){//main
   //initialise detector
   HGCSSDetector & myDetector = theDetector();
  
-  myDetector.buildDetector(versionNumber,true,false,false);
+  myDetector.buildDetector(versionNumber,model,true,false,false);
   //myDetector.buildDetector(versionNumber,concept,isCaliceHcal);
 
-  const unsigned nLayers = 28;//myDetector.nLayers();
+  const unsigned nLayers = myDetector.nLayers();
   const unsigned nSections = myDetector.nSections();
 
   std::cout << " -- N layers = " << nLayers << std::endl
@@ -280,8 +280,8 @@ int main(int argc, char** argv){//main
   else if (shape==1) geomConv.initialiseHoneyComb(calorSizeXY,cellSize);
   else if (shape==4) geomConv.initialiseSquareMap(calorSizeXY,10.);
   //square map for BHCAL
-  geomConv.initialiseSquareMap1(1.4,3.0,0,2*TMath::Pi(),0.01745);//eta phi segmentation
-  geomConv.initialiseSquareMap2(1.4,3.0,0,2*TMath::Pi(),0.02182);//eta phi segmentation
+  geomConv.initialiseSquareMap1(1.4,3.0,-1.*TMath::Pi(),TMath::Pi(),0.01745);//eta phi segmentation
+  geomConv.initialiseSquareMap2(1.4,3.0,-1.*TMath::Pi(),TMath::Pi(),0.02182);//eta phi segmentation
   if (doPaul) geomConv.initialiseSquareMap(calorSizeXY,cellSize>5?83.:62);
 
   geomConv.initialiseHistos();

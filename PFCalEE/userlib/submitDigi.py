@@ -165,10 +165,14 @@ elif (opt.version==39):
     granularity='0-8:4,9-20:8'
     noise='0-8:0.14,9-20:0.2'
     threshold='0-20:5'
-elif (opt.version==60):
+elif (opt.version==60 or opt.version==64 or opt.version==65):
     granularity='0-27:1'
     noise='0-27:0.12'
     threshold='0-27:5'
+elif (opt.version==66):
+    granularity='0-23:1'
+    noise='0-23:0.12'
+    threshold='0-23:5'
 elif (opt.version==61):
     granularity='0-39:1'
     noise='0-23:0.12,24-39:0.15'

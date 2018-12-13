@@ -26,6 +26,20 @@
 #include "Math/Point3D.h"
 #include "Math/Point3Dfwd.h"
 
+struct MyRecoHit{
+  double dR;
+  double E;
+};
+
+struct {
+  bool operator()(const MyRecoHit & a,
+		  const MyRecoHit & b) const
+  {   
+    return a.dR < b.dR;
+  }   
+} customdRsort;
+
+
 class SignalRegion{
 
 public:
@@ -194,10 +208,18 @@ private:
   double vtxZ_;
   double trueEta_;
   double truePhi_;
+  double mR68_;
+  double mR90_;
   std::vector<std::vector<double> > energySR_;
   std::vector<std::vector<double> > subtractedenergySR_;
   std::vector<std::vector<double> > Exy_;
   std::vector<std::vector<double> > maxhitEoutside_;
+  std::vector<double> dR68_;
+  std::vector<double> dR90_;
+  std::vector<double> E68_;
+  std::vector<double> E90_;
+  std::vector<double> E100_;
+
 
   TH1F *p_rawEtotal;
   TH1F *p_wgtEtotal;
