@@ -8,6 +8,11 @@
 #####################
 Nothing for the moment
 
+V08-05-00
+----------
+* make config for digitiser
+* add versions with more air and copper.
+
 V08-04-00
 ----------
 * fix outer boundary as a function of layer number -> PR#23 from Bryan 
