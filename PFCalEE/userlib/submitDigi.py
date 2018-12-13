@@ -88,6 +88,10 @@ if opt.inPathPU:
 #nPuVtxlist=[0,140,200]
 nPuVtxlist=[int(x) for x in opt.nPuVtx.split(',')]
 
+#to turn off add noise only hits: can be slow for muon files for example. 
+#Default should be true.
+addNoise='false'
+
 #in %
 interCalibList=[3];#0,1,2,3,4,5,10,15,20,50]
 
@@ -241,9 +245,10 @@ for nPuVtx in nPuVtxlist:
             if (opt.run>=0) : outTag='%s_run%d'%(outTag,opt.run)
             scriptFile.write('localdir=`pwd`\n')
             if (opt.etamean>1.3):
-                 scriptFile.write('%s/bin/digitizer %d %s/HGcal_%s.root $localdir/ %s %s %s %d %d %d %s %3.2f %3.2f | tee %s\n'%(os.getcwd(),opt.nevts,eosDirIn,outTag,granularity,noise,threshold,interCalib,nSiLayers,nPuVtx,INPATHPU,opt.etamean,opt.deta,outlog))
+                scriptFile.write('%s/bin/digitizer -c %s/DigiConfig.cfg -n %d -i %s/HGcal_%s.root -o $localdir/ --granulStr=%s --noiseStr=%s --threshStr=%s --interCalib=%d --nSiLayers=%d --nPU=%d --puPath=%s --etamean=%3.2f --deta=%3.2f -a %s | tee %s\n'%(os.getcwd(),os.getcwd(),opt.nevts,eosDirIn,outTag,granularity,noise,threshold,interCalib,nSiLayers,nPuVtx,INPATHPU,opt.etamean,opt.deta,addNoise,outlog))
             else:
-                scriptFile.write('%s/bin/digitizer %d %s/HGcal_%s.root $localdir/ %s %s %s %d %d %d %s | tee %s\n'%(os.getcwd(),opt.nevts,eosDirIn,outTag,granularity,noise,threshold,interCalib,nSiLayers,nPuVtx,INPATHPU,outlog))
+                scriptFile.write('%s/bin/digitizer -c %s/DigiConfig.cfg -n %d -i %s/HGcal_%s.root -o $localdir/ --granulStr=%s --noiseStr=%s --threshStr=%s --interCalib=%d --nSiLayers=%d --nPU=%d --puPath=%s -a %s| tee %s\n'%(os.getcwd(),os.getcwd(),opt.nevts,eosDirIn,outTag,granularity,noise,threshold,interCalib,nSiLayers,nPuVtx,INPATHPU,addNoise,outlog))
+
             scriptFile.write('echo "--Local directory is " $localdir >> %s\n'%(g4log))
             scriptFile.write('ls * >> %s\n'%(g4log))
             if len(opt.eos)>0:

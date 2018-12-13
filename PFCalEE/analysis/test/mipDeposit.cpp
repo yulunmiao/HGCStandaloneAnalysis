@@ -50,15 +50,18 @@ int main(int argc, char** argv){//main
   std::string inFilePath = "root://eoscms//eos/cms/store/group/dpg_hgcal/comm_hgcal/amagnan/HGCalTDR/gitV08-02-00/mu-/HGcal__version63_model2_";
   if (bfieldON) inFilePath += "BON";
   else inFilePath += "BOFF";
+  //if (etaval=="1.600") inFilePath += "_et20_eta";
+  //else inFilePath += "_et13_eta";
   inFilePath += "_et0_eta";
-
 
   double expMPV = etaval=="1.600" ? 0.09 : etaval=="2.000"? 0.055 : 0.03;
 
   const unsigned nSi = etaval=="1.600" ? 3 : etaval=="2.000"? 2 : 1;
   const unsigned firstLayerScint = 52;
 
-  std::string outFilePath = plotBase+"/mipcalib_E1GeV_eta"+etaval+".root";
+  std::string outFilePath = plotBase+"/mipcalib_E0GeV_eta"+etaval;
+  if (bfieldON) outFilePath += "BON";
+  outFilePath += ".root";
 
   TChain *lTree = new TChain("HGCSSTree");
   TFile * mipFile = 0;

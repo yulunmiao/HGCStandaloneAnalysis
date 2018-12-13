@@ -548,9 +548,47 @@ public:
       sensitiveZ_[68] = 5130.7;
 
       etaBoundary_.resize(indices_[6],0);
-      for (unsigned iL(0); iL<36; ++iL){
-	etaBoundary_[iL] = 1.4;
-      }
+      //for (unsigned iL(0); iL<36; ++iL){
+      //etaBoundary_[iL] = 1.4;
+      //}
+      // outer eta boundary for layers 0-35
+      etaBoundary_[0]  = 1.461;
+      etaBoundary_[1]  = 1.464;
+      etaBoundary_[2]  = 1.463;
+      etaBoundary_[3]  = 1.466;
+      etaBoundary_[4]  = 1.465;
+      etaBoundary_[5]  = 1.468;
+      etaBoundary_[6]  = 1.467;
+      etaBoundary_[7]  = 1.469;
+      etaBoundary_[8]  = 1.469;
+      etaBoundary_[9]  = 1.471;
+      etaBoundary_[10]  = 1.471;
+      etaBoundary_[11]  = 1.473;
+      etaBoundary_[12]  = 1.472;
+      etaBoundary_[13]  = 1.475;
+      etaBoundary_[14]  = 1.474;
+      etaBoundary_[15]  = 1.477;
+      etaBoundary_[16]  = 1.476;
+      etaBoundary_[17]  = 1.478;
+      etaBoundary_[18]  = 1.478;
+      etaBoundary_[19]  = 1.480;
+      etaBoundary_[20]  = 1.479;
+      etaBoundary_[21]  = 1.482;
+      etaBoundary_[22]  = 1.481;
+      etaBoundary_[23]  = 1.483;
+      etaBoundary_[24]  = 1.483;
+      etaBoundary_[25]  = 1.485;
+      etaBoundary_[26]  = 1.484;
+      etaBoundary_[27]  = 1.487;
+      etaBoundary_[28]  = 1.487;
+      etaBoundary_[29]  = 1.490;
+      etaBoundary_[30]  = 1.494;
+      etaBoundary_[31]  = 1.497;
+      etaBoundary_[32]  = 1.500;
+      etaBoundary_[33]  = 1.503;
+      etaBoundary_[34]  = 1.506;
+      etaBoundary_[35]  = 1.493;
+	
       etaBoundary_[36] = 1.72042;
       etaBoundary_[37] = 1.81718;
       etaBoundary_[38] = 1.82927;

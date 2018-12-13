@@ -84,7 +84,7 @@ int main(int argc, char** argv){//main
   std::cout << " ---- Selection settings: ---- " << std::endl
 	    << " -------noise=threshBeforeAfterMin ";
   for (unsigned iN(0); iN<nNoise;++iN){
-    threshBeforeAfterMin[iN] = std::max(0.9,2.2*noise[iN]);
+    threshBeforeAfterMin[iN] = 0.5;//std::max(0.9,2.2*noise[iN]);
     std::cout << noise[iN] << "=" << threshBeforeAfterMin[iN] << " ";
   }
   std::cout << std::endl

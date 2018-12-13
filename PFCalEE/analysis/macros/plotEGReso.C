@@ -132,8 +132,8 @@ unsigned fitEnergy(TH1F *hist,
 			   tmpmean,
 			   hist->GetRMS());
 
-  std::cout << " Initial params: "  << fitResult->GetParameter(0) << " "<< fitResult->GetParameter(1) << " " << fitResult->GetParameter(2)
-  << std::endl;
+  //std::cout << " Initial params: "  << fitResult->GetParameter(0) << " "<< fitResult->GetParameter(1) << " " << fitResult->GetParameter(2)
+  //<< std::endl;
 
 
   int status = hist->Fit("fitResult","L0QEMI","",
@@ -273,7 +273,7 @@ TPad* plotCalibration(TGraphErrors *gr,TPad *pad,bool doRatio, TGraphErrors *grD
       grDelta->SetPoint(ip,x,((y-loffset)/lslope-x)/x);
       double err = gr->GetErrorY(ip)/lslope*1./x;
       grDelta->SetPointError(ip,0,err);
-      std::cout << "Calib " << ip << " Egen=" << x << " Erec=" << y << " delta=" << ((y-loffset)/lslope-x)/x << std::endl;
+      //std::cout << "Calib " << ip << " Egen=" << x << " Erec=" << y << " delta=" << ((y-loffset)/lslope-x)/x << std::endl;
     }
     grDelta->SetTitle("");
     grDelta->SetMinimum(-1.*range);
@@ -341,8 +341,8 @@ bool plotResolution(TGraphErrors *gr,TPad *pad,
     fitFunc->FixParameter(2,noise0);
   if (ipu>=2) fitFunc->FixParameter(1,const0);
   
-  std::cout << " Initial params: "  << fitFunc->GetParameter(0) << " "<< fitFunc->GetParameter(1) << " " << fitFunc->GetParameter(2)
-	    << std::endl;
+  //std::cout << " Initial params: "  << fitFunc->GetParameter(0) << " "<< fitFunc->GetParameter(1) << " " << fitFunc->GetParameter(2)
+  //<< std::endl;
 
   int status = gr->Fit(fitFunc,"BIME0");
 
