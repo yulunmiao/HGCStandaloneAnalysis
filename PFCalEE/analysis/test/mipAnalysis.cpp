@@ -108,15 +108,15 @@ int main(int argc, char** argv){//main
 
   const double neighRadius = 13;//mm for 6 closest neighbours
 
-  const double sizeFH = 0.01745;
-  const double sizeBH = 0.02182;
+  const double sizeFH = 2./360.;//0.01745;
+  const double sizeBH = 2./288.;//0.02182;
 
   //global threshold to reduce size of noise hits
   const double threshMin = 0.5;
   //save only central hits with 0.5 mips...
   const double threshCentralHitMin = 0.5;
   const double threshCentralHitMax = 5;
-  const double threshBeforeAfterMin = 0.9;
+  const double threshBeforeAfterMin = 0.5;
   const double threshBeforeAfterMax = 5;
   const double threshCentralNeighMax = 3;//3*sigma_noise...
 
@@ -219,8 +219,8 @@ int main(int argc, char** argv){//main
 
   //square map for BHCAL
   //square map for BHCAL
-  geomConv.initialiseSquareMap1(1.4,3.0,-1.*TMath::Pi(),1.*TMath::Pi(),sizeFH);//eta phi segmentation
-  geomConv.initialiseSquareMap2(1.4,3.0,-1.*TMath::Pi(),1.*TMath::Pi(),sizeBH);//eta phi segmentation
+  geomConv.initialiseSquareMap1(1.3,3.0,-1.*TMath::Pi(),1.*TMath::Pi(),sizeFH);//eta phi segmentation
+  geomConv.initialiseSquareMap2(1.3,3.0,-1.*TMath::Pi(),1.*TMath::Pi(),sizeBH);//eta phi segmentation
   std::vector<unsigned> granularity;
   granularity.resize(myDetector.nLayers(),1);
   geomConv.setGranularity(granularity);
@@ -381,7 +381,7 @@ int main(int argc, char** argv){//main
     for (unsigned iN(0); iN<nNoise;++iN){
       miphitvec[iN].clear();
       miphitvec[iN].reserve(nHitsInit);
-      std::cout << " vec pointer event loop " << iN << " " << &miphitvec[iN] << " size " <<  miphitvec[iN].size() << std::endl;
+      //std::cout << " vec pointer event loop " << iN << " " << &miphitvec[iN] << " size " <<  miphitvec[iN].size() << std::endl;
       hitEnergy[iN].clear();
       hitEnergy[iN].resize((*rechitvec).size(),-1);
     }
@@ -543,7 +543,7 @@ int main(int argc, char** argv){//main
 	    }
 
 	    if (fabs(dx)<0.01&&fabs(dy)<0.01) index = 0;
-	    if (isScint && iH%1000==0){
+	    if (debug && isScint && iH%1000==0){
 	      std::cout << " Hit " << iH << " l " << hitlayer 
 			<< " nl " << lHit.layer()
 			<< " dx " << dx << " dy " << dy 
@@ -597,7 +597,7 @@ int main(int argc, char** argv){//main
 	  pass[iN]=false;	  
 	}
 	if (iN==0 && pass[0]) passSel[1]++;
-	if (myHit[iN].getMaxEnergy(0)>threshCentralNeighMax*noise[iN]){
+	if (noise[iN]>0 && myHit[iN].getMaxEnergy(0)>threshCentralNeighMax*noise[iN]){
 	  pass[iN]=false;	  
 	} 
 	if (pass[iN]) {

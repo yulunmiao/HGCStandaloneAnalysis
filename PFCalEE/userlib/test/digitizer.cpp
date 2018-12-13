@@ -4,6 +4,10 @@
 #include<fstream>
 #include<sstream>
 #include <boost/algorithm/string.hpp>
+#include "boost/lexical_cast.hpp"
+#include "boost/program_options.hpp"
+#include "boost/format.hpp"
+#include "boost/function.hpp"
 
 #include "TFile.h"
 #include "TTree.h"
@@ -33,6 +37,9 @@
 #include "HGCSSGeometryConversion.hh"
 
 using namespace fastjet;
+
+using boost::lexical_cast;
+namespace po=boost::program_options;
 
 template <class T>
 void extractParameterFromStr(std::string aStr,T & vec){ 
@@ -303,47 +310,69 @@ void processHist(const unsigned iL,
 
 
 int main(int argc, char** argv){//main  
+
   const unsigned evtmin = 0;//100;
   /////////////////////////////////////////////////////////////
   //parameters
   /////////////////////////////////////////////////////////////
-  const unsigned nReqA = 11;
-  const unsigned nPar = static_cast<unsigned>(argc);
-  if (nPar < nReqA-1) {
-    std::cout << " Usage: "
-              << argv[0] << " <nEvts to process (0=all)>"<< std::endl
-              << "<full path to input file>"<< std::endl
-              << "<full path to output file>"<< std::endl
-              << "<granularities \"layer_i-layer_j:factor,layer:factor,...\">"<< std::endl
-              << "<noise (in Mips) \"layer_i-layer_j:factor,layer:factor,...\">"<< std::endl
-              << "<threshold (in ADC counts) \"layer_i-layer_j:factor,layer:factor,...\">"<< std::endl
-              << "<intercalib factor in %>" << std::endl
-	      << "<Number of si layers for TB setups>" << std::endl
-              << "<number of PU>" << std::endl
-              << "<full path to MinBias file if nPU!=0>" << std::endl
-              << std::endl
-              << "<optional: etamean (default=no eta sel)> "  << std::endl
-              << "<optional: deta (default=no eta sel)>" << std::endl
-              << "<optional: randomSeed (default=0)> "  << std::endl
-              << "<optional: debug (default=0)>" << std::endl
-              << "<optional: save sim hits (default=0)> " << std::endl
-              << "<optional: save digi hits (default=0)> " << std::endl
-              << "<optional: make jets (default=0)> " << std::endl
-              << std::endl;
-    return 1;
-  }
-
-  const unsigned pNevts = atoi(argv[1]);
-  std::string inFilePath = argv[2];
-  std::string outFilePath = argv[3];
-  std::string granulStr = argv[4];
-  std::string noiseStr = argv[5];
-  std::string threshStr = argv[6];
-  const unsigned interCalib = atoi(argv[7]);
-  const unsigned nSiLayers = atoi(argv[8]);
-  const unsigned nPU = atoi(argv[9]);
+  //Input output and config options
+  std::string cfg;
+  unsigned pNevts;
+  std::string inFilePath;
+  std::string outFilePath;
+  std::string granulStr;//granularities layer_i-layer_j:factor,layer:factor,...
+  std::string noiseStr;//noise (in Mips) layer_i-layer_j:factor,layer:factor,...
+  std::string threshStr;//threshold (in ADC counts) layer_i-layer_j:factor,layer:factor,...
+  unsigned interCalib;//intercalib factor in %
+  unsigned nSiLayers;//Number of si layers for TB setups
+  unsigned nPU;//number of PU to overlay
   std::string puPath;
-  if (nPar > nReqA-1) puPath = argv[10];
+  //for selecting a ring in eta - for noise studies.
+  double etamean;//ring etamean (default=0=no eta sel)
+  double deta;//ring +/- delta eta value
+  //remove noise hits everywhere to speed up processing, e.g. for muons.
+  bool addNoiseHits;
+
+  unsigned pSeed ;
+  unsigned debug;
+  bool pSaveDigis;
+  bool pSaveSims;
+  bool pMakeJets;
+ 
+  po::options_description preconfig("Configuration"); 
+  preconfig.add_options()("cfg,c",po::value<std::string>(&cfg)->required());
+  po::variables_map vm;
+  po::store(po::command_line_parser(argc, argv).options(preconfig).allow_unregistered().run(), vm);
+  po::notify(vm);
+  po::options_description config("Configuration");
+  config.add_options()
+    ("pNevts,n",      po::value<unsigned>(&pNevts)->default_value(0))
+    ("inFilePath,i",  po::value<std::string>(&inFilePath)->required())
+    ("outFilePath,o", po::value<std::string>(&outFilePath)->required())
+    ("granulStr",     po::value<std::string>(&granulStr)->required())
+    ("noiseStr",      po::value<std::string>(&noiseStr)->required())
+    ("threshStr",     po::value<std::string>(&threshStr)->required())
+    ("interCalib",    po::value<unsigned>(&interCalib)->default_value(3))
+    ("nSiLayers",     po::value<unsigned>(&nSiLayers)->default_value(2))
+    ("nPU",           po::value<unsigned>(&nPU)->default_value(0))
+    ("puPath",        po::value<std::string>(&puPath)->default_value(""))
+    ("etamean",       po::value<double>(&etamean)->default_value(0))
+    ("deta",          po::value<double>(&deta)->default_value(10))
+    ("addNoiseHits,a",po::value<bool>(&addNoiseHits)->default_value(true))
+    ("pSeed,s",       po::value<unsigned>(&pSeed)->default_value(0))
+    ("debug,d",       po::value<unsigned>(&debug)->default_value(0))
+    ("pSaveDigis",    po::value<bool>(&pSaveDigis)->default_value(false))
+    ("pSaveSims",     po::value<bool>(&pSaveSims)->default_value(false))
+    ("pMakeJets",     po::value<bool>(&pMakeJets)->default_value(false))
+    ;
+
+  po::store(po::command_line_parser(argc, argv).options(config).allow_unregistered().run(), vm);
+  po::store(po::parse_config_file<char>(cfg.c_str(), config), vm);
+  po::notify(vm);
+
+
+
+
   if (nPU>0 && puPath.size()==0) {
     std::cout << " -- Error! Missing full path to minbias file. Exiting." << std::endl;
     return 1;
@@ -366,34 +395,14 @@ int main(int argc, char** argv){//main
 	    << " -- pu file path: " << puPath << std::endl
     ;
 
-  double etamean;
-  double deta;
+
   bool doEtaSel = false;
-
-  //std::string pModel = "model2";
-  unsigned debug = 0;
-  unsigned pSeed = 0;
-  bool pSaveDigis = 0;
-  bool pSaveSims = 0;
-  bool pMakeJets = false;
-  //if (nPar > nReqA-1) pModel = argv[nReqA];
-  if (nPar > nReqA+1){
-    std::istringstream(argv[nReqA])>>etamean;
-    std::istringstream(argv[nReqA+1])>>deta;
-
+  if (etamean > 1.4){
     std::cout << " -- Eta selection: " << etamean << " +/- " << deta << std::endl;
     doEtaSel = true;
   }
-  if (etamean < 1.4) doEtaSel = false;
 
-  if (nPar > nReqA+2) std::istringstream(argv[nReqA+2])>>pSeed;
-  if (nPar > nReqA+3) {
-    debug = atoi(argv[nReqA+3]);
-    std::cout << " -- DEBUG output is set to " << debug << std::endl;
-  }
-  if (nPar > nReqA+4) std::istringstream(argv[nReqA+4])>>pSaveDigis;
-  if (nPar > nReqA+5) std::istringstream(argv[nReqA+5])>>pSaveSims;
-  if (nPar > nReqA+6) std::istringstream(argv[nReqA+6])>>pMakeJets;
+  if (debug>0) std::cout << " -- DEBUG output is set to " << debug << std::endl;
   
   //try to get model automatically
   //if (inFilePath.find("model0")!=inFilePath.npos) pModel = "model0";
@@ -418,6 +427,18 @@ int main(int argc, char** argv){//main
   // choose a jet definition
   double R = 0.5;
   JetDefinition jet_def(antikt_algorithm, R);
+
+  // define the outer edge of the scint layers
+  double outerScintBoundary [69] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				     0, 0, 0,
+				     1.474, 1.455, 1.437, 1.420, 1.403, 1.376, 1.351, 1.327, 
+				     1.306, 1.316, 1.332, 1.348, 1.364, 1.379, 1.395, 1.410};
+
+
 
   //////////////////////////////////////////////////////////
   //// End Hardcoded config ////////////////////////////////////
@@ -818,34 +839,27 @@ int main(int argc, char** argv){//main
       double etaBoundary = myDetector.etaBoundary(iL);
       //extend map to include all cells in eta=1.4-3 region
       //in eta ring if saving only one eta ring....
-      // define the outer edge of the scint layers
-      double outerScintBoundary [69] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-					 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-					 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-					 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-					 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-					 0, 0, 0,
-					 1.474, 1.455, 1.437, 1.420, 1.403, 1.376, 1.351, 1.327, 
-					 1.306, 1.316, 1.332, 1.348, 1.364, 1.379, 1.395, 1.410};
 
-      for (unsigned iB(1); iB<nBins+1;++iB){
-	std::pair<double,double> xy = geom[iB];
-	if (isScint) {
-	  HGCSSGeometryConversion::convertFromEtaPhi(xy,meanZpos);
+      if (addNoiseHits) {
+	for (unsigned iB(1); iB<nBins+1;++iB){
+	  std::pair<double,double> xy = geom[iB];
+	  if (isScint) {
+	    HGCSSGeometryConversion::convertFromEtaPhi(xy,meanZpos);
+	  }
+	  ROOT::Math::XYZPoint lpos = ROOT::Math::XYZPoint(xy.first,xy.second,meanZpos);
+	  double eta = lpos.eta();
+	  bool passeta = eta>1.3 && eta<3.0;
+	  if (doEtaSel) passeta = fabs(eta-etamean)<deta;
+	  else {
+	    if (isScint) passeta = eta>outerScintBoundary[iL] && eta<=etaBoundary; // only simulate noise within the physical bounds of the detector
+	    else passeta = eta>etaBoundary && eta<3.0;
+	  }
+	  if (!passeta) continue;
+	  MergeCells tmpCell;
+	  tmpCell.energy = 0;
+	  tmpCell.time = 0;
+	  histE.insert(std::pair<unsigned,MergeCells>(iB,tmpCell));
 	}
-	ROOT::Math::XYZPoint lpos = ROOT::Math::XYZPoint(xy.first,xy.second,meanZpos);
-	double eta = lpos.eta();
-	bool passeta = eta>1.4 && eta<3.0;
-	if (doEtaSel) passeta = fabs(eta-etamean)<deta;
-	else {
-	  if (isScint) passeta = eta>outerScintBoundary[iL] && eta<=etaBoundary; // only simulate noise within the physical bounds of the detector
-	  else passeta = eta>etaBoundary && eta<3.0;
-	}
-	if (!passeta) continue;
-	MergeCells tmpCell;
-	tmpCell.energy = 0;
-	tmpCell.time = 0;
-	histE.insert(std::pair<unsigned,MergeCells>(iB,tmpCell));
       }
 
       //std::cout << iL << " " << meanZpos << " map size " << histE.size() << std::endl;
