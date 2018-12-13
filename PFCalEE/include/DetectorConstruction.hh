@@ -75,6 +75,7 @@ public:
     v_HGCALEE_v8_air3=64,
     v_HGCALEE_v8_Cu=65,
     v_HGCALEE_v8_Cu_12=66,
+    v_HGCALEE_v8_air4=67,
     v_HGCALEE_TB=100,
     v_HGCALEE_TB_gap0=101,
     v_HGCALEE_TB_allW=102,

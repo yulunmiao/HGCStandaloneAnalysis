@@ -358,11 +358,11 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 	break;
       }
 
-    case v_HGCALEE_v8: case v_HGCAL_v8: case v_HGCALEE_v8_air3: case v_HGCALEE_v8_Cu: case v_HGCALEE_v8_Cu_12:
+    case v_HGCALEE_v8: case v_HGCAL_v8: case v_HGCALEE_v8_air3: case v_HGCALEE_v8_air4: case v_HGCALEE_v8_Cu: case v_HGCALEE_v8_Cu_12:
       {
 
 	G4cout << "[DetectorConstruction] starting v_HGCAL(EE)_v8"<< G4endl;
-	G4double airThick1 = (version_==v_HGCALEE_v8_air3)? 3*mm : 1.5*mm;
+	G4double airThick1 = (version_==v_HGCALEE_v8_air4)? 4*mm :(version_==v_HGCALEE_v8_air3)? 3*mm : 1.5*mm;
 	G4double airThick2 = 0*mm;
 	G4double cuExtra = 0*mm;
 	if (version_==v_HGCALEE_v8_Cu || version_==v_HGCALEE_v8_Cu_12){
@@ -1358,7 +1358,7 @@ void DetectorConstruction::UpdateCalorSize(){
     m_CalorSizeXY=2800*2;//use full length for making hexagon map
     m_minRadius = 150;
     m_maxRadius = m_CalorSizeXY;
-    if (version_ != v_HGCAL_v8 && version_ != v_HGCALEE_v8 && version_!=v_HGCALEE_v8_air3 && version_!=v_HGCALEE_v8_Cu && version_!=v_HGCALEE_v8_Cu_12) {
+    if (version_ != v_HGCAL_v8 && version_ != v_HGCALEE_v8 && version_!=v_HGCALEE_v8_air3 && version_!=v_HGCALEE_v8_air4 && version_!=v_HGCALEE_v8_Cu && version_!=v_HGCALEE_v8_Cu_12) {
       m_minEta.resize(m_caloStruct.size(),m_minEta0);
       m_maxEta.resize(m_caloStruct.size(),m_maxEta0);
     }
@@ -1369,7 +1369,7 @@ void DetectorConstruction::UpdateCalorSize(){
     m_z0pos = 2990;//3170;
     if (version_ == v_HGCALEE_v5 || version_ == v_HGCAL_v5 || version_ == v_HGCALEE_v5_gap4 || version_ == v_HGCAL_v5_gap4) m_z0pos = 2990;//3170;
     else if (version_ == v_HGCALEE_v6 || version_ == v_HGCAL_v6 || version_ == v_HGCALEE_v7 || version_ == v_HGCAL_v7 || version_ == v_HGCAL_v7_HF ||version_ == v_HGCALEE_v624 || version_ == v_HGCALEE_v618) m_z0pos = 3070;
-    else if (version_ == v_HGCALEE_v8 || version_ == v_HGCAL_v8 || version_==v_HGCALEE_v8_air3 || version_==v_HGCALEE_v8_Cu || version_==v_HGCALEE_v8_Cu_12) m_z0pos = 2980;
+    else if (version_ == v_HGCALEE_v8 || version_ == v_HGCAL_v8 || version_==v_HGCALEE_v8_air3 || version_==v_HGCALEE_v8_air4 || version_==v_HGCALEE_v8_Cu || version_==v_HGCALEE_v8_Cu_12) m_z0pos = 2980;
     else if(version_ == v_HGCALBE_v8) m_z0pos=3920.7; 
     if (doHF_){
       m_z0HF=11100;
@@ -1611,7 +1611,7 @@ void DetectorConstruction::buildSectorStack(const unsigned sectorNum,
       }//loop on elements
 
       //add support cone, for EE only, and only in full det version
-      if (i<28 && model_==DetectorConstruction::m_FULLSECTION && (version_ == v_HGCALEE_v6 || version_ ==  v_HGCAL_v6 || version_ == v_HGCALEE_v7 || version_ ==  v_HGCAL_v7 || version_ == v_HGCALEE_v8 || version_ ==  v_HGCAL_v8 || version_==v_HGCALEE_v8_air3 || version_==v_HGCALEE_v8_Cu || version_==v_HGCALEE_v8_Cu_12)) {
+      if (i<28 && model_==DetectorConstruction::m_FULLSECTION && (version_ == v_HGCALEE_v6 || version_ ==  v_HGCAL_v6 || version_ == v_HGCALEE_v7 || version_ ==  v_HGCAL_v7 || version_ == v_HGCALEE_v8 || version_ ==  v_HGCAL_v8 || version_==v_HGCALEE_v8_air3 || version_==v_HGCALEE_v8_air4 || version_==v_HGCALEE_v8_Cu || version_==v_HGCALEE_v8_Cu_12)) {
 	//remove support cone for moderator
 	//if (i==0) {
 	//totalThicknessLayer -= 100;
