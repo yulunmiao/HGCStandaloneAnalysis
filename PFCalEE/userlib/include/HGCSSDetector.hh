@@ -222,7 +222,76 @@ public:
       sensitiveZ_[26] = 283.15;
       sensitiveZ_[27] = 292.25;
     }
-     else if (versionNumber == 65){
+    else if (versionNumber == 67){
+      indices_[0] = 0;
+      indices_[1] = 10;
+      indices_[2] = 20;
+      indices_[3] = 28;
+      indices_[4] = indices_[3];
+      indices_[5] = indices_[3];
+      indices_[6] = indices_[3];
+
+      sensitiveZ_.resize(indices_[3],0);
+      sensitiveZ_[0] = 3200.5;
+      sensitiveZ_[1] = 3209.6;
+      sensitiveZ_[2] = 3229.9;
+      sensitiveZ_[3] = 3239;
+      sensitiveZ_[4] = 3259.3;
+      sensitiveZ_[5] = 3268.4;
+      sensitiveZ_[6] = 3288.7;
+      sensitiveZ_[7] = 3297.8;
+      sensitiveZ_[8] = 3318.1;
+      sensitiveZ_[9] = 3327.2;
+      sensitiveZ_[10] = 3347.5;
+      sensitiveZ_[11] = 3356.6;
+      sensitiveZ_[12] = 3376.9;
+      sensitiveZ_[13] = 3386;
+      sensitiveZ_[14] = 3406.3;
+      sensitiveZ_[15] = 3415.4;
+      sensitiveZ_[16] = 3435.7;
+      sensitiveZ_[17] = 3444.8;
+      sensitiveZ_[18] = 3465.1;
+      sensitiveZ_[19] = 3474.2;
+      sensitiveZ_[20] = 3494.5;
+      sensitiveZ_[21] = 3503.6;
+      sensitiveZ_[22] = 3523.9;
+      sensitiveZ_[23] = 3533;
+      sensitiveZ_[24] = 3553.3;
+      sensitiveZ_[25] = 3562.4;
+      sensitiveZ_[26] = 3582.7;
+      sensitiveZ_[27] = 3591.8;
+      if (model==3){
+	sensitiveZ_[0] = -85.55;
+	sensitiveZ_[1] = -76.45;
+	sensitiveZ_[2] = -56.15;
+	sensitiveZ_[3] = -47.05;
+	sensitiveZ_[4] = -26.75;
+	sensitiveZ_[5] = -17.65;
+	sensitiveZ_[6] = 2.65;
+	sensitiveZ_[7] = 11.75;
+	sensitiveZ_[8] = 32.05;
+	sensitiveZ_[9] = 41.15;
+	sensitiveZ_[10] = 61.45;
+	sensitiveZ_[11] = 70.55;
+	sensitiveZ_[12] = 90.85;
+	sensitiveZ_[13] = 99.95;
+	sensitiveZ_[14] = 120.25;
+	sensitiveZ_[15] = 129.35;
+	sensitiveZ_[16] = 149.65;
+	sensitiveZ_[17] = 158.75;
+	sensitiveZ_[18] = 179.05;
+	sensitiveZ_[19] = 188.15;
+	sensitiveZ_[20] = 208.45;
+	sensitiveZ_[21] = 217.55;
+	sensitiveZ_[22] = 237.85;
+	sensitiveZ_[23] = 246.95;
+	sensitiveZ_[24] = 267.25;
+	sensitiveZ_[25] = 276.35;
+	sensitiveZ_[26] = 296.65;
+	sensitiveZ_[27] = 305.75;
+      }
+    }
+    else if (versionNumber == 65){
       indices_[0] = 0;
       indices_[1] = 10;
       indices_[2] = 20;

@@ -227,6 +227,8 @@ private:
   std::vector<TH1F*> p_wgtESR;
   //std::vector<TH1F*> p_rawSubtractESR;
   std::vector<TH1F*> p_wgtSubtractESR;
+  std::vector<TH2F*> p_EsumfracvsdR;
+  std::vector<TH2F*> p_EvsdR;
 
 
 };

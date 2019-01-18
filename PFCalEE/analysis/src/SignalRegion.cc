@@ -20,11 +20,11 @@ SignalRegion::SignalRegion(const std::string inputFolder,
   g4trackID_ = g4trackID;
   doHexa_ = doHexa;
   nSR_ = 6;
-  radius_[0] = 13;
-  radius_[1] = 15;
-  radius_[2] = 20;
-  radius_[3] = 23;
-  radius_[4] = 26;
+  radius_[0] = 9;
+  radius_[1] = 14;
+  radius_[2] = 21;
+  radius_[3] = 25;
+  radius_[4] = 37;
   radius_[5] = 53;
   nevt_ = nevt;
   inputFolder_ = inputFolder;
@@ -479,7 +479,10 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
     double Esum = 0;
     for (unsigned iH(0); iH<lhitvec[iL].size(); ++iH){
       //std::cout << iL << " " << iH << " " << lhitvec[iL][iH].dR << std::endl;
+      //if (lhitvec[iL][iH].dR>0) 
       Esum += lhitvec[iL][iH].E;
+      p_EsumfracvsdR[iL]->Fill(lhitvec[iL][iH].dR,Esum/E100_[iL]);
+      p_EvsdR[iL]->Fill(lhitvec[iL][iH].dR,lhitvec[iL][iH].E);
       if (Esum<0.68*E100_[iL]) {
 	dR68_[iL] = lhitvec[iL][iH].dR;
 	E68_[iL] = Esum;
@@ -627,6 +630,20 @@ void SignalRegion::initialiseHistograms(){
     p_wgtESR.resize(nSR_,0);
     //p_rawSubtractESR.resize(nSR_,0);
     p_wgtSubtractESR.resize(nSR_,0);
+
+    p_EsumfracvsdR.resize(nLayers_,0);
+    p_EvsdR.resize(nLayers_,0);
+    for (unsigned iL(0); iL<nLayers_;++iL){
+      label.str("");
+      label << "EsumfracvsdR_" << iL;
+      p_EsumfracvsdR[iL] = new TH2F(("p_"+label.str()).c_str(),";dR (mm);Esum/Etot;events", 2000,0,200,1000,0,1);
+      p_EsumfracvsdR[iL]->StatOverflows();
+      label.str("");
+      label << "EvsdR_" << iL;
+      p_EvsdR[iL] = new TH2F(("p_"+label.str()).c_str(),";dR (mm);Ehit (mips);events", 2000,0,200,5000,0,5000);
+      p_EvsdR[iL]->StatOverflows();   
+    }
+
 
     for (unsigned iSR(0);iSR<nSR_;++iSR){
       //label.str("");

@@ -29,10 +29,15 @@ parser.add_option('-e', '--eos'         ,    dest='eos'                , help='e
 parser.add_option('-E', '--eosin'       ,    dest='eosin'              , help='eos path to read input root file from EOS',  default='')
 parser.add_option('-g', '--gun'         ,    action="store_true",  dest='dogun'              , help='use particle gun.')
 parser.add_option('-S', '--no-submit'   ,    action="store_true",  dest='nosubmit'           , help='Do not submit batch job.')
+parser.add_option(      '--enList'      ,    dest='enList'              , help='E_T list to use with gun [%default]', default='5,10,20,30,40,60,80,100,150,200')
+parser.add_option(      '--nPuVtx'      ,    dest='nPuVtx'             , help='pileup scenarios (csv) [%h]',   default='0')
+
+
 (opt, args) = parser.parse_args()
 
 redofit=1
 #label=''
+labeldir='200u'
 label='200u'
 #label='300u'
 #label='Large'
@@ -48,13 +53,9 @@ workdir='/afs/cern.ch/work/a/amagnan/PFCalEEAna/'
 
 enlist=[0]
 if opt.dogun : 
-    #enlist=[3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200]
-    #enlist=[3,5,10,30,50,70,100,200]
-    #enlist=[10,20,40,60,80,100,150,200]
-    #enlist=[50]
-    #enlist=[3,5,7,10,30,50,70,90,125,150,175,200]
-    #enlist=[5,10,20,30]#,40,60,80,100,150,200]
-    enlist=[20]
+    #enlist=[5,10,20,30,40,60,80,100,150,200]
+    #enlist=[20]
+    enlist=[float(x) for x in opt.enList.split(',')]
 
 #alphaset=[0.361,0.297,0.244,0.200,0.164,0.134,0.110]
 #alphaset=[0.361,0.244,0.164,0.110]
@@ -62,7 +63,9 @@ alphaset=[2.000]
 #alphaset=[1.700,2.000]
 #alphaset=[0.297,0.244,0.200,0.134,0.110]
 #nPuVtxset=[0,140]
-nPuVtxset=[0]
+#nPuVtxset=[0]
+nPuVtxset=[int(x) for x in opt.nPuVtx.split(',')]
+
 #etaset=[17,19,21,23,25,27,29]
 #etaset=[17,21,25,29]
 etaset=[20]
@@ -97,8 +100,8 @@ for nPuVtx in nPuVtxset :
                 
             #too many files produced: make local output then copy back to afs
             #outDir='%s/%s/git%s/version%d/%s/200um/eta%s_et%s_pu%s'%(os.getcwd(),opt.out,opt.gittag,opt.version,opt.datatype,eta,et,nPuVtx)
-                outDir='%s/git%s/version%d/model%d/%s/%s/eta%s_et%s_%s'%(opt.out,opt.gittag,opt.version,opt.model,opt.datatype,label,eta,et,suffix)
-                if opt.phi!=0.5 : outDir='%s/git%s/version%d/model%d/%s/phi_%3.3fpi/eta%s_et%s_%s'%(opt.out,opt.gittag,opt.version,opt.model,opt.datatype,opt.phi,eta,et,suffix)
+                outDir='%s/git%s/version%d/model%d/%s/%s/eta%s_et%d_%s'%(opt.out,opt.gittag,opt.version,opt.model,opt.datatype,labeldir,eta,et,suffix)
+                if opt.phi!=0.5 : outDir='%s/git%s/version%d/model%d/%s/phi_%3.3fpi/eta%s_et%d_%s'%(opt.out,opt.gittag,opt.version,opt.model,opt.datatype,opt.phi,eta,et,suffix)
                 eosDir='%s/git%s/%s'%(opt.eos,opt.gittag,opt.datatype)
                 eosDirIn='%s/git%s/%s'%(opt.eosin,opt.gittag,opt.datatype)
 

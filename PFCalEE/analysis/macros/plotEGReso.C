@@ -506,7 +506,8 @@ bool retrievePuSigma(TTree *atree, TTree *atreePu,
 		  << " PU E = " << puE[iSR]
 		  << std::endl;
       }
-
+      //cut outliers to have correct mean
+      if (fabs(puE[iSR]-E[iSR])/calib[iSR]>20) continue;
       p_sigma[iSR]->Fill((puE[iSR]-E[iSR])/calib[iSR]);
       p_EvspuE[iSR]->Fill(puE[iSR]/calib[iSR],E[iSR]/calib[iSR]);
     }//loop on SR
@@ -537,16 +538,15 @@ int plotEGReso(){//main
   const unsigned nIC = 1;
   const unsigned ICval[nIC] = {3};//0,1,2,3,4,5,10,15,20,50};
 
-  const unsigned nPu = 2;//4;
-  unsigned pu[nPu] = {0,0};//,140,200};
+  const unsigned nPu = 3;//4;
+  unsigned pu[nPu] = {0,0,200};//,140,200};
 
   const unsigned nS = 1;
   std::string scenario[nS] = {
-    "model3/gamma/200u/"
+    //"model2/gamma/",
+    "model2/gamma/200u/"
   };
 
-  std::string foutname = "PLOTS/PuSubtraction.root";
-  TFile *fout = TFile::Open(foutname.c_str(),"RECREATE");
 
   const unsigned neta = 1;
   unsigned eta[neta]={20};
@@ -563,18 +563,25 @@ int plotEGReso(){//main
   TString pSuffix = doBackLeakCor?"backLeakCor":"";
 
   
-  const unsigned nV = 4;
-  TString version[nV] = {"60","64","65","66"};//,"0"};
+  const unsigned nV = 1;
+  TString version[nV] = {"67"};//,"64","65","66"};//,"0"};
   //TString version[nV] = {"65","66"};//,"0"};
+
+  std::ostringstream foutname;
+  foutname << "PLOTS/PuSubtraction_v" << version[0] << ".root";
+  TFile *fout = TFile::Open(foutname.str().c_str(),"RECREATE");
   
   unsigned nLayers = 28;
   const unsigned nSR = 6;
-  const double radius[nSR] = {13,15,20,23,26,53};
+  //const double radius[nSR] = {13,15,20,23,26,53};
+  const double radius[nSR] = {9,14,21,25,37,53};
   double noise100[nSR];
   double noise200[nSR];
   double noise300[nSR];
-  unsigned ncellsSmall[nSR] = {7,13,19,31,37,151};
-  unsigned ncellsLarge[nSR] = {7,7,13,19,19,85};
+  //unsigned ncellsSmall[nSR] = {7,13,19,31,37,151};
+  //unsigned ncellsLarge[nSR] = {7,7,13,19,19,85};
+  unsigned ncellsSmall[nSR] = {7,13,19,37,61,151};
+  unsigned ncellsLarge[nSR] = {1,7,13,19,37,85};
   double fitQual[nSR];
   double srval[nSR];
   double srerr[nSR];
@@ -659,10 +666,12 @@ int plotEGReso(){//main
   for (unsigned ic(0);ic<nIC;++ic){//loop on intercalib
     
     for (unsigned iV(0); iV<nV;++iV){//loop on versions
-      if (iV==nV-1) nLayers = 24;
+      //if (iV==nV-1) nLayers = 24;
 
       for (unsigned iS(0); iS<nS;++iS){//loop on scenarios
-	TString plotDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalTDR/gittestCu/version"+version[iV]+"/"+scenario[iS]+"/";
+	TString inputDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalTDR/gitV08-05-00/version"+version[iV]+"/"+scenario[iS]+"/";
+	//TString inputDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalTDR/gittestV8/version"+version[iV]+"/"+scenario[iS]+"/";
+	TString plotDir = inputDir+"TDR/";
 
 	TFile *fcalib;
 	std::ostringstream label;
@@ -698,12 +707,12 @@ int plotEGReso(){//main
 	      skip[iE] = false;
 	      TFile *inputFile = 0;
 	      std::ostringstream linputStr;
-	      linputStr << plotDir ;
+	      linputStr << inputDir ;
 	      //if (ipu>=2 && eta[ieta]==17) linputStr << "300u/";
 	      //else if (ipu>=2 && eta[ieta]==20) linputStr << "200u/";
 	      linputStr << "eta" << eta[ieta] << "_et" << genEnAll[iE];// << "_pu" << pu[ipu];
 	      if (ipu>=2) linputStr << "_Pu" << pu[ipu];
-	      linputStr << "_IC" << ICval[ic] << "_Si2";
+	      linputStr << "_IC" << ICval[ic] ;//<< "_Si2";
 	      if (!processNoFitFiles) linputStr << ".root";
 	      else linputStr << "_nofit.root";
 	      inputFile = TFile::Open(linputStr.str().c_str());
@@ -800,13 +809,13 @@ int plotEGReso(){//main
 	      
 	      TFile *inputFile = 0;
 	      std::ostringstream linputStr;
-	      linputStr << plotDir ;
+	      linputStr << inputDir ;
 	      //if (ipu>=2 && eta[ieta]==17) linputStr << "300u/";
 	      //else if (ipu>=2 && eta[ieta]==20) linputStr << "200u/";
 	      linputStr << "eta" << eta[ieta] << "_et" << genEn[iE];
 	      // << "_pu" << pu[ipu];
 	      if (ipu>=2) linputStr << "_Pu" << pu[ipu];
-	      linputStr << "_IC" << ICval[ic] << "_Si2";
+	      linputStr << "_IC" << ICval[ic] ;//<< "_Si2";
 	      if (!processNoFitFiles) linputStr << ".root" ;
 	      else linputStr << "_nofit.root";
 	      inputFile = TFile::Open(linputStr.str().c_str());
@@ -913,13 +922,23 @@ int plotEGReso(){//main
 		}
 
 		std::ostringstream lcut;
-		lcut << lName.str() << ">0.7*";
-		lcut << E(genEn[iE],eta[ieta]);
+		if (iSR>0){
+		  lcut << lName.str() << ">0.7*";
+		  lcut << E(genEn[iE],eta[ieta]);
+		}
 
 		ltree[ieta][ipu][oldIdx[iE]]->Draw(lName.str().c_str(),lcut.str().c_str(),"");
+		if (!gPad->GetPrimitive("htemp")) {
+		  std::cout << " -- Problem with tree Draw for "
+			    <<  lName.str() << " cut " << lcut.str()
+			    << " -> not drawn. Exiting..." << std::endl;
+		  return 1;
+		}
 		lName.str("");
 		lName << "energy" << genEn[iE] << "_SR" << iSR ;
 		p_Ereco[iE][iSR] = (TH1F*)(gPad->GetPrimitive("htemp"))->Clone(lName.str().c_str()); // 1D
+
+
 		//if (iSR==7) p_Ereco[iE][iSR] = (TH1F*)gDirectory->Get("p_wgtEtotal");
 		if (!p_Ereco[iE][iSR]){
 		  std::cout << " -- ERROR, pointer for histogram " << lName.str() << " is null." << std::endl;
@@ -1070,7 +1089,7 @@ int plotEGReso(){//main
 
 	      //limit range to get more realistic RMS ?
 	      //if (pu[ipu]!=0 && iSR<(nSR-1)) p_sigma[iSR]->GetXaxis()->SetRangeUser(-5,15);
-	      double noise0 = pu[ipu]==0? (eta[ieta]==24?noise100[iSR]:eta[ieta]==20?noise200[iSR]:eta[ieta]==17?noise300[iSR]:0) : p_sigma[iSR]->GetRMS();
+	      double noise0 = pu[ipu]==0? (eta[ieta]==24?noise100[iSR]:eta[ieta]==20?noise200[iSR]:eta[ieta]==17?noise300[iSR]:0) : fabs(p_sigma[iSR]->GetRMS());
 	   
 
 	      bool success = plotResolution(resoRecoFit[ipu][ieta][iSR],lpad,

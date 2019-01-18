@@ -80,6 +80,11 @@ elif opt.version==63:
         INPATHPU="root://eoscms//eos/cms/store/cmst3/group/hgcal/HGCalTDR/gittestV8/MinBiasSmall/"
     else :
         INPATHPU="root://eoscms//eos/cms/store/group/dpg_hgcal/comm_hgcal/amagnan/HGCalTDR/gitV08-01-00/MinBiasLarge/"
+elif opt.version==67:
+    if (label==''):
+        INPATHPU="root://eoscms//eos/cms/store/group/dpg_hgcal/comm_hgcal/amagnan/HGCalTDR/gitV08-05-00/MinBiasSmall/"
+    else :
+        INPATHPU="root://eoscms//eos/cms/store/group/dpg_hgcal/comm_hgcal/amagnan/HGCalTDR/gitV08-05-00/MinBiasLarge/"
 
 if opt.inPathPU:
     INPATHPU='root://eoscms//eos/cms/%s'%opt.inPathPU
@@ -165,10 +170,10 @@ elif (opt.version==39):
     granularity='0-8:4,9-20:8'
     noise='0-8:0.14,9-20:0.2'
     threshold='0-20:5'
-elif (opt.version==60 or opt.version==64 or opt.version==65):
+elif (opt.version==60 or opt.version==64 or opt.version==65 or opt.version==67):
     granularity='0-27:1'
-    noise='0-27:0.12'
-    threshold='0-27:5'
+    noise='0-27:0.'
+    threshold='0-27:0'
 elif (opt.version==66):
     granularity='0-23:1'
     noise='0-23:0.12'
