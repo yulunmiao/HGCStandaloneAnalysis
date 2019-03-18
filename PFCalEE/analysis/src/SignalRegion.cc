@@ -277,6 +277,7 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
       std::cout << " - Layer " << iL << " wdEdx=" << ssvec[iL].voldEdx()  << " Wx0=" << ssvec[iL].volX0trans() << " W valeri scheme " << absweight_[iL] << std::endl;
     }
     //absweight_[0] = 20.3628;
+    absweight_[27] = 13.0629;
     //absweight_[nLayers_-1] = 13.0629;
     
     firstEvent_=false;

@@ -260,6 +260,7 @@ int main(int argc, char** argv){//main
   //myDetector.buildDetector(versionNumber,concept,isCaliceHcal);
 
   const unsigned nLayers = myDetector.nLayers();
+  const unsigned nEcalLayers = 28;
   const unsigned nSections = myDetector.nSections();
 
   std::cout << " -- N layers = " << nLayers << std::endl
@@ -337,7 +338,7 @@ int main(int argc, char** argv){//main
   }
 
 
-  SignalRegion SignalEnergy(outFolder, nLayers, zpos, nEvts, geomConv, puDensity,applyPuMixFix,versionNumber,doHexa,g4trackID);
+  SignalRegion SignalEnergy(outFolder, nEcalLayers, zpos, nEvts, geomConv, puDensity,applyPuMixFix,versionNumber,doHexa,g4trackID);
   SignalEnergy.initialise(outputFile,"Energies");
 
   std::cout << " -- sigenergy initialisation done." << std::endl;

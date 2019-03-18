@@ -468,6 +468,29 @@ int main(int argc, char** argv){//main
   }
 
   std::cout << "...Done." <<  std::endl;
+  /////////////////////////////////////////////////////////////
+  //input tree
+  /////////////////////////////////////////////////////////////
+
+  HGCSSInfo * info=(HGCSSInfo*)inputFile->Get("Info");
+
+  assert(info);
+  //info->Print();
+
+  const unsigned versionNumber = info->version();
+  const unsigned model = info->model();
+  //CAMM-dirty fix
+  //const unsigned shape = inputStr.find("Diamond")!=inputStr.npos? 2: inputStr.find("Triangle")!=inputStr.npos?3 :1 ;//info->shape();
+  const unsigned shape = info->shape();
+  //const double cellSize = 6.496345;//info->cellSize();
+  //const double calorSizeXY = 2800*2;//info->calorSizeXY();
+  const double cellSize = info->cellSize();
+  const double calorSizeXY = info->calorSizeXY();
+
+  bool isTBsetup = (model != 2);
+  if (isTBsetup) std::cout << " -- Number of Si layers: " << nSiLayers << std::endl;
+  else std::cout << " -- Number of Si layers ignored: hardcoded as a function of radius in HGCSSGeometryConversion class." << std::endl;
+
 
   /////////////////////////////////////////////////////////////
   //  //input PU hits
@@ -492,8 +515,11 @@ int main(int argc, char** argv){//main
     while ((file=(TSystemFile*)next())) {
       if( file->IsDirectory() ) continue;
       TString fname( file->GetName() );
+      TString lversion = "version";
+      lversion += versionNumber;
       if( !fname.Contains(".root") ) continue;
       if( !fname.Contains("HGcal") ) continue;
+      if( !fname.Contains(lversion) ) continue;
       if(  fname.Contains("Digi") ) continue;
       TString puInput(localMountPuPath+"/"+fname);
       if (puInput==inFilePath.c_str()) {
@@ -510,28 +536,8 @@ int main(int argc, char** argv){//main
     std::cout << "- Number of PU events available: " << nPuEvts  << std::endl;
   }
   /////////////////////////////////////////////////////////////
-  //input tree
+  //input signal tree
   /////////////////////////////////////////////////////////////
-
-  HGCSSInfo * info=(HGCSSInfo*)inputFile->Get("Info");
-
-  assert(info);
-  //info->Print();
-
-  const unsigned versionNumber = info->version();
-  const unsigned model = info->model();
-  //CAMM-dirty fix
-  //const unsigned shape = inputStr.find("Diamond")!=inputStr.npos? 2: inputStr.find("Triangle")!=inputStr.npos?3 :1 ;//info->shape();
-  const unsigned shape = info->shape();
-  //const double cellSize = 6.496345;//info->cellSize();
-  //const double calorSizeXY = 2800*2;//info->calorSizeXY();
-  const double cellSize = info->cellSize();
-  const double calorSizeXY = info->calorSizeXY();
-
-  bool isTBsetup = (model != 2);
-  if (isTBsetup) std::cout << " -- Number of Si layers: " << nSiLayers << std::endl;
-  else std::cout << " -- Number of Si layers ignored: hardcoded as a function of radius in HGCSSGeometryConversion class." << std::endl;
-
 
   HGCSSEvent * event=0;
   std::vector<HGCSSSimHit> * hitvec = 0;

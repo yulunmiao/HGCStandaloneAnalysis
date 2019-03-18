@@ -80,7 +80,7 @@ elif opt.version==63:
         INPATHPU="root://eoscms//eos/cms/store/cmst3/group/hgcal/HGCalTDR/gittestV8/MinBiasSmall/"
     else :
         INPATHPU="root://eoscms//eos/cms/store/group/dpg_hgcal/comm_hgcal/amagnan/HGCalTDR/gitV08-01-00/MinBiasLarge/"
-elif opt.version==67:
+elif opt.version==67 or opt.version==60:
     if (label==''):
         INPATHPU="root://eoscms//eos/cms/store/group/dpg_hgcal/comm_hgcal/amagnan/HGCalTDR/gitV08-05-00/MinBiasSmall/"
     else :
@@ -95,7 +95,7 @@ nPuVtxlist=[int(x) for x in opt.nPuVtx.split(',')]
 
 #to turn off add noise only hits: can be slow for muon files for example. 
 #Default should be true.
-addNoise='false'
+addNoise='true'
 
 #in %
 interCalibList=[3];#0,1,2,3,4,5,10,15,20,50]
@@ -172,8 +172,8 @@ elif (opt.version==39):
     threshold='0-20:5'
 elif (opt.version==60 or opt.version==64 or opt.version==65 or opt.version==67):
     granularity='0-27:1'
-    noise='0-27:0.'
-    threshold='0-27:0'
+    noise='0-27:0.12'
+    threshold='0-27:5'
 elif (opt.version==66):
     granularity='0-23:1'
     noise='0-23:0.12'

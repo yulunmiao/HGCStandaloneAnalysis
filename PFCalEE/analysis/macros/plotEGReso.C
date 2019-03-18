@@ -113,7 +113,7 @@ unsigned fitEnergy(TH1F *hist,
   double sigmaeff = effSigmaMacro(hist);
 
   double nRMSm = isr<1? 1 : 2;
-  double nRMSp = 2;
+  double nRMSp = 2.2;
   
   TF1 *fitResult = new TF1("fitResult","[0]*TMath::Gaus(x,[1],[2],0)",hist->GetXaxis()->GetXmin(),hist->GetXaxis()->GetXmax());
   double tmpmean = hist->GetXaxis()->GetBinCenter(hist->GetMaximumBin());
@@ -538,8 +538,8 @@ int plotEGReso(){//main
   const unsigned nIC = 1;
   const unsigned ICval[nIC] = {3};//0,1,2,3,4,5,10,15,20,50};
 
-  const unsigned nPu = 3;//4;
-  unsigned pu[nPu] = {0,0,200};//,140,200};
+  const unsigned nPu = 2;//4;
+  unsigned pu[nPu] = {0,0};//,140,200};
 
   const unsigned nS = 1;
   std::string scenario[nS] = {
@@ -564,7 +564,7 @@ int plotEGReso(){//main
 
   
   const unsigned nV = 1;
-  TString version[nV] = {"67"};//,"64","65","66"};//,"0"};
+  TString version[nV] = {"67"};//,"65","66"};//,"0"};
   //TString version[nV] = {"65","66"};//,"0"};
 
   std::ostringstream foutname;
@@ -669,8 +669,9 @@ int plotEGReso(){//main
       //if (iV==nV-1) nLayers = 24;
 
       for (unsigned iS(0); iS<nS;++iS){//loop on scenarios
-	TString inputDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalTDR/gitV08-05-00/version"+version[iV]+"/"+scenario[iS]+"/";
+	TString inputDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalTDR/Bis/gitV08-05-00/version"+version[iV]+"/"+scenario[iS]+"/";
 	//TString inputDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalTDR/gittestV8/version"+version[iV]+"/"+scenario[iS]+"/";
+	//TString inputDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalTDR/gittestCu/version"+version[iV]+"/"+scenario[iS]+"/";
 	TString plotDir = inputDir+"TDR/";
 
 	TFile *fcalib;
@@ -712,7 +713,7 @@ int plotEGReso(){//main
 	      //else if (ipu>=2 && eta[ieta]==20) linputStr << "200u/";
 	      linputStr << "eta" << eta[ieta] << "_et" << genEnAll[iE];// << "_pu" << pu[ipu];
 	      if (ipu>=2) linputStr << "_Pu" << pu[ipu];
-	      linputStr << "_IC" << ICval[ic] ;//<< "_Si2";
+	      linputStr << "_IC" << ICval[ic];// << "_Si2";
 	      if (!processNoFitFiles) linputStr << ".root";
 	      else linputStr << "_nofit.root";
 	      inputFile = TFile::Open(linputStr.str().c_str());
@@ -815,7 +816,7 @@ int plotEGReso(){//main
 	      linputStr << "eta" << eta[ieta] << "_et" << genEn[iE];
 	      // << "_pu" << pu[ipu];
 	      if (ipu>=2) linputStr << "_Pu" << pu[ipu];
-	      linputStr << "_IC" << ICval[ic] ;//<< "_Si2";
+	      linputStr << "_IC" << ICval[ic];// << "_Si2";
 	      if (!processNoFitFiles) linputStr << ".root" ;
 	      else linputStr << "_nofit.root";
 	      inputFile = TFile::Open(linputStr.str().c_str());
