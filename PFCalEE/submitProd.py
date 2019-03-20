@@ -108,7 +108,11 @@ for et in enlist :
     #wrapper
     scriptFile = open('%s/runJob.sh'%(outDir), 'w')
     scriptFile.write('#!/bin/bash\n')
-    scriptFile.write('source %s/g4env.sh\n'%(os.getcwd()))
+    scriptFile.write('localdir=`pwd`\n')
+    scriptFile.write('export HOME=%s\n'%(os.environ['HOME']))
+    scriptFile.write('cd %s/\n'%(os.getcwd()))
+    scriptFile.write('source g4env.sh\n')
+    scriptFile.write('cd $localdir\n')
     #scriptFile.write('cd %s\n'%(outDir))
 
 
@@ -123,8 +127,10 @@ for et in enlist :
     if opt.phi!=0.5 : outTag='%s_phi%3.3fpi'%(outTag,opt.phi) 
     if (opt.run>=0) : outTag='%s_run%d'%(outTag,opt.run)
     scriptFile.write('mv PFcal.root HGcal_%s.root\n'%(outTag))
-    scriptFile.write('localdir=`pwd`\n')
     scriptFile.write('echo "--Local directory is " $localdir >> g4.log\n')
+    scriptFile.write('echo home=$HOME >> g4.log\n')
+    scriptFile.write('echo path=$PATH >> g4.log\n')
+    scriptFile.write('echo ldlibpath=$LD_LIBRARY_PATH >> g4.log\n')
     scriptFile.write('ls -ltrh * >> g4.log\n')
     if len(opt.eos)>0:
         #scriptFile.write('grep "alias eos=" /afs/cern.ch/project/eos/installation/cms/etc/setup.sh | sed "s/alias /export my/" > eosenv.sh\n')
@@ -182,7 +188,17 @@ for et in enlist :
     g4Macro.close()
     
     #submit
+    condorFile = open('%s/condorSubmitProd.sub'%(outDir), 'w')
+    condorFile.write('universe = vanilla\n')
+    condorFile.write('+JobFlavour = "nextweek"\n')
+    condorFile.write('Executable = %s/runJob.sh\n'%outDir)
+    condorFile.write('Output = %s/condorTree.out\n'%outDir)
+    condorFile.write('Error = %s/condorTree.err\n'%outDir)
+    condorFile.write('Log = %s/condorTree.log\n'%outDir)
+    condorFile.write('Queue 1\n')
+    condorFile.close()
+
     os.system('chmod u+rwx %s/runJob.sh'%outDir)
-    if opt.nosubmit : os.system('echo bsub -q %s %s/runJob.sh'%(myqueue,outDir)) 
-    else: os.system("bsub -q %s \'%s/runJob.sh\'"%(myqueue,outDir))
+    if opt.nosubmit : os.system('echo condor_submit %s/condorSubmitProd.sub'%(outDir)) 
+    else: os.system('condor_submit %s/condorSubmitProd.sub'%(outDir))
 

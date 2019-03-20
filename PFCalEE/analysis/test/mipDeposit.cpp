@@ -33,10 +33,11 @@
 int main(int argc, char** argv){//main
 
   const unsigned nPar = static_cast<unsigned>(argc);
-  if (nPar < 5) {
+  if (nPar < 6) {
     std::cout << " Usage: "
               << argv[0] << " <nEvts to process (0=all)>"
 	      << " <eta value: 1.600,2.000,2.850>"
+	      << " <et value: 0, 1>"
 	      << " <output dir>"
 	      << " <BON ? 1>" << std::endl;
     return 1;
@@ -44,22 +45,23 @@ int main(int argc, char** argv){//main
   
   unsigned nEvts = atoi(argv[1]);
   std::string etaval = argv[2];
-  std::string plotBase = argv[3];
-  bool bfieldON = atoi(argv[4]);
+  std::string etval = argv[3];
+  std::string plotBase = argv[4];
+  bool bfieldON = atoi(argv[5]);
 
   std::string inFilePath = "root://eoscms//eos/cms/store/group/dpg_hgcal/comm_hgcal/amagnan/HGCalTDR/gitV08-02-00/mu-/HGcal__version63_model2_";
   if (bfieldON) inFilePath += "BON";
   else inFilePath += "BOFF";
   //if (etaval=="1.600") inFilePath += "_et20_eta";
   //else inFilePath += "_et13_eta";
-  inFilePath += "_et0_eta";
+  inFilePath += "_et";
 
   double expMPV = etaval=="1.600" ? 0.09 : etaval=="2.000"? 0.055 : 0.03;
 
   const unsigned nSi = etaval=="1.600" ? 3 : etaval=="2.000"? 2 : 1;
   const unsigned firstLayerScint = 52;
 
-  std::string outFilePath = plotBase+"/mipcalib_E0GeV_eta"+etaval;
+  std::string outFilePath = plotBase+"/mipcalib_Et"+etval+"GeV_eta"+etaval;
   if (bfieldON) outFilePath += "BON";
   outFilePath += ".root";
 
@@ -67,7 +69,7 @@ int main(int argc, char** argv){//main
   TFile * mipFile = 0;
   for (unsigned i(0);i<10;++i){
     std::ostringstream lstrrec;
-    lstrrec << inFilePath << etaval << "_run" << i << ".root";
+    lstrrec << inFilePath << etval << "_eta" << etaval << "_run" << i << ".root";
     if (!testInputFile(lstrrec.str(),mipFile)) continue;
     lTree->AddFile(lstrrec.str().c_str());
   }
@@ -152,11 +154,14 @@ int main(int argc, char** argv){//main
     
     for (unsigned iH(0); iH<(*simhitvec).size(); ++iH){//loop on hits
       HGCSSSimHit lHit = (*simhitvec)[iH];
+      double energy = lHit.energy();
+      if (energy<=0) continue;
       unsigned layer = lHit.layer();
       if (layer < firstLayerScint && nHitsperLayer[layer]!=nSi) continue;
       if (layer > firstLayerScint && nHitsperLayer[layer]!=1) continue;
       if (lHit.silayer() >= nSi) continue;
       EperLayer[layer] += lHit.energy();
+      std::cout << " -- hit " << iH << " layer " << lHit.layer() << " siLayer " << lHit.silayer() << " E " << lHit.energy() << " cellId " << lHit.cellid() << " Elayer = " <<  EperLayer[layer] << std::endl;
     }
 
     for (unsigned iL(0); iL<nLayers; ++iL){
