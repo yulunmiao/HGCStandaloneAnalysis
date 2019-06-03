@@ -95,7 +95,7 @@ nPuVtxlist=[int(x) for x in opt.nPuVtx.split(',')]
 
 #to turn off add noise only hits: can be slow for muon files for example. 
 #Default should be true.
-addNoise='true'
+addNoise='false'
 
 #in %
 interCalibList=[3];#0,1,2,3,4,5,10,15,20,50]
@@ -241,20 +241,28 @@ for nPuVtx in nPuVtxlist:
             #wrapper
             scriptFile = open('%s/runDigiJob%s.sh'%(outDir,suffix), 'w')
             scriptFile.write('#!/bin/bash\n')
-            scriptFile.write('source %s/../g4env.sh\n'%(os.getcwd()))
+            scriptFile.write('localdir=`pwd`\n')
+            scriptFile.write('export HOME=%s\n'%(os.environ['HOME']))
+            scriptFile.write('cd %s/../\n'%(os.getcwd()))
+            scriptFile.write('source g4env.sh\n')
+            scriptFile.write('echo $PATH\n')
+            scriptFile.write('cd $localdir\n')
             #scriptFile.write('cd %s\n'%(outDir))
+
             outTag='_version%d_model%d_%s'%(opt.version,opt.model,bval)
             if en>0 : outTag='%s_et%d'%(outTag,en)
             if opt.alpha>0 : outTag='%s_eta%3.3f'%(outTag,opt.alpha) 
             if opt.phi!=0.5 : outTag='%s_phi%3.3fpi'%(outTag,opt.phi) 
             if (opt.run>=0) : outTag='%s_run%d'%(outTag,opt.run)
-            scriptFile.write('localdir=`pwd`\n')
             if (opt.etamean>1.3):
                 scriptFile.write('%s/bin/digitizer -c %s/DigiConfig.cfg -n %d -i %s/HGcal_%s.root -o $localdir/ --granulStr=%s --noiseStr=%s --threshStr=%s --interCalib=%d --nSiLayers=%d --nPU=%d --puPath=%s --etamean=%3.2f --deta=%3.2f -a %s | tee %s\n'%(os.getcwd(),os.getcwd(),opt.nevts,eosDirIn,outTag,granularity,noise,threshold,interCalib,nSiLayers,nPuVtx,INPATHPU,opt.etamean,opt.deta,addNoise,outlog))
             else:
                 scriptFile.write('%s/bin/digitizer -c %s/DigiConfig.cfg -n %d -i %s/HGcal_%s.root -o $localdir/ --granulStr=%s --noiseStr=%s --threshStr=%s --interCalib=%d --nSiLayers=%d --nPU=%d --puPath=%s -a %s| tee %s\n'%(os.getcwd(),os.getcwd(),opt.nevts,eosDirIn,outTag,granularity,noise,threshold,interCalib,nSiLayers,nPuVtx,INPATHPU,addNoise,outlog))
 
             scriptFile.write('echo "--Local directory is " $localdir >> %s\n'%(g4log))
+            scriptFile.write('echo home=$HOME >> %s\n'%(g4log))
+            scriptFile.write('echo path=$PATH >> %s\n'%(g4log))
+            scriptFile.write('echo ldlibpath=$LD_LIBRARY_PATH >> %s\n'%(g4log))
             scriptFile.write('ls * >> %s\n'%(g4log))
             if len(opt.eos)>0:
                 #scriptFile.write('grep "alias eos=" /afs/cern.ch/project/eos/installation/cms/etc/setup.sh | sed "s/alias /export my/" > eosenv.sh\n')
@@ -284,9 +292,21 @@ for nPuVtx in nPuVtxlist:
             scriptFile.close()
             
             #submit
-            os.system('chmod u+rwx %s/runDigiJob%s.sh'%(outDir,suffix))
-            if opt.nosubmit : os.system('echo bsub -q %s %s/runDigiJob%s.sh'%(myqueue,outDir,suffix)) 
-            else: os.system("bsub -q %s \'%s/runDigiJob%s.sh\'"%(myqueue,outDir,suffix))
+            condorFile = open('%s/condorSubmitDigi%s.sub'%(outDir,suffix), 'w')
+            condorFile.write('universe = vanilla\n')
+            condorFile.write('+JobFlavour = "nextweek"\n')
+            condorFile.write('Executable = %s/runDigiJob%s.sh\n'%(outDir,suffix))
+            condorFile.write('Output = %s/condorDigi%s.out\n'%(outDir,suffix))
+            condorFile.write('Error = %s/condorDigi%s.err\n'%(outDir,suffix))
+            condorFile.write('Log = %s/condorDigi%s.log\n'%(outDir,suffix))
+            condorFile.write('Queue 1\n')
+            condorFile.close()
 
+
+
+            os.system('chmod u+rwx %s/runDigiJob%s.sh'%(outDir,suffix))
+
+            if opt.nosubmit : os.system('echo condor_submit %s/condorSubmitDigi%s.sub'%(outDir,suffix)) 
+            else: os.system('condor_submit %s/condorSubmitDigi%s.sub'%(outDir,suffix))
 
 
