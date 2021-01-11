@@ -46,7 +46,7 @@ public:
   };
   HGCSSSimHit(const G4SiHit & aSiHit, const unsigned & asilayer, TH2Poly* map, const float cellSize = CELL_SIZE_X, const bool etaphimap = false);
 
-  ~HGCSSSimHit(){};
+  virtual ~HGCSSSimHit(){};
 
   inline double energy() const {
     return energy_;

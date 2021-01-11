@@ -33,7 +33,7 @@ public:
 	       const HGCSSGeometryConversion & aGeom,
 	       const unsigned & shape);
 
-  ~HGCSSRecoHit(){};
+  virtual ~HGCSSRecoHit(){};
 
   inline double energy() const {
     return energy_;

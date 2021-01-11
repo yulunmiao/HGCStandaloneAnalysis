@@ -24,7 +24,7 @@ public:
   HGCSSGeometryConversion(){};
   HGCSSGeometryConversion(const unsigned model, const double cellsize, const bool bypassR=false, const unsigned nSiLayers=3);
 
-  ~HGCSSGeometryConversion();
+  virtual ~HGCSSGeometryConversion();
 
   static void convertFromEtaPhi(std::pair<double,double> & xy, const double & z);
 

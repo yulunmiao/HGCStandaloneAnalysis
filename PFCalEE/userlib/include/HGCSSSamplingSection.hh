@@ -30,7 +30,7 @@ public:
     
   };
 
-  ~HGCSSSamplingSection(){};
+  virtual ~HGCSSSamplingSection(){};
   //getters
   inline unsigned volNb() const{
     return volNb_;

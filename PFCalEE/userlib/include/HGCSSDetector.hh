@@ -32,7 +32,7 @@ public:
     isScint(false),
     radiusLim(0)
   {};
-  ~HGCSSSubDetector(){};
+  virtual ~HGCSSSubDetector(){};
 
   DetectorEnum type;
   std::string name;
@@ -799,7 +799,7 @@ private:
     bypassRadius_ = false;
   };
 
-  ~HGCSSDetector(){
+  virtual ~HGCSSDetector(){
     reset();
   };
   

@@ -34,7 +34,7 @@ public:
 
   HGCSSCluster(const HGCSSRecoHit & aRecHit);
 
-  ~HGCSSCluster(){};
+  virtual ~HGCSSCluster(){};
 
   //double eta() const;
   //double theta() const;

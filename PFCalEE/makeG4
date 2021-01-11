@@ -1,0 +1,8 @@
+#!/bin/sh
+
+mkdir -p $G4Build
+cd $G4Build
+cmake -DGeant4_DIR=$G4DIR ../
+make -j 8
+
+cd ../
