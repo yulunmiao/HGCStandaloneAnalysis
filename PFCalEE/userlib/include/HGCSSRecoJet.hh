@@ -19,7 +19,7 @@ public:
     area_error_(0)
   {};
 
-  ~HGCSSRecoJet(){};
+  virtual ~HGCSSRecoJet(){};
 
   HGCSSRecoJet(const double & px, const double & py, const double & pz, const double & E);
 

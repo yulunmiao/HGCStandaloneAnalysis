@@ -5,20 +5,20 @@ LIBNAME = PFCalEEuserlib
 SHELL=bash
 
 # Define include paths
-USERINCLUDES += -I$(ROOTSYS)/include/
-USERINCLUDES += -I$(ROOFITSYS)/include/
+USERINCLUDES += `root-config --cflags --libs`
+#USERINCLUDES += -I$(ROOFITSYS)/include/
 #USERINCLUDES += -I$(CMS_PATH)/$(SCRAM_ARCH)/external/boost/1.47.0/include/
-USERINCLUDES += -isystem $(BOOSTSYS)/include
-USERINCLUDES += -Iinclude/ -I../userlib/include/ -I$(FASTJET_INSTALL)/include/
+#USERINCLUDES += -isystem $(BOOSTSYS)/include
+USERINCLUDES += -Iinclude/ -I../userlib/include/ -I$(BASEINSTALL)/include/
 
 # Define libraries to link
 USERLIBS += $(shell root-config --glibs) -lGenVector # -lTreePlayer -lTMVA
 #USERLIBS += -L$(CMS_PATH)/$(SCRAM_ARCH)/external/boost/1.47.0/lib/ -lboost_regex -lboost_program_options -lboost_filesystem
-USERLIBS += -Wl,-rpath,$(FASTJET_INSTALL)/lib -lm  -L$(FASTJET_INSTALL)/lib -lfastjettools -lfastjet -lfastjetplugins -lsiscone_spherical -lsiscone -lgfortran
-USERLIBS += -L$(BOOSTSYS)/lib -lboost_regex -lboost_program_options -lboost_filesystem
+USERLIBS += -Wl,-rpath, -L$(BASEINSTALL)/lib -lfastjettools -lfastjet -lfastjetplugins -lsiscone_spherical -lsiscone -lgfortran
+USERLIBS += -lboost_regex -lboost_program_options -lboost_filesystem
 
 #CXXFLAGS = -Wall -W -Wno-unused-function -Wno-parentheses -Wno-char-subscripts -Wno-unused-parameter -O2 
-CXXFLAGS = -Wall -W -O2 -std=c++0x
+CXXFLAGS = -Wall -W -O2 #-std=c++1y
 LDFLAGS = -shared -Wall -W 
 
 # If possible we'll use the clang compiler, it's faster and gives more helpful error messages
@@ -73,10 +73,13 @@ $(LIBDIR)/lib$(LIBNAME).so:  $(OBJS) $(LIBDEPENDS)
 lib: $(LIBDIR)/lib$(LIBNAME).so
 
 dictionary:
-	rootcint -v -f src/dict.cc -c include/HGCSSInfo.hh include/HGCSSEvent.hh include/HGCSSSamplingSection.hh include/HGCSSSimHit.hh include/HGCSSGenParticle.hh include/HGCSSRecoHit.hh include/HGCSSRecoJet.hh include/HGCSSCluster.hh include/HGCSSMipHit.hh include/LinkDef.h
-	sed "s/include\/HGCSS/HGCSS/" src/dict.h > include/dict.h
-	rm src/dict.h
-
+	rootcint -v -f src/dict.cc include/HGCSSInfo.hh include/HGCSSEvent.hh include/HGCSSSamplingSection.hh include/HGCSSSimHit.hh include/HGCSSGenParticle.hh include/HGCSSRecoHit.hh include/HGCSSRecoJet.hh include/HGCSSCluster.hh include/HGCSSMipHit.hh include/LinkDef.h
+	sed "s/include\/HGCSS/HGCSS/" src/dict.cc > tmp
+	mv tmp src/dict.cc
+#> include/dict.h
+#	mv src/dict.cc include/dict.h
+	echo "#Dummy" > include/dict.h
+	mv src/*.pcm $(LIBDIR)/.
 # info:
 # 	@echo "LIBS: " $(LIBS)
 # 	@echo "CXXFLAGS: " $(CXXFLAGS)

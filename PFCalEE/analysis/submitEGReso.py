@@ -154,8 +154,25 @@ for nPuVtx in nPuVtxset :
                 scriptFile.write('echo "All done"\n')
                 scriptFile.close()
                 
-        #submit
+                #submit
+                condorFile = open('%s/%s/condorSubmitEGReso.sub'%(workdir,outDir), 'w')
+                condorFile.write('universe = vanilla\n')
+                condorFile.write('+JobFlavour = "nextweek"\n')
+                condorFile.write('Executable = %s/%s/runEGResoJob.sh\n'%(workdir,outDir))
+                condorFile.write('Output = %s/%s/condorEGReso.out\n'%(workdir,outDir))
+                condorFile.write('Error = %s/%s/condorEGReso.err\n'%(workdir,outDir))
+                condorFile.write('Log = %s/%s/condorEGReso.log\n'%(workdir,outDir))
+                condorFile.write('Queue 1\n')
+                condorFile.close()
+
+
+
                 os.system('chmod u+rwx %s/%s/runEGResoJob.sh'%(workdir,outDir))
-                if opt.nosubmit : os.system('echo bsub -q %s %s/%s/runEGResoJob.sh'%(myqueue,workdir,outDir)) 
-                else: os.system("bsub -q %s \'%s/%s/runEGResoJob.sh\'"%(myqueue,workdir,outDir))
+                
+                if opt.nosubmit : 
+                    os.system('echo condor_submit %s/%s/condorSubmitEGReso.sub'%(workdir,outDir)) 
+                else: 
+                    os.system('condor_submit %s/%s/condorSubmitEGReso.sub'%(workdir,outDir))
+
+
 

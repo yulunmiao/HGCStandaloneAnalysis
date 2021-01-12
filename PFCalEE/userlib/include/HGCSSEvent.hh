@@ -16,7 +16,7 @@ public:
     
   };
 
-  ~HGCSSEvent(){};
+  virtual ~HGCSSEvent(){};
 
   inline unsigned eventNumber() const{
     return event_;

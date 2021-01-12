@@ -5,21 +5,26 @@ LIBNAME = PFCalEEAnalysis
 SHELL=bash
 
 # Define include paths
-USERINCLUDES += -I$(ROOTSYS)/include/
-USERINCLUDES += -I$(ROOFITSYS)/include/
-USERINCLUDES += -isystem $(BOOSTSYS)/include
+USERINCLUDES += `root-config --cflags --libs`
+#USERINCLUDES += -I$(ROOFITSYS)/include/
+#USERINCLUDES += -isystem $(BOOSTSYS)/include
 
-USERINCLUDES += -Iinclude/ -I../userlib/include/ -I$(FASTJET_INSTALL)/include/
-USERINCLUDES += -I$(HEPMC_DIR)/include/
+#USERINCLUDES += -Iinclude/ -I../userlib/include/ -I$(FASTJET_INSTALL)/include/
+#USERINCLUDES += -I$(HEPMC_DIR)/include/
+USERINCLUDES += -Iinclude/ -I../userlib/include/ -I$(BASEINSTALL)/include/
+
 
 # Define libraries to link
-USERLIBS += $(shell root-config --glibs) -lRooFit -lGenVector #-lTreePlayer -lTMVA
+USERLIBS += $(shell root-config --glibs) -lGenVector #-lTreePlayer -lTMVA -lRooFit
 USERLIBS += -L../userlib/lib -lPFCalEEuserlib
-USERLIBS += -Wl,-rpath,$(FASTJET_INSTALL)/lib -lm  -L$(FASTJET_INSTALL)/lib -lfastjettools -lfastjet -lfastjetplugins -lsiscone_spherical -lsiscone
-USERLIBS += -L$(BOOSTSYS)/lib -lboost_regex -lboost_program_options -lboost_filesystem
+#USERLIBS += -Wl,-rpath,$(FASTJET_INSTALL)/lib -lm  -L$(FASTJET_INSTALL)/lib -lfastjettools -lfastjet -lfastjetplugins -lsiscone_spherical -lsiscone
+#USERLIBS += -L$(BOOSTSYS)/lib -lboost_regex -lboost_program_options -lboost_filesystem
+USERLIBS += -Wl,-rpath, -L$(BASEINSTALL)/lib -lfastjettools -lfastjet -lfastjetplugins -lsiscone_spherical -lsiscone -lgfortran
+USERLIBS += -lboost_regex -lboost_program_options -lboost_filesystem
+
 
 #CXXFLAGS = -Wall -W -Wno-unused-function -Wno-parentheses -Wno-char-subscripts -Wno-unused-parameter -O2 
-CXXFLAGS = -Wall -W -O2 -std=c++0x # -std=c++11 
+CXXFLAGS = -Wall -W -O2 #-std=c++0x # -std=c++11 
 #CXXFLAGS = -Wall -W -O2 -std=c++11 
 LDFLAGS = -shared -Wall -W
 
@@ -76,7 +81,9 @@ OBJS=$(subst $(SRCDIR), $(OBJDIR),$(subst cc,$(OBJ_EXT),$(SRCS)))
 
 #BINS=$(EXEDIR)/findMaximumSimEnergy
 
-BINS=$(EXEDIR)/egammaResoWithTruth $(EXEDIR)/mipAnalysis $(EXEDIR)/mipHistos $(EXEDIR)/mipSelection $(EXEDIR)/mipDeposit $(EXEDIR)/simpleBH
+BINS=$(EXEDIR)/egammaResoWithTruth 
+
+#BINS=$(EXEDIR)/mipAnalysis $(EXEDIR)/mipHistos $(EXEDIR)/mipSelection $(EXEDIR)/mipDeposit $(EXEDIR)/simpleBH
 
 #BINS=$(EXEDIR)/studyOutliers
 #BINS=$(EXEDIR)/getAbsorberWeight $(EXEDIR)/egammaResoWithTruth $(EXEDIR)/studySupportCone

@@ -19,9 +19,9 @@
 //tiny for shower size studies
 //static const float CELL_SIZE_X=0.5;
 //for hexagons: side size.
-//static const float CELL_SIZE_X=6.496345; //2.5;//mm
+static const float CELL_SIZE_X=6.496345; //2.5;//mm
 //small hexagons
-static const float CELL_SIZE_X=4.76;//mm
+//static const float CELL_SIZE_X=4.76;//mm
 static const float CELL_SIZE_Y=CELL_SIZE_X;
 
 class HGCSSSimHit{
@@ -46,7 +46,7 @@ public:
   };
   HGCSSSimHit(const G4SiHit & aSiHit, const unsigned & asilayer, TH2Poly* map, const float cellSize = CELL_SIZE_X, const bool etaphimap = false);
 
-  ~HGCSSSimHit(){};
+  virtual ~HGCSSSimHit(){};
 
   inline double energy() const {
     return energy_;

@@ -28,7 +28,7 @@ public:
     
   };
 
-  ~HGCSSGenParticle(){};
+  virtual ~HGCSSGenParticle(){};
 
   inline double mass() const {
     return mass_;

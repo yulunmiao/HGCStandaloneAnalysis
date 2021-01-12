@@ -31,7 +31,7 @@ public:
       yref_neighlay_[i] = 0;
     }
   };
-  ~HGCSSMipHit(){
+  virtual ~HGCSSMipHit(){
     
   };
 

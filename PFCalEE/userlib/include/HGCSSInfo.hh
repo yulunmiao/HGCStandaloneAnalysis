@@ -18,7 +18,7 @@ public:
     shape_ = 1;
   };
   
-  ~HGCSSInfo(){};
+  virtual ~HGCSSInfo(){};
 
   inline void version(const int & aVal){
     version_ = aVal;
