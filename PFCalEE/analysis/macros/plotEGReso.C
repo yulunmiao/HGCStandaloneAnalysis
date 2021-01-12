@@ -564,7 +564,7 @@ int plotEGReso(){//main
 
   
   const unsigned nV = 1;
-  TString version[nV] = {"67"};//,"65","66"};//,"0"};
+  TString version[nV] = {"60"};//,"65","66"};//,"0"};
   //TString version[nV] = {"65","66"};//,"0"};
 
   std::ostringstream foutname;
@@ -612,7 +612,7 @@ int plotEGReso(){//main
   std::ostringstream saveName;
 
   //unsigned genEnAll[]={3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200};
-  unsigned genEnAll[]={5,10,20,30,40,60,80,100,150,200};
+  unsigned genEnAll[]={5,10,20,30,40};//,60,80,100,150,200};
   //unsigned genEnAll[]={7,10,20,30,40};
   const unsigned nGenEnAll=sizeof(genEnAll)/sizeof(unsigned);
 

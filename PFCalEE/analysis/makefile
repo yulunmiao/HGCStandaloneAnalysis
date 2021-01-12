@@ -81,7 +81,7 @@ OBJS=$(subst $(SRCDIR), $(OBJDIR),$(subst cc,$(OBJ_EXT),$(SRCS)))
 
 #BINS=$(EXEDIR)/findMaximumSimEnergy
 
-BINS=$(EXEDIR)/egammaResoWithTruth 
+BINS=$(EXEDIR)/egammaResoWithTruth $(EXEDIR)/mipEperLayer
 
 #BINS=$(EXEDIR)/mipAnalysis $(EXEDIR)/mipHistos $(EXEDIR)/mipSelection $(EXEDIR)/mipDeposit $(EXEDIR)/simpleBH
 
@@ -105,6 +105,9 @@ $(SUBDIRS):
 
 $(EXEDIR)/plotMomentum:  $(TESTDIR)/plotMomentum.cpp $(wildcard $(BASEDIR)/include/*.h*)
 	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(HEPMC_DIR)lib -lHepMC #-lHepMCfio
+
+$(EXEDIR)/mipEperLayer:  $(TESTDIR)/mipEperLayer.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
+	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
 
 $(EXEDIR)/dumpHitRates:  $(TESTDIR)/dumpHitRates.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
 	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)

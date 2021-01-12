@@ -115,7 +115,10 @@ for nPuVtx in nPuVtxset :
             #wrapper
                 scriptFile = open('%s/%s/runEGResoJob.sh'%(workdir,outDir), 'w')
                 scriptFile.write('#!/bin/bash\n')
-                scriptFile.write('source %s/../g4env.sh\n'%(os.getcwd()))
+                scriptFile.write('cd %s/..\n'%(os.getcwd()))
+                scriptFile.write('source g4env.sh\n')
+                scriptFile.write('cd -\n') 
+                scriptFile.write('echo "LD_LIBRARY_PATH = $LD_LIBRARY_PATH" >> %s\n'%(g4log))
             #scriptFile.write('cd %s\n'%(outDir))
                 outTag='_version%d_model%d_%s'%(opt.version,opt.model,bval)
                 if et>0 : outTag='%s_et%d'%(outTag,et)
