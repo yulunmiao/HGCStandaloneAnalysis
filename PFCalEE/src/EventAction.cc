@@ -23,13 +23,13 @@ EventAction::EventAction()
   outF_->cd();
 
   double xysize = ((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->GetCalorSizeXY();
-
+  coarseGranularity_ = ((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->GetCalorLateralGranularity();
   shape_ = ((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->getShape();
 
   //save some info
   HGCSSInfo *info = new HGCSSInfo();
   info->calorSizeXY(xysize);
-  info->cellSize(CELL_SIZE_X);
+  info->cellSize(coarseGranularity_ ? CELL_SIZE_X : FINE_CELL_SIZE_X);
   info->model(((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->getModel());
   info->version(((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->getVersion());
   info->shape(shape_);
@@ -40,10 +40,10 @@ EventAction::EventAction()
   outF_->WriteObjectAny(info,"HGCSSInfo","Info");
 
   //honeycomb or diamond or triangles
-  geomConv_ = new HGCSSGeometryConversion(info->model(),CELL_SIZE_X);
+  geomConv_ = new HGCSSGeometryConversion(info->model(),coarseGranularity_ ? CELL_SIZE_X : FINE_CELL_SIZE_X);
   if (shape_==2) geomConv_->initialiseDiamondMap(xysize,10.);
   else if (shape_==3) geomConv_->initialiseTriangleMap(xysize,10.*sqrt(2.));
-  else if (shape_==1) geomConv_->initialiseHoneyComb(xysize,CELL_SIZE_X);
+  else if (shape_==1) geomConv_->initialiseHoneyComb(xysize,coarseGranularity_ ? CELL_SIZE_X : FINE_CELL_SIZE_X);
   else if (shape_==4) geomConv_->initialiseSquareMap(xysize,100.);
   //square map for FHCAL Scint + BH Scint
   double etamin = ((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->GetMinEta();
@@ -51,7 +51,7 @@ EventAction::EventAction()
   //std::cout << "EventAction: " << etamin << " " << etamax << std::endl;
   geomConv_->initialiseSquareMap1(etamin,etamax,-1.*TMath::Pi(),TMath::Pi(),TMath::Pi()*2./360.);//eta phi segmentation
   geomConv_->initialiseSquareMap2(etamin,etamax,-1.*TMath::Pi(),TMath::Pi(),TMath::Pi()*2./288.);//eta phi segmentation
-  
+
 
   tree_=new TTree("HGCSSTree","HGC Standalone simulation tree");
   tree_->Branch("HGCSSEvent","HGCSSEvent",&event_);
@@ -79,9 +79,9 @@ EventAction::~EventAction()
 
 //
 void EventAction::BeginOfEventAction(const G4Event* evt)
-{  
+{
   evtNb_ = evt->GetEventID();
-  if (evtNb_%printModulo == 0) { 
+  if (evtNb_%printModulo == 0) {
     G4cout << "\n---> Begin of event: " << evtNb_ << G4endl;
     CLHEP::HepRandom::showEngineStatus();
   }
@@ -90,8 +90,8 @@ void EventAction::BeginOfEventAction(const G4Event* evt)
 }
 
 //
-void EventAction::Detect(G4double edep, G4double stepl,G4double globalTime, 
-			 G4int pdgId, G4VPhysicalVolume *volume, const G4ThreeVector & position, 
+void EventAction::Detect(G4double edep, G4double stepl,G4double globalTime,
+			 G4int pdgId, G4VPhysicalVolume *volume, const G4ThreeVector & position,
 			 G4int trackID, G4int parentID,
 			 const HGCSSGenParticle & genPart)
 {
@@ -121,7 +121,7 @@ void EventAction::EndOfEventAction(const G4Event* g4evt)
   event_.eventNumber(evtNb_);
 
   //std::cout << " -- Number of primary vertices: " << g4evt->GetNumberOfPrimaryVertex() << std::endl
-  //<< " -- vtx pos x=" << g4evt->GetPrimaryVertex(0)->GetX0() 
+  //<< " -- vtx pos x=" << g4evt->GetPrimaryVertex(0)->GetX0()
   //	    << " y=" << g4evt->GetPrimaryVertex(0)->GetY0()
   //	    << " z=" << g4evt->GetPrimaryVertex(0)->GetZ0()
   //	    << " t=" << g4evt->GetPrimaryVertex(0)->GetT0()
@@ -130,12 +130,12 @@ void EventAction::EndOfEventAction(const G4Event* g4evt)
   event_.vtx_x(g4evt->GetPrimaryVertex(0)->GetX0());
   event_.vtx_y(g4evt->GetPrimaryVertex(0)->GetY0());
   event_.vtx_z(g4evt->GetPrimaryVertex(0)->GetZ0());
-  //event_.cellSize(CELL_SIZE_X);
+  //event_.cellSize(coarseGranularity_ ? CELL_SIZE_X :FINE_CELL_SIZE_X);
 
   ssvec_.clear();
   ssvec_.reserve(detector_->size());
 
-  for(size_t i=0; i<detector_->size(); i++) 
+  for(size_t i=0; i<detector_->size(); i++)
     {
       HGCSSSamplingSection lSec;
       lSec.volNb(i);
@@ -154,7 +154,7 @@ void EventAction::EndOfEventAction(const G4Event* g4evt)
       lSec.avgTime((*detector_)[i].getAverageTime());
       lSec.nSiHits((*detector_)[i].getTotalSensHits());
       ssvec_.push_back(lSec);
-      if (evtNb_==1) std::cout << "if (layer==" << i << ") return " 
+      if (evtNb_==1) std::cout << "if (layer==" << i << ") return "
 			       <<  lSec.voldEdx() << ";"
 			       << std::endl;
       //std::cout << " n_sens_ele = " << (*detector_)[i].n_sens_elements << std::endl;
@@ -162,15 +162,15 @@ void EventAction::EndOfEventAction(const G4Event* g4evt)
       for (unsigned idx(0); idx<(*detector_)[i].n_sens_elements; ++idx){
 	std::map<unsigned,HGCSSSimHit> lHitMap;
 	std::pair<std::map<unsigned,HGCSSSimHit>::iterator,bool> isInserted;
-	
+
 	//if (i>0) (*detector_)[i].trackParticleHistory(idx,(*detector_)[i-1].getSiHitVec(idx));
-	
+
 	//std::cout << " si layer " << idx << " " << (*detector_)[i].getSiHitVec(idx).size() << std::endl;
 
 	for (unsigned iSiHit(0); iSiHit<(*detector_)[i].getSiHitVec(idx).size();++iSiHit){
 	  G4SiHit lSiHit = (*detector_)[i].getSiHitVec(idx)[iSiHit];
-	  HGCSSSimHit lHit(lSiHit,idx,is_scint? (i<57?geomConv_->squareMap1():geomConv_->squareMap2()): (shape_==4 ?geomConv_->squareMap() : shape_==2?geomConv_->diamondMap():shape_==3?geomConv_->triangleMap():geomConv_->hexagonMap()),CELL_SIZE_X,is_scint?true:false);
-	  
+	  HGCSSSimHit lHit(lSiHit,idx,is_scint? (i<57?geomConv_->squareMap1():geomConv_->squareMap2()) : (shape_==4 ?geomConv_->squareMap() : shape_==2?geomConv_->diamondMap():shape_==3?geomConv_->triangleMap():geomConv_->hexagonMap()),(coarseGranularity_ ? CELL_SIZE_X : FINE_CELL_SIZE_X),is_scint?true:false);
+
 	  isInserted = lHitMap.insert(std::pair<unsigned,HGCSSSimHit>(lHit.cellid(),lHit));
 	  if (!isInserted.second) isInserted.first->second.Add(lSiHit);
 	}
@@ -211,11 +211,11 @@ void EventAction::EndOfEventAction(const G4Event* g4evt)
 	   << " -- Number of simhits = " << hitvec_.size() << G4endl
 	   << " -- Number of aluminium simhits = " << alhitvec_.size() << G4endl
 	   << " -- Number of sampling sections = " << ssvec_.size() << G4endl;
-    
+
   }
 
   tree_->Fill();
-  
+
   //reset vectors
   genvec_.clear();
   hitvec_.clear();

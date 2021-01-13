@@ -4,14 +4,14 @@
 #include <cmath>
 #include <stdlib.h>
 
-HGCSSSimHit::HGCSSSimHit(const G4SiHit & aSiHit, 
-			 const unsigned & asilayer, 
-			 TH2Poly* map, 
+HGCSSSimHit::HGCSSSimHit(const G4SiHit & aSiHit,
+			 const unsigned & asilayer,
+			 TH2Poly* map,
 			 const float ,
 			 const bool etaphimap){
   energy_ = aSiHit.energy;
   //energy weighted time
-  //PS: need to call calculateTime() after all hits 
+  //PS: need to call calculateTime() after all hits
   //have been added to have divided by totalE!!
   time_ = aSiHit.time*aSiHit.energy;
   zpos_ = aSiHit.hit_z;
@@ -32,7 +32,7 @@ HGCSSSimHit::HGCSSSimHit(const G4SiHit & aSiHit,
     cellid_ = map->FindBin(pos.eta(),pos.phi());
   }
   else cellid_ = map->FindBin(x,y);
-  
+
   //for (int ix(1);ix<map->GetNumberOfBins()+1; ++ix){
   //if (map->GetBinContent(ix)!=0)
     //cellid_ = ix;
@@ -41,22 +41,22 @@ HGCSSSimHit::HGCSSSimHit(const G4SiHit & aSiHit,
 
   /*
   TIter next(map->GetBins());
-  TObject *obj=0; 
+  TObject *obj=0;
   TH2PolyBin *polyBin = 0;
 
   while ((obj=next())){
     polyBin=(TH2PolyBin*)obj;
     int id = polyBin->GetBinNumber();
-    if (id==cellid_) break; 
+    if (id==cellid_) break;
   }
 
-  std::cout << " - Sanity check: x,y = " << x << " " << y 
-	    << " cellid=" << cellid_ 
+  std::cout << " - Sanity check: x,y = " << x << " " << y
+	    << " cellid=" << cellid_
 	    << " polybin# " << polyBin->GetBinNumber() << " area " << polyBin->GetArea() << std::endl
 	    << " x bin = " << polyBin->GetXMin() << "-" << polyBin->GetXMax() << std::endl
 	    << " y bin = " << polyBin->GetYMin() << "-" << polyBin->GetYMax() << std::endl
-	    << " middle = " << (polyBin->GetXMax()+polyBin->GetXMin())/2 
-	    << " " << (polyBin->GetYMax()+polyBin->GetYMin())/2 
+	    << " middle = " << (polyBin->GetXMax()+polyBin->GetXMin())/2
+	    << " " << (polyBin->GetYMax()+polyBin->GetYMin())/2
 	    << std::endl;
 */
 
@@ -87,7 +87,7 @@ HGCSSSimHit::HGCSSSimHit(const G4SiHit & aSiHit,
 }
 
 /*void HGCSSSimHit::encodeCellId(const bool x_side,const bool y_side,const unsigned x_cell,const unsigned y_cell){
-  cellid_ = 
+  cellid_ =
     x_side | (x_cell<<1) |
     (y_side<<16) | (y_cell<<17);
 
@@ -102,7 +102,7 @@ HGCSSSimHit::HGCSSSimHit(const G4SiHit & aSiHit,
 void HGCSSSimHit::Add(const G4SiHit & aSiHit){
 
   time_ = time_ + aSiHit.time*aSiHit.energy;
-  //PS: need to call calculateTime() after all hits 
+  //PS: need to call calculateTime() after all hits
   //have been added to have divided by totalE!!
 
   if(abs(aSiHit.pdgId)==22) nGammas_++;
@@ -186,16 +186,15 @@ void HGCSSSimHit::Print(std::ostream & aOs) const{
   aOs << "====================================" << std::endl
       << " = Layer " << layer() << " siLayer " << silayer() << " cellid " << cellid_ << std::endl
       << " = Energy " << energy_ << " time " << time_ << std::endl
-      << " = g " << nGammas_ 
-      << " e " << nElectrons_ 
-      << " mu " << nMuons_ 
-      << " neutron " << nNeutrons_ 
-      << " proton " << nProtons_ 
-      << " had " << nHadrons_ 
+      << " = g " << nGammas_
+      << " e " << nElectrons_
+      << " mu " << nMuons_
+      << " neutron " << nNeutrons_
+      << " proton " << nProtons_
+      << " had " << nHadrons_
       << std::endl
       << " = main parent: trackID " << trackIDMainParent_ << " efrac " << mainParentEfrac()
       << std::endl
       << "====================================" << std::endl;
 
 }
-
