@@ -468,119 +468,132 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 	}
 	break;
       }
+      
+      //Jan2021 update
+    case v_HGCALEE_v9: case v_HGCAL_v9:
+      {
 
-	//Jan2021 update
-	case v_HGCALEE_v9: case v_HGCAL_v9:
-	      {
+        G4cout << "[DetectorConstruction] starting v_HGCAL(EE)_v9"<< G4endl;
+	
+        //hard-point extension
+        G4double hpAirThick = 1*mm;
 
-		G4cout << "[DetectorConstruction] starting v_HGCAL(EE)_v9"<< G4endl;
-		/*
-		G4double airThick1 = (version_==v_HGCALEE_v8_air4)? 4*mm :(version_==v_HGCALEE_v8_air3)? 3*mm : 1.5*mm;
-		G4double airThick2 = 0*mm;
-		G4double cuExtra = 0*mm;
-		if (version_==v_HGCALEE_v8_Cu || version_==v_HGCALEE_v8_Cu_12){
-		  airThick1 = 0.5*mm;
-		  cuExtra = 1.5*mm;
-		  airThick2 = 2.0*mm;
-		}
-		G4double pcbThick = 1.6*mm;
-		G4double pbThick = 2.1*mm;
-		G4double wcuThick = 1.4*mm;
-		G4int nK7 = 13;
+        //lead-ss sandwich
+        G4double cuThick1 = 1*mm;
+        G4double inoxThick1 = 3*mm;
+        G4double leadThick[3] = {3.1*mm,5.2*mm,8.22*mm}; // cassetes 1; 2-9; 10-13;
+        G4double inoxThick2 = 3*mm;
+        G4double cuThick2 = 1*mm;
+        G4double airThick = 2*mm;
 
-		if (version_==v_HGCALEE_v8_Cu) {
-		  pbThick = 2.*mm;
-		  wcuThick = 1.*mm;
-		}
+        //motherboard
+        G4double mbPCBThick(1.6*mm);
+        G4double mbAirThick(0.5*(5.25-mbPCBThick));
 
-		if (version_==v_HGCALEE_v8_Cu_12) {
-		  pbThick = 2.4*mm;
-		  nK7 = 11;
-		}
+        //module
+        G4double modPCBThick(1.6*mm);
+        G4double modAirThick1(0.4*mm);
+        G4double modSiThick(0.1*mm); //x3 below
+        G4double modAirThick2(0.3*mm);
+        G4double modWCuThick(1.4*mm);
+        
+        //cooling plate
+        G4double coolingCuThick(6.05*mm);
 
-		std::vector<G4double> lThickL;
-		std::vector<std::string> lEleL;
-		//in front of first layer
-		lThickL.push_back(2.*mm);lEleL.push_back("Al");
-		lThickL.push_back(36.*mm);lEleL.push_back("Foam");
-		lThickL.push_back(2.*mm);lEleL.push_back("Al");
-		lThickL.push_back(10*mm);lEleL.push_back("Air");
-	        lThickL.push_back(157.*mm);lEleL.push_back("NeutMod");
-		lThickL.push_back(3.5*mm);lEleL.push_back("Air");
+        
+        std::vector<G4double> lThick, inv_lThick;
+        std::vector<std::string> lEle, inv_lEle;
 
-		//cassette structure
+        //cassette structure
+        for(int i=0;i<13; i++) {
+          
+          lThick.clear(); inv_lThick.clear();
+          lEle.clear();   inv_lEle.clear();
 
-		lThickL.push_back(0.3*mm);lEleL.push_back("SSteel");
-		lThickL.push_back(pbThick);lEleL.push_back("Pb");
-		lThickL.push_back(0.3*mm);lEleL.push_back("SSteel");
-		lThickL.push_back(0.1*mm);lEleL.push_back("Cu");
-		lThickL.push_back(pcbThick);lEleL.push_back("PCB");
+          //in front of first layer only (Chris said to ignore this for the moment)
+          /*
+          if(i==0) {
+            lThick.push_back(2.*mm);   lEle.push_back("Al");
+            lThick.push_back(36.*mm);  lEle.push_back("Foam");
+            lThick.push_back(2.*mm);   lEle.push_back("Al");
+            lThick.push_back(10*mm);   lEle.push_back("Air");
+            lThick.push_back(157.*mm); lEle.push_back("NeutMod");
+            lThick.push_back(3.5*mm);  lEle.push_back("Air");
+          }
+          */
 
-		lThickL.push_back(airThick1);lEleL.push_back("Air");
-		lThickL.push_back(cuExtra);lEleL.push_back("CuExtra");
-		lThickL.push_back(airThick2);lEleL.push_back("Air");
-		lThickL.push_back(pcbThick);lEleL.push_back("PCB");
-		lThickL.push_back(0.1*mm);lEleL.push_back("Si");
-		lThickL.push_back(0.1*mm);lEleL.push_back("Si");
-		lThickL.push_back(0.1*mm);lEleL.push_back("Si");
+          //hard-point extension
+          lThick.push_back(hpAirThick); lEle.push_back("Air");
+          
+          //lead-ss sandwich
+          int Pbidx(0);
+          if(i>1 && i<9) Pbidx=1;
+          if(i>=9)       Pbidx=2;
+          lThick.push_back(cuThick1);         lEle.push_back("Cu");
+          lThick.push_back(inoxThick1);       lEle.push_back("SSteel");
+          lThick.push_back(leadThick[Pbidx]); lEle.push_back("Pb");
+          lThick.push_back(inoxThick2);       lEle.push_back("SSteel");
+          lThick.push_back(cuThick2);         lEle.push_back("Cu");
+          lThick.push_back(airThick);         lEle.push_back("Air");
+          
+          //motherboard
+          lThick.push_back(mbAirThick);    lEle.push_back("Air");
+          lThick.push_back(mbPCBThick);    lEle.push_back("PCB");
+          lThick.push_back(mbAirThick);    lEle.push_back("Air");
 
-		std::vector<G4double> lThickR;
-		std::vector<std::string> lEleR;
-		lThickR.push_back(wcuThick);lEleR.push_back("WCu");
-		lThickR.push_back(6*mm);lEleR.push_back("Cu");
-		lThickR.push_back(wcuThick);lEleR.push_back("WCu");
-		lThickR.push_back(0.1*mm);lEleR.push_back("Si");
-		lThickR.push_back(0.1*mm);lEleR.push_back("Si");
-		lThickR.push_back(0.1*mm);lEleR.push_back("Si");
+          //module
+          lThick.push_back(modPCBThick);   lEle.push_back("PCB");
+          lThick.push_back(modAirThick1);  lEle.push_back("Air");
+          for(int j=0; j<3; j++){
+            lThick.push_back(modSiThick);  lEle.push_back("Si");
+          }
+          lThick.push_back(modAirThick2);  lEle.push_back("Air");
+          lThick.push_back(modWCuThick);   lEle.push_back("WCu");
+          
+          //cooling plate
+          lThick.push_back(coolingCuThick); lEle.push_back("Cu");
 
-		//first cassette
-		m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
-		m_minEta.push_back(minEta[0]);m_maxEta.push_back(m_maxEta0);
-		m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
-		m_minEta.push_back(minEta[1]);m_maxEta.push_back(m_maxEta0);
+          //"inverted" module
+          inv_lThick.push_back(modWCuThick);   inv_lEle.push_back("WCu");
+          inv_lThick.push_back(modAirThick2);  inv_lEle.push_back("Air");
+          for(int j=0; j<3; j++){
+            inv_lThick.push_back(modSiThick);  inv_lEle.push_back("Si");
+          }
+          inv_lThick.push_back(modAirThick1);  inv_lEle.push_back("Air");
+          inv_lThick.push_back(modPCBThick);   inv_lEle.push_back("PCB");
 
-		lThickL.clear();
-		lEleL.clear();
-		lThickL.push_back(pcbThick);lEleL.push_back("PCB");
-		lThickL.push_back(airThick2);lEleL.push_back("Air");
-		lThickL.push_back(cuExtra);lEleL.push_back("CuExtra");
-		lThickL.push_back(airThick1);lEleL.push_back("Air");
-		lThickL.push_back(pcbThick);lEleL.push_back("PCB");
-		lThickL.push_back(0.1*mm);lEleL.push_back("Cu");
-		lThickL.push_back(0.3*mm);lEleL.push_back("SSteel");
-		lThickL.push_back(pbThick);lEleL.push_back("Pb");
-		lThickL.push_back(0.3*mm);lEleL.push_back("SSteel");
-		lThickL.push_back(0.3*mm);lEleL.push_back("SSteel");
-		lThickL.push_back(pbThick);lEleL.push_back("Pb");
-		lThickL.push_back(0.3*mm);lEleL.push_back("SSteel");
-		lThickL.push_back(0.1*mm);lEleL.push_back("Cu");
-		lThickL.push_back(pcbThick);lEleL.push_back("PCB");
+          //motherboard
+          inv_lThick.push_back(mbAirThick);    inv_lEle.push_back("Air");
+          inv_lThick.push_back(mbPCBThick);    inv_lEle.push_back("PCB");
+          inv_lThick.push_back(mbAirThick);    inv_lEle.push_back("Air");
 
-		lThickL.push_back(airThick1);lEleL.push_back("Air");
-		lThickL.push_back(cuExtra);lEleL.push_back("CuExtra");
-		lThickL.push_back(airThick2);lEleL.push_back("Air");
-		lThickL.push_back(pcbThick);lEleL.push_back("PCB");
-		lThickL.push_back(0.1*mm);lEleL.push_back("Si");
-		lThickL.push_back(0.1*mm);lEleL.push_back("Si");
-		lThickL.push_back(0.1*mm);lEleL.push_back("Si");
+          //hard-point extension
+          inv_lThick.push_back(hpAirThick); inv_lEle.push_back("Air");
+
+          //end of CE-E
+          if(i==12) {
+            inv_lThick.push_back(0.1*mm); inv_lEle.push_back("Cu");
+            inv_lThick.push_back(45*mm);  inv_lEle.push_back("SSteel");
+          }
 
 
-		for(G4int i=0; i<nK7; i++) {
-		  m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
-		  m_minEta.push_back(minEta[2+2*i]);m_maxEta.push_back(m_maxEta0); // minEta index: 2,4,...,26
-		  m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
-		  m_minEta.push_back(minEta[2+2*i+1]);m_maxEta.push_back(m_maxEta0); // minEta index: 3,5,...,27
-		}
-*/
-		if(version_==v_HGCAL_v8){
-		  //add HCAL
-		  //FH = FH+BH silicon version
-		  buildHGCALFHE(9);
-		  //BH = FH+BH scintillator version
-		  buildHGCALBHE(9);
-		}
-		break;
-	      }
+          m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+          m_minEta.push_back(minEta[2+2*i]);m_maxEta.push_back(m_maxEta0); //FIXME
+
+          m_caloStruct.push_back( SamplingSection(inv_lThick,inv_lEle) );
+          m_minEta.push_back(minEta[2+2*i+1]);m_maxEta.push_back(m_maxEta0); //FIXME as well
+        }
+
+        
+        //add HCAL if full detector
+        if(version_==v_HGCAL_v9){
+          //FH = FH+BH silicon version
+          buildHGCALFHE(9);
+          //BH = FH+BH scintillator version
+          buildHGCALBHE(9);
+        }
+        break;
+      }
 
     case v_HGCALEE_v5: case v_HGCALEE_v5_gap4: case v_HGCAL_v5: case v_HGCAL_v5_gap4:
       {
