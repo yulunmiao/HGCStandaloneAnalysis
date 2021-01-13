@@ -44,10 +44,10 @@ public:
   {
 
   };
-  HGCSSSimHit(const G4SiHit & aSiHit, const unsigned & asilayer, TH2Poly* map, const float cellSize = CELL_SIZE_X, const bool etaphimap = false);
+  HGCSSSimHit(const G4SiHit & aSiHit, const unsigned & asilayer, TH2Poly* map, float cellSize = CELL_SIZE_X, bool etaphimap = false);
 
-  HGCSSSimHit(const G4SiHit & aSiHit, const unsigned & asilayer, TH2Poly* map, bool coarseGranularity, const bool etaphimap = false):
-    HGCSSSimHit(aSiHit,asilayer,coarseGranularity ? CELL_SIZE_X : FINE_CELL_SIZE_X,etaphimap){
+  HGCSSSimHit(const G4SiHit & aSiHit, const unsigned & asilayer, TH2Poly* map, bool coarseGranularity, bool etaphimap = false):
+    HGCSSSimHit(aSiHit,asilayer,map,(coarseGranularity ? CELL_SIZE_X : FINE_CELL_SIZE_X),etaphimap){
 
   }
 

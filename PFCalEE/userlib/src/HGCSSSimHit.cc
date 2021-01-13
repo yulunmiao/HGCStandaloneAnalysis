@@ -7,8 +7,8 @@
 HGCSSSimHit::HGCSSSimHit(const G4SiHit & aSiHit,
 			 const unsigned & asilayer,
 			 TH2Poly* map,
-			 const float ,
-			 const bool etaphimap){
+			 float ,
+			 bool etaphimap){
   energy_ = aSiHit.energy;
   //energy weighted time
   //PS: need to call calculateTime() after all hits
