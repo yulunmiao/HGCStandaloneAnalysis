@@ -167,7 +167,7 @@ public:
   G4double GetCalorSizeZ()  { return m_CalorSizeZ; }
   G4double GetWorldSizeXY() { return m_WorldSizeXY; }
   G4double GetWorldSizeZ()  { return m_WorldSizeZ; }
-
+  G4double GetCalorLateralGranularity() { return m_coarseGranularity;}
   G4double GetMinEta() { return m_minEta0; }
   G4double GetMaxEta() { return m_maxEta0; }
 
@@ -252,7 +252,7 @@ private:
   std::vector<G4LogicalVolume*>   m_logicAl;    //pointer to the logical Si volumes
   std::vector<G4LogicalVolume*>   m_logicAbs;    //pointer to the logical absorber volumes situated just before the si
 
-  bool coarseGranularity_; //whether fine or coarse cells should be used
+  bool m_coarseGranularity; //whether fine or coarse cells should be used
   DetectorMessenger* m_detectorMessenger;  //pointer to the Messenger
 };
 
