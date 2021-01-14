@@ -50,7 +50,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
   m_maxEta0 = 3.0;
   // min Eta per layer, 0-27 for EE, 28-35 FH, 36-51 BH
   //double minEta[52] =
-  double minEta_tmp[52] = { 11.461, 1.464, 1.463, 1.466, 1.465, 1.468, 1.467, 1.469, 1.469, 1.471,
+  double minEta_tmp[52] = { 1.461, 1.464, 1.463, 1.466, 1.465, 1.468, 1.467, 1.469, 1.469, 1.471,
 			1.471, 1.473, 1.472, 1.475, 1.474, 1.477, 1.476, 1.478, 1.478, 1.480,
 			1.479, 1.482, 1.481, 1.483, 1.483, 1.485, 1.484, 1.487,
 			1.487, 1.490, 1.494, 1.497, 1.500, 1.503, 1.506, 1.493,
@@ -524,7 +524,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
           if(i==0) {
 
             //air just to get first layer in the correct position
-            a_lThick.push_back(212.5*mm); a_lEle.push_back("Air");
+            a_lThick.push_back(222.5*mm); a_lEle.push_back("Air");
 
             /*Chris said to ignore this for the moment
             a_lThick.push_back(2.*mm);   a_lEle.push_back("Al");
@@ -586,13 +586,6 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 
           //hard-point extension
           b_lThick.push_back(hpAirThick); b_lEle.push_back("Air");
-
-          //end of CE-E
-          if(i==12) {
-            b_lThick.push_back(0.1*mm); b_lEle.push_back("Cu");
-            b_lThick.push_back(45*mm);  b_lEle.push_back("SSteel");
-          }
-
 
           m_caloStruct.push_back( SamplingSection(a_lThick,a_lEle) );
           totalThick += m_caloStruct[m_caloStruct.size()-1].Total_thick;
@@ -1699,8 +1692,14 @@ void DetectorConstruction::UpdateCalorSize(){
     m_z0pos = 2990;//3170;
     if (version_ == v_HGCALEE_v5 || version_ == v_HGCAL_v5 || version_ == v_HGCALEE_v5_gap4 || version_ == v_HGCAL_v5_gap4) m_z0pos = 2990;//3170;
     else if (version_ == v_HGCALEE_v6 || version_ == v_HGCAL_v6 || version_ == v_HGCALEE_v7 || version_ == v_HGCAL_v7 || version_ == v_HGCAL_v7_HF ||version_ == v_HGCALEE_v624 || version_ == v_HGCALEE_v618) m_z0pos = 3070;
-    else if (version_ == v_HGCALEE_v8 || version_ == v_HGCAL_v8 || version_==v_HGCALEE_v8_air3 || version_==v_HGCALEE_v8_air4 || version_==v_HGCALEE_v8_Cu || version_==v_HGCALEE_v8_Cu_12) m_z0pos = 2980;
-    else if(version_ == v_HGCALBE_v8) m_z0pos=3920.7;
+    else if (version_ == v_HGCALEE_v8 || version_ == v_HGCAL_v8 || version_==v_HGCALEE_v8_air3 || version_==v_HGCALEE_v8_air4 || version_==v_HGCALEE_v8_Cu || version_==v_HGCALEE_v8_Cu_12 ||
+             version_ == v_HGCALEE_v9 || version_ == v_HGCAL_v9) {
+      m_z0pos = 2980;
+    }
+    else if(version_ == v_HGCALBE_v8) {
+      m_z0pos=3920.7;
+    }
+
     if (doHF_){
       m_z0HF=11100;
       m_CalorSizeZ=m_z0HF-m_z0pos+HFsize;
@@ -2154,7 +2153,7 @@ G4SubtractionSolid *DetectorConstruction::constructSolidWithHoles (std::string b
   G4SubtractionSolid* result = 0;
 
   bool isSmall = false;
-  if (m_coarseGranularity) isSmall = true;
+  if (!m_coarseGranularity) isSmall = true;
 
   //center of rectangles to remove
   double xc[34] = {
