@@ -50,7 +50,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
   m_maxEta0 = 3.0;
   // min Eta per layer, 0-27 for EE, 28-35 FH, 36-51 BH
   //double minEta[52] =
-  double minEta_tmp[52] = { 1.461, 1.464, 1.463, 1.466, 1.465, 1.468, 1.467, 1.469, 1.469, 1.471,
+  double minEta_tmp[52] = { 11.461, 1.464, 1.463, 1.466, 1.465, 1.468, 1.467, 1.469, 1.469, 1.471,
 			1.471, 1.473, 1.472, 1.475, 1.474, 1.477, 1.476, 1.478, 1.478, 1.480,
 			1.479, 1.482, 1.481, 1.483, 1.483, 1.485, 1.484, 1.487,
 			1.487, 1.490, 1.494, 1.497, 1.500, 1.503, 1.506, 1.493,
@@ -476,15 +476,15 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
         G4cout << "[DetectorConstruction] starting v_HGCAL(EE)_v9"<< G4endl;
 	
         //hard-point extension
-        G4double hpAirThick = 1*mm;
+        G4double hpAirThick = 0.1*mm;
 
         //lead-ss sandwich
-        G4double cuThick1 = 1*mm;
-        G4double inoxThick1 = 3*mm;
+        G4double cuThick1 = 0.1*mm;
+        G4double inoxThick1 = 0.3*mm;
         G4double leadThick[3] = {3.1*mm,5.2*mm,8.22*mm}; // cassetes 1; 2-9; 10-13;
-        G4double inoxThick2 = 3*mm;
-        G4double cuThick2 = 1*mm;
-        G4double airThick = 2*mm;
+        G4double inoxThick2 = 0.3*mm;
+        G4double cuThick2 = 0.1*mm;
+        G4double airThick = 0.2*mm;
 
         //motherboard
         G4double mbPCBThick(1.6*mm);
@@ -503,8 +503,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
         //these values are adapted from
         //https://espace.cern.ch/project-HGCAL/Shared%20Documents/2D%20DRAWINGS/PARAMETER%20DRAWINGS/PDF/20200629_HGCAL_PARAMETER_DRAWING.pdf
         //there is one more value at the moment because the drawing is for 14 cassettes
-        G4double layerZ0(3210.5);
-        G4double layerRvsZ_param[2]={1523.3+0.30053};
+        G4double cassetteVsEta_param[2]={0.002167,1.45883};
 
         std::vector<G4double> a_lThick, b_lThick;
         std::vector<std::string> a_lEle, b_lEle;
@@ -520,7 +519,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
           if(i==0) {
 
             //air just to get first layer in the correct position
-            a_lThick.push_back(199*mm); a_lEle.push_back("Air");
+            a_lThick.push_back(212.5*mm); a_lEle.push_back("Air");
 
             /*Chris said to ignore this for the moment
             a_lThick.push_back(2.*mm);   a_lEle.push_back("Al");
@@ -540,6 +539,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
           int Pbidx(0);
           if(i>0 && i<9) Pbidx=1;
           if(i>=9)       Pbidx=2;
+
           a_lThick.push_back(cuThick1);         a_lEle.push_back("Cu");
           a_lThick.push_back(inoxThick1);       a_lEle.push_back("SSteel");
           a_lThick.push_back(leadThick[Pbidx]); a_lEle.push_back("Pb");
@@ -591,16 +591,12 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 
           m_caloStruct.push_back( SamplingSection(a_lThick,a_lEle) );
           totalThick += m_caloStruct[m_caloStruct.size()-1].Total_thick;
-          G4double layerZ(layerZ0+totalThick);
-          G4double layerR(layerRvsZ_param[0]+layerRvsZ_param[1]*(layerZ-layerZ0));
-          m_minEta.push_back(getEtaFromRZ(layerR,layerZ));
+          m_minEta.push_back(cassetteVsEta_param[0]*i+cassetteVsEta_param[1]);
           m_maxEta.push_back(m_maxEta0);
 
           m_caloStruct.push_back( SamplingSection(b_lThick,b_lEle) );
           totalThick += m_caloStruct[m_caloStruct.size()-1].Total_thick;
-          layerZ=(layerZ0+totalThick);
-          layerR=(layerRvsZ_param[0]+layerRvsZ_param[1]*(layerZ-layerZ0));
-          m_minEta.push_back(getEtaFromRZ(layerR,layerZ));
+          m_minEta.push_back(cassetteVsEta_param[0]*i+cassetteVsEta_param[1]);
           m_maxEta.push_back(m_maxEta0);
         }
 
@@ -1886,12 +1882,14 @@ void DetectorConstruction::buildSectorStack(const unsigned sectorNum,
 	  if (sectorNum==0 || sectorNum==m_nSectors-1) {
 	    G4cout << "************ " << eleName;
 	    if (m_nSectors>1) G4cout << " sector " << sectorNum;
-	    G4cout << " layer " << i << " dEdx=" << m_caloStruct[i].ele_dEdx[ie] << " X0=" << m_caloStruct[i].ele_X0[ie]
-		   << " L0=" << m_caloStruct[i].ele_L0[ie] << " zpos=" ;
-
-	    if (i>=firstHFlayer_) G4cout << m_z0HF+zOverburden ;
-	    else G4cout << m_z0pos+zOverburden ;
-	    G4cout << "mm w=" << m_caloStruct[i].ele_thick[ie] << "mm";
+	    //G4cout << " layer " << i << " dEdx=" << m_caloStruct[i].ele_dEdx[ie] << " X0=" << m_caloStruct[i].ele_X0[ie]
+            //	   << " L0=" << m_caloStruct[i].ele_L0[ie] << " zpos=" ;
+            
+            G4cout << " layer " << i << " zpos=" ;
+            if (i>=firstHFlayer_) G4cout << m_z0HF+zOverburden ;
+            else G4cout << m_z0pos+zOverburden ;
+            G4cout << "mm w=" << m_caloStruct[i].ele_thick[ie] << "mm";
+            
 	    //G4cout << " d=" << m_materials[eleName]->GetDensity();
 	  //G4cout << G4endl;
 	  //G4cout << *(m_materials[eleName]->GetMaterialTable()) << G4endl;
@@ -1976,8 +1974,12 @@ void DetectorConstruction::buildSectorStack(const unsigned sectorNum,
       }
     }//loop on layers
   std::cout << " Z positions of sensitive layers: " << std::endl;
-  for (size_t i=0; i<m_caloStruct.size(); i++) {
-    std::cout << "sensitiveZ_[" << i << "] = " << m_caloStruct[i].sensitiveZ << ";" << std::endl;
+  for (size_t i=0; i<m_caloStruct.size(); i+=2) {
+    std::cout << "sensitiveZ_[" << i << "] = " << m_caloStruct[i].sensitiveZ << ";" 
+      //<< " maxRadius=" <<
+              << " minEta=" << m_minEta[i]
+              << " maxEta=" << m_maxEta[i]
+              << std::endl;
   }
 
   //dummy layer to get genparticles
