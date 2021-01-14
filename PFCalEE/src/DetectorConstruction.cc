@@ -1535,7 +1535,7 @@ void DetectorConstruction::DefineMaterials()
   m_materials["PCB"]->AddMaterial(m_materials["C"]  , 0.27804208);
   m_materials["PCB"]->AddMaterial(m_materials["H"]  , 0.068442752);
   m_materials["PCB"]->AddMaterial(m_materials["Br"] , 0.067109079);
-  m_dEdx["PCB"] = 0;
+  m_dEdx["PCB"] =  0.399; //matching CMSSW
 
   m_materials["Brass"]= new G4Material("Brass",8.53*g/cm3,2);
   m_materials["Brass"]->AddMaterial(m_materials["Cu"]  , 70*perCent);
