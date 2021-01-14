@@ -516,17 +516,21 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
           a_lThick.clear(); b_lThick.clear();
           a_lEle.clear();   b_lEle.clear();
 
-          //in front of first layer only (Chris said to ignore this for the moment)
-          /*
+          //in front of first layer only
           if(i==0) {
+
+            //air just to get first layer in the correct position
+            a_lThick.push_back(199*mm); a_lEle.push_back("Air");
+
+            /*Chris said to ignore this for the moment
             a_lThick.push_back(2.*mm);   a_lEle.push_back("Al");
             a_lThick.push_back(36.*mm);  a_lEle.push_back("Foam");
             a_lThick.push_back(2.*mm);   a_lEle.push_back("Al");
             a_lThick.push_back(10*mm);   a_lEle.push_back("Air");
             a_lThick.push_back(157.*mm); a_lEle.push_back("NeutMod");
             a_lThick.push_back(3.5*mm);  a_lEle.push_back("Air");
+            */
           }
-          */
 
           //A-side of the cassette
           //hard-point extension
@@ -534,7 +538,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
           
           //lead-ss sandwich
           int Pbidx(0);
-          if(i>1 && i<9) Pbidx=1;
+          if(i>0 && i<9) Pbidx=1;
           if(i>=9)       Pbidx=2;
           a_lThick.push_back(cuThick1);         a_lEle.push_back("Cu");
           a_lThick.push_back(inoxThick1);       a_lEle.push_back("SSteel");
