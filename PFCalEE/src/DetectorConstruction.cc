@@ -387,13 +387,18 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 
 	std::vector<G4double> lThickL;
 	std::vector<std::string> lEleL;
+
+
 	//in front of first layer
+	lThickL.push_back(210.5*mm);lEleL.push_back("Air");
+        /*
 	lThickL.push_back(2.*mm);lEleL.push_back("Al");
 	lThickL.push_back(36.*mm);lEleL.push_back("Foam");
 	lThickL.push_back(2.*mm);lEleL.push_back("Al");
 	lThickL.push_back(10*mm);lEleL.push_back("Air");
         lThickL.push_back(157.*mm);lEleL.push_back("NeutMod");
 	lThickL.push_back(3.5*mm);lEleL.push_back("Air");
+        */
 
 	//cassette structure
 
