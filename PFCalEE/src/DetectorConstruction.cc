@@ -503,14 +503,14 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
         //these values are adapted from
         //https://espace.cern.ch/project-HGCAL/Shared%20Documents/2D%20DRAWINGS/PARAMETER%20DRAWINGS/PDF/20200629_HGCAL_PARAMETER_DRAWING.pdf
         //there is one more value at the moment because the drawing is for 14 cassettes
-        G4double layerZ[14]={3210.5,3238,3267.7,3297.4,3327.1,3356.8,3386.5,3416.2,3445.9,3475.6,3505.3,3535,3564.7,3594.4};
-        G4double layerRadius[14];
-        for(int i=0; i<14; i++) layerRadius[i]= 1523.3+0.30053*(layerZ[i]-layerZ[0]);
+        G4double layerZ0(3210.5);
+        G4double layerRvsZ_param[2]={1523.3+0.30053};
 
         std::vector<G4double> a_lThick, b_lThick;
         std::vector<std::string> a_lEle, b_lEle;
         
         //cassette structure
+        G4double totalThick(0.);
         for(int i=0;i<13; i++) {
           
           a_lThick.clear(); b_lThick.clear();
@@ -586,12 +586,17 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 
 
           m_caloStruct.push_back( SamplingSection(a_lThick,a_lEle) );
-          m_minEta.push_back(getEtaFromRZ(layerRadius[i],layerZ[i]));
+          totalThick += m_caloStruct[m_caloStruct.size()-1].Total_thick;
+          G4double layerZ(layerZ0+totalThick);
+          G4double layerR(layerRvsZ_param[0]+layerRvsZ_param[1]*(layerZ-layerZ0));
+          m_minEta.push_back(getEtaFromRZ(layerR,layerZ));
           m_maxEta.push_back(m_maxEta0);
 
           m_caloStruct.push_back( SamplingSection(b_lThick,b_lEle) );
-          m_minEta.push_back(minEta[2+2*i+1]);m_maxEta.push_back(m_maxEta0); //FIXME as well
-          m_minEta.push_back(getEtaFromRZ(layerRadius[i],layerZ[i]));
+          totalThick += m_caloStruct[m_caloStruct.size()-1].Total_thick;
+          layerZ=(layerZ0+totalThick);
+          layerR=(layerRvsZ_param[0]+layerRvsZ_param[1]*(layerZ-layerZ0));
+          m_minEta.push_back(getEtaFromRZ(layerR,layerZ));
           m_maxEta.push_back(m_maxEta0);
         }
 
