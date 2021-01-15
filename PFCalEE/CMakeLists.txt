@@ -27,6 +27,9 @@ endif()
 #  message(STATUS "G4 Examples: HepMC package not found.") 
 #endif()
 
+#debug symbols
+set(CMAKE_BUILD_TYPE Debug)
+
 #----------------------------------------------------------------------------
 # Setup Geant4 include directories and compile definitions
 # Setup include directory for this project

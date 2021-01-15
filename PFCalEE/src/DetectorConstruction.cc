@@ -457,6 +457,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 	lThickL.push_back(0.1*mm);lEleL.push_back("Si");
 
 
+
 	for(G4int i=0; i<nK7; i++) {
 	  m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
 	  m_minEta.push_back(minEta[2+2*i]);m_maxEta.push_back(m_maxEta0); // minEta index: 2,4,...,26
@@ -470,7 +471,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 	  buildHGCALFHE(8);
 	  //BH = FH+BH scintillator version = 16 layers
 	  buildHGCALBHE(8);
-	}else {
+	} else {
           //add the back cover which would otherwise be added in buildHGCALFHE
           lThickL.clear(); lEleL.clear();
           lThickL.push_back(1*mm);  lEleL.push_back("Cu");
@@ -595,6 +596,12 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
           //hard-point extension
           b_lThick.push_back(hpAirThick); b_lEle.push_back("Air");
 
+          if(i==12 && version_==v_HGCALEE_v9) {
+            //add the back cover which would otherwise be added in buildHGCALFHE
+            b_lThick.push_back(1*mm);  b_lEle.push_back("Cu");
+            b_lThick.push_back(45*mm); b_lEle.push_back("SSteel");
+          }
+
           m_caloStruct.push_back( SamplingSection(a_lThick,a_lEle) );
           totalThick += m_caloStruct[m_caloStruct.size()-1].Total_thick;
           m_minEta.push_back(cassetteVsEta_param[0]*i+cassetteVsEta_param[1]);
@@ -612,13 +619,6 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
           buildHGCALFHE(9);
           //BH = FH+BH scintillator version
           buildHGCALBHE(9);
-        }else {
-          //add the back cover which would otherwise be added in buildHGCALFHE
-          a_lThick.clear(); a_lEle.clear();
-          a_lThick.push_back(1*mm);  a_lEle.push_back("Cu");
-          a_lThick.push_back(45*mm); a_lEle.push_back("SSteel");
-          m_caloStruct.push_back( SamplingSection(a_lThick,a_lEle) );
-          m_minEta.push_back( m_minEta[m_minEta.size()-1] );m_maxEta.push_back(m_maxEta0);
         }
 
         break;
