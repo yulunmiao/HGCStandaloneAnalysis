@@ -476,7 +476,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
           lThickL.push_back(1*mm);  lEleL.push_back("Cu");
           lThickL.push_back(45*mm); lEleL.push_back("SSteel");
           m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
-	  m_minEta.push_back(m_minEta.size()-1);m_maxEta.push_back(m_maxEta0);
+	  m_minEta.push_back( m_minEta[m_minEta.size()-1] ); m_maxEta.push_back(m_maxEta0);
         }
 
 	break;
@@ -618,7 +618,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
           a_lThick.push_back(1*mm);  a_lEle.push_back("Cu");
           a_lThick.push_back(45*mm); a_lEle.push_back("SSteel");
           m_caloStruct.push_back( SamplingSection(a_lThick,a_lEle) );
-          m_minEta.push_back(m_minEta.size()-1);m_maxEta.push_back(m_maxEta0);
+          m_minEta.push_back( m_minEta[m_minEta.size()-1] );m_maxEta.push_back(m_maxEta0);
         }
 
         break;
