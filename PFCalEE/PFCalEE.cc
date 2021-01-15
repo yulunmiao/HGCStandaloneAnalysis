@@ -30,10 +30,10 @@ int main(int argc,char** argv)
 
   // Choose the Random engine
   CLHEP::HepRandom::setTheEngine(new CLHEP::RanecuEngine);
-  
+
   // User Verbose output class
   G4VSteppingVerbose::SetInstance(new SteppingVerbose);
-     
+
   // Construct the default run manager
   G4RunManager * runManager = new G4RunManager;
 
@@ -45,6 +45,7 @@ int main(int argc,char** argv)
   //int model=DetectorConstruction::m_BOXWITHCRACK_100;
   //int model=DetectorConstruction::m_2016TB;
   //int model=DetectorConstruction::m_SIMPLE_100;
+  bool coarseGranularity(true);
 
   int shape = 4;
 
@@ -63,8 +64,9 @@ int main(int argc,char** argv)
   if(argc>6) absThickW = argv[6];
   if(argc>7) absThickPb = argv[7];
   if(argc>8) dropLayers = argv[8];
+  if(argc>9) coarseGranularity=bool(atoi(argv[9]));
 
-  runManager->SetUserInitialization(new DetectorConstruction(version,model,shape,absThickW,absThickPb,dropLayers));
+  runManager->SetUserInitialization(new DetectorConstruction(version,model,shape,absThickW,absThickPb,dropLayers,coarseGranularity));
   runManager->SetUserInitialization(new PhysicsList);
 
   // Set user action classes
@@ -72,10 +74,10 @@ int main(int argc,char** argv)
   runManager->SetUserAction(new RunAction);
   runManager->SetUserAction(new EventAction);
   runManager->SetUserAction(new SteppingAction);
-  
+
   // Initialize G4 kernel
   runManager->Initialize();
-  
+
   // Initialize visualization
 #ifdef G4VIS_USE
   G4VisManager* visManager = new G4VisExecutive;
@@ -96,7 +98,7 @@ int main(int argc,char** argv)
   G4String fileName;
   if (argc>1) fileName = argv[1];
   if (argc!=1)   // batch mode
-    {    
+    {
       std::cout << " ====================================== " << std::endl
 		<< " ========  Running batch mode ========= " << std::endl
 		<< " ====================================== " << std::endl;
@@ -111,7 +113,7 @@ int main(int argc,char** argv)
 #ifdef G4UI_USE
       G4UIExecutive* ui = new G4UIExecutive(argc, argv);
 #ifdef G4VIS_USE
-      UImanager->ApplyCommand("/control/execute vis.mac"); 
+      UImanager->ApplyCommand("/control/execute vis.mac");
 #endif
       if (ui->IsGUI())
         UImanager->ApplyCommand("/control/execute gui.mac");

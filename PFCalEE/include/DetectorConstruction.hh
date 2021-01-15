@@ -27,7 +27,7 @@ class DetectorConstruction : public G4VUserDetectorConstruction
 {
 public:
 
-  enum DetectorVersion { 
+  enum DetectorVersion {
     v_CALICE=0,
     v_HGCALEE_Si80=1,
     v_HGCALEE_Si120=2,
@@ -76,6 +76,10 @@ public:
     v_HGCALEE_v8_Cu=65,
     v_HGCALEE_v8_Cu_12=66,
     v_HGCALEE_v8_air4=67,
+    v_HGCALEE_v9=70,
+    v_HGCALHE_v9=71,
+    v_HGCALBE_v9=72,
+    v_HGCAL_v9=73,
     v_HGCALEE_TB=100,
     v_HGCALEE_TB_gap0=101,
     v_HGCALEE_TB_allW=102,
@@ -96,14 +100,15 @@ public:
   /**
      @short CTOR
    */
-  DetectorConstruction(G4int ver=DetectorConstruction::v_CALICE, 
+  DetectorConstruction(G4int ver=DetectorConstruction::v_CALICE,
 		       G4int mod=DetectorConstruction::m_SIMPLE_20,
 		       G4int shape=1,
 		       //std::string absThickW="1.75,1.75,1.75,1.75,1.75,2.8,2.8,2.8,2.8,2.8,4.2,4.2,4.2,4.2,4.2",
 		       //std::string absThickPb="1,1,1,1,1,2.1,2.1,2.1,2.1,2.1,4.4,4.4,4.4,4.4",
 		       std::string absThickW="",
 		       std::string absThickPb="",
-		       std::string dropLayer="");
+		       std::string dropLayer="",
+           bool coarseGranularity=true);
 
   void buildHGCALFHE(const unsigned aVersion);
   void buildHGCALBHE(const unsigned aVersion);
@@ -128,7 +133,7 @@ public:
   /**
      @short define the calorimeter materials
    */
-  void DefineMaterials(); 
+  void DefineMaterials();
   std::map<std::string, G4Material *> m_materials;
   std::map<std::string, G4double > m_dEdx;
   std::map<std::string, G4Colour > m_colours;
@@ -153,7 +158,7 @@ public:
      @short DTOR
    */
   ~DetectorConstruction();
-  
+
 
   /**
      @short getters
@@ -162,7 +167,7 @@ public:
   G4double GetCalorSizeZ()  { return m_CalorSizeZ; }
   G4double GetWorldSizeXY() { return m_WorldSizeXY; }
   G4double GetWorldSizeZ()  { return m_WorldSizeZ; }
-
+  G4double GetCalorLateralGranularity() { return m_coarseGranularity;}
   G4double GetMinEta() { return m_minEta0; }
   G4double GetMaxEta() { return m_maxEta0; }
 
@@ -200,19 +205,19 @@ private:
   /**
      @short compute the calor dimensions
    */
-  void UpdateCalorSize(); 
+  void UpdateCalorSize();
 
   /**
      @short build the calorimeter
    */
-  G4VPhysicalVolume* ConstructCalorimeter();     
+  G4VPhysicalVolume* ConstructCalorimeter();
 
   void buildSectorStack(const unsigned sectorNum,
-			const G4double & minL, 
+			const G4double & minL,
 			const G4double & width);
 
   void fillInterSectorSpace(const unsigned sectorNum,
-			    const G4double & minL, 
+			    const G4double & minL,
 			    const G4double & width);
 
   G4double getCrackOffset(size_t layer);
@@ -226,7 +231,7 @@ private:
   G4VSolid *constructSupportCone (std::string baseName, G4double thick, G4double zpos,const G4double & minL, const G4double & width);
 
   std::vector<G4Material* > m_SensitiveMaterial;
-  
+
   G4double           m_CalorSizeXY, m_CalorSizeZ;
   G4double           m_minRadius,m_maxRadius;
   G4double           m_minRadiusHF,m_maxRadiusHF;
@@ -238,18 +243,18 @@ private:
   G4double           m_z0pos, m_z0HF;
   G4double           m_WorldSizeXY, m_WorldSizeZ;
   G4double m_nSectors,m_sectorWidth,m_interSectorWidth;
-            
-  G4VSolid*          m_solidWorld;    //pointer to the solid World 
+
+  G4VSolid*          m_solidWorld;    //pointer to the solid World
   G4LogicalVolume*   m_logicWorld;    //pointer to the logical World
-  G4VPhysicalVolume* m_physWorld;     //pointer to the physical World  
-  
+  G4VPhysicalVolume* m_physWorld;     //pointer to the physical World
+
   std::vector<G4LogicalVolume*>   m_logicSi;    //pointer to the logical Si volumes
   std::vector<G4LogicalVolume*>   m_logicAl;    //pointer to the logical Si volumes
   std::vector<G4LogicalVolume*>   m_logicAbs;    //pointer to the logical absorber volumes situated just before the si
 
+  bool m_coarseGranularity; //whether fine or coarse cells should be used
   DetectorMessenger* m_detectorMessenger;  //pointer to the Messenger
 };
 
 
 #endif
-
