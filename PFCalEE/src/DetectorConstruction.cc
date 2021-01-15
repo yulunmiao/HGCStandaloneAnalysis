@@ -470,7 +470,15 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 	  buildHGCALFHE(8);
 	  //BH = FH+BH scintillator version = 16 layers
 	  buildHGCALBHE(8);
-	}
+	}else {
+          //add the back cover which would otherwise be added in buildHGCALFHE
+          lThickL.clear(); lEleL.clear();
+          lThickL.push_back(1*mm);  lEleL.push_back("Cu");
+          lThickL.push_back(45*mm); lEleL.push_back("SSteel");
+          m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
+	  m_minEta.push_back(m_minEta.size()-1);m_maxEta.push_back(m_maxEta0);
+        }
+
 	break;
       }
       
@@ -598,14 +606,21 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
           m_maxEta.push_back(m_maxEta0);
         }
 
-        
         //add HCAL if full detector
         if(version_==v_HGCAL_v9){
           //FH = FH+BH silicon version
           buildHGCALFHE(9);
           //BH = FH+BH scintillator version
           buildHGCALBHE(9);
+        }else {
+          //add the back cover which would otherwise be added in buildHGCALFHE
+          a_lThick.clear(); a_lEle.clear();
+          a_lThick.push_back(1*mm);  a_lEle.push_back("Cu");
+          a_lThick.push_back(45*mm); a_lEle.push_back("SSteel");
+          m_caloStruct.push_back( SamplingSection(a_lThick,a_lEle) );
+          m_minEta.push_back(m_minEta.size()-1);m_maxEta.push_back(m_maxEta0);
         }
+
         break;
       }
 
@@ -1681,7 +1696,7 @@ void DetectorConstruction::UpdateCalorSize(){
     m_CalorSizeXY=2800*2;//use full length for making hexagon map
     m_minRadius = 150;
     m_maxRadius = m_CalorSizeXY;
-    if (version_ != v_HGCAL_v8 && version_ != v_HGCALEE_v8 && version_!=v_HGCALEE_v8_air3 && version_!=v_HGCALEE_v8_air4 && version_!=v_HGCALEE_v8_Cu && version_!=v_HGCALEE_v8_Cu_12) {
+    if (version_ != v_HGCAL_v8 && version_ != v_HGCALEE_v8 && version_!=v_HGCALEE_v8_air3 && version_!=v_HGCALEE_v8_air4 && version_!=v_HGCALEE_v8_Cu && version_!=v_HGCALEE_v8_Cu_12 && version_!=v_HGCAL_v9 && version_!=v_HGCALEE_v9) {
       m_minEta.resize(m_caloStruct.size(),m_minEta0);
       m_maxEta.resize(m_caloStruct.size(),m_maxEta0);
     }
@@ -1942,7 +1957,7 @@ void DetectorConstruction::buildSectorStack(const unsigned sectorNum,
       }//loop on elements
 
       //add support cone, for EE only, and only in full det version
-      if (i<28 && model_==DetectorConstruction::m_FULLSECTION && (version_ == v_HGCALEE_v6 || version_ ==  v_HGCAL_v6 || version_ == v_HGCALEE_v7 || version_ ==  v_HGCAL_v7 || version_ == v_HGCALEE_v8 || version_ ==  v_HGCAL_v8 || version_==v_HGCALEE_v8_air3 || version_==v_HGCALEE_v8_air4 || version_==v_HGCALEE_v8_Cu || version_==v_HGCALEE_v8_Cu_12)) {
+      if (i<28 && model_==DetectorConstruction::m_FULLSECTION && (version_ == v_HGCALEE_v6 || version_ ==  v_HGCAL_v6 || version_ == v_HGCALEE_v7 || version_ ==  v_HGCAL_v7 || version_ == v_HGCALEE_v8 || version_ ==  v_HGCAL_v8 || version_==v_HGCALEE_v8_air3 || version_==v_HGCALEE_v8_air4 || version_==v_HGCALEE_v8_Cu || version_==v_HGCALEE_v8_Cu_12 || version_==v_HGCAL_v9 || version_==v_HGCALEE_v9)) {
 	//remove support cone for moderator
 	//if (i==0) {
 	//totalThicknessLayer -= 100;
@@ -1978,7 +1993,7 @@ void DetectorConstruction::buildSectorStack(const unsigned sectorNum,
       }
     }//loop on layers
   std::cout << " Z positions of sensitive layers: " << std::endl;
-  for (size_t i=0; i<m_caloStruct.size(); i+=2) {
+  for (size_t i=0; i<m_caloStruct.size(); i++) {
     std::cout << "sensitiveZ_[" << i << "] = " << m_caloStruct[i].sensitiveZ << ";" 
       //<< " maxRadius=" <<
               << " minEta=" << m_minEta[i]
