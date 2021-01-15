@@ -5,6 +5,8 @@
 #include <cmath>
 #include <stdlib.h>
 
+ClassImp(HGCSSCluster);
+
 HGCSSCluster::HGCSSCluster(const HGCSSRecoHit & aRecHit){
   energy_ = aRecHit.energy();
   //mm->cm

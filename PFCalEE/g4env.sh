@@ -33,3 +33,5 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${BASEINSTALL}/lib64:${HepMC_DIR}/lib:$U
 #cd - &> /dev/null
 #export PATH=$DAWNHOME/bin:$PATH:$FASTJET_INSTALL/bin
 export PATH=$PATH:${BASEINSTALL}/bin:${G4Build}
+export ROOT_INCLUDE_PATH=$ROOT_INCLUDE_PATH:${USERBASE}/userlib/include
+

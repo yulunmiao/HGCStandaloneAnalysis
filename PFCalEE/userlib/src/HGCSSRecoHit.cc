@@ -4,6 +4,7 @@
 #include <cmath>
 #include <stdlib.h>
 
+ClassImp(HGCSSRecoHit);
 
 HGCSSRecoHit::HGCSSRecoHit(const HGCSSSimHit & aSimHit, 
 			   const HGCSSSubDetector & subdet,

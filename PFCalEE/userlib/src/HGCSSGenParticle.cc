@@ -4,6 +4,7 @@
 #include <cmath>
 #include <stdlib.h>
 
+ClassImp(HGCSSGenParticle);
 
 void HGCSSGenParticle::Print(std::ostream & aOs) const{
   aOs << std::setprecision(6)

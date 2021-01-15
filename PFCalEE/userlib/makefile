@@ -73,7 +73,7 @@ $(LIBDIR)/lib$(LIBNAME).so:  $(OBJS) $(LIBDEPENDS)
 lib: $(LIBDIR)/lib$(LIBNAME).so
 
 dictionary:
-	rootcint -v -f src/dict.cc include/HGCSSInfo.hh include/HGCSSEvent.hh include/HGCSSSamplingSection.hh include/HGCSSSimHit.hh include/HGCSSGenParticle.hh include/HGCSSRecoHit.hh include/HGCSSRecoJet.hh include/HGCSSCluster.hh include/HGCSSMipHit.hh include/LinkDef.h
+	rootcling -v -f src/dict.cc include/HGCSSInfo.hh include/HGCSSEvent.hh include/HGCSSSamplingSection.hh include/HGCSSSimHit.hh include/HGCSSGenParticle.hh include/HGCSSRecoHit.hh include/HGCSSRecoJet.hh include/HGCSSCluster.hh include/HGCSSMipHit.hh include/LinkDef.h
 	sed "s/include\/HGCSS/HGCSS/" src/dict.cc > tmp
 	mv tmp src/dict.cc
 #> include/dict.h

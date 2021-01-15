@@ -1,5 +1,7 @@
 #include "HGCSSMipHit.hh"
 
+ClassImp(HGCSSMipHit);
+
 void HGCSSMipHit::set_xref_neighlay(const unsigned idx,const double & val){
   if (idx>4) {
     std::cout << " -- Problem with neighbour index, too large!" << std::endl;

@@ -4,6 +4,8 @@
 #include <cmath>
 #include <stdlib.h>
 
+ClassImp(HGCSSSimHit);
+
 HGCSSSimHit::HGCSSSimHit(const G4SiHit & aSiHit,
 			 const unsigned & asilayer,
 			 TH2Poly* map,

@@ -4,6 +4,8 @@
 #include <cmath>
 #include <stdlib.h>
 
+ClassImp(HGCSSRecoJet);
+
 HGCSSRecoJet::HGCSSRecoJet(const double & px, const double & py, const double & pz, const double & E){
   energy_ = E;
   px_ = px;
