@@ -6,14 +6,17 @@ import commands
 import math
 import random
 
+git_tag=os.popen('git describe --tags --abbrev=0').read()
+
 usage = 'usage: %prog [options]'
 parser = optparse.OptionParser(usage)
-parser.add_option('-s', '--short-queue' ,    dest='squeue'             , help='short batch queue'            , default='1nd')
-parser.add_option('-q', '--long-queue'  ,    dest='lqueue'             , help='long batch queue'             , default='2nw')
-parser.add_option('-t', '--git-tag'     ,    dest='gittag'             , help='git tag version'              , default='V00-00-00')
+parser.add_option('-s', '--short-queue' ,    dest='squeue'             , help='short batch queue [%default]' , default='tomorrow')
+parser.add_option('-q', '--long-queue'  ,    dest='lqueue'             , help='long batch queue [%default]'  , default='nextweek')
+parser.add_option('-t', '--git-tag'     ,    dest='gittag'             , help='git tag version [%default]'   , default=git_tag)
 parser.add_option('-r', '--run'         ,    dest='run'                , help='stat run'                     , default=-1,      type=int)
 parser.add_option('-v', '--version'     ,    dest='version'            , help='detector version'             , default=3,      type=int)
 parser.add_option('-m', '--model'       ,    dest='model'              , help='detector model'               , default=3,      type=int)
+parser.add_option(      '--granularity' ,    dest='granularity'        , help='lateral granularity (0=HD,1=LD) [%default]', default=1,      type=int)
 parser.add_option('-a', '--eta'         ,    dest='eta'                , help='incidence eta'                , default=0,      type=float)
 parser.add_option('-p', '--phi'         ,    dest='phi'                , help='incidence phi angle in pi unit' , default=0.5,      type=float)
 parser.add_option('-b', '--Bfield'      ,    dest='Bfield'             , help='B field value in Tesla'       , default=0,      type=float)
@@ -120,7 +123,7 @@ for et in enlist :
         scriptFile.write('eos cp %s/%s %s\n'%(opt.datafileeos,opt.datafile,opt.datafile))
 
     scriptFile.write('cp %s/g4steer.mac .\n'%(outDir))
-    scriptFile.write('PFCalEE g4steer.mac %d %d %f %d %s %s %s | tee g4.log\n'%(opt.version,opt.model,opt.eta,shape,wthick,pbthick,droplayers))
+    scriptFile.write('PFCalEE g4steer.mac %d %d %f %d %s %s %s %d| tee g4.log\n'%(opt.version,opt.model,opt.eta,shape,wthick,pbthick,droplayers,opt.granularity))
     outTag='%s_version%d_model%d_%s'%(label,opt.version,opt.model,bval)
     if et>0 : outTag='%s_et%d'%(outTag,et)
     if opt.eta>0 : outTag='%s_eta%3.3f'%(outTag,opt.eta) 

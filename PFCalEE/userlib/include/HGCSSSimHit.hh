@@ -20,9 +20,9 @@
 //static const float CELL_SIZE_X=0.5;
 //for hexagons: side size.
 static const float CELL_SIZE_X=6.496345; //2.5;//mm
-//small hexagons
-//static const float CELL_SIZE_X=4.76;//mm
+static const float FINE_CELL_SIZE_X=4.76;//mm
 static const float CELL_SIZE_Y=CELL_SIZE_X;
+static const float FINE_CELL_SIZE_Y=FINE_CELL_SIZE_X;
 
 class HGCSSSimHit{
 
@@ -42,9 +42,15 @@ public:
     trackIDMainParent_(0),
     energyMainParent_(0)
   {
-    
+
   };
-  HGCSSSimHit(const G4SiHit & aSiHit, const unsigned & asilayer, TH2Poly* map, const float cellSize = CELL_SIZE_X, const bool etaphimap = false);
+  HGCSSSimHit(const G4SiHit & aSiHit, const unsigned & asilayer, TH2Poly* map, float cellSize = CELL_SIZE_X, bool etaphimap = false);
+
+  HGCSSSimHit(const G4SiHit & aSiHit, const unsigned & asilayer, TH2Poly* map, bool coarseGranularity, bool etaphimap = false):
+    HGCSSSimHit(aSiHit,asilayer,map,(coarseGranularity ? CELL_SIZE_X : FINE_CELL_SIZE_X),etaphimap){
+
+  }
+
 
   virtual ~HGCSSSimHit(){};
 
