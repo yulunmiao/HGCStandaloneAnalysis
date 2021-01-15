@@ -227,6 +227,8 @@ void processHist(const unsigned iL,
     if (isScint) HGCSSGeometryConversion::convertFromEtaPhi(xy,meanZpos);
     double digiE = 0;
     double simE = lIter->second.energy;
+    double hitTime = simE>0 ? lIter->second.time/simE : 0;
+
     //double time = 0;
     //if (simE>0) time = histE[iele].time/simE;
     
@@ -269,15 +271,15 @@ void processHist(const unsigned iL,
     double noiseFrac = 1.0;
     if (simEcor>0) noiseFrac = (digiE-simEcor)/simEcor;
     
-    //for silicon-based Calo
+    ////for silicon-based Calo
     unsigned adc = 0;
-    if (isSi){
-      adc = myDigitiser.adcConverter(digiE,adet);
-      digiE = myDigitiser.adcToMIP(adc,adet);
-    }
-    bool aboveThresh = //digiE > 0.5;
-      (isSi && adc >= pThreshInADC[iL]) ||
-      (isScint && digiE >= pThreshInADC[iL]*myDigitiser.adcToMIP(1,adet,false));
+    //if (isSi){
+    adc = myDigitiser.adcConverter(digiE,adet);
+    digiE = myDigitiser.adcToMIP(adc,adet);
+    //}
+    bool aboveThresh = adc >= pThreshInADC[iL];//digiE > 0.5;
+    //(isSi && adc >= pThreshInADC[iL]) ||
+    //(isScint && digiE >= pThreshInADC[iL]*myDigitiser.adcToMIP(1,adet,false));
     //histE->SetBinContent(iX,iY,digiE);
     if ((!pSaveDigis && aboveThresh) ||
 	pSaveDigis)
@@ -286,6 +288,7 @@ void processHist(const unsigned iL,
 	HGCSSRecoHit lRecHit;
 	lRecHit.layer(iL);
 	lRecHit.energy(digiE);
+	lRecHit.time(hitTime);
 	lRecHit.adcCounts(adc);
 	lRecHit.x(xy.first);
 	lRecHit.y(xy.second);
@@ -609,7 +612,7 @@ int main(int argc, char** argv){//main
   if (doEtaSel){
     for (unsigned iL(0); iL<nLayers; ++iL){
       pNoiseInMips[iL] = 0;
-      pThreshInADC[iL] = 0;
+      pThreshInADC[iL] = 1;
     }
   }
 
@@ -727,6 +730,8 @@ int main(int argc, char** argv){//main
 	if (!passeta) continue;
       }
 
+      //std::pair<double,double> xy = geom[iB];
+      //if (isScint) HGCSSGeometryConversion::convertFromEtaPhi(xy,meanZpos);
       std::pair<double,double> xy = lHit.get_xy(subdet,geomConv,shape);
       double posx = xy.first;//lHit.get_x(cellSize);
       double posy = xy.second;//lHit.get_y(cellSize);

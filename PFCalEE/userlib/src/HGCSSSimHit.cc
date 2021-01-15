@@ -138,9 +138,10 @@ std::pair<double,double> HGCSSSimHit::get_xy(const HGCSSSubDetector & subdet,
     std::pair<double,double> etaphi = subdet.type==DetectorEnum::BHCAL1?aGeom.squareGeom1.find(cellid_)->second : aGeom.squareGeom2.find(cellid_)->second;
     //convert back to x-y
     double theta = 2*atan(exp(-1.*etaphi.first));
+    double phi = etaphi.second;
     double r = zpos_/cos(theta);
-    double x = r*sin(theta)*cos(etaphi.second);
-    double y = r*sin(theta)*sin(etaphi.second);
+    double x = r*sin(theta)*cos(phi);
+    double y = r*sin(theta)*sin(phi);
     return std::pair<double,double>(x,y);
   }
   else if (shape==4) return aGeom.squareGeom.find(cellid_)->second;

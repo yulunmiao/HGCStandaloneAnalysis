@@ -40,12 +40,12 @@ double pT(const unsigned E, const unsigned eta){
   return E/cosh(eta/10.);
 };
 
-void drawChi2(TCanvas *myc,TH1F ** p_chi2ndf){
+void drawChi2(TCanvas *myc,TH1F ** p_chi2ndf,const unsigned nSR){
   
   gStyle->SetOptStat("eMRuo");
   gStyle->SetStatH(0.4);
   gStyle->SetStatW(0.4);
-  for (unsigned iSR(0); iSR<8;++iSR){
+  for (unsigned iSR(0); iSR<nSR;++iSR){
     myc->cd(iSR+1);
     if (p_chi2ndf[iSR]) p_chi2ndf[iSR]->Draw();
   }
@@ -273,7 +273,7 @@ TPad* plotCalibration(TGraphErrors *gr,TPad *pad,bool doRatio, TGraphErrors *grD
       grDelta->SetPoint(ip,x,((y-loffset)/lslope-x)/x);
       double err = gr->GetErrorY(ip)/lslope*1./x;
       grDelta->SetPointError(ip,0,err);
-      //std::cout << "Calib " << ip << " Egen=" << x << " Erec=" << y << " delta=" << ((y-loffset)/lslope-x)/x << std::endl;
+      std::cout << "Calib " << ip << " Egen=" << x << " Erec=" << y << " delta=" << ((y-loffset)/lslope-x)/x << std::endl;
     }
     grDelta->SetTitle("");
     grDelta->SetMinimum(-1.*range);
@@ -572,16 +572,17 @@ int plotEGReso(){//main
   TFile *fout = TFile::Open(foutname.str().c_str(),"RECREATE");
   
   unsigned nLayers = 28;
-  const unsigned nSR = 6;
+  const unsigned nSR = 1;
+  const unsigned srIdx[nSR] = {3};//{0,1,2,3,4,5};
   //const double radius[nSR] = {13,15,20,23,26,53};
-  const double radius[nSR] = {9,14,21,25,37,53};
+  const double radius[nSR] = {25};//{9,14,21,25,37,53};
   double noise100[nSR];
   double noise200[nSR];
   double noise300[nSR];
   //unsigned ncellsSmall[nSR] = {7,13,19,31,37,151};
   //unsigned ncellsLarge[nSR] = {7,7,13,19,19,85};
-  unsigned ncellsSmall[nSR] = {7,13,19,37,61,151};
-  unsigned ncellsLarge[nSR] = {1,7,13,19,37,85};
+  unsigned ncellsSmall[nSR] = {37};//7,13,19,37,61,151};
+  unsigned ncellsLarge[nSR] = {19};//1,7,13,19,37,85};
   double fitQual[nSR];
   double srval[nSR];
   double srerr[nSR];
@@ -669,10 +670,10 @@ int plotEGReso(){//main
       //if (iV==nV-1) nLayers = 24;
 
       for (unsigned iS(0); iS<nS;++iS){//loop on scenarios
-	TString inputDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalTDR/Bis/gitV08-05-00/version"+version[iV]+"/"+scenario[iS]+"/";
+	TString inputDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalTDR/gittestNewSetup/version"+version[iV]+"/"+TString(scenario[iS])+"/";
 	//TString inputDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalTDR/gittestV8/version"+version[iV]+"/"+scenario[iS]+"/";
 	//TString inputDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalTDR/gittestCu/version"+version[iV]+"/"+scenario[iS]+"/";
-	TString plotDir = inputDir+"TDR/";
+	TString plotDir = inputDir;//+"TDR/";
 
 	TFile *fcalib;
 	std::ostringstream label;
@@ -783,6 +784,7 @@ int plotEGReso(){//main
 	    
 	    std::ostringstream lsave;
 	    lsave << "eta"<< eta[ieta]  << "_pu" << puOption;
+	    if (ipu==0) lsave << "raw";
 	    fout->mkdir(lsave.str().c_str());
 	    fout->cd(lsave.str().c_str());
 	    gStyle->SetOptStat("eMRuo");
@@ -840,23 +842,23 @@ int plotEGReso(){//main
 		  for (unsigned iL(0);iL<nLayers;++iL){	      
 		    //if (iL==0) lName << "absweight_" << iL  << "*subtractedenergy_" << iL << "_SR" << iSR ;
 		    //else lName << "+" << "absweight_" << iL  << "*subtractedenergy_" << iL << "_SR" << iSR ;
-		    if (iL==0) lNameTot << "absweight_" << iL  << "*energy_" << iL << "_SR" << iSR ;
-		    else lNameTot << "+absweight_" << iL  << "*energy_" << iL << "_SR" << iSR ;
-		    //if (iL==0) lNameTot << "20.3628*energy_" << iL << "_SR" << iSR ;
-		    //else if (iL==nLayers-1) lNameTot << "+13.0629*energy_" << iL << "_SR" << iSR ;
-		    //else lNameTot << "+10.0166*energy_" << iL << "_SR" << iSR ;
+		    if (iL==0) lNameTot << "absweight_" << iL  << "*energy_" << iL << "_SR" << srIdx[iSR] ;
+		    else lNameTot << "+absweight_" << iL  << "*energy_" << iL << "_SR" << srIdx[iSR] ;
+		    //if (iL==0) lNameTot << "20.3628*energy_" << iL << "_SR" << srIdx[iSR] ;
+		    //else if (iL==nLayers-1) lNameTot << "+13.0629*energy_" << iL << "_SR" << srIdx[iSR] ;
+		    //else lNameTot << "+10.0166*energy_" << iL << "_SR" << srIdx[iSR] ;
 
 		    //use always largest area for correction
-		    //if (iL==nLayers-2) lNameBack << "10.0166*energy_" << iL << "_SR" << iSR ;
-		    //else if (iL==nLayers-1) lNameBack << "+13.0629*energy_" << iL << "_SR" << iSR ;
-		    //else if (iL>nLayers-2) lNameBack << "+10.0166*energy_" << iL << "_SR" << iSR ;
-		    if (iL==nLayers-2) lNameBack << "absweight_" << iL << "*energy_" << iL << "_SR" << iSR ;
-		    else if (iL==nLayers-1) lNameBack << "+absweight_" << iL << "*energy_" << iL << "_SR" << iSR ;
-		    else if (iL>nLayers-2) lNameBack  << "+absweight_" << iL<< "*energy_" << iL << "_SR" << iSR ;
+		    //if (iL==nLayers-2) lNameBack << "10.0166*energy_" << iL << "_SR" << srIdx[iSR] ;
+		    //else if (iL==nLayers-1) lNameBack << "+13.0629*energy_" << iL << "_SR" << srIdx[iSR] ;
+		    //else if (iL>nLayers-2) lNameBack << "+10.0166*energy_" << iL << "_SR" << srIdx[iSR] ;
+		    if (iL==nLayers-2) lNameBack << "absweight_" << iL << "*energy_" << iL << "_SR" << srIdx[iSR] ;
+		    else if (iL==nLayers-1) lNameBack << "+absweight_" << iL << "*energy_" << iL << "_SR" << srIdx[iSR] ;
+		    else if (iL>nLayers-2) lNameBack  << "+absweight_" << iL<< "*energy_" << iL << "_SR" << srIdx[iSR] ;
 		  }
 		}
 		else lNameTot << "wgtEtotal";///" << tanh(etaval[ieta]);
-		if (iSR==4){
+		if (srIdx[iSR]==4){
 		  //std::cout << lName.str() << std::endl;
 		  //return 1;
 		}
@@ -894,22 +896,26 @@ int plotEGReso(){//main
 		  TF1 *fitcor = (TF1*)tmpProf->GetFunction("pol1");
 		  if (!fitcor) {
 		    std::cout << " Fit failed for back leakage correction" << std::endl;
-		    return 1;
+		    mycE2D[iE]->Update();
+		    backLeakCor[oldIdx[iE]][iSR] = 0;
+		    continue;
+		    //return 1;
 		  }
-
-		  backLeakCor[oldIdx[iE]][iSR] = fitcor->GetParameter(1);
-
-		  char buf[500];
-		  TLatex lat;
-		  sprintf(buf,"E=%3.3f #times f_{back} + %3.3f",backLeakCor[oldIdx[iE]][iSR],fitcor->GetParameter(0));
-		  lat.DrawLatexNDC(0.25,0.85,buf);
-
-		  Int_t np=corrBackLeakFit[iSR]->GetN();
-		  //if (!dovsE) corrBackLeakFit[iSR]->SetPoint(np,genEn[iE],backLeakCor[oldIdx[iE]][iSR]);
-		  corrBackLeakFit[iSR]->SetPoint(np,E(genEn[iE],eta[ieta]),backLeakCor[oldIdx[iE]][iSR]);
-		  corrBackLeakFit[iSR]->SetPointError(np,0.0,fitcor->GetParError(1));
-
-		  //if (iSR==4) return 1;
+		  else {
+		    backLeakCor[oldIdx[iE]][iSR] = fitcor->GetParameter(1);
+		    
+		    char buf[500];
+		    TLatex lat;
+		    sprintf(buf,"E=%3.3f #times f_{back} + %3.3f",backLeakCor[oldIdx[iE]][iSR],fitcor->GetParameter(0));
+		    lat.DrawLatexNDC(0.25,0.85,buf);
+		    
+		    Int_t np=corrBackLeakFit[iSR]->GetN();
+		    //if (!dovsE) corrBackLeakFit[iSR]->SetPoint(np,genEn[iE],backLeakCor[oldIdx[iE]][iSR]);
+		    corrBackLeakFit[iSR]->SetPoint(np,E(genEn[iE],eta[ieta]),backLeakCor[oldIdx[iE]][iSR]);
+		    corrBackLeakFit[iSR]->SetPointError(np,0.0,fitcor->GetParError(1));
+		    
+		    //if (iSR==4) return 1;
+		  }
 		}
 
 		mycE[iE]->cd(iSR+1);
@@ -923,7 +929,7 @@ int plotEGReso(){//main
 		}
 
 		std::ostringstream lcut;
-		if (iSR>0){
+		if (iSR>=0){
 		  lcut << lName.str() << ">0.7*";
 		  lcut << E(genEn[iE],eta[ieta]);
 		}
@@ -996,6 +1002,8 @@ int plotEGReso(){//main
 		//else 
 		calibRecoFit[iSR]->SetPoint(np,E(genEn[iE],eta[ieta]),lres.mean);
 		calibRecoFit[iSR]->SetPointError(np,0.0,lres.meanerr);
+
+		std::cout << " -- calib value for point " << np << " " << E(genEn[iE],eta[ieta]) << " " << lres.mean << " +/- " << lres.meanerr << std::endl;
 		
 		//use truth: residual calib won't affect resolution....
 		double reso = fabs(lres.sigma/lres.mean);
@@ -1041,7 +1049,7 @@ int plotEGReso(){//main
 	      
 	    }//loop on energies
 	    
-	    drawChi2(myc[2],p_chi2ndf);
+	    drawChi2(myc[2],p_chi2ndf,nSR);
 
 
 	    //plot and fit calib

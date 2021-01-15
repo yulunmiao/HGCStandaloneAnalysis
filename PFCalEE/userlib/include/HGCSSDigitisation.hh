@@ -43,8 +43,8 @@ public:
     timeCut_[DetectorEnum::MECAL] = 25;//ns
     timeCut_[DetectorEnum::BECAL] = 25;//ns
     timeCut_[DetectorEnum::FHCAL] = 25;//ns
-    timeCut_[DetectorEnum::BHCAL1] = 150;//ns
-    timeCut_[DetectorEnum::BHCAL2] = 150;//ns
+    timeCut_[DetectorEnum::BHCAL1] = 25;//ns
+    timeCut_[DetectorEnum::BHCAL2] = 25;//ns
     gainSmearing_[DetectorEnum::FECAL] = 0.02;//2% intercalibration
     gainSmearing_[DetectorEnum::MECAL] = 0.02;
     gainSmearing_[DetectorEnum::BECAL] = 0.02;
