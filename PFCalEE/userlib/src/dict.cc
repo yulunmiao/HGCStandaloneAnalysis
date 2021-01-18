@@ -1470,7 +1470,7 @@ namespace {
     };
     static const char* includePaths[] = {
 "/cvmfs/sft.cern.ch/lcg/releases/ROOT/v6.20.02-10e75/x86_64-centos7-gcc8-opt/include/",
-"/afs/cern.ch/work/p/psilva/HGCal/Standalone/descoping_studies_Jan2021/PFCal/PFCalEE/userlib/",
+"/afs/cern.ch/work/p/psilva/HGCal/Standalone/descoping_studies_Jan2021_v70/PFCal/PFCalEE/userlib/",
 0
     };
     static const char* fwdDeclCode = R"DICTFWDDCLS(
