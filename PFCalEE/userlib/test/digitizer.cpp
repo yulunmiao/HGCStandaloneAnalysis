@@ -716,14 +716,15 @@ int main(int argc, char** argv){//main
     for (unsigned iH(0); iH<(*hitvec).size(); ++iH){//loop on hits
       HGCSSSimHit lHit = (*hitvec)[iH];
       if (lHit.energy()<=0) continue;
-      
+      if(lHit.cellid()>4000000000) continue;
+
       //do not save hits with 0 energy...
       if (lHit.energy()>0 && pSaveSims) lSimHits.push_back(lHit);
       
       unsigned layer = lHit.layer();
       const HGCSSSubDetector & subdet = myDetector.subDetectorByLayer(layer);
       DetectorEnum type = subdet.type;
-      if (debug > 1) std::cout << " - layer " << layer << " " << subdet.name << " " << layer-subdet.layerIdMin << std::endl;
+      if (debug > 1 && subdet.isScint) std::cout << " - layer " << layer << " " << subdet.name << " " << layer-subdet.layerIdMin << std::endl;
 
       if (doEtaSel){
 	bool passeta = fabs(lHit.eta(subdet,geomConv,shape)-etamean)<deta;
@@ -785,6 +786,7 @@ int main(int argc, char** argv){//main
         for (unsigned iH(0); iH<(*puhitvec).size(); ++iH){//loop on hits
           HGCSSSimHit lHit = (*puhitvec)[iH];
 	  if (lHit.energy()<=0) continue;
+	  if(lHit.cellid()>4000000000) continue;
 
 	  unsigned layer = lHit.layer();
 	  const HGCSSSubDetector & subdet = myDetector.subDetectorByLayer(layer);
