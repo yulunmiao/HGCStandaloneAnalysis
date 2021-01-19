@@ -54,3 +54,31 @@ done
 ```
 ./submitProd.py -S -q 2nd -t V00-00-00 -f /afs/cern.ch/work/a/amagnan/CMSSW_6_2_0_SLHC8/src/UserCode/Gen2HepMC/test/VBFH_sel.dat  -v 20 -m 2 -e /store/cmst3/group/hgcal/Geant4 -o ~/work/ntuples -d VBFH -n 1000
 ```
+
+## Visualization
+
+To produce a `prim` file which can be given as input to DAWN you can run the following command
+```
+PFCalEE vis.mac --version 70 --model 2 --ui
+```
+and then in the gui execute
+```
+/control/execute vis.mac
+```
+The output will be a `.prim` file.
+To run it with DAWN you have to follow the installation procedure which is found in https://geant4.kek.jp/~tanaka/DAWN/About_DAWN.html.
+Below is a summary:
+```
+gunzip dawn_3_91a.tgz 
+tar -xvf dawn_3_91a.tar 
+cd dawn_3_91a
+cp Makefile.default Makefile
+make clean
+make guiclean
+make
+make install 
+```
+Then it runs simply as
+```
+dawn prim_file
+```
