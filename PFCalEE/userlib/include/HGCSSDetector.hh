@@ -365,6 +365,44 @@ public:
       sensitiveZ_[22] = 270.7;
       sensitiveZ_[23] = 279.8;
      }
+     else if (versionNumber == 70) {
+      indices_[0] = 0;
+      indices_[1] = 10;
+      indices_[2] = 20;
+      indices_[3] = 26;
+      indices_[4] = indices_[3];
+      indices_[5] = indices_[3];
+      indices_[6] = indices_[3];
+
+      sensitiveZ_.resize(indices_[3],0);
+      sensitiveZ_[0] = 3213.95; //minEta=1.45883 maxEta=3
+      sensitiveZ_[1] = 3223.7; //minEta=1.45883 maxEta=3
+      sensitiveZ_[2] = 3244.9; //minEta=1.461 maxEta=3
+      sensitiveZ_[3] = 3254.65; //minEta=1.461 maxEta=3
+      sensitiveZ_[4] = 3275.85; //minEta=1.46316 maxEta=3
+      sensitiveZ_[5] = 3285.6; //minEta=1.46316 maxEta=3
+      sensitiveZ_[6] = 3306.8; //minEta=1.46533 maxEta=3
+      sensitiveZ_[7] = 3316.55; //minEta=1.46533 maxEta=3
+      sensitiveZ_[8] = 3337.75; //minEta=1.4675 maxEta=3
+      sensitiveZ_[9] = 3347.5;  //minEta=1.4675 maxEta=3
+      sensitiveZ_[10] = 3368.7; //minEta=1.46966 maxEta=3
+      sensitiveZ_[11] = 3378.45; //minEta=1.46966 maxEta=3
+      sensitiveZ_[12] = 3399.65; //minEta=1.47183 maxEta=3
+      sensitiveZ_[13] = 3409.4; //minEta=1.47183 maxEta=3
+      sensitiveZ_[14] = 3430.6; //minEta=1.474 maxEta=3
+      sensitiveZ_[15] = 3440.35; //minEta=1.474 maxEta=3
+      sensitiveZ_[16] = 3461.55; //minEta=1.47617 maxEta=3
+      sensitiveZ_[17] = 3471.3; //minEta=1.47617 maxEta=3
+      sensitiveZ_[18] = 3495.52; //minEta=1.47833 maxEta=3
+      sensitiveZ_[19] = 3505.27; //minEta=1.47833 maxEta=3
+      sensitiveZ_[20] = 3529.49; //minEta=1.4805 maxEta=3
+      sensitiveZ_[21] = 3539.24; //minEta=1.4805 maxEta=3
+      sensitiveZ_[22] = 3563.46; //minEta=1.48267 maxEta=3
+      sensitiveZ_[23] = 3573.21; //minEta=1.48267 maxEta=3
+      sensitiveZ_[24] = 3597.43; //minEta=1.48483 maxEta=3
+      sensitiveZ_[25] = 3607.18; //minEta=1.48483 maxEta=3
+    } 
+
    else if (versionNumber == 33){
       indices_[0] = 0;
       indices_[1] = 10;
