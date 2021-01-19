@@ -123,7 +123,12 @@ for et in enlist :
         scriptFile.write('eos cp %s/%s %s\n'%(opt.datafileeos,opt.datafile,opt.datafile))
 
     scriptFile.write('cp %s/g4steer.mac .\n'%(outDir))
-    scriptFile.write('PFCalEE g4steer.mac %d %d %f %d %s %s %s %d| tee g4.log\n'%(opt.version,opt.model,opt.eta,shape,wthick,pbthick,droplayers,opt.granularity))
+    cmd='PFCalEE g4steer.mac --model %d --version %d --eta %f --shape %d'%(opt.version,opt.model,opt.eta,shape)
+    if len(wthick)>0 :       cmd += ' --absThickW {}'.format(wthick)
+    if len(pbthick)>0 :      cmd += ' --absThickPb {}'.format(pbthick)
+    if len(dropLayers)>0 :   cmd += ' --dropLayers {}'.format(dropLayers)
+    if not opt.granularity : cmd += ' --fineGranularity'
+    scriptFile.write(cmd + '\n')
     outTag='%s_version%d_model%d_%s'%(label,opt.version,opt.model,bval)
     if et>0 : outTag='%s_et%d'%(outTag,et)
     if opt.eta>0 : outTag='%s_eta%3.3f'%(outTag,opt.eta) 
