@@ -1099,6 +1099,7 @@ void DetectorConstruction::buildHGCALFHE(const unsigned aVersion){
       m_minEta.push_back(outerEtaFineNonMixed[0]*(i+1)+outerEtaFineNonMixed[1]);
       m_maxEta.push_back(m_maxEta0);
     }
+    firstMixedlayer_ = m_caloStruct.size();
     for(unsigned i=0; i<4; i++){
       m_caloStruct.push_back( SamplingSection(lThick,lEle) );
       m_minEta.push_back(getEtaFromRZ(outerRadiusFineMixed[i], zFineMixed[i]));
