@@ -11,22 +11,31 @@
 #include "EventAction.hh"
 #include "SteppingAction.hh"
 #include "SteppingVerbose.hh"
-
-#ifdef G4VIS_USE
 #include "G4VisExecutive.hh"
-#endif
-
-#ifdef G4UI_USE
 #include "G4UIExecutive.hh"
-#endif
+
+void printHelp() {
+  std::cout << "===========================================================================" << std::endl
+            << "PFCalEE - a standalone simulation of HGCal-type of detectors" << std::endl
+            << "---------------------------------------------------------------------------" << std::endl
+            << "Execute like" << std::endl
+            << "PFCalEE steer.mac [options]" << std::endl
+            << "---------------------------------------------------------------------------" << std::endl
+            << "The following options can be used" << std::endl
+            << "\t--version - the detector version to use" << std::endl
+            << "\t--model - the model (stack, endcap etc.)" << std::endl
+            << "\t--eta - pseudo-rapidity" << std::endl
+            << "\t--shape - cell shape" << std::endl
+            << "\t--absThick{W,Pb} - csv list of the thicknesses for W and Pb absorbers" << std::endl
+            << "\t--dropLayers - csv list of layers to drop" << std::endl
+            << "\t--fineGranularity - use fine granularity cells" << std::endl
+            << "\t--ui - do not run in batch mode" << std::endl
+            << "===========================================================================" << std::endl << std::endl;
+}
+
 
 int main(int argc,char** argv)
 {
-#ifdef G4VIS_USE
-  std::cout << " -- G4VIS_USE is set " << std::endl;
-#else
-  std::cout << " -- G4VIS_USE is not set " << std::endl;
-#endif
 
   // Choose the Random engine
   CLHEP::HepRandom::setTheEngine(new CLHEP::RanecuEngine);
@@ -42,29 +51,40 @@ int main(int argc,char** argv)
   int version=73;
   //int version=DetectorConstruction::v_HGCALEE_TB;
   int model=DetectorConstruction::m_FULLSECTION;
-  //int model=DetectorConstruction::m_BOXWITHCRACK_100;
-  //int model=DetectorConstruction::m_2016TB;
-  //int model=DetectorConstruction::m_SIMPLE_100;
   bool coarseGranularity(true);
-
   int shape = 4;
-
   double eta=0;
-
-  if(argc>2) version=atoi(argv[2]);
-  if(argc>3) model=atoi(argv[3]);
-  if(argc>4) eta=atof(argv[4]);
-  if(argc>5) shape=atoi(argv[5]);
-
-  std::cout << "-- Running version " << version << " model " << model << " shape " << shape << " eta " << eta << std::endl;
 
   std::string absThickW="";//1.75,1.75,1.75,1.75,1.75,2.8,2.8,2.8,2.8,2.8,4.2,4.2,4.2,4.2,4.2";
   std::string absThickPb="";//1,1,1,1,1,2.1,2.1,2.1,2.1,2.1,4.4,4.4,4.4,4.4";
   std::string dropLayers="";
-  if(argc>6) absThickW = argv[6];
-  if(argc>7) absThickPb = argv[7];
-  if(argc>8) dropLayers = argv[8];
-  if(argc>9) coarseGranularity=bool(atoi(argv[9]));
+  bool batchMode(true);
+
+  if (argc<2){
+    printHelp();
+    return -1;
+  }
+
+  //parse command line
+  G4String fileName = argv[1];
+  for(int i=2;i<argc;i++){
+    std::string arg(argv[i]);
+    if(arg.find("-h") !=std::string::npos)                       { printHelp(); return -1;} 
+    else if(arg.find("--model")!=std::string::npos)              { sscanf(argv[i+1],"%d",&model); i++;}
+    else if(arg.find("--version")!=std::string::npos )           { sscanf(argv[i+1],"%d",&version); i++;}
+    else if(arg.find("--eta")!=std::string::npos )               { sscanf(argv[i+1],"%lf",&eta); i++;}
+    else if(arg.find("--shape")!=std::string::npos )             { sscanf(argv[i+1],"%d",&shape); i++;}
+    else if(arg.find("--absThickW")!=std::string::npos)          { absThickW=argv[i+1]; i++;}
+    else if(arg.find("--absThickPb")!=std::string::npos)         { absThickPb=argv[i+1]; i++;}
+    else if(arg.find("--dropLayers")!=std::string::npos)         { dropLayers=argv[i+1]; i++;}
+    else if(arg.find("--fineGranularity")!=std::string::npos)    { coarseGranularity=false;} 
+    else if(arg.find("--ui")!=std::string::npos)                 { batchMode=false;} 
+  }
+
+  std::cout << "-- Running version=" << version << " model=" << model << " shape=" << shape << std::endl
+            << "\teta=" << eta << " coarse granularity=" << coarseGranularity << std::endl
+            << "\tabsThickW=" << absThickW << " absThickPb=" << absThickPb << " dropLayers=" << dropLayers << std::endl
+            << "\tbatchMode=" << batchMode << std::endl;
 
   runManager->SetUserInitialization(new DetectorConstruction(version,model,shape,absThickW,absThickPb,dropLayers,coarseGranularity));
   runManager->SetUserInitialization(new PhysicsList);
@@ -78,26 +98,16 @@ int main(int argc,char** argv)
   // Initialize G4 kernel
   runManager->Initialize();
 
-  // Initialize visualization
-#ifdef G4VIS_USE
-  G4VisManager* visManager = new G4VisExecutive;
-  visManager->Initialize();
-
-  /*
-  G4TrajectoryDrawByParticleID* model = new G4TrajectoryDrawByParticleID;
-  model->SetDefault("yellow");
-  model->Set("e+", "green");
-  model->Set("e-", "green");
-  visManager->RegisterModel(model);
-  visManager->SelectTrajectoryModel(model->Name());
-  */
-#endif
+  // Initialize visualization if required
+  G4VisManager* visManager=0;
+  if(!batchMode) {
+    visManager = new G4VisExecutive;
+    visManager->Initialize();
+  }
 
   // Get the pointer to the User Interface manager
   G4UImanager* UImanager = G4UImanager::GetUIpointer();
-  G4String fileName;
-  if (argc>1) fileName = argv[1];
-  if (argc!=1)   // batch mode
+  if(batchMode)
     {
       std::cout << " ====================================== " << std::endl
 		<< " ========  Running batch mode ========= " << std::endl
@@ -110,21 +120,17 @@ int main(int argc,char** argv)
       std::cout << " ====================================== " << std::endl
 		<< " ====  Running interactive display ==== " << std::endl
 		<< " ====================================== " << std::endl;
-#ifdef G4UI_USE
+      
       G4UIExecutive* ui = new G4UIExecutive(argc, argv);
-#ifdef G4VIS_USE
-      UImanager->ApplyCommand("/control/execute vis.mac");
-#endif
-      if (ui->IsGUI())
-        UImanager->ApplyCommand("/control/execute gui.mac");
+      UImanager->ApplyCommand("/control/execute "+fileName);
+      //if (ui->IsGUI())
+      // UImanager->ApplyCommand("/control/execute gui.mac");
       ui->SessionStart();
       delete ui;
-#endif
+      
+      delete visManager;
     }
 
-#ifdef G4VIS_USE
-  delete visManager;
-#endif
   delete runManager;
 
   return 0;

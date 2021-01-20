@@ -144,6 +144,12 @@ std::pair<double,double> HGCSSSimHit::get_xy(const HGCSSSubDetector & subdet,
     double r = zpos_/cos(theta);
     double x = r*sin(theta)*cos(phi);
     double y = r*sin(theta)*sin(phi);
+
+    if (phi >= 0) std::cout << " -- check scint hit: cellid_=" << cellid_ 
+			    << " eta=" << etaphi.first 
+			    << " theta=" << theta << " phi=" << phi 
+			    << " x=" << x << " y=" << y << std::endl;
+
     return std::pair<double,double>(x,y);
   }
   else if (shape==4) return aGeom.squareGeom.find(cellid_)->second;
