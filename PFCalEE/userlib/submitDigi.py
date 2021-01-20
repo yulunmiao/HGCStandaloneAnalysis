@@ -172,8 +172,26 @@ elif (opt.version==39):
     threshold='0-20:5'
 elif (opt.version==60 or opt.version==64 or opt.version==65 or opt.version==67):
     granularity='0-27:1'
-    noise='0-27:0.12'
+    if (label=='200u'):
+        noise='0-27:0.13'
+    elif (label=='300u'):
+        noise='0-27:0.07'
+    elif (label=='100u'):
+        noise='0-27:0.27'
+    else:
+        noise='0-27:0.13'
     threshold='0-27:5'
+elif (opt.version==70):
+    granularity='0-25:1'
+    if (label=='200u'):
+        noise='0-25:0.13'
+    elif (label=='300u'):
+        noise='0-25:0.07'
+    elif (label=='100u'):
+        noise='0-25:0.27'
+    else:
+        noise='0-25:0.13'
+    threshold='0-25:5'
 elif (opt.version==66):
     granularity='0-23:1'
     noise='0-23:0.12'
@@ -192,9 +210,22 @@ elif (opt.version==63):
         noise='0-51:0.13,53-68:0.15'
     elif (label=='300u'):
         noise='0-51:0.07,53-68:0.15'
-    else:
+    elif (label=='100u'):
         noise='0-51:0.27,53-68:0.15'
+    else:
+        noise='0-51:0.13,53-68:0.15'
     threshold='0-68:5'
+elif (opt.version==73):
+    granularity='0-61:1'
+    if (label=='200u'):
+        noise='0-46:0.13,48-61:0.15'
+    elif (label=='300u'):
+        noise='0-46:0.07,48-61:0.15'
+    elif (label=='100u'):
+        noise='0-46:0.27,48-61:0.15'
+    else:
+        noise='0-46:0.13,48-61:0.15'
+    threshold='0-61:5'
 else:
     granularity='0-51:4'
     noise='0-51:0.15'

@@ -1958,11 +1958,13 @@ void DetectorConstruction::buildSectorStack(const unsigned sectorNum,
     }//loop on layers
   std::cout << " Z positions of sensitive layers: " << std::endl;
   for (size_t i=0; i<m_caloStruct.size(); i++) {
-    std::cout << "sensitiveZ_[" << i << "] = " << m_caloStruct[i].sensitiveZ << ";" 
-      //<< " maxRadius=" <<
-              << " minEta=" << m_minEta[i]
-              << " maxEta=" << m_maxEta[i]
-              << std::endl;
+    std::cout << "sensitiveZ_[" << i << "] = " << m_caloStruct[i].sensitiveZ << ";"  << std::endl;
+  }
+  std::cout << " Eta boundary of sensitive layers for HGCSSDetector class: " << std::endl;
+  for (size_t i=0; i<m_caloStruct.size(); i++) {
+    //<< " maxRadius=" <<
+    if (i<firstScintlayer_) std::cout << " etaBoundary_[" << i << "] =" << m_minEta[i] << ";"  << std::endl;
+    else std::cout << " etaBoundary_[" << i << "] =" << m_maxEta[i] << ";"  << std::endl;
   }
 
   //dummy layer to get genparticles
