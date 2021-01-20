@@ -402,7 +402,6 @@ public:
       sensitiveZ_[24] = 3597.43; //minEta=1.48483 maxEta=3
       sensitiveZ_[25] = 3607.18; //minEta=1.48483 maxEta=3
     } 
-
    else if (versionNumber == 33){
       indices_[0] = 0;
       indices_[1] = 10;
