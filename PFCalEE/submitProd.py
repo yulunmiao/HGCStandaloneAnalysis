@@ -65,7 +65,7 @@ wthick=''
 #1.75,1.75,1.75,1.75,1.75,2.8,2.8,2.8,2.8,2.8,4.2,4.2,4.2,4.2,4.2'
 pbthick=''
 #1,1,1,1,1,2.1,2.1,2.1,2.1,2.1,4.4,4.4,4.4,4.4'
-droplayers=''
+dropLayers=''
 label=''
 #label='v5_30'
 ##28
@@ -123,7 +123,7 @@ for et in enlist :
         scriptFile.write('eos cp %s/%s %s\n'%(opt.datafileeos,opt.datafile,opt.datafile))
 
     scriptFile.write('cp %s/g4steer.mac .\n'%(outDir))
-    cmd='PFCalEE g4steer.mac --model %d --version %d --eta %f --shape %d'%(opt.version,opt.model,opt.eta,shape)
+    cmd='PFCalEE g4steer.mac --model %d --version %d --eta %f --shape %d'%(opt.model,opt.version,opt.eta,shape)
     if len(wthick)>0 :       cmd += ' --absThickW {}'.format(wthick)
     if len(pbthick)>0 :      cmd += ' --absThickPb {}'.format(pbthick)
     if len(dropLayers)>0 :   cmd += ' --dropLayers {}'.format(dropLayers)

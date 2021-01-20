@@ -1045,109 +1045,87 @@ void DetectorConstruction::buildHGCALFHE(const unsigned aVersion){
 
   //Jan2021 version
   else if (aVersion==9){
-			/*
-    G4double airThick = 1.5*mm;
-    G4double pcbThick = 1.6*mm;
-    if (version_==v_HGCAL_v8){
-      //back of ecal
-      lThick.push_back(pcbThick);lEle.push_back("PCB");
-      lThick.push_back(airThick);lEle.push_back("Air");
-      lThick.push_back(pcbThick);lEle.push_back("PCB");
-      lThick.push_back(0.1*mm);lEle.push_back("Cu");
-      lThick.push_back(1*mm);lEle.push_back("SSteel");
+    
+    G4double innerRadiusFineMixed=383.6*mm;
+    G4double innerRadiusCoarse=448.4*mm;    
+    G4double outerEtaFineNonMixed[2]={0.0008571428571,1.487}; //eta=eta(layer) from technical drawing
+    G4double outerRadiusFineMixed[]={1537.05, 1537.05, 1537.05, 1537.05};
+    G4double outerRadiusCoarse[]={1378.52, 1378.52, 1182.99, 1182.99, 1182.99, 
+                                  1182.99, 1037.83, 1037.83,1037.83, 1037.83};
+    G4double zFineMixed[] = {4129.68, 4192.73, 4255.78, 4318.83};
+    G4double zCoarse[] = {4401.08, 4483.33, 4565.58, 4647.83, 4730.08, 
+                          4812.33, 4894.58, 4976.83, 5059.08, 5141.33};
+
+    //
+    // CE-H fine
+    //
+    
+    //CE-H layer 1
+    lThick.clear(); lEle.clear();
+    
+    //back cover for CEE   
+    lThick.push_back(1*mm);  lEle.push_back("Cu");
+    lThick.push_back(45*mm); lEle.push_back("SSteel");
+    
+    //CEH gap
+    std::vector<G4double> gap_lThick; 
+    std::vector<std::string> gap_lEle;    
+    gap_lThick.push_back(0.7*mm);   gap_lEle.push_back("Air");
+    gap_lThick.push_back(1.0*mm);   gap_lEle.push_back("Cu");
+    gap_lThick.push_back(3*mm);     gap_lEle.push_back("Air");
+    gap_lThick.push_back(1.6*mm);   gap_lEle.push_back("PCB");
+    gap_lThick.push_back(3*mm);     gap_lEle.push_back("Air");
+    gap_lThick.push_back(1.6*mm);   gap_lEle.push_back("PCB");
+    gap_lThick.push_back(3*mm);     gap_lEle.push_back("Air");
+    for(int i=0; i<3; i++){
+      gap_lThick.push_back(0.1*mm); gap_lEle.push_back("Si");
     }
-    //CE-H layers 1
-    lThick.push_back(40*mm);lEle.push_back("SSteel");
-    lThick.push_back(6*mm);lEle.push_back("Cu");
-    lThick.push_back(1*mm);lEle.push_back("SSteel");
-    lThick.push_back(0.1*mm);lEle.push_back("Si");
-    lThick.push_back(0.1*mm);lEle.push_back("Si");
-    lThick.push_back(0.1*mm);lEle.push_back("Si");
+    gap_lThick.push_back(1.6*mm);   gap_lEle.push_back("PCB");
+    gap_lThick.push_back(6.35*mm);  gap_lEle.push_back("Cu");
+
+    lThick.insert(lThick.end(), gap_lThick.begin(), gap_lThick.end());
+    lEle.insert(lEle.end(), gap_lEle.begin(), gap_lEle.end());
     m_caloStruct.push_back( SamplingSection(lThick,lEle) );
-    m_minEta.push_back(minEta[28]);m_maxEta.push_back(m_maxEta0);
+    m_minEta.push_back(1.487);      //this matches the last CE-E layer
+    m_maxEta.push_back(m_maxEta0);
 
-    //CE-H layers 2-9
-    lThick.clear();
-    lEle.clear();
-    lThick.push_back(pcbThick);lEle.push_back("PCB");
-    lThick.push_back(airThick);lEle.push_back("Air");
-    lThick.push_back(pcbThick);lEle.push_back("PCB");
-    lThick.push_back(1*mm);lEle.push_back("Cu");
-    lThick.push_back(1*mm);lEle.push_back("Air");
-    lThick.push_back(35*mm);lEle.push_back("SSteel");
-    lThick.push_back(6*mm);lEle.push_back("Cu");
-    lThick.push_back(1*mm);lEle.push_back("SSteel");
-    lThick.push_back(0.1*mm);lEle.push_back("Si");
-    lThick.push_back(0.1*mm);lEle.push_back("Si");
-    lThick.push_back(0.1*mm);lEle.push_back("Si");
-    //layers 2-8
-
-
-    for(unsigned i=0; i<7; i++) {
+    //CE-H layers 2-10
+    lThick.clear(); lEle.clear();
+    lThick.push_back(41.5);  lEle.push_back("SSteel");
+    lThick.insert(lThick.end(), gap_lThick.begin(), gap_lThick.end());
+    lEle.insert(lEle.end(), gap_lEle.begin(), gap_lEle.end());
+    for(unsigned i=0; i<6; i++) {
       m_caloStruct.push_back( SamplingSection(lThick,lEle) );
-      m_minEta.push_back(minEta[29+i]);m_maxEta.push_back(m_maxEta0); // minEta index: 29,30,...,35
+      m_minEta.push_back(outerEtaFineNonMixed[0]*(i+1)+outerEtaFineNonMixed[1]);
+      m_maxEta.push_back(m_maxEta0);
     }
-    //layer 9
     firstMixedlayer_ = m_caloStruct.size();
-    m_caloStruct.push_back( SamplingSection(lThick,lEle) );
-    m_minEta.push_back(getEtaFromRZ(1450,3920.7));m_maxEta.push_back(m_maxEta0);
-    //CE-H layers 10-12
-    lThick.clear();
-    lEle.clear();
-    lThick.push_back(pcbThick);lEle.push_back("PCB");
-    lThick.push_back(airThick);lEle.push_back("Air");
-    lThick.push_back(pcbThick);lEle.push_back("PCB");
-    //added in layer 9 but after Si so belongs to layer10 here...
-    lThick.push_back(1.9*mm);lEle.push_back("Air");
-    lThick.push_back(1*mm);lEle.push_back("Cu");
-    lThick.push_back(1*mm);lEle.push_back("Air");
-    lThick.push_back(35*mm);lEle.push_back("SSteel");
-    lThick.push_back(6*mm);lEle.push_back("Cu");
-    lThick.push_back(1*mm);lEle.push_back("SSteel");
-    lThick.push_back(0.1*mm);lEle.push_back("Si");
-    lThick.push_back(0.1*mm);lEle.push_back("Si");
-    lThick.push_back(0.1*mm);lEle.push_back("Si");
-    for(unsigned i=0; i<3; i++) {
+    for(unsigned i=0; i<4; i++){
       m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+      m_minEta.push_back(getEtaFromRZ(outerRadiusFineMixed[i], zFineMixed[i]));
+      m_maxEta.push_back(getEtaFromRZ(innerRadiusFineMixed,    zFineMixed[i]));
     }
-    m_minEta.push_back(getEtaFromRZ(1325,3969.7));m_maxEta.push_back(m_maxEta0);
-    m_minEta.push_back(getEtaFromRZ(1325,4020.6));m_maxEta.push_back(m_maxEta0);
-    m_minEta.push_back(getEtaFromRZ(1225,4071.5));m_maxEta.push_back(m_maxEta0);
 
-    //CE-H layers 13-24
-    lThick[6] = 68*mm;
-    for(unsigned i=0; i<12; i++) {
+    //
+    // CE-H coarse
+    //
+    //CE-H layers 12-22
+    lThick.clear(); lEle.clear();
+    lThick.push_back(60.7*mm);  lEle.push_back("SSteel");
+    lThick.insert(lThick.end(), gap_lThick.begin(), gap_lThick.end());
+    lEle.insert(lEle.end(), gap_lEle.begin(), gap_lEle.end());
+    for(unsigned i=0; i<10; i++) {
       m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+      m_minEta.push_back(getEtaFromRZ(outerRadiusCoarse[i], zCoarse[i]));
+      m_maxEta.push_back(getEtaFromRZ(innerRadiusCoarse,    zCoarse[i]));
     }
-    m_minEta.push_back(getEtaFromRZ(1110,4122.4));m_maxEta.push_back(m_maxEta0);
-    m_minEta.push_back(getEtaFromRZ(1050,4206.3));m_maxEta.push_back(m_maxEta0);
-    m_minEta.push_back(getEtaFromRZ(950,4290.2));m_maxEta.push_back(m_maxEta0);
-
-    m_minEta.push_back(getEtaFromRZ(900,4374.1));m_maxEta.push_back(m_maxEta0);
-    m_minEta.push_back(getEtaFromRZ(900,4458));m_maxEta.push_back(m_maxEta0);
-    m_minEta.push_back(getEtaFromRZ(900,4541.9));m_maxEta.push_back(m_maxEta0);
-    m_minEta.push_back(getEtaFromRZ(900,4625.8));m_maxEta.push_back(m_maxEta0);
-    m_minEta.push_back(getEtaFromRZ(900,4709.7));m_maxEta.push_back(m_maxEta0);
-    m_minEta.push_back(getEtaFromRZ(900,4793.6));m_maxEta.push_back(m_maxEta0);
-    m_minEta.push_back(getEtaFromRZ(900,4877.5));m_maxEta.push_back(m_maxEta0);
-    m_minEta.push_back(getEtaFromRZ(900,4961.4));m_maxEta.push_back(m_maxEta0);
-    m_minEta.push_back(getEtaFromRZ(900,5045.3));m_maxEta.push_back(m_maxEta0);
-
-
+    
     //end of last layer
-    lThick.clear();
-    lEle.clear();
-    lThick.push_back(pcbThick);lEle.push_back("PCB");
-    lThick.push_back(airThick);lEle.push_back("Air");
-    lThick.push_back(pcbThick);lEle.push_back("PCB");
-    lThick.push_back(1.9*mm);lEle.push_back("Air");
-    lThick.push_back(1*mm);lEle.push_back("Cu");
-    lThick.push_back(1*mm);lEle.push_back("Air");
-    //back disk
-    lThick.push_back(93.9*mm);lEle.push_back("SSteel");
+    lThick.clear();            lEle.clear();
+    lThick.push_back(93.9*mm); lEle.push_back("SSteel");
     m_caloStruct.push_back( SamplingSection(lThick,lEle) );
-    m_minEta.push_back(minEta[51]);m_maxEta.push_back(m_maxEta0);
-                        */
+    m_minEta.push_back( m_minEta[m_minEta.size()-1] );
+    m_maxEta.push_back( m_maxEta[m_maxEta.size()-1] );
   }
   else {
     
@@ -1320,83 +1298,69 @@ void DetectorConstruction::buildHGCALBHE(const unsigned aVersion){
       m_minEta.push_back(minEta[51]);m_maxEta.push_back(m_maxEta0);
     }
   }
-	//Jan2021 version
-	if (aVersion==9){
-		/*
-		firstScintlayer_ = m_caloStruct.size();
+  //Jan2021 version
+  else if (aVersion==9){
 
-		G4double airThick = 1.5*mm;
-		G4double pcbThick = 1.6*mm;
-		//back of layer 8+layer9 scint.
-		lThick.push_back(pcbThick);lEle.push_back("PCB");
-		lThick.push_back(airThick);lEle.push_back("Air");
-		lThick.push_back(pcbThick);lEle.push_back("PCB");
-		lThick.push_back(1*mm);lEle.push_back("Cu");
-		lThick.push_back(1*mm);lEle.push_back("Air");
-		lThick.push_back(35*mm);lEle.push_back("SSteel");
-		lThick.push_back(6*mm);lEle.push_back("Cu");
-		lThick.push_back(pcbThick);lEle.push_back("PCB");
-		lThick.push_back(1.2*mm);lEle.push_back("Air");
-		lThick.push_back(3.0*mm);lEle.push_back("Scintillator");
-		m_caloStruct.push_back( SamplingSection(lThick,lEle) );
-		m_minEta.push_back(minEta[36]);m_maxEta.push_back(getEtaFromRZ(1450,3920.7));
+    firstScintlayer_ = m_caloStruct.size();
 
-		//CE-H-scint layers 10-12
-		lThick.clear();
-		lEle.clear();
-		lThick.push_back(0.5*mm);lEle.push_back("Air");
-		lThick.push_back(pcbThick);lEle.push_back("PCB");
-		lThick.push_back(1*mm);lEle.push_back("Cu");
-		lThick.push_back(1*mm);lEle.push_back("Air");
-		lThick.push_back(35*mm);lEle.push_back("SSteel");
-		lThick.push_back(6*mm);lEle.push_back("Cu");
-		lThick.push_back(pcbThick);lEle.push_back("PCB");
-		lThick.push_back(1.2*mm);lEle.push_back("Air");
-		lThick.push_back(3.0*mm);lEle.push_back("Scintillator");
-		for(unsigned i=0; i<3; i++) {
-			m_caloStruct.push_back( SamplingSection(lThick,lEle) );
-		}
-		m_minEta.push_back(minEta[37]);m_maxEta.push_back(getEtaFromRZ(1325,3969.7));
-		m_minEta.push_back(minEta[38]);m_maxEta.push_back(getEtaFromRZ(1325,4020.6));
-		m_minEta.push_back(minEta[39]);m_maxEta.push_back(getEtaFromRZ(1225,4071.5));
+    G4double outerEtaFine[2]={-0.029625,1.4345};//parametrized from v8 for 4 mixed layers
+    G4double outerEtaCoarse[2]={0.008666666667,1.332}; //parametrized from v8 for 10 layers
+    G4double outerRadiusFine[]={1537.05, 1537.05, 1537.05, 1537.05};
+    G4double outerRadiusCoarse[]={1378.52, 1378.52, 1182.99, 1182.99, 1182.99, 
+                                  1182.99, 1037.83, 1037.83,1037.83, 1037.83};
+    G4double zFine[]   = {4129.68, 4192.73, 4255.78, 4318.83};
+    G4double zCoarse[] = {4401.08, 4483.33, 4565.58, 4647.83, 4730.08, 
+                          4812.33, 4894.58, 4976.83, 5059.08, 5141.33};
 
-		//CE-H-scint layers 13-24
-		lThick[4] = 68*mm;
-		for(unsigned i=0; i<12; i++) {
-			m_caloStruct.push_back( SamplingSection(lThick,lEle) );
-		}
-		m_minEta.push_back(minEta[40]);m_maxEta.push_back(getEtaFromRZ(1110,4122.4));
-		m_minEta.push_back(minEta[41]);m_maxEta.push_back(getEtaFromRZ(1050,4206.3));
-		m_minEta.push_back(minEta[42]);m_maxEta.push_back(getEtaFromRZ(950,4290.2));
+    //
+    // CE-H fine
+    //
+    
+    //CE-H layer 1
+    lThick.clear(); lEle.clear();
+    
+    //CEH gap for scintillator
+    std::vector<G4double> gap_lThick; 
+    std::vector<std::string> gap_lEle;    
+    gap_lThick.push_back(0.7*mm);   gap_lEle.push_back("Air");
+    gap_lThick.push_back(1.0*mm);   gap_lEle.push_back("Cu");
+    gap_lThick.push_back(7.3*mm);   gap_lEle.push_back("Air");
+    gap_lThick.push_back(1.6*mm);   gap_lEle.push_back("PCB");
+    gap_lThick.push_back(3*mm);     gap_lEle.push_back("Scintillator");
+    gap_lThick.push_back(1.6*mm);   gap_lEle.push_back("PCB");
+    gap_lThick.push_back(6.35*mm);  gap_lEle.push_back("Cu");
+    
+    //fine section
+    lThick.push_back(41.5);  lEle.push_back("SSteel");
+    lThick.insert(lThick.end(), gap_lThick.begin(), gap_lThick.end());
+    lEle.insert(lEle.end(), gap_lEle.begin(), gap_lEle.end());
+    for(unsigned i=0; i<4; i++){
+      m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+      m_minEta.push_back(outerEtaFine[0]*(i+1)+outerEtaFine[1]);
+      m_maxEta.push_back(getEtaFromRZ(outerRadiusFine[i], zFine[i]));      
+    }
 
-		m_minEta.push_back(minEta[43]);m_maxEta.push_back(getEtaFromRZ(900,4374.1));
-		m_minEta.push_back(minEta[44]);m_maxEta.push_back(getEtaFromRZ(900,4458));
-		m_minEta.push_back(minEta[45]);m_maxEta.push_back(getEtaFromRZ(900,4541.9));
-		m_minEta.push_back(minEta[46]);m_maxEta.push_back(getEtaFromRZ(900,4625.8));
-		m_minEta.push_back(minEta[47]);m_maxEta.push_back(getEtaFromRZ(900,4709.7));
-		m_minEta.push_back(minEta[48]);m_maxEta.push_back(getEtaFromRZ(900,4793.6));
-		m_minEta.push_back(minEta[49]);m_maxEta.push_back(getEtaFromRZ(900,4877.5));
-		m_minEta.push_back(minEta[50]);m_maxEta.push_back(getEtaFromRZ(900,4961.4));
-		m_minEta.push_back(minEta[51]);m_maxEta.push_back(getEtaFromRZ(900,5045.3));
-
-
-
-		//end of last layer - only if building BH only
-		if (version_ == v_HGCALBE_v8){
-			lThick.clear();
-			lEle.clear();
-			lThick.push_back(0.5*mm);lEle.push_back("Air");
-			lThick.push_back(pcbThick);lEle.push_back("PCB");
-			lThick.push_back(1*mm);lEle.push_back("Cu");
-			lThick.push_back(1*mm);lEle.push_back("Air");
-			//back disk
-			lThick.push_back(93.9*mm);lEle.push_back("SSteel");
-			m_caloStruct.push_back( SamplingSection(lThick,lEle) );
-			m_minEta.push_back(minEta[51]);m_maxEta.push_back(m_maxEta0);
-		}
-		*/
-	}
-
+    //
+    //coarse section
+    //
+    //CE-H layers 12-22
+    lThick.clear(); lEle.clear();
+    lThick.push_back(60.7*mm);  lEle.push_back("SSteel");
+    lThick.insert(lThick.end(), gap_lThick.begin(), gap_lThick.end());
+    lEle.insert(lEle.end(), gap_lEle.begin(), gap_lEle.end());
+    for(unsigned i=0; i<10; i++) {
+      m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+      m_minEta.push_back(outerEtaCoarse[0]*i+outerEtaCoarse[1]);
+      m_maxEta.push_back(getEtaFromRZ(outerRadiusCoarse[i], zCoarse[i]));
+    }
+    
+    //end of last layer
+    lThick.clear();            lEle.clear();
+    lThick.push_back(93.9*mm); lEle.push_back("SSteel");
+    m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+    m_minEta.push_back( m_minEta[m_minEta.size()-1] );
+    m_maxEta.push_back( m_maxEta[m_maxEta.size()-1] );
+  }
   else {
     //first layer
     bool isBrass = aVersion!=7;

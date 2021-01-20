@@ -46,16 +46,24 @@ int main(int argc,char** argv)
   // Construct the default run manager
   G4RunManager * runManager = new G4RunManager;
 
-  //default configuration
-  int version=60;
+  // Set mandatory initialization classes
+  //int version=DetectorConstruction::v_HGCAL_2016TB;
+  int version=73;
+  //int version=DetectorConstruction::v_HGCALEE_TB;
   int model=DetectorConstruction::m_FULLSECTION;
   bool coarseGranularity(true);
   int shape = 4;
   double eta=0;
+
   std::string absThickW="";//1.75,1.75,1.75,1.75,1.75,2.8,2.8,2.8,2.8,2.8,4.2,4.2,4.2,4.2,4.2";
   std::string absThickPb="";//1,1,1,1,1,2.1,2.1,2.1,2.1,2.1,4.4,4.4,4.4,4.4";
   std::string dropLayers="";
   bool batchMode(true);
+
+  if (argc<2){
+    printHelp();
+    return -1;
+  }
 
   //parse command line
   G4String fileName = argv[1];
@@ -114,7 +122,7 @@ int main(int argc,char** argv)
 		<< " ====================================== " << std::endl;
       
       G4UIExecutive* ui = new G4UIExecutive(argc, argv);
-      UImanager->ApplyCommand("/control/execute vis.mac");
+      UImanager->ApplyCommand("/control/execute "+fileName);
       //if (ui->IsGUI())
       // UImanager->ApplyCommand("/control/execute gui.mac");
       ui->SessionStart();
