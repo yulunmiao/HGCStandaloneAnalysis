@@ -145,10 +145,10 @@ std::pair<double,double> HGCSSSimHit::get_xy(const HGCSSSubDetector & subdet,
     double x = r*sin(theta)*cos(phi);
     double y = r*sin(theta)*sin(phi);
 
-    if (phi >= 0) std::cout << " -- check scint hit: cellid_=" << cellid_ 
-			    << " eta=" << etaphi.first 
-			    << " theta=" << theta << " phi=" << phi 
-			    << " x=" << x << " y=" << y << std::endl;
+    //std::cout << " -- check scint hit: zpos " << zpos_ << " cellid_=" << cellid_ 
+    //<< " eta=" << etaphi.first 
+    //<< " theta=" << theta << " phi=" << phi 
+    //<< " x=" << x << " y=" << y << std::endl;
 
     return std::pair<double,double>(x,y);
   }
