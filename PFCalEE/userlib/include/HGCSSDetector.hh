@@ -402,6 +402,80 @@ public:
       sensitiveZ_[24] = 3597.43; //minEta=1.48483 maxEta=3
       sensitiveZ_[25] = 3607.18; //minEta=1.48483 maxEta=3
     } 
+     else if (versionNumber == 73) {
+       indices_[0] = 0;
+       indices_[1] = 10;
+       indices_[2] = 20;
+       indices_[3] = 26;
+       indices_[4] = 48;
+       indices_[5] = 52;
+       indices_[6] = 63;
+
+       sensitiveZ_[0] = 3213.95; //minEta=1.45883 maxEta=3
+       sensitiveZ_[1] = 3223.7; //minEta=1.45883 maxEta=3
+       sensitiveZ_[2] = 3244.9; //minEta=1.461 maxEta=3
+       sensitiveZ_[3] = 3254.65; //minEta=1.461 maxEta=3
+       sensitiveZ_[4] = 3275.85; //minEta=1.46316 maxEta=3
+       sensitiveZ_[5] = 3285.6; //minEta=1.46316 maxEta=3
+       sensitiveZ_[6] = 3306.8; // minEta=1.46533 maxEta=3
+       sensitiveZ_[7] = 3316.55; //minEta=1.46533 maxEta=3
+       sensitiveZ_[8] = 3337.75; //minEta=1.4675 maxEta=3
+       sensitiveZ_[9] = 3347.5; //minEta=1.4675 maxEta=3
+       sensitiveZ_[10] = 3368.7; //minEta=1.46966 maxEta=3
+       sensitiveZ_[11] = 3378.45; //minEta=1.46966 maxEta=3
+       sensitiveZ_[12] = 3399.65; //minEta=1.47183 maxEta=3
+       sensitiveZ_[13] = 3409.4; //minEta=1.47183 maxEta=3
+       sensitiveZ_[14] = 3430.6; //minEta=1.474 maxEta=3
+       sensitiveZ_[15] = 3440.35; //minEta=1.474 maxEta=3
+       sensitiveZ_[16] = 3461.55; //minEta=1.47617 maxEta=3
+       sensitiveZ_[17] = 3471.3; //minEta=1.47617 maxEta=3
+       sensitiveZ_[18] = 3495.52; //minEta=1.47833 maxEta=3
+       sensitiveZ_[19] = 3505.27; //minEta=1.47833 maxEta=3
+       sensitiveZ_[20] = 3529.49; //minEta=1.4805 maxEta=3
+       sensitiveZ_[21] = 3539.24; //minEta=1.4805 maxEta=3
+       sensitiveZ_[22] = 3563.46; //minEta=1.48267 maxEta=3
+       sensitiveZ_[23] = 3573.21; //minEta=1.48267 maxEta=3
+       sensitiveZ_[24] = 3597.43; //minEta=1.48483 maxEta=3
+       sensitiveZ_[25] = 3607.18; //minEta=1.48483 maxEta=3
+       sensitiveZ_[26] = 3674.73; //minEta=1.487 maxEta=3
+       sensitiveZ_[27] = 3738.38; //minEta=1.48786 maxEta=3
+       sensitiveZ_[28] = 3802.03; //minEta=1.48871 maxEta=3
+       sensitiveZ_[29] = 3865.68; //minEta=1.48957 maxEta=3
+       sensitiveZ_[30] = 3929.33; //minEta=1.49043 maxEta=3
+       sensitiveZ_[31] = 3992.98; //minEta=1.49129 maxEta=3
+       sensitiveZ_[32] = 4056.63; //minEta=1.49214 maxEta=3
+       sensitiveZ_[33] = 4120.28; //minEta=1.71444 maxEta=3.07165
+       sensitiveZ_[34] = 4183.93; //minEta=1.72866 maxEta=3.08674
+       sensitiveZ_[35] = 4247.58; //minEta=1.74268 maxEta=3.10161
+       sensitiveZ_[36] = 4311.23; //minEta=1.75653 maxEta=3.11625
+       sensitiveZ_[37] = 4394.08; //minEta=1.87766 maxEta=2.97965
+       sensitiveZ_[38] = 4476.93; //minEta=1.89534 maxEta=2.99807
+       sensitiveZ_[39] = 4559.78; //minEta=2.06002 maxEta=3.01617
+       sensitiveZ_[40] = 4642.63; //minEta=2.07732 maxEta=3.03394
+       sensitiveZ_[41] = 4725.48; //minEta=2.09433 maxEta=3.0514
+       sensitiveZ_[42] = 4808.33; //minEta=2.11106 maxEta=3.06856
+       sensitiveZ_[43] = 4891.18; //minEta=2.2552 maxEta=3.08544
+       sensitiveZ_[44] = 4974.03; //minEta=2.27151 maxEta=3.10203
+       sensitiveZ_[45] = 5056.88; //minEta=2.28756 maxEta=3.11836
+       sensitiveZ_[46] = 5139.73; //minEta=2.30336 maxEta=3.13442
+       sensitiveZ_[47] = 0;       //minEta=2.30336 maxEta=3.13442
+       sensitiveZ_[48] = 4116.98; //minEta=1.40488 maxEta=1.71444
+       sensitiveZ_[49] = 4180.03; //minEta=1.37525 maxEta=1.72866
+       sensitiveZ_[50] = 4243.08; //minEta=1.34563 maxEta=1.74268
+       sensitiveZ_[51] = 4306.13; //minEta=1.316 maxEta=1.75653
+       sensitiveZ_[52] = 4388.38; //minEta=1.332 maxEta=1.87766
+       sensitiveZ_[53] = 4470.63; //minEta=1.34067 maxEta=1.89534
+       sensitiveZ_[54] = 4552.88; //minEta=1.34933 maxEta=2.06002
+       sensitiveZ_[55] = 4635.13; //minEta=1.358 maxEta=2.07732
+       sensitiveZ_[56] = 4717.38; //minEta=1.36667 maxEta=2.09433
+       sensitiveZ_[57] = 4799.63; //minEta=1.37533 maxEta=2.11106
+       sensitiveZ_[58] = 4881.88; //minEta=1.384 maxEta=2.2552
+       sensitiveZ_[59] = 4964.13; //minEta=1.39267 maxEta=2.27151
+       sensitiveZ_[60] = 5046.38; //minEta=1.40133 maxEta=2.28756
+       sensitiveZ_[61] = 5128.63; //minEta=1.41 maxEta=2.30336
+       sensitiveZ_[62] = 0;       //minEta=1.41 maxEta=2.30336
+
+     }
 
    else if (versionNumber == 33){
       indices_[0] = 0;
