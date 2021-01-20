@@ -39,7 +39,7 @@ int main(int argc,char** argv)
 
   // Set mandatory initialization classes
   //int version=DetectorConstruction::v_HGCAL_2016TB;
-  int version=60;
+  int version=73;
   //int version=DetectorConstruction::v_HGCALEE_TB;
   int model=DetectorConstruction::m_FULLSECTION;
   //int model=DetectorConstruction::m_BOXWITHCRACK_100;
@@ -56,7 +56,7 @@ int main(int argc,char** argv)
   if(argc>4) eta=atof(argv[4]);
   if(argc>5) shape=atoi(argv[5]);
 
-  std::cout << "-- Running version " << version << " model " << model << " shape " << shape << std::endl;
+  std::cout << "-- Running version " << version << " model " << model << " shape " << shape << " eta " << eta << std::endl;
 
   std::string absThickW="";//1.75,1.75,1.75,1.75,1.75,2.8,2.8,2.8,2.8,2.8,4.2,4.2,4.2,4.2,4.2";
   std::string absThickPb="";//1,1,1,1,1,2.1,2.1,2.1,2.1,2.1,4.4,4.4,4.4,4.4";
