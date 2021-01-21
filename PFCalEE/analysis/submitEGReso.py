@@ -1,12 +1,9 @@
 #!/usr/bin/env python
-
-
 import os,sys
 import optparse
 import commands
 import math
 import random
-
 random.seed()
 
 usage = 'usage: %prog [options]'
@@ -18,7 +15,7 @@ parser.add_option('-r', '--run'         ,    dest='run'                , help='s
 parser.add_option('-R', '--nRuns'       ,    dest='nRuns'              , help='number of runs'               , default=0,      type=int)
 parser.add_option('-v', '--version'     ,    dest='version'            , help='detector version'             , default=3,      type=int)
 parser.add_option('-m', '--model'       ,    dest='model'              , help='detector model'               , default=3,      type=int)
-parser.add_option('-a', '--alpha'       ,    dest='alpha'              , help='incidence angle in rad'       , default=0,      type=float)
+parser.add_option('-a', '--alphas'      ,    dest='alphas'             , help='incidence angles in rad'       , default='2.0')
 parser.add_option('-p', '--phi'         ,    dest='phi'                , help='incidence phi angle in pi unit' , default=0.5,      type=float)
 parser.add_option('-b', '--Bfield'      ,    dest='Bfield'             , help='B field value in Tesla'       , default=0,      type=float)
 parser.add_option('-d', '--datatype'    ,    dest='datatype'           , help='data type or particle to shoot', default='e-')
@@ -29,27 +26,18 @@ parser.add_option('-e', '--eos'         ,    dest='eos'                , help='e
 parser.add_option('-E', '--eosin'       ,    dest='eosin'              , help='eos path to read input root file from EOS',  default='')
 parser.add_option('-g', '--gun'         ,    action="store_true",  dest='dogun'              , help='use particle gun.')
 parser.add_option('-S', '--no-submit'   ,    action="store_true",  dest='nosubmit'           , help='Do not submit batch job.')
-parser.add_option(      '--enList'      ,    dest='enList'              , help='E_T list to use with gun [%default]', default='5,10,20,30,40,60,80,100,150,200')
+parser.add_option(      '--enList'      ,    dest='enList'             , help='E_T list to use with gun [%default]', default='5,10,20,30,40,60,80,100,150,200')
 parser.add_option(      '--nPuVtx'      ,    dest='nPuVtx'             , help='pileup scenarios (csv) [%h]',   default='0')
+parser.add_option(      '--workdir'     ,    dest='workdir'           , help='Work directory',  default='')
 
 
 (opt, args) = parser.parse_args()
 
 redofit=1
-#label=''
 labeldir='200u'
 label='200u'
-#label='300u'
-#label='Large'
-#label='v5_30_'
-#label='v5_28_'
-#label='v5_24_'
-#label='v5_18_'
 
-#./submitEGReso.py -q 8nh -s 8nh -t testV8 -v 63 -m 2 -n 0 -o HGCalTDRPaul/ -R 20 -g -d gamma -b 3.8 -e /store/cmst3/group/hgcal/HGCalTDR -E /store/cmst3/group/hgcal/HGCalTDR
-#./submitEGReso.py -q 8nh -s 8nh -t testV8 -v 63 -m 2 -n 0 -o HGCalTDRPaul/ -R 20 -g -d gamma -b 3.8 -E /store/cmst3/group/hgcal/HGCalTDR -e /store/group/dpg_hgcal/comm_hgcal/amagnan/HGCalTDR
-
-workdir='/afs/cern.ch/work/a/amagnan/PFCalEEAna/'
+workdir = opt.workdir
 
 enlist=[0]
 if opt.dogun : 
@@ -57,20 +45,8 @@ if opt.dogun :
     #enlist=[20]
     enlist=[float(x) for x in opt.enList.split(',')]
 
-#alphaset=[0.361,0.297,0.244,0.200,0.164,0.134,0.110]
-#alphaset=[0.361,0.244,0.164,0.110]
-alphaset=[2.000]
-#alphaset=[1.700,2.000]
-#alphaset=[0.297,0.244,0.200,0.134,0.110]
-#nPuVtxset=[0,140]
-#nPuVtxset=[0]
-nPuVtxset=[int(x) for x in opt.nPuVtx.split(',')]
-
-#etaset=[17,19,21,23,25,27,29]
-#etaset=[17,21,25,29]
-etaset=[20]
-#etaset=[17,20]
-#etaset=[17,21,23,25,27,29]
+alphaset = [float(x) for x in opt.alphas.split(',')]
+nPuVtxset = [int(x) for x in opt.nPuVtx.split(',')]
 
 interCalibList=[3] #0,1,2,3,4,5,10,15,20,50]
 
@@ -89,8 +65,8 @@ for nPuVtx in nPuVtxset :
             
 
         for alpha in alphaset :
-            eta=etaset[counter]
-            counter=counter+1
+            eta = str(int(alpha * 10))
+            counter = counter + 1
             for et in enlist :
                 
                 nevents=opt.nevts
