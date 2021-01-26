@@ -27,7 +27,7 @@ parser.add_argument('-n', '--nevts'       , dest='nevts'      , type=int,   help
 parser.add_argument('-o', '--out'         , dest='out'        ,             help='output directory'             , default=os.getcwd() )
 parser.add_argument('-e', '--eos'         , dest='eos'        ,             help='eos path to save root file to EOS',         default='')
 parser.add_argument('-g', '--gun'         , dest='dogun'      ,             help='use particle gun.', action="store_true")
-parser.add_argument(      '--enList'      , dest='enList'     , type=float, help='E_T list to use with gun [%default]', nargs='+', default=[5,10,20,30,40,60,80,100,150,200])
+parser.add_argument(      '--enList'      , dest='enList'     , type=int,   help='E_T list to use with gun [%default]', nargs='+', default=[5,10,20,30,40,60,80,100,150,200])
 parser.add_argument('-S', '--no-submit'   , dest='nosubmit'   ,             help='Do not submit batch job.', action="store_true")
 (opt, args) = parser.parse_known_args()
 
@@ -53,6 +53,7 @@ class SubmitProd:
         self.mac_name = lambda e,a,r: 'g4steer_en' + e + '_eta' + a + '_run' + r + '.mac'
         self.clean_tag = lambda t: t.strip('$').strip('(').strip(')')
         self.shellify_tag = lambda t: t.replace('(', '{').replace(')','}')
+        self.remove_dot = lambda t: t.replace('.', '')
 
         #other operations
         self.create_dir(self.outDir)
@@ -75,21 +76,27 @@ class SubmitProd:
         with open('{}/runJob.sh'.format(self.outDir), 'w') as s:
             s.write('#!/usr/bin/env bash\n')
 
-            #input arguments: energy and eta
-            s.write('ARGS=`getopt -o "" -l ",energy:,eta::" -n "getopts_${0}" -- "$@"`\n')
+            #input arguments: energy, eta and run
+            s.write('ARGS=`getopt -o "" -l ",energy:,eta:,run:" -n "getopts_${0}" -- "$@"`\n')
             s.write('eval set -- "$ARGS"\n')
             s.write('while true; do\n')
             s.write('case "$1" in\n')
             s.write('--energy)\n')
             s.write('if [ -n "$2" ]; then\n')
-            s.write('ENERGY="${2}";\n')
+            s.write('{}="${{2}}";\n'.format(self.clean_tag(self.en_tag)))
             s.write('echo "Energy: {}";\n'.format(self.shellify_tag(self.en_tag)))
             s.write('fi\n')
             s.write('shift 2;;\n')
             s.write('--eta)\n')
             s.write('if [ -n "$2" ]; then\n')
-            s.write('ETA="${2}";\n')
-            s.write('echo "Eta: {}";\n'.format(self.shellify_tag(self.eta_tag)))
+            s.write("{}=$(echo ${{2}} | sed 's/\.//');\n".format(self.clean_tag(self.eta_tag)))
+            s.write("echo \"Eta: {}\";\n".format(self.shellify_tag(self.eta_tag)))
+            s.write('fi\n')
+            s.write('shift 2;;\n')
+            s.write('--run)\n')
+            s.write('if [ -n "$2" ]; then\n')
+            s.write('{}="${{2}}";\n'.format(self.clean_tag(self.run_tag)))
+            s.write('echo "Run: {}";\n'.format(self.shellify_tag(self.run_tag)))
             s.write('fi\n')
             s.write('shift 2;;\n')
             s.write('--)\n')
@@ -159,7 +166,7 @@ class SubmitProd:
         for run in range(self.p.nRuns):
             for et in self.p.enList:
                 for eta in self.p.etas:
-                    with open('{}/{}'.format(self.outDir, self.mac_name(str(et), str(eta), str(run))), 'w') as s:
+                    with open('{}/{}'.format(self.outDir, self.mac_name(str(et), self.remove_dot(str(eta)), str(run))), 'w') as s:
                         s.write('/control/verbose 0\n')
                         s.write('/control/saveHistory\n')
                         s.write('/run/verbose 0\n')
@@ -191,18 +198,18 @@ class SubmitProd:
         with open('{}/{}'.format(self.outDir,self.condor_submit_name), 'w') as s:
             s.write('universe = vanilla\n')
             s.write('Executable = {}/runJob.sh\n'.format(self.outDir))
-            s.write('Arguments = --energy {} --eta {}\n'.format(self.en_tag, self.eta_tag))
-            s.write('Requirements = (OpSysAndVer =?= "CentOS7")')
+            s.write('Arguments = --energy {} --eta {} --run {}\n'.format(self.en_tag, self.eta_tag, self.run_tag))
+            s.write('Requirements = (OpSysAndVer =?= "CentOS7")\n')
             s.write('Output = {}/condorTree.out\n'.format(self.outDir))
             s.write('Error = {}/condorTree.err\n'.format(self.outDir))
             s.write('Log = {}/condorTree.log\n'.format(self.outDir))
-            s.write('RequestMemory = 10MB')
+            s.write('RequestMemory = 10MB\n')
             s.write('+JobFlavour = "nextweek"\n')
             s.write('Queue {nruns} {entag}, {etatag} from (\n'.format( nruns=self.p.nRuns, entag=self.clean_tag(self.en_tag),
                                                                        etatag=self.clean_tag(self.eta_tag) ))
             for et in self.p.enList:
                 for eta in self.p.etas:
-                    s.write('{en}, {n:.{r}f}\n'.format(en=et,n=eta,r=3))
+                    s.write('{}, {}\n'.format(et,str(eta),r=3))
             s.write(')')
 ###################################################################################################
 ###################################################################################################
