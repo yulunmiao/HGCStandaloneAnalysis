@@ -64,7 +64,12 @@ class SubmitProd:
         except OSError as e:
             if e.errno != errno.EEXIST:
                 raise
-            
+
+    def gen_uniform_int_random_seeds_(low, high, size):
+        random.seed()
+        r = random.uniform(low=low, high=high, size=size)
+        return [int(x) for x in r]
+        
     def write_shell_script_file(self):
         """
         Writes a general shell file which runs the neration step for particular set of run,
@@ -163,9 +168,19 @@ class SubmitProd:
         Writes all required geant4 input files, one
         for each run (different seed) and energy.
         """
+        niters = len(self.p.nRuns)*len(self.p.enList)*len(self.p.etas)
+        gen_kwargs = dict(low=0, high=100000, size=niters)
+        seeds1 = gen_uniform_int_random_seeds_(**gen_kwargs)
+        seeds2 = gen_uniform_int_random_seeds_(**gen_kwargs)
+        
         for run in range(self.p.nRuns):
-            for et in self.p.enList:
-                for eta in self.p.etas:
+            for iet,et in enumerate(self.p.enList):
+                for ieta,eta in enumerate(self.p.etas):
+                    gen_idx = ( ( run * len(self.p.enList) * len(self.p.etas) ) +
+                                ( iet * len(self.p.etas) ) +
+                                ( ieta ) )
+                    assert(gen_idx < niters)
+                    
                     with open('{}/{}'.format(self.outDir, self.mac_name(str(et), self.remove_dot(str(eta)), str(run))), 'w') as s:
                         s.write('/control/verbose 0\n')
                         s.write('/control/saveHistory\n')
@@ -174,7 +189,7 @@ class SubmitProd:
                         s.write('/tracking/verbose 0\n')
                         s.write('/N03/det/setField {n:.{r}f} T\n'.format(n=self.p.Bfield,r=1))
                         s.write('/N03/det/setModel {}\n'.format(self.p.model))
-                        s.write('/random/setSeeds {} {}\n'.format( int(random.uniform(0,100000)), int(random.uniform(0,100000)) ) )
+                        s.write('/random/setSeeds {} {}\n'.format(seeds1[gen_idx], seeds2[gen_idx]) )
                         if self.p.dogun :
                             s.write('/generator/select particleGun\n')
                             s.write('/gun/particle {} \n'.format(self.p.datatype))
