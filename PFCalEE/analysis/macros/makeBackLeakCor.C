@@ -110,7 +110,7 @@ int makeBackLeakCor(const unsigned nLayers,
   saveName << plotDir << "/ErecovsbackFraction_eta" << eta << "_pu" << pu;
   saveName << "_E" << pT << "_SR" << iSR;
   mycE2D->Update();
-  mycE2D->Print((saveName.str()+".pdf").c_str());
+  mycE2D->Print((saveName.str()+".png").c_str());
   mycE2D->Print((saveName.str()+".C").c_str());
   
   
@@ -141,7 +141,7 @@ int plotBackLeakFit(const TString & plotDir,
   lsave << "BackLeakCor";
   lsave << "_eta" << eta << "_pu" << pu ;
   lsave << "_vsE";
-  myc->Print((lsave.str()+".pdf").c_str());
+  myc->Print((lsave.str()+".png").c_str());
   myc->Print((lsave.str()+".C").c_str());
 
   return 0;
