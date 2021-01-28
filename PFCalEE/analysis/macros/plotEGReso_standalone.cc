@@ -791,9 +791,9 @@ int plotEGReso(const InputParserPlotEGReso& ip) {
 		  corrBackLeakFit->Write();
 		  plotBackLeakFit(plotDir,corrBackLeakFit,etax10,pu[ipu]);
 		}
-		double noise = eta==2.4 ? noise100[iSR] : eta==2.0 ? noise200[iSR] : eta==1.7 ? noise300[iSR] : 0 ;
+		double noise = eta==2.4f ? noise100[iSR] : eta==2.0f ? noise200[iSR] : eta==1.7f ? noise300[iSR] : 0 ;
 		double noiseRef = pu[ipu]==0? noise : noisePu[iSR];
-		
+
 		makeResolution(dovsE,doRaw,doBackLeakCor,
 			       etax10,pu[ipu],iSR,radius[iSR],
 			       resoRecoFit,
