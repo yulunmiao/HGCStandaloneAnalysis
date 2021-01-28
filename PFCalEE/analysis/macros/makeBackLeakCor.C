@@ -104,10 +104,12 @@ int makeBackLeakCor(const unsigned nLayers,
     corrBackLeakFit->SetPointError(np,0.0,fitcor->GetParError(1));
     
   }
+
+  if (system(TString("mkdir -p ")+plotDir+TString("/BackCor2D"))) return 1;
   
   std::ostringstream saveName;
   saveName.str("");
-  saveName << plotDir << "/ErecovsbackFraction_eta" << eta << "_pu" << pu;
+  saveName << plotDir << "BackCor2D/ErecovsbackFraction_eta" << eta << "_pu" << pu;
   saveName << "_E" << pT << "_SR" << iSR;
   mycE2D->Update();
   mycE2D->Print((saveName.str()+".png").c_str());

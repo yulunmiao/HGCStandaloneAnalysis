@@ -5,6 +5,8 @@
 #include<iomanip>
 #include<numeric>
 
+#include<unordered_map>
+
 #include "TFile.h"
 #include "TTree.h"
 #include "TNtuple.h"
@@ -53,9 +55,10 @@ public:
   }
 
   const std::string tag() const { return tag_; }
-  const std::string thickness() const { return thickness_; }
   const std::vector<float> etas() const { return etas_; }
   const std::vector<std::string> versions() const { return versions_; }
+  const std::vector<unsigned> thicknesses() const { return thicknesses_; }
+  const std::vector<unsigned> signalRegions() const { return signalRegions_; }
   const unsigned nBack() const { return nBack_; }
   
 private:
@@ -63,8 +66,9 @@ private:
   char** argv_;
   
   std::string tag_;
-  std::string thickness_;
   std::vector<float> etas_;
+  std::vector<unsigned> thicknesses_;
+  std::vector<unsigned> signalRegions_;
   std::vector<std::string> versions_;
   unsigned nBack_;
 
@@ -73,10 +77,30 @@ private:
   std::vector<std::string> free_args_; //any argument allowed
   std::vector<std::string> free_args_v_; //any vector argument allowed
   std::vector<std::string> optional_args_; //optional arguments (boolean flags)
+  std::array<std::string,6> required_args_ = {{ "--nBack", "--thicknesses", "--signalRegions",
+						"--versions", "--tag", "--etas" }};
 
   std::unordered_map<std::string, std::string> chosen_args_;
   std::unordered_map<std::string, std::vector<std::string>> chosen_args_v_;
 
+  bool are_required_args_present_()
+  {
+    for(auto&& req: required_args_)
+      {
+	bool is_present = false;
+	for(int iarg=0; iarg<argc_; ++iarg)
+	  {
+	    if(std::string(argv_[iarg]) == req)
+	      is_present = true;
+	  }
+	if(!is_present) {
+	  std::cout << "You must specify the `" << req << "` argument." << std::endl;
+	  return 0;
+	} 
+      }
+    return 1;
+  }
+  
   bool are_args_supported_()
   {
     for(int iarg=0; iarg<argc_; ++iarg) {
@@ -142,7 +166,7 @@ private:
   */
   void parse_chosen_args_()
   {
-    if( !is_nargs_correct_() or !are_args_supported_())
+    if( !is_nargs_correct_() or !are_args_supported_() or !are_required_args_present_())
       std::exit(1);
     set_chosen_args_();
   }
@@ -160,11 +184,14 @@ private:
 
   void set_args_final_()
   {
-    thickness_ = chosen_args_["--thickness"];
     tag_ = chosen_args_["--tag"];
     nBack_ = static_cast<unsigned>( std::stoi(chosen_args_["--nBack"]) );
     for(auto&& x: chosen_args_v_["--etas"])
       etas_.push_back( std::stof(x) );
+    for(auto&& x: chosen_args_v_["--thicknesses"])
+      thicknesses_.push_back( static_cast<unsigned>(std::stoi(x)) );
+    for(auto&& x: chosen_args_v_["--signalRegions"])
+      signalRegions_.push_back( static_cast<unsigned>(std::stoi(x)) );
     versions_ = chosen_args_v_["--versions"];
   }
   
@@ -212,12 +239,24 @@ private:
 
   void set_args_options_()
   {
-    valid_args_["--thickness"] = {"100", "200", "300"};
-    valid_args_["--nBack"] = {"0", "1", "2", "3", "4", "5"};
+    valid_args_["--nBack"] = {"0", "1", "2", "3", "4"};
+    valid_args_v_["--thicknesses"] = {"100", "200", "300"};
+    valid_args_v_["--signalRegions"] = {"0", "1", "2", "3", "4", "5"};
     valid_args_v_["--versions"] = {"60", "70"};
     free_args_ = {"--tag"};
     free_args_v_ = {"--etas"};
     optional_args_ = {""};
+
+    for(auto&& req: required_args_)
+      {
+	if( valid_args_.find(req) == valid_args_.end() and
+	    valid_args_v_.find(req) == valid_args_v_.end() and
+	    std::find(free_args_.begin(), free_args_.end(), req) == free_args_.end() and
+	    std::find(free_args_v_.begin(), free_args_v_.end(), req) == free_args_v_.end() ) {
+	  std::cout << "You forgot to set optional arguments for `" << req << "`.";
+	  std::exit(1);
+	}
+      }
   }
 
 };
@@ -402,7 +441,7 @@ int makeEfit(const bool useSigmaEff,
   if (doRaw) saveName << "raw";
   saveName << "_E" << pT << "_SR" << iSR << pSuffix;
   mycE->Update();
-  mycE->Print((saveName.str()+".pdf").c_str());
+  mycE->Print((saveName.str()+".png").c_str());
   mycE->Print((saveName.str()+".C").c_str());
 
   //    drawChi2(p_chi2ndf);
@@ -431,28 +470,25 @@ int plotEGReso(const InputParserPlotEGReso& ip) {
   const std::array<unsigned,1> pu = {0};//,140,200};
   const unsigned nPu = pu.size();
 
-  const std::array<std::string,1> scenarios = { "model2/gamma/" + ip.thickness() + "u/" };
-  const unsigned nS = scenarios.size();
+  const std::vector<unsigned> thicknesses = ip.thicknesses();
+  const unsigned nS = thicknesses.size();
+  std::vector<std::string> scenarios(nS);
+  for(unsigned inS(0); inS<nS; ++inS)
+    scenarios[inS] = std::string("model2/gamma/") + std::to_string(thicknesses[inS]) + "u/";
   
-  const unsigned neta = 1;
-  unsigned eta[neta]={17};
-
   const std::array<unsigned,10> genEnAll = {5,10,20,30,40,60,80,100,150,200};
   const unsigned nGenEnAll = genEnAll.size();
 
   const unsigned nEvtMin = 150;
 
-  constexpr unsigned nSR = 6;
-  std::array<unsigned,nSR> srIdx;
-  std::iota(srIdx.begin(), srIdx.end(), 0);
-  
-  const std::array<double,nSR> radius = {13,15,20,23,26,53};
+  const std::array<double,6> radius = {13,15,20,23,26,53};
+  const unsigned nSR = radius.size(); 
   std::array<double,nSR> noise100, noise200, noise300;
 
   const std::array<unsigned,nSR> ncellsSmall = {7,13,19,31,37,151};
   const std::array<unsigned,nSR> ncellsLarge = {7,7,13,19,19,85};
 
-  for (unsigned iSR(0); iSR<nSR; ++iSR){
+  for (auto&& iSR: ip.signalRegions()) {
     noise100[iSR] = sqrt(pow(sqrt(10*ncellsSmall[iSR])*0.00192,2)+pow(sqrt(10*ncellsSmall[iSR])*0.00241,2)+pow(sqrt(8*ncellsSmall[iSR])*0.00325,2));
     noise200[iSR] = sqrt(pow(sqrt(10*ncellsLarge[iSR])*0.00097,2)+pow(sqrt(10*ncellsLarge[iSR])*0.00121,2)+pow(sqrt(8*ncellsLarge[iSR])*0.00164,2));
     noise300[iSR] = sqrt(pow(sqrt(10*ncellsLarge[iSR])*0.00049,2)+pow(sqrt(10*ncellsLarge[iSR])*0.00062,2)+pow(sqrt(8*ncellsLarge[iSR])*0.00083,2));
@@ -486,9 +522,6 @@ int plotEGReso(const InputParserPlotEGReso& ip) {
       for (auto&& scenario: scenarios) {
 
 	TString inputDir = baseDir+"version"+version+"/"+scenario+"/";
-	TString plotDir = saveDir+"version"+version+"/"+scenario+"/";
-	if (system(TString("mkdir -p ")+plotDir)) return 1;
-
 
 	for (auto&& eta: ip.etas()) {
 	  unsigned etax10 = static_cast<unsigned>(eta*10.);
@@ -568,19 +601,15 @@ int plotEGReso(const InputParserPlotEGReso& ip) {
 	      }
 	    }
 
-
 	    std::vector<double> noisePu;
-	    //loop on SR...
-	    //for (unsigned iSR(0); iSR<nSR;++iSR)
-	    {//loop on signal region
-	      unsigned iSR=srIdx[4];
+
+	    for (auto&& iSR: ip.signalRegions()) { //loop on signal regions
 	      std::cout << " - Processing signal region: " << iSR << " with size " << radius[iSR] << std::endl;
 
+	      TString plotDir = saveDir+"version"+version+"/model2/gamma/SR"+std::to_string(iSR)+"/";
+	      if (system(TString("mkdir -p ")+plotDir)) return 1;
 
-	      double calib = 0;
-	      double offset = 0;
-	      double calibErr = 0;
-	      double offsetErr = 0;
+	      double calib = 0, offset = 0, calibErr = 0, offsetErr = 0;
 	      
 	      for (unsigned iT(redoCalib && pu[ipu]==0 ? 0 : 1); iT<2; ++iT){//loop on calib type
 		bool doRaw = iT==0?true:false;
@@ -714,8 +743,8 @@ int plotEGReso(const InputParserPlotEGReso& ip) {
 
 		  if (redoLeakCor && !doRaw) {
 		    int fail = makeBackLeakCor(nLayers, ip.nBack(),
-					       iSR,genEn[iE],etax10,pu[ipu],
-					       offset,calib,
+					       iSR, genEn[iE], etax10, pu[ipu],
+					       offset, calib,
 					       backLeakCor,
 					       mycE2D[oldIdx[iE]],
 					       ltree[ipu][oldIdx[iE]],
@@ -733,11 +762,11 @@ int plotEGReso(const InputParserPlotEGReso& ip) {
 
 		  }
 		  
-		  int success = makeEfit(useSigmaEff,dovsE,doRaw,
+		  int success = makeEfit(useSigmaEff, dovsE, doRaw,
 					 doBackLeakCor, ip.nBack(),
 					 pu[ipu], icval,
-					 scenario,version,nLayers,
-					 etax10,genEn[iE],iSR,radius[iSR],
+					 scenario, version, nLayers,
+					 etax10,genEn[iE], iSR, radius[iSR],
 					 offset,calib,backLeakCor,
 					 mycE[oldIdx[iE]],
 					 ltree[ipu][oldIdx[iE]],
@@ -750,7 +779,7 @@ int plotEGReso(const InputParserPlotEGReso& ip) {
 
 		//get calib
 		makeCalibration(doRaw,doBackLeakCor,
-				etax10,pu[ipu],iSR,radius[iSR],
+				etax10,pu[ipu], iSR, radius[iSR],
 				calibRecoFit,calibRecoDelta,
 				calib,calibErr,
 				offset,offsetErr,
@@ -794,6 +823,8 @@ int plotEGReso(const InputParserPlotEGReso& ip) {
 
 };//main
 
+//compile with ``
+//run with `` (example)
 int main(int argc, char** argv)
 {
   InputParserPlotEGReso ip(argc, argv);
