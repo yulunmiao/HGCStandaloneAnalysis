@@ -823,8 +823,8 @@ int plotEGReso(const InputParserPlotEGReso& ip) {
 
 };//main
 
-//compile with ``
-//run with `` (example)
+//compile with `g++ plotEGReso_standalone.cc $(root-config --glibs --cflags --libs) -o plotEGReso`
+//run with `./plotEGReso --thicknesses 1 200 --tag tag1 --nBack 2 --etas 3 1.7 2.0 2.4 --versions 1 60 --signalRegions 1 4` (example)
 int main(int argc, char** argv)
 {
   InputParserPlotEGReso ip(argc, argv);
