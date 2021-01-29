@@ -4,7 +4,6 @@
 #include<sstream>
 #include<iomanip>
 #include<numeric>
-
 #include<unordered_map>
 
 #include "TFile.h"
@@ -104,12 +103,7 @@ private:
   bool are_args_supported_()
   {
     for(int iarg=0; iarg<argc_; ++iarg) {
-      if(std::string(argv_[iarg]).find("--") != std::string::npos and
-	 valid_args_.find(std::string(argv_[iarg])) == valid_args_.end() and
-	 valid_args_v_.find(std::string(argv_[iarg])) == valid_args_v_.end() and
-	 std::find(free_args_.begin(), free_args_.end(), std::string(argv_[iarg])) == free_args_.end() and
-	 std::find(free_args_v_.begin(), free_args_v_.end(), std::string(argv_[iarg])) == free_args_v_.end() and
-	 std::find(optional_args_.begin(), optional_args_.end(), std::string(argv_[iarg])) == optional_args_.end())
+      if(is_arg_absent_(argv_[iarg]))
 	{
 	  std::cout << "Argument " << std::string(argv_[iarg]) << " was not recognized." << std::endl;
 	  std::cout << "The arguments currently supported are:" << std::endl;
@@ -127,10 +121,21 @@ private:
     return 1;
   }
 
-  bool is_nargs_correct_()
+  //returns true if the passed argument was not defined by the user
+  bool is_arg_absent_(char* s)
   {
-    int nargsmin = (valid_args_.size()+valid_args_v_.size()+free_args_.size()+free_args_v_.size()) * 2 + 1;
-    if(argc_ < nargsmin) {
+    return ( std::string(s).find("--") != std::string::npos and
+	     valid_args_.find(std::string(s)) == valid_args_.end() and
+	     valid_args_v_.find(std::string(s)) == valid_args_v_.end() and
+	     std::find(free_args_.begin(), free_args_.end(), std::string(s)) == free_args_.end() and
+	     std::find(free_args_v_.begin(), free_args_v_.end(), std::string(s)) == free_args_v_.end() and
+	     std::find(optional_args_.begin(), optional_args_.end(), std::string(s)) == optional_args_.end() );
+  }
+  
+  bool help_()
+  {     
+    if(argc_ == 1 or was_help_invoked_()) {
+      
       std::cout << "You must specify the following:" << std::endl;
       for(auto& elem : valid_args_) {
 	std::string elem2 = elem.first;
@@ -155,6 +160,8 @@ private:
 	std::cout << elem2 + ": vector required, any choice allowed" << std::endl;
       }
       std::cout << "last_step_only: optional" << std::endl;
+      std::cout << "Note: vector arguments must obbey the "
+	"`--arg length val1 val2 val3 ...` structure. " << std::endl;
       return 0;
     }
     return 1;
@@ -166,7 +173,7 @@ private:
   */
   void parse_chosen_args_()
   {
-    if( !is_nargs_correct_() or !are_args_supported_() or !are_required_args_present_())
+    if( !help_() or !are_args_supported_() or !are_required_args_present_())
       std::exit(1);
     set_chosen_args_();
   }
@@ -259,6 +266,18 @@ private:
       }
   }
 
+  /*currently redundant, as the printout message appears as soon as one of the
+    arguments is wrong.*/
+  bool was_help_invoked_()
+  {
+    std::array<std::string,3> help_calls = {{"--help", "help", "-h"}};
+    for(int iarg(0); iarg<argc_; ++iarg) {
+      for(int i(0); i<help_calls.size(); ++i)
+	if(std::string(argv_[iarg]).find(help_calls[i]) != std::string::npos)
+	  return 1;
+    }
+    return 0;
+  }
 };
 
 int makeEfit(const bool useSigmaEff,
