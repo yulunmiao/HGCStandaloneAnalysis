@@ -4,7 +4,6 @@
 #include<sstream>
 #include<iomanip>
 #include<numeric>
-#include<unordered_map>
 
 #include "TFile.h"
 #include "TTree.h"
@@ -31,27 +30,11 @@
 #include "makeCalibration.C"
 #include "makeResolution.C"
 
-//#include "extractResultsvsEta.C"
+#include "../include/InputParserBase.h"
 
-class InputParserPlotEGReso {
-  /* Vector arguments are passed as follows:
-     < command --vector_argument length val1 val2 val3 ... >
-     where `length` refers to the number of `val` elements in the vector.
-     For example: < plot.cc --energies 3 30 50 100 >
-
-     The arguments must be defined in derived classes, by
-     overriding the following methods:
-     - set_args_options()
-     - set_args_final()
-     Do not forget to declare the command line arguments as private 
-     members in the derived class, and their getters.
-  */
+class InputParserPlotEGReso: public InputParserBase {
 public:
-  InputParserPlotEGReso(int argc, char** argv): argc_(argc), argv_(argv) { 
-    set_args_options_();
-    parse_chosen_args_();
-    set_args_final_();
-  }
+  explicit InputParserPlotEGReso(int argc, char** argv): InputParserBase(argc, argv) { run(); }
 
   const std::string tag() const { return tag_; }
   const std::vector<float> etas() const { return etas_; }
@@ -59,135 +42,14 @@ public:
   const std::vector<unsigned> thicknesses() const { return thicknesses_; }
   const std::vector<unsigned> signalRegions() const { return signalRegions_; }
   const unsigned nBack() const { return nBack_; }
-  
+
 private:
-  int argc_;
-  char** argv_;
-  
   std::string tag_;
   std::vector<float> etas_;
   std::vector<unsigned> thicknesses_;
   std::vector<unsigned> signalRegions_;
   std::vector<std::string> versions_;
   unsigned nBack_;
-
-  std::unordered_map< std::string, std::vector<std::string> > valid_args_; //arguments with limited options
-  std::unordered_map< std::string, std::vector<std::string> > valid_args_v_; //vector arguments with limited options
-  std::vector<std::string> free_args_; //any argument allowed
-  std::vector<std::string> free_args_v_; //any vector argument allowed
-  std::vector<std::string> optional_args_; //optional arguments (boolean flags)
-  std::array<std::string,6> required_args_ = {{ "--nBack", "--thicknesses", "--signalRegions",
-						"--versions", "--tag", "--etas" }};
-
-  std::unordered_map<std::string, std::string> chosen_args_;
-  std::unordered_map<std::string, std::vector<std::string>> chosen_args_v_;
-
-  bool are_required_args_present_()
-  {
-    for(auto&& req: required_args_)
-      {
-	bool is_present = false;
-	for(int iarg=0; iarg<argc_; ++iarg)
-	  {
-	    if(std::string(argv_[iarg]) == req)
-	      is_present = true;
-	  }
-	if(!is_present) {
-	  std::cout << "You must specify the `" << req << "` argument." << std::endl;
-	  return 0;
-	} 
-      }
-    return 1;
-  }
-  
-  bool are_args_supported_()
-  {
-    for(int iarg=0; iarg<argc_; ++iarg) {
-      if(is_arg_absent_(argv_[iarg]))
-	{
-	  std::cout << "Argument " << std::string(argv_[iarg]) << " was not recognized." << std::endl;
-	  std::cout << "The arguments currently supported are:" << std::endl;
-	  for(auto& elem : valid_args_)
-	    std::cout << elem.first << std::endl;
-	  for(auto& elem : valid_args_v_)
-	    std::cout << elem.first << std::endl;
-	  for(auto& elem : free_args_)
-	    std::cout << elem << std::endl;
-	  for(auto& elem : free_args_v_)
-	    std::cout << elem << std::endl;
-	  return 0;
-	}
-    }
-    return 1;
-  }
-
-  //returns true if the passed argument was not defined by the user
-  bool is_arg_absent_(char* s)
-  {
-    return ( std::string(s).find("--") != std::string::npos and
-	     valid_args_.find(std::string(s)) == valid_args_.end() and
-	     valid_args_v_.find(std::string(s)) == valid_args_v_.end() and
-	     std::find(free_args_.begin(), free_args_.end(), std::string(s)) == free_args_.end() and
-	     std::find(free_args_v_.begin(), free_args_v_.end(), std::string(s)) == free_args_v_.end() and
-	     std::find(optional_args_.begin(), optional_args_.end(), std::string(s)) == optional_args_.end() );
-  }
-  
-  bool help_()
-  {     
-    if(argc_ == 1 or was_help_invoked_()) {
-      
-      std::cout << "You must specify the following:" << std::endl;
-      for(auto& elem : valid_args_) {
-	std::string elem2 = elem.first;
-	elem2.erase(0,2);
-	std::cout << elem2 + ": ";
-	print_vector_elements_(elem.second);
-      }
-      for(auto& elem : valid_args_v_) {
-	std::string elem2 = elem.first;
-	elem2.erase(0,2);
-	std::cout << elem2 + ": ";
-	print_vector_elements_(elem.second);
-      }
-      for(std::string& elem : free_args_) {
-	std::string elem2 = elem;
-	elem2.erase(0,2);
-	std::cout << elem2 + ": required, any choice allowed" << std::endl;
-      }
-      for(std::string& elem : free_args_v_) {
-	std::string elem2 = elem;
-	elem2.erase(0,2);
-	std::cout << elem2 + ": vector required, any choice allowed" << std::endl;
-      }
-      std::cout << "last_step_only: optional" << std::endl;
-      std::cout << "Note: vector arguments must obbey the "
-	"`--arg length val1 val2 val3 ...` structure. " << std::endl;
-      return 0;
-    }
-    return 1;
-  }
-
-  /*
-    Gathers all operations which are independent of the specific command line arguments
-    this method can be used directly by any derived class
-  */
-  void parse_chosen_args_()
-  {
-    if( !help_() or !are_args_supported_() or !are_required_args_present_())
-      std::exit(1);
-    set_chosen_args_();
-  }
-  
-  //convenience function which prints all the elements in a vector of strings to std::cout
-  void print_vector_elements_(const std::vector<std::string>& v)
-  {
-    for(auto& elem : v) {
-      if(elem == v.back())
-	std::cout << elem << std::endl;
-      else
-	std::cout << elem << " / ";
-    }
-  }
 
   void set_args_final_()
   {
@@ -202,50 +64,11 @@ private:
     versions_ = chosen_args_v_["--versions"];
   }
   
-  void set_chosen_args_()
-  {
-    for(int iarg=1; iarg<argc_; ++iarg)
-      {
-	std::string argvstr = std::string(argv_[iarg]);
-	if( valid_args_.find(argvstr) != valid_args_.end() ) {
-	  if( std::find(valid_args_[argvstr].begin(), valid_args_[argvstr].end(), std::string(argv_[iarg+1])) == valid_args_[argvstr].end() )
-	    {
-	      std::cout << "The data type has to be one of the following: ";
-	      print_vector_elements_(valid_args_[argvstr]);
-	      std::exit(0);
-	    }
-	  else
-	    chosen_args_[argvstr] = std::string(argv_[iarg+1]);
-	}
-	else if(valid_args_v_.find(argvstr) != valid_args_v_.end() ) {
-	  int idx = iarg+1;
-	  for(int i(1); i<=std::stoi(std::string(argv_[idx])); ++i)
-	    {
-	      if( std::find(valid_args_v_[argvstr].begin(), valid_args_v_[argvstr].end(), std::string(argv_[idx+i])) == valid_args_v_[argvstr].end() )
-		{
-		  std::cout << "The vector data type has to be one of the following: ";
-		  print_vector_elements_(valid_args_v_[argvstr]);
-		  std::exit(0);
-		}
-	      else
-		chosen_args_v_[argvstr].push_back( std::string(argv_[idx+i]) );
-	    }
-	}
-	else if( std::find(free_args_.begin(), free_args_.end(), argvstr) != free_args_.end() )
-	  chosen_args_[argvstr] = std::string(argv_[iarg+1]);
-	else if( std::find(free_args_v_.begin(), free_args_v_.end(), argvstr) != free_args_v_.end() )
-	  {
-	    int idx = iarg+1;
-	    for(int i(1); i<=std::stoi(argv_[idx]); ++i)
-	      chosen_args_v_[argvstr].push_back( std::string(argv_[idx+i]) );
-	  }
-	else if(std::find(optional_args_.begin(), optional_args_.end(), std::string(argv_[iarg])) == optional_args_.end())
-	  chosen_args_[argvstr] = "true";
-      }
-  }
-
   void set_args_options_()
   {
+    required_args_ = { "--nBack", "--thicknesses", "--signalRegions",
+		       "--versions", "--tag", "--etas" };
+
     valid_args_["--nBack"] = {"0", "1", "2", "3", "4"};
     valid_args_v_["--thicknesses"] = {"100", "200", "300"};
     valid_args_v_["--signalRegions"] = {"0", "1", "2", "3", "4", "5"};
@@ -253,30 +76,6 @@ private:
     free_args_ = {"--tag"};
     free_args_v_ = {"--etas"};
     optional_args_ = {""};
-
-    for(auto&& req: required_args_)
-      {
-	if( valid_args_.find(req) == valid_args_.end() and
-	    valid_args_v_.find(req) == valid_args_v_.end() and
-	    std::find(free_args_.begin(), free_args_.end(), req) == free_args_.end() and
-	    std::find(free_args_v_.begin(), free_args_v_.end(), req) == free_args_v_.end() ) {
-	  std::cout << "You forgot to set optional arguments for `" << req << "`.";
-	  std::exit(1);
-	}
-      }
-  }
-
-  /*currently redundant, as the printout message appears as soon as one of the
-    arguments is wrong.*/
-  bool was_help_invoked_()
-  {
-    std::array<std::string,3> help_calls = {{"--help", "help", "-h"}};
-    for(int iarg(0); iarg<argc_; ++iarg) {
-      for(int i(0); i<help_calls.size(); ++i)
-	if(std::string(argv_[iarg]).find(help_calls[i]) != std::string::npos)
-	  return 1;
-    }
-    return 0;
   }
 };
 
@@ -625,7 +424,7 @@ int plotEGReso(const InputParserPlotEGReso& ip) {
 	    for (auto&& iSR: ip.signalRegions()) { //loop on signal regions
 	      std::cout << " - Processing signal region: " << iSR << " with size " << radius[iSR] << std::endl;
 
-	      TString plotDir = saveDir+"version"+version+"/model2/gamma/SR"+std::to_string(iSR)+"/";
+	      TString plotDir = saveDir + "version" + version + "/model2/gamma/SR" + std::to_string(iSR) + "/";
 	      if (system(TString("mkdir -p ")+plotDir)) return 1;
 
 	      double calib = 0, offset = 0, calibErr = 0, offsetErr = 0;
