@@ -290,11 +290,10 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
       //double w = ssvec[iL].voldEdx()/ssvec[1].voldEdx();
       //double w = ssvec[iL].volX0trans()/ssvec[1].volX0trans();
       //absweight_[iL] = 10.0166;
-      absweight_[iL]=iL<(nLayers_-1) ? (ssvec[iL].voldEdx()+ssvec[iL+1].voldEdx())/2. : ssvec[iL].voldEdx();
+      absweight_[iL]=iL<(nLayers_-2) ? (ssvec[iL].voldEdx()+ssvec[iL+1].voldEdx())/2. : absweight_[nLayers_-3];
       std::cout << " - Layer " << iL << " wdEdx=" << ssvec[iL].voldEdx()  << " Wx0=" << ssvec[iL].volX0trans() << " W valeri scheme " << absweight_[iL] << std::endl;
     }
     //absweight_[0] = 20.3628;
-    absweight_[nLayers_-1] = 13.0629;
     //absweight_[nLayers_-1] = 13.0629;
     
     firstEvent_=false;
