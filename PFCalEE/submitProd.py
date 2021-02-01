@@ -84,7 +84,6 @@ label=''
 #droplayers='1,3,5,7,10,12,15,18,20,23,25,27'
 #label='v5_18'
 
-
 for et in enlist :
 
     nevents=opt.nevts

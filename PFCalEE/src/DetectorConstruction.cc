@@ -1071,20 +1071,20 @@ void DetectorConstruction::buildHGCALFHE(const unsigned aVersion){
     std::vector<G4double> gap_lThick; 
     std::vector<std::string> gap_lEle;    
     gap_lThick.push_back(0.7*mm);   gap_lEle.push_back("Air");
-    gap_lThick.push_back(1.0*mm);   gap_lEle.push_back("Cu");
-    gap_lThick.push_back(3*mm);     gap_lEle.push_back("Air");
+    gap_lThick.push_back(2.5*mm);   gap_lEle.push_back("Cu");
+    gap_lThick.push_back(2.5*mm);     gap_lEle.push_back("Air");
     gap_lThick.push_back(1.6*mm);   gap_lEle.push_back("PCB");
-    gap_lThick.push_back(3*mm);     gap_lEle.push_back("Air");
+    gap_lThick.push_back(2.5*mm);     gap_lEle.push_back("Air");
     gap_lThick.push_back(1.6*mm);   gap_lEle.push_back("PCB");
-    gap_lThick.push_back(3*mm);     gap_lEle.push_back("Air");
+    gap_lThick.push_back(2.5*mm);     gap_lEle.push_back("Air");
     for(int i=0; i<3; i++){
       gap_lThick.push_back(0.1*mm); gap_lEle.push_back("Si");
     }
-    gap_lThick.push_back(1.6*mm);   gap_lEle.push_back("PCB");
-    gap_lThick.push_back(6.35*mm);  gap_lEle.push_back("Cu");
+    gap_lThick.push_back(1.0*mm);   gap_lEle.push_back("PCB"); //baseplate
+    gap_lThick.push_back(6.35*mm);  gap_lEle.push_back("Cu");  //cooling plate
 
     lThick.insert(lThick.end(), gap_lThick.begin(), gap_lThick.end());
-    lEle.insert(lEle.end(), gap_lEle.begin(), gap_lEle.end());
+    lEle.insert(lEle.end(),     gap_lEle.begin(),   gap_lEle.end());
     m_caloStruct.push_back( SamplingSection(lThick,lEle) );
     m_minEta.push_back(1.487);      //this matches the last CE-E layer
     m_maxEta.push_back(m_maxEta0);
@@ -1323,8 +1323,8 @@ void DetectorConstruction::buildHGCALBHE(const unsigned aVersion){
     std::vector<G4double> gap_lThick; 
     std::vector<std::string> gap_lEle;    
     gap_lThick.push_back(0.7*mm);   gap_lEle.push_back("Air");
-    gap_lThick.push_back(1.0*mm);   gap_lEle.push_back("Cu");
-    gap_lThick.push_back(7.3*mm);   gap_lEle.push_back("Air");
+    gap_lThick.push_back(2.5*mm);   gap_lEle.push_back("Cu");
+    gap_lThick.push_back(5.8*mm);   gap_lEle.push_back("Air");
     gap_lThick.push_back(1.6*mm);   gap_lEle.push_back("PCB");
     gap_lThick.push_back(3*mm);     gap_lEle.push_back("Scintillator");
     gap_lThick.push_back(1.6*mm);   gap_lEle.push_back("PCB");
@@ -1461,6 +1461,8 @@ double DetectorConstruction::getEtaFromRZ(const double & r, const double & z){
 //
 void DetectorConstruction::DefineMaterials()
 {
+  std::cout << "[DetectorConstruction::DefineMaterials]" << std::endl;
+
   G4NistManager* nistManager = G4NistManager::Instance();
   m_materials["Abs"] = (version_== v_CALICE || version_==v_HGCALEE_W) ?
     nistManager->FindOrBuildMaterial("G4_W",false) :
@@ -1506,7 +1508,7 @@ void DetectorConstruction::DefineMaterials()
   m_materials["PCB"]->AddElement(nistManager->FindOrBuildElement(6) , 3);
   m_materials["PCB"]->AddElement(nistManager->FindOrBuildElement(1) , 3);
   m_dEdx["PCB"] = 0;*/
-  m_materials["PCB"] = new G4Material("FR4",1.700*g/cm3,5);
+  m_materials["PCB"] = new G4Material("FR4",1.700*g/cm3,5); //from google: 1.850*g/cm3,5);
   m_materials["PCB"]->AddMaterial(m_materials["Si"] , 0.18077359);
   m_materials["PCB"]->AddMaterial(m_materials["O"]  , 0.4056325);
   m_materials["PCB"]->AddMaterial(m_materials["C"]  , 0.27804208);
@@ -1565,7 +1567,6 @@ void DetectorConstruction::DefineMaterials()
   m_materials["Scintillator"]->AddMaterial(m_materials["H"]  , 8.4878906*perCent);
   m_dEdx["Scintillator"] = m_dEdx["C"];
 
-  G4cout << m_materials["Scintillator"] << G4endl;
   m_materials["Polystyrole"]= new G4Material("Polystyrole",1.065*g/cm3,2);
   m_materials["Polystyrole"]->AddMaterial(m_materials["H"]  , 50*perCent);
   m_materials["Polystyrole"]->AddMaterial(m_materials["C"]  , 50*perCent);
@@ -1613,6 +1614,14 @@ void DetectorConstruction::DefineMaterials()
   m_materials["NeutMod"]->AddMaterial(m_materials["H"]  , 0.14372);
   m_dEdx["NeutMod"] = 1.749*0.86*0.950/10.;
 
+
+  G4cout << m_materials["PCB"] << G4endl;
+  G4cout << m_materials["Scintillator"] << G4endl;
+  G4cout << m_materials["Si"] << G4endl;
+  G4cout << m_materials["Pb"] << G4endl;
+  G4cout << m_materials["WCu"] << G4endl;
+  G4cout << m_materials["Cu"] << G4endl;
+  G4cout << m_materials["SSteel"] << G4endl;
 }
 
 //

@@ -231,6 +231,22 @@ else:
     noise='0-51:0.15'
     threshold='0-51:5'
 
+    
+#submit
+bval="BOFF"
+if opt.Bfield>0 : bval="BON"
+condor_dir='%s/git_%s/version_%d/model_%d/%s/%s'%(opt.out,opt.gittag,opt.version,opt.model,opt.datatype,bval)
+os.system('mkdir -p {}'.format(condor_dir))
+condor_url=os.path.abspath('%s/condorSubmitDigi_%3.3f_%d.sub'%(condor_dir,opt.alpha,opt.run))
+condorFile = open(condor_url, 'w')
+condorFile.write('universe = vanilla\n')
+condorFile.write('+JobFlavour = "nextweek"\n')
+condorFile.write('Executable = $(exe)\n')
+condorFile.write('Output = %s\n'%(condor_url.replace('.sub','.out')))
+condorFile.write('Error = %s\n'%(condor_url.replace('.sub','.err')))
+condorFile.write('Log = %s\n'%(condor_url.replace('.sub','.log')))
+condorFile.write('queue exe from (\n')
+
 for nPuVtx in nPuVtxlist:
 
     for interCalib in interCalibList:
@@ -321,23 +337,31 @@ for nPuVtx in nPuVtxlist:
             scriptFile.write('cp * %s/\n'%(outDir))
             scriptFile.write('echo "All done"\n')
             scriptFile.close()
+
+            sh_url=os.path.abspath('%s/runDigiJob%s.sh'%(outDir,suffix))
+            condorFile.write('\t%s\n'%sh_url)
             
             #submit
-            condorFile = open('%s/condorSubmitDigi%s.sub'%(outDir,suffix), 'w')
-            condorFile.write('universe = vanilla\n')
-            condorFile.write('+JobFlavour = "nextweek"\n')
-            condorFile.write('Executable = %s/runDigiJob%s.sh\n'%(outDir,suffix))
-            condorFile.write('Output = %s/condorDigi%s.out\n'%(outDir,suffix))
-            condorFile.write('Error = %s/condorDigi%s.err\n'%(outDir,suffix))
-            condorFile.write('Log = %s/condorDigi%s.log\n'%(outDir,suffix))
-            condorFile.write('Queue 1\n')
-            condorFile.close()
+            #condorFile = open('%s/condorSubmitDigi%s.sub'%(outDir,suffix), 'w')
+            #condorFile.write('universe = vanilla\n')
+            #condorFile.write('+JobFlavour = "nextweek"\n')
+            #condorFile.write('Executable = %s/runDigiJob%s.sh\n'%(outDir,suffix))
+            #condorFile.write('Output = %s/condorDigi%s.out\n'%(outDir,suffix))
+            #condorFile.write('Error = %s/condorDigi%s.err\n'%(outDir,suffix))
+            #condorFile.write('Log = %s/condorDigi%s.log\n'%(outDir,suffix))
+            #condorFile.write('Queue 1\n')
+            #condorFile.close()
 
 
-
+            
             os.system('chmod u+rwx %s/runDigiJob%s.sh'%(outDir,suffix))
 
-            if opt.nosubmit : os.system('echo condor_submit %s/condorSubmitDigi%s.sub'%(outDir,suffix)) 
-            else: os.system('condor_submit %s/condorSubmitDigi%s.sub'%(outDir,suffix))
+            #if opt.nosubmit : os.system('echo condor_submit %s/condorSubmitDigi%s.sub'%(outDir,suffix)) 
+            #else: os.system('condor_submit %s/condorSubmitDigi%s.sub'%(outDir,suffix))
 
 
+condorFile.write(')\n')
+condorFile.close()
+
+if opt.nosubmit : os.system('echo condor_submit {}'.format(condor_url))
+else: os.system('condor_submit {}'.format(condor_url))
