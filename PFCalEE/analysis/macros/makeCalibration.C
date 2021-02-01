@@ -206,7 +206,7 @@ int makeCalibration(const bool doRaw,
   lsave << "_eta" << eta << "_pu" << pu ;
   //if (dovsE) 
   lsave << "_vsE";
-  mycC->Print((lsave.str()+".pdf").c_str());
+  mycC->Print((lsave.str()+".png").c_str());
   mycC->Print((lsave.str()+".C").c_str());
 
   foutEfit->cd();

@@ -1508,7 +1508,7 @@ void DetectorConstruction::DefineMaterials()
   m_materials["PCB"]->AddElement(nistManager->FindOrBuildElement(6) , 3);
   m_materials["PCB"]->AddElement(nistManager->FindOrBuildElement(1) , 3);
   m_dEdx["PCB"] = 0;*/
-  m_materials["PCB"] = new G4Material("FR4",1.700*g/cm3,5);
+  m_materials["PCB"] = new G4Material("FR4",1.700*g/cm3,5); //from google: 1.850*g/cm3,5);
   m_materials["PCB"]->AddMaterial(m_materials["Si"] , 0.18077359);
   m_materials["PCB"]->AddMaterial(m_materials["O"]  , 0.4056325);
   m_materials["PCB"]->AddMaterial(m_materials["C"]  , 0.27804208);
