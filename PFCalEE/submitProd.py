@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
-import os, sys, errno
+import os, sys
 import argparse
 import math
-import random
+import numpy as np
+from utils import create_dir, SubmitBase
 
 git_tag=os.popen('git describe --tags --abbrev=0').read()
 
@@ -25,7 +26,7 @@ parser.add_argument('-f', '--datafile'    , dest='datafile'   ,             help
 parser.add_argument('-F', '--datafileeos' , dest='datafileeos',             help='EOS path to HepMC input file', default='') #/eos/cms/store/cmst3/group/hgcal/HGCalMinbias/Pythia8/
 parser.add_argument('-n', '--nevts'       , dest='nevts'      , type=int,   help='number of events to generate' , default=1000)
 parser.add_argument('-o', '--out'         , dest='out'        ,             help='output directory'             , default=os.getcwd() )
-parser.add_argument('-e', '--eos'         , dest='eos'        ,             help='eos path to save root file to EOS',         default='')
+parser.add_argument('-e', '--eosOut'         , dest='eos'        ,             help='eos path to save root file to EOS',         default='')
 parser.add_argument('-g', '--gun'         , dest='dogun'      ,             help='use particle gun.', action="store_true")
 parser.add_argument(      '--enList'      , dest='enList'     , type=int,   help='E_T list to use with gun [%default]', nargs='+', default=[5,10,20,30,40,60,80,100,150,200])
 parser.add_argument('-S', '--no-submit'   , dest='nosubmit'   ,             help='Do not submit batch job.', action="store_true")
@@ -35,49 +36,22 @@ parser.add_argument('-S', '--no-submit'   , dest='nosubmit'   ,             help
 ###################################################################################################
 ###################################################################################################
 ###################################################################################################
-class SubmitProd:
-    def __init__(self, outDir, eosDir, bfield, params):
+class SubmitProd(SubmitBase):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        
         #variables
-        self.outDir = outDir
-        self.eosDir = eosDir
-        self.p = params
-        self.bfield = bfield
-        if self.bfield not in ('BON', 'BOFF'):
-            raise ValueError('[submitProd.py] The magnetic filed must be either ON or OFF.')
-        self.en_tag = '$(ENERGY)'
-        self.eta_tag = '$(ETA)'
-        self.run_tag = '$(Process)'
         self.condor_submit_name = 'condorSubmitProd.sub'
 
         #lambda functions
         self.mac_name = lambda e,a,r: 'g4steer_en' + e + '_eta' + a + '_run' + r + '.mac'
-        self.clean_tag = lambda t: t.strip('$').strip('(').strip(')')
-        self.shellify_tag = lambda t: t.replace('(', '{').replace(')','}')
-        self.remove_dot = lambda t: t.replace('.', '')
 
-        #other operations
-        self.create_dir(self.outDir)
-
-    def create_dir(self, d):
-        try:        
-            os.makedirs(d)              
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise
-
-    def gen_uniform_int_random_seeds_(low, high, size):
-        random.seed()
-        r = random.uniform(low=low, high=high, size=size)
+    def gen_uniform_int_random_seeds_(self, low, high, size):
+        np.random.seed()
+        r = np.random.uniform(low=low, high=high, size=size)
         return [int(x) for x in r]
         
     def write_shell_script_file(self):
-        """
-        Writes a general shell file which runs the neration step for particular set of run,
-        energy and eta values. The file is stored under `d`/runJob.sh
-
-        Args: -p:      Command line arguments
-              -d:      Output directory
-        """
         with open('{}/runJob.sh'.format(self.outDir), 'w') as s:
             s.write('#!/usr/bin/env bash\n')
 
@@ -168,10 +142,10 @@ class SubmitProd:
         Writes all required geant4 input files, one
         for each run (different seed) and energy.
         """
-        niters = len(self.p.nRuns)*len(self.p.enList)*len(self.p.etas)
+        niters = self.p.nRuns*len(self.p.enList)*len(self.p.etas)
         gen_kwargs = dict(low=0, high=100000, size=niters)
-        seeds1 = gen_uniform_int_random_seeds_(**gen_kwargs)
-        seeds2 = gen_uniform_int_random_seeds_(**gen_kwargs)
+        seeds1 = self.gen_uniform_int_random_seeds_(**gen_kwargs)
+        seeds2 = self.gen_uniform_int_random_seeds_(**gen_kwargs)
         
         for run in range(self.p.nRuns):
             for iet,et in enumerate(self.p.enList):
@@ -218,7 +192,7 @@ class SubmitProd:
             s.write('Output = {}/condorTree.out\n'.format(self.outDir))
             s.write('Error = {}/condorTree.err\n'.format(self.outDir))
             s.write('Log = {}/condorTree.log\n'.format(self.outDir))
-            s.write('RequestMemory = 10MB\n')
+            s.write('RequestMemory = 100MB\n')
             s.write('+JobFlavour = "nextweek"\n')
             s.write('Queue {nruns} {entag}, {etatag} from (\n'.format( nruns=self.p.nRuns, entag=self.clean_tag(self.en_tag),
                                                                        etatag=self.clean_tag(self.eta_tag) ))
@@ -233,7 +207,7 @@ class SubmitProd:
 bval = 'BON' if opt.Bfield>0 else 'BOFF'
 outDir = '{}git_{}/version_{}/model_{}/{}/{}'.format(opt.out,opt.gittag,opt.version,opt.model,opt.datatype,bval)
 if opt.phi != 0.5: outDir='{out}/phi_{n:.{r}f}pi'.format(out=outDir,n=opt.phi,r=3)
-eosDir = '/eos/cms{}/git{}/{}'.format(opt.eos,opt.gittag,opt.datatype)
+eosDir = '/eos/cms{}/git{}/{}'.format(opt.eosOut,opt.gittag,opt.datatype)
 
 subprod = SubmitProd(outDir=outDir, eosDir=eosDir, bfield=bval, params=opt)
 subprod.write_shell_script_file()
