@@ -54,7 +54,15 @@ public:
 		 const bool doHexa=true,
 		 const unsigned g4trackID=1);
 
-    ~SignalRegion();
+  SignalRegion(const std::string inputFolder, 
+	       const unsigned nLayers,
+	       const std::vector<double> & zpos,
+	       const unsigned nevt,
+	       HGCSSGeometryConversion & geomConv,
+	       const unsigned versionNumber=12,
+	       const bool doHexa=true,
+	       const unsigned g4trackID=1);
+  ~SignalRegion();
 
   bool initialiseFitPositions();
   void initialise(TFile *outputFile,
