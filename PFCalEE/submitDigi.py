@@ -100,10 +100,17 @@ class SubmitDigi(SubmitBase):
             s.write('cd $localdir\n')
             
             outTag = '_version{}_model{}_{}'.format(self.p.version,self.p.model,bval)
-            outTag += '_nvtx{}_ic{}_et{}_eta{}'.format(self.shellify_tag(self.npuvtx_tag),self.shellify_tag(self.ic_tag),self.shellify_tag(self.en_tag),self.shellify_tag(self.eta_tag))
-            if self.p.phi!=0.5: outTag += '_phi{n:.{r}f}pi'.format(n=self.p.phi,r=3)
+            inTag = outTag
+            addToTag_ = '_et{}_eta{}'.format(self.shellify_tag(self.en_tag),self.shellify_tag(self.eta_tag))
+            outTag += '_npuvtx{}_ic{}'.format(self.shellify_tag(self.npuvtx_tag),self.shellify_tag(self.ic_tag))
+            inTag  += addToTag_
+            outTag += addToTag_
+            if self.p.phi!=0.5:
+                inTag  += '_phi{n:.{r}f}pi'.format(n=self.p.phi,r=3)
+                outTag += '_phi{n:.{r}f}pi'.format(n=self.p.phi,r=3)
             outTag += '_run{}'.format(self.shellify_tag(self.run_tag))
-            substr = '{cwd}/bin/digitizer -c {cwd}/DigiConfig.cfg -n {n} -i {i}/HGcal_{tag}.root -o $localdir/ --granulStr={g}  --noiseStr={noise} --threshStr={thresh} --interCalib={ic} --nSiLayers={nl} --nPU={npu} --puPath={path} '.format(cwd=os.getcwd(),n=self.p.nevts,i=self.eosDirIn,tag=outTag,g=self.granularity,noise=self.noise,thresh=self.threshold,ic=self.shellify_tag(self.ic_tag),nl=self.nSiLayers,npu=self.shellify_tag(self.npuvtx_tag),path=self.pathPU)
+            inTag += '_run{}'.format(self.shellify_tag(self.run_tag))
+            substr = '{cwd}/bin/digitizer -c {cwd}/DigiConfig.cfg -n {n} -i {i}/HGcal_{tag}.root -o $localdir/ --granulStr={g}  --noiseStr={noise} --threshStr={thresh} --interCalib={ic} --nSiLayers={nl} --nPU={npu} --puPath={path} '.format(cwd=os.getcwd(),n=self.p.nevts,i=self.eosDirIn,tag=inTag,g=self.granularity,noise=self.noise,thresh=self.threshold,ic=self.shellify_tag(self.ic_tag),nl=self.nSiLayers,npu=self.shellify_tag(self.npuvtx_tag),path=self.pathPU)
             if self.p.etamean>1.3:
                 s.write(substr+'--etamean={em1:.{em2}f} --deta={p1:.{p2}f}'.format(em1=self.p.etamean,em2=2,p1=self.p.deta,p2=2))
             else:
