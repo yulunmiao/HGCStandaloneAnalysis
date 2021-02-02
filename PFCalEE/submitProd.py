@@ -26,7 +26,7 @@ parser.add_argument('-f', '--datafile'    , dest='datafile'   ,             help
 parser.add_argument('-F', '--datafileeos' , dest='datafileeos',             help='EOS path to HepMC input file', default='') #/eos/cms/store/cmst3/group/hgcal/HGCalMinbias/Pythia8/
 parser.add_argument('-n', '--nevts'       , dest='nevts'      , type=int,   help='number of events to generate' , default=1000)
 parser.add_argument('-o', '--out'         , dest='out'        ,             help='output directory'             , default=os.getcwd() )
-parser.add_argument('-e', '--eosOut'         , dest='eos'        ,             help='eos path to save root file to EOS',         default='')
+parser.add_argument('-e', '--eosOut'      , dest='eos'        ,             help='eos path to save root file to EOS',         default='')
 parser.add_argument('-g', '--gun'         , dest='dogun'      ,             help='use particle gun.', action="store_true")
 parser.add_argument(      '--enList'      , dest='enList'     , type=int,   help='E_T list to use with gun [%default]', nargs='+', default=[5,10,20,30,40,60,80,100,150,200])
 parser.add_argument('-S', '--no-submit'   , dest='nosubmit'   ,             help='Do not submit batch job.', action="store_true")
@@ -38,7 +38,7 @@ parser.add_argument('-S', '--no-submit'   , dest='nosubmit'   ,             help
 ###################################################################################################
 class SubmitProd(SubmitBase):
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super(SubmitProd, self).__init__(**kwargs)
         
         #variables
         self.condor_submit_name = 'condorSubmitProd.sub'
@@ -91,7 +91,7 @@ class SubmitProd(SubmitBase):
             s.write('cd $localdir\n')
 
             if len(self.p.datafileeos)>0:
-                s.write('eos cp %s/%s %s\n'%(self.p.datafileeos,self.p.datafile,self.p.datafile))
+                s.write('eos cp {}/{} {}\n'.format(self.p.datafileeos,self.p.datafile,self.p.datafile))
 
             mac_shell_name = self.mac_name(self.shellify_tag(self.en_tag), self.shellify_tag(self.eta_tag),
                                            self.shellify_tag(self.run_tag))
@@ -114,18 +114,18 @@ class SubmitProd(SubmitBase):
             if len(self.p.eos)>0:
                 #s.write('grep "alias eos=" /afs/cern.ch/project/eos/installation/cms/etc/setuself.p.sh | sed "s/alias /export my/" > eosenv.sh\n')
                 #s.write('source eosenv.sh\n')
-                s.write('eos mkdir -p %s\n'%eosDir)
-                s.write('eos cp HGcal_%s.root %s/HGcal_%s.root\n'%(outTag,eosDir,outTag))
+                s.write('eos mkdir -p {}\n'.format(self.eosDirOut))
+                s.write('eos cp HGcal_{}.root {}/HGcal_{}.root\n'.format(outTag,self.eosDirOut,outTag))
                 s.write('if (( "$?" != "0" )); then\n')
                 s.write('echo " --- Problem with copy of file PFcal.root to EOS. Keeping locally." >> g4{}.log\n'.format(outTag))
                 s.write('else\n')
-                s.write('eossize=`eos ls -l %s/HGcal_%s.root | awk \'{print $5}\'`\n'%(eosDir,outTag))
-                s.write('localsize=`ls -l HGcal_%s.root | awk \'{print $5}\'`\n'%(outTag))
+                s.write('eossize=`eos ls -l {}/HGcal_{}.root | awk \'{{print $5}}\'`\n'.format(self.eosDirIn,outTag))
+                s.write('localsize=`ls -l HGcal_{}.root | awk \'{{print $5}}\'`\n'.format(outTag))
                 s.write('if [ $eossize != $localsize ]; then\n')
                 s.write('echo " --- Copy of sim file to eos failed. Localsize = $localsize, eossize = $eossize. Keeping locally..." >> g4_{}.log\n'.format(outTag))
                 s.write('else\n')
                 s.write('echo " --- Size check done: Localsize = $localsize, eossize = $eossize" >> g4_{}.log\n'.format(outTag))
-                s.write('echo " --- File PFcal.root successfully copied to EOS: {ed}/HGcal_{ot}.root" >> g4_{ot}.log\n'.format(ed=eosDir,ot=outTag))
+                s.write('echo " --- File PFcal.root successfully copied to EOS: {ed}/HGcal_{ot}.root" >> g4_{ot}.log\n'.format(ed=self.eosDirOut,ot=outTag))
                 s.write('rm HGcal_{}.root\n'.format(outTag))
                 s.write('fi\n')
                 s.write('fi\n')
@@ -192,7 +192,7 @@ class SubmitProd(SubmitBase):
             s.write('Output = {}/condorTree.out\n'.format(self.outDir))
             s.write('Error = {}/condorTree.err\n'.format(self.outDir))
             s.write('Log = {}/condorTree.log\n'.format(self.outDir))
-            s.write('RequestMemory = 100MB\n')
+            s.write('RequestMemory = 250MB\n')
             s.write('+JobFlavour = "nextweek"\n')
             s.write('Queue {nruns} {entag}, {etatag} from (\n'.format( nruns=self.p.nRuns, entag=self.clean_tag(self.en_tag),
                                                                        etatag=self.clean_tag(self.eta_tag) ))
@@ -205,17 +205,18 @@ class SubmitProd(SubmitBase):
 ###################################################################################################
 
 bval = 'BON' if opt.Bfield>0 else 'BOFF'
-outDir = '{}git_{}/version_{}/model_{}/{}/{}'.format(opt.out,opt.gittag,opt.version,opt.model,opt.datatype,bval)
-if opt.phi != 0.5: outDir='{out}/phi_{n:.{r}f}pi'.format(out=outDir,n=opt.phi,r=3)
-eosDir = '/eos/cms{}/git{}/{}'.format(opt.eosOut,opt.gittag,opt.datatype)
+lab = '200u'
+odir = '{}git_{}/version_{}/model_{}/{}/{}/{}'.format(opt.out,opt.gittag,opt.version,opt.model,opt.datatype,bval,lab)
+if opt.phi != 0.5: odir='{out}/phi_{n:.{r}f}pi'.format(out=odir,n=opt.phi,r=3)
+edir = '/eos/cms{}/git{}/{}'.format(opt.eos,opt.gittag,opt.datatype)
 
-subprod = SubmitProd(outDir=outDir, eosDir=eosDir, bfield=bval, params=opt)
+subprod = SubmitProd(outDir=odir, eosDirOut=edir, bfield=bval, params=opt)
 subprod.write_shell_script_file()
 subprod.write_geant4_files()
 subprod.write_condor_submission_file()
 
-os.system('chmod u+rwx {}/runJob.sh'.format(outDir))
+os.system('chmod u+rwx {}/runJob.sh'.format(odir))
 if opt.nosubmit:
-    os.system('echo condor_submit {}/{}'.format(outDir, subprod.condor_submit_name)) 
+    os.system('echo condor_submit {}/{}'.format(odir, subprod.condor_submit_name)) 
 else:
-    os.system('condor_submit {}/{}'.format(outDir, subprod.condor_submit_name))
+    os.system('condor_submit {}/{}'.format(odir, subprod.condor_submit_name))
