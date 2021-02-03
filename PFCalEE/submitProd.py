@@ -39,13 +39,16 @@ parser.add_argument('-S', '--no-submit'   , dest='nosubmit'   ,             help
 class SubmitProd(SubmitBase):
     def __init__(self, **kwargs):
         super(SubmitProd, self).__init__(**kwargs)
-        
+
         #variables
         self.condor_submit_name = 'condorSubmitProd.sub'
+        self.mac_name = self._unique_name('g4steer',
+                                          self.shellify_tag(self.en_tag), self.shellify_tag(self.eta_tag),
+                                          self.shellify_tag(self.run_tag), 'mac')
 
-        #lambda functions
-        self.mac_name = lambda e,a,r: 'g4steer_en' + e + '_eta' + a + '_run' + r + '.mac'
-
+    def _unique_name(self, pre, en, eta, run, ext):
+        return pre + '_en' + en + '_eta' + eta + '_run' + run + '.' + ext
+        
     def gen_uniform_int_random_seeds_(self, low, high, size):
         np.random.seed()
         r = np.random.uniform(low=low, high=high, size=size)
@@ -93,11 +96,9 @@ class SubmitProd(SubmitBase):
             if len(self.p.datafileeos)>0:
                 s.write('eos cp {}/{} {}\n'.format(self.p.datafileeos,self.p.datafile,self.p.datafile))
 
-            mac_shell_name = self.mac_name(self.shellify_tag(self.en_tag), self.shellify_tag(self.eta_tag),
-                                           self.shellify_tag(self.run_tag))
-            s.write('cp {}/{} .\n'.format(self.outDir, mac_shell_name))
+            s.write('cp {}/{} .\n'.format(self.outDir, self.mac_name))
             cmd = ( 'PFCalEE {} --model {} --version {} --eta {} --shape {}'
-                    .format(mac_shell_name, self.p.model, self.p.version,
+                    .format(self.mac_name, self.p.model, self.p.version,
                             self.shellify_tag(self.eta_tag), self.p.shape) )
             if not self.p.granularity: cmd += ' --fineGranularity'
             s.write(cmd + '\n')
@@ -155,7 +156,7 @@ class SubmitProd(SubmitBase):
                                 ( ieta ) )
                     assert(gen_idx < niters)
                     
-                    with open('{}/{}'.format(self.outDir, self.mac_name(str(et), self.remove_dot(str(eta)), str(run))), 'w') as s:
+                    with open('{}/{}'.format(self.outDir, self.mac_name), 'w') as s:
                         s.write('/control/verbose 0\n')
                         s.write('/control/saveHistory\n')
                         s.write('/run/verbose 0\n')
@@ -189,9 +190,13 @@ class SubmitProd(SubmitBase):
             s.write('Executable = {}/runJob.sh\n'.format(self.outDir))
             s.write('Arguments = --energy {} --eta {} --run {}\n'.format(self.en_tag, self.eta_tag, self.run_tag))
             s.write('Requirements = (OpSysAndVer =?= "CentOS7")\n')
-            s.write('Output = {}/condorTree.out\n'.format(self.outDir))
-            s.write('Error = {}/condorTree.err\n'.format(self.outDir))
-            s.write('Log = {}/condorTree.log\n'.format(self.outDir))
+
+            err_name = self._unique_name('err', self.en_tag, self.eta_tag, self.run_tag, 'err')
+            out_name = self._unique_name('out', self.en_tag, self.eta_tag, self.run_tag, 'out')
+            log_name = self._unique_name('log', self.en_tag, self.eta_tag, self.run_tag, 'log')
+            s.write('Output = {}/{}\n'.format(self.outDir,out_name))
+            s.write('Error = {}/{}\n'.format(self.outDir,err_name))
+            s.write('Log = {}/{}\n'.format(self.outDir, log_name))
             s.write('RequestMemory = 250MB\n')
             s.write('+JobFlavour = "nextweek"\n')
             s.write('Queue {nruns} {entag}, {etatag} from (\n'.format( nruns=self.p.nRuns, entag=self.clean_tag(self.en_tag),
