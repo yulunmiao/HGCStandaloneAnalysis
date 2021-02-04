@@ -215,7 +215,7 @@ elif (opt.version==63):
     else:
         noise='0-51:0.13,53-68:0.15'
     threshold='0-68:5'
-elif (opt.version==73):
+elif (opt.version==73 or opt.version==83):
     granularity='0-61:1'
     if (label=='200u'):
         noise='0-46:0.13,48-61:0.15'
