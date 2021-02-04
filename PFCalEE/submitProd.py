@@ -42,12 +42,12 @@ class SubmitProd(SubmitBase):
 
         #variables
         self.condor_submit_name = 'condorSubmitProd.sub'
-        self.mac_name = self._unique_name('g4steer',
+        self.mac_name = self._unique_name('g4steer_',
                                           self.shellify_tag(self.en_tag), self.shellify_tag(self.eta_tag),
                                           self.shellify_tag(self.run_tag), 'mac')
 
     def _unique_name(self, pre, en, eta, run, ext):
-        return pre + '_en' + en + '_eta' + eta + '_run' + run + '.' + ext
+        return pre + 'en' + en + '_eta' + eta + '_run' + run + '.' + ext
         
     def gen_uniform_int_random_seeds_(self, low, high, size):
         np.random.seed()
@@ -191,9 +191,9 @@ class SubmitProd(SubmitBase):
             s.write('Arguments = --energy {} --eta {} --run {}\n'.format(self.en_tag, self.eta_tag, self.run_tag))
             s.write('Requirements = (OpSysAndVer =?= "CentOS7")\n')
 
-            err_name = self._unique_name('err', self.en_tag, self.eta_tag, self.run_tag, 'err')
-            out_name = self._unique_name('out', self.en_tag, self.eta_tag, self.run_tag, 'out')
-            log_name = self._unique_name('log', self.en_tag, self.eta_tag, self.run_tag, 'log')
+            err_name = self._unique_name('', self.en_tag, self.eta_tag, self.run_tag, 'err')
+            out_name = self._unique_name('', self.en_tag, self.eta_tag, self.run_tag, 'out')
+            log_name = self._unique_name('', self.en_tag, self.eta_tag, self.run_tag, 'log')
             s.write('Output = {}/{}\n'.format(self.outDir,out_name))
             s.write('Error = {}/{}\n'.format(self.outDir,err_name))
             s.write('Log = {}/{}\n'.format(self.outDir, log_name))
