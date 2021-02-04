@@ -4,8 +4,9 @@ import os, sys
 import argparse
 from utils import SubmitBase
 
-usage = 'usage: %prog [options]'
-parser = argparse.ArgumentParser(usage)
+git_tag=os.popen('git describe --tags --abbrev=0').read()
+
+parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('-t', '--git-tag'  , dest='gittag'    , help='git tag version', default='V00-00-00')
 parser.add_argument(      '--nRuns'    , dest='nRuns'     , type=int,   help='number of run, 0-indexed', default=-1)
 parser.add_argument('-v', '--version'  , dest='version'   , type=int,   help='detector version', required=True)
@@ -19,17 +20,17 @@ parser.add_argument('-d', '--datatype' , dest='datatype'  , help='data type or p
 parser.add_argument('-f', '--datafile' , dest='datafile'  , help='full path to HepMC input file', default='data/example_MyPythia.dat')
 parser.add_argument('-n', '--nevts'    , dest='nevts'     , type=int, help='number of events to generate', default=1000)
 parser.add_argument('-o', '--out'      , dest='out'       , help='output directory', default=os.getcwd())
-parser.add_argument(      '--nPuVtx'   , dest='nPuVtxList', type=int, help='pileup scenarios (csv) [%h]', nargs='+', default=[0])
-parser.add_argument('-e', '--eosOut'   , dest='eos'       , help='eos path to save root file to EOS', default='')
-parser.add_argument('-E', '--eosIn'    , dest='eosin'     , help='eos path to read input root file from EOS', default='')
+parser.add_argument(      '--nPuVtx'   , dest='nPuVtxList', type=int, help='pileup scenarios (csv) ', nargs='+', default=[0])
+parser.add_argument('-e', '--eosOut'   , dest='eosout'    , help='eos path to save root file to EOS', default='')
+parser.add_argument('-E', '--eosIn'    , dest='eosin'     , help='eos path to read input root file from EOS (if empty, it is equal to `--eosOut`.', default='')
 parser.add_argument('-g', '--gun'      , dest='dogun'     , help='use particle gun.', action='store_true')
 parser.add_argument('-S', '--no-submit', dest='nosubmit'  , help='Do not submit batch job.', action='store_true')
-parser.add_argument('--enList'         , dest='enList'    , type=int, help='E_T list to use with gun [%default]', nargs='+', default=[5,10,20,30,40,60,80,100,150,200])
+parser.add_argument('--enList'         , dest='enList'    , type=int, help='E_T list to use with gun', nargs='+', default=[5,10,20,30,40,60,80,100,150,200])
 parser.add_argument('--interCalib'     , dest='iCalibList', type=int, help='inter calibration list in percentage', nargs='+', default=[3]) #0,1,2,3,4,5,10,15,20,50]
 parser.add_argument('--etamean'        , dest='etamean'   , help='mean value of eta ring to save', default=0,  type=float)
 parser.add_argument('--deta'           , dest='deta'      , help='width of eta ring', default=0,  type=float)
-parser.add_argument('--inPathPU'       , dest='inPathPU'  , help='input path for PU files (overrides defaults) [%default]', action='store_true')
-(opt, args) = parser.parse_known_args()
+parser.add_argument('--inPathPU'       , dest='inPathPU'  , help='input path for PU files (overrides defaults)', action='store_true')
+opt, _ = parser.parse_known_args()
 
 ###################################################################################################
 ###################################################################################################
@@ -41,7 +42,7 @@ class SubmitDigi(SubmitBase):
             
             self.condor_submit_name_ = 'condorSubmitDigi.sub'
             self.jobName_ = 'runDigiJob.sh'
-            self.npuvtx_tag = '$(NPUVTX)'
+            self.vtx_tag = '$(NPUVTX)'
             self.ic_tag = '$(IC)'
             
             self.nSiLayers = nSiLayers
@@ -52,8 +53,11 @@ class SubmitDigi(SubmitBase):
             self.label = label
             self.pathPU = pathPU
 
-            self.tags = (self.en_tag, self.eta_tag, self.run_tag, self.ic_tag, self.npuvtx_tag)
+            self.tags = (self.en_tag, self.eta_tag, self.run_tag, self.ic_tag, self.vtx_tag)
             self.labels = ('energy', 'eta', 'run', 'ic', 'npuvtx')
+
+    def _unique_name(self, pre, npuvtx, ic, en, eta, run, ext):
+        return pre + 'npuvtx' + npuvtx + '_ic' + ic + '_en' + en + '_eta' + eta + '_run' + run + '.' + ext
 
     @property
     def condor_submit_name(self):
@@ -88,9 +92,6 @@ class SubmitDigi(SubmitBase):
             s.write('break;;\n')
             s.write('esac\n')
             s.write('done\n\n')
-                    
-            outlog = '{}/digitizer.log'.format(self.outDir)
-            g4log = 'digijob.log'
                         
             s.write('localdir=`pwd`\n')
             s.write('export HOME={}\n'.format(os.environ['HOME']))
@@ -99,10 +100,10 @@ class SubmitDigi(SubmitBase):
             s.write('echo $PATH\n')
             s.write('cd $localdir\n')
             
-            outTag = '_version{}_model{}_{}'.format(self.p.version,self.p.model,bval)
+            outTag = 'version{}_model{}_{}'.format(self.p.version,self.p.model,bval)
             inTag = outTag
-            addToTag_ = '_et{}_eta{}'.format(self.shellify_tag(self.en_tag),self.shellify_tag(self.eta_tag))
-            outTag += '_npuvtx{}_ic{}'.format(self.shellify_tag(self.npuvtx_tag),self.shellify_tag(self.ic_tag))
+            addToTag_ = '_en}_eta{}'.format(self.shellify_tag(self.en_tag),self.shellify_tag(self.eta_tag))
+            outTag += '_npuvtx{}_ic{}'.format(self.shellify_tag(self.vtx_tag),self.shellify_tag(self.ic_tag))
             inTag  += addToTag_
             outTag += addToTag_
             if self.p.phi!=0.5:
@@ -110,30 +111,30 @@ class SubmitDigi(SubmitBase):
                 outTag += '_phi{n:.{r}f}pi'.format(n=self.p.phi,r=3)
             outTag += '_run{}'.format(self.shellify_tag(self.run_tag))
             inTag += '_run{}'.format(self.shellify_tag(self.run_tag))
-            substr = '{cwd}/bin/digitizer -c {cwd}/DigiConfig.cfg -n {n} -i {i}/HGcal_{tag}.root -o $localdir/ --granulStr={g}  --noiseStr={noise} --threshStr={thresh} --interCalib={ic} --nSiLayers={nl} --nPU={npu} --puPath={path} '.format(cwd=os.getcwd(),n=self.p.nevts,i=self.eosDirIn,tag=inTag,g=self.granularity,noise=self.noise,thresh=self.threshold,ic=self.shellify_tag(self.ic_tag),nl=self.nSiLayers,npu=self.shellify_tag(self.npuvtx_tag),path=self.pathPU)
+            substr = '{cwd}/userlib/bin/digitizer -c {cwd}/userlib/DigiConfig.cfg -n {n} -i {i}/HGcal_{tag}.root -o $localdir/ --granulStr={g}  --noiseStr={noise} --threshStr={thresh} --interCalib={ic} --nSiLayers={nl} --nPU={npu} --puPath={path} '.format(cwd=os.getcwd(),n=self.p.nevts,i=self.eosDirIn,tag=inTag,g=self.granularity,noise=self.noise,thresh=self.threshold,ic=self.shellify_tag(self.ic_tag),nl=self.nSiLayers,npu=self.shellify_tag(self.vtx_tag),path=self.pathPU)
             if self.p.etamean>1.3:
                 s.write(substr+'--etamean={em1:.{em2}f} --deta={p1:.{p2}f}'.format(em1=self.p.etamean,em2=2,p1=self.p.deta,p2=2))
             else:
                 s.write(substr)
-            s.write('-a {} | tee {}\n'.format(self.addNoise,outlog))
-            s.write('echo "--Local directory is " $localdir >> {}\n'.format(g4log))
-            s.write('echo home=$HOME >> {}\n'.format(g4log))
-            s.write('echo path=$PATH >> {}\n'.format(g4log))
-            s.write('echo ldlibpath=$LD_LIBRARY_PATH >> {}\n'.format(g4log))
-            s.write('ls * >> {}\n'.format(g4log))
-            if len(self.p.eos)>0:
+            s.write('-a {}\n'.format(self.addNoise))
+            s.write('echo "--Local directory is " $localdir\n')
+            s.write('echo home=$HOME\n')
+            s.write('echo path=$PATH\n')
+            s.write('echo ldlibpath=$LD_LIBRARY_PATH\n')
+            s.write('ls *\n')
+            if len(self.p.eosout)>0:
                 s.write('eos mkdir -p {}\n'.format(self.eosDirOut))
                 s.write('eos cp $localdir/DigiPFcal.root {}/Digi_{}{}.root\n'.format(self.eosDirOut,self.label,outTag))
                 s.write('if (( "$?" != "0" )); then\n')
-                s.write('echo " --- Problem with copy of file DigiPFcal.root to EOS. Keeping locally." >> {}\n'.format(g4log))
+                s.write('echo " --- Problem with copy of file DigiPFcal.root to EOS. Keeping locally."\n')
                 s.write('else\n')
                 s.write("eossize=`eos ls -l {}/Digi_{}{}.root | awk \'{{print $5}}\'`\n".format(self.eosDirOut,self.label,outTag))
                 s.write("localsize=`ls -l DigiPFcal.root | awk \'{print $5}\'`\n")
                 s.write('if [ ${eossize} != ${localsize} ]; then\n')
-                s.write('echo " --- Copy of digi file to eos failed. Localsize = ${{localsize}}, eossize = ${{eossize}}. Keeping locally..." >> {}\n'.format(g4log))
+                s.write('echo " --- Copy of digi file to eos failed. Localsize = ${{localsize}}, eossize = ${{eossize}}. Keeping locally..."\n')
                 s.write('else\n')
-                s.write('echo " --- Size check done: Localsize = ${{localsize}}, eossize = ${{eossize}}" >> {}\n'.format(g4log))
-                s.write('echo " --- File DigiPFcal.root successfully copied to EOS: {}/Digi_{}{}.root" >> {}\n'.format(self.eosDirOut,self.label,outTag,g4log))
+                s.write('echo " --- Size check done: Localsize = ${{localsize}}, eossize = ${{eossize}}"\n')
+                s.write('echo " --- File DigiPFcal.root successfully copied to EOS: {}/Digi_{}{}.root"\n'.format(self.eosDirOut,self.label,outTag))
                 s.write('rm DigiPFcal.root\n')
                 s.write('fi\n')
                 s.write('fi\n')
@@ -154,14 +155,19 @@ class SubmitDigi(SubmitBase):
                     s.write('--'+l+' '+t+' ')
                 s.write('\n')
                 s.write('Requirements = (OpSysAndVer =?= "CentOS7")\n')
-                s.write('Output = {}/condorDigi.out\n'.format(self.outDir))
-                s.write('Error = {}/condorDigi.err\n'.format(self.outDir))
-                s.write('Log = {}/condorDigi.log\n'.format(self.outDir))
-                s.write('RequestMemory = 20MB\n')
-                s.write('+JobFlavour = "nextweek"\n')
-                s.write('Queue {nruns} {n}, {ic}, {en}, {eta} from (\n'.format( nruns=self.p.nRuns, n=self.clean_tag(self.npuvtx_tag), ic=self.clean_tag(self.ic_tag), en=self.clean_tag(self.en_tag), eta=self.clean_tag(self.eta_tag) ))
-                                
 
+                kw = dict(pre='', npuvtx=self.vtx_tag, ic=self.ic_tag, en=self.en_tag,
+                          eta=self.eta_tag, run=self.run_tag)
+                out_name = self._unique_name(ext='out', **kw)
+                err_name = self._unique_name(ext='err', **kw)
+                log_name = self._unique_name(ext='log', **kw)
+                s.write('Output = {}/{}\n'.format(self.outDir,out_name))
+                s.write('Error = {}/{}\n'.format(self.outDir,err_name))
+                s.write('Log = {}/{}\n'.format(self.outDir,log_name))
+                s.write('RequestMemory = 30MB\n')
+                s.write('+JobFlavour = "microcentury"\n')
+                s.write('Queue {nruns} {n}, {ic}, {en}, {eta} from (\n'.format( nruns=self.p.nRuns, n=self.clean_tag(self.vtx_tag), ic=self.clean_tag(self.ic_tag), en=self.clean_tag(self.en_tag), eta=self.clean_tag(self.eta_tag) ))
+                                
                 for nvid in self.p.nPuVtxList:
                     for icid in self.p.iCalibList:
                         for et in self.p.enList:
@@ -174,9 +180,9 @@ class SubmitDigi(SubmitBase):
 ###################################################################################################
 bval = 'BON' if opt.Bfield>0 else 'BOFF'
 lab = '200u'
-odir = '{}/git_{}/version_{}/model_{}/{}/{}/{}'.format(opt.out,opt.gittag,opt.version,opt.model,opt.datatype,bval,lab)
-edirin = 'root://eoscms//eos/cms{}/git{}/{}'.format(opt.eosin,opt.gittag,opt.datatype)
-edirout = '/eos/cms{}/git{}/{}'.format(opt.eos,opt.gittag,opt.datatype)
+odir = '{}/git{}/version_{}/model_{}/{}/{}/{}'.format(opt.out,opt.gittag,opt.version,opt.model,opt.datatype,bval,lab)
+edirout = '/eos/cms{}/git{}/{}'.format(opt.eosout,opt.gittag,opt.datatype)
+edirin = 'root://eoscms//eos/cms{}/git{}/{}'.format(opt.eosin,opt.gittag,opt.datatype) if opt.eosin != '' else edirout
 nSiLayers = 2
 
 nmult = ('0-27:0.27', '0-27:0.13', '0-27:0.07', '0-27:0.13')

@@ -8,15 +8,14 @@ from utils import create_dir, SubmitBase
 
 git_tag=os.popen('git describe --tags --abbrev=0').read()
 
-usage = 'usage: %prog [options]'
-parser = argparse.ArgumentParser(usage)
-parser.add_argument('-s', '--short-queue' , dest='squeue'     , help='short batch queue [%default]' , default='tomorrow')
-parser.add_argument('-q', '--long-queue'  , dest='lqueue'     , help='long batch queue [%default]'  , default='nextweek')
-parser.add_argument('-t', '--git-tag'     , dest='gittag'     , help='git tag version [%default]'   , default=git_tag)
+parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument('-s', '--short-queue' , dest='squeue'     , help='short batch queue', default='tomorrow')
+parser.add_argument('-q', '--long-queue'  , dest='lqueue'     , help='long batch queue', default='nextweek')
+parser.add_argument('-t', '--git-tag'     , dest='gittag'     , help='git tag version', default=git_tag)
 parser.add_argument(      '--nRuns'       , dest='nRuns'      , type=int,   help='number of run, 0-indexed', default=-1)
 parser.add_argument('-v', '--version'     , dest='version'    , type=int,   help='detector version', default=3)
 parser.add_argument('-m', '--model'       , dest='model'      , type=int,   help='detector model', default=3)
-parser.add_argument(      '--granularity' , dest='granularity', type=int,   help='lateral granularity (0=HD,1=LD) [%default]', default=1)
+parser.add_argument(      '--granularity' , dest='granularity', type=int,   help='lateral granularity (0=HD,1=LD)', default=1)
 parser.add_argument('-a', '--etas'        , dest='etas'       , type=float, help='incidence eta', nargs='+')
 parser.add_argument('-p', '--phi'         , dest='phi'        , type=float, help='incidence phi angle in pi unit' , default=0.5)
 parser.add_argument(      '--shape'       , dest='shape'      , type=int,   help='shape', default=1) # 1 = hexagons, 2=diamonds, 3=triangles, 4=squares
@@ -28,9 +27,9 @@ parser.add_argument('-n', '--nevts'       , dest='nevts'      , type=int,   help
 parser.add_argument('-o', '--out'         , dest='out'        ,             help='output directory'             , default=os.getcwd() )
 parser.add_argument('-e', '--eosOut'      , dest='eos'        ,             help='eos path to save root file to EOS',         default='')
 parser.add_argument('-g', '--gun'         , dest='dogun'      ,             help='use particle gun.', action="store_true")
-parser.add_argument(      '--enList'      , dest='enList'     , type=int,   help='E_T list to use with gun [%default]', nargs='+', default=[5,10,20,30,40,60,80,100,150,200])
+parser.add_argument(      '--enList'      , dest='enList'     , type=int,   help='E_T list to use with gun', nargs='+', default=[5,10,20,30,40,60,80,100,150,200])
 parser.add_argument('-S', '--no-submit'   , dest='nosubmit'   ,             help='Do not submit batch job.', action="store_true")
-(opt, args) = parser.parse_known_args()
+opt, _ = parser.parse_known_args()
 
 
 ###################################################################################################
@@ -113,8 +112,6 @@ class SubmitProd(SubmitBase):
             s.write('echo ldlibpath=$LD_LIBRARY_PATH >> g4_{}.log\n'.format(outTag))
             s.write('ls -ltrh * >> g4_{}.log\n'.format(outTag))
             if len(self.p.eos)>0:
-                #s.write('grep "alias eos=" /afs/cern.ch/project/eos/installation/cms/etc/setuself.p.sh | sed "s/alias /export my/" > eosenv.sh\n')
-                #s.write('source eosenv.sh\n')
                 s.write('eos mkdir -p {}\n'.format(self.eosDirOut))
                 s.write('eos cp HGcal_{}.root {}/HGcal_{}.root\n'.format(outTag,self.eosDirOut,outTag))
                 s.write('if (( "$?" != "0" )); then\n')
@@ -191,14 +188,16 @@ class SubmitProd(SubmitBase):
             s.write('Arguments = --energy {} --eta {} --run {}\n'.format(self.en_tag, self.eta_tag, self.run_tag))
             s.write('Requirements = (OpSysAndVer =?= "CentOS7")\n')
 
-            err_name = self._unique_name('', self.en_tag, self.eta_tag, self.run_tag, 'err')
-            out_name = self._unique_name('', self.en_tag, self.eta_tag, self.run_tag, 'out')
-            log_name = self._unique_name('', self.en_tag, self.eta_tag, self.run_tag, 'log')
+            kw = dict(pre='', en=self.en_tag, eta=self.eta_tag, run=self.run_tag)
+            out_name = self._unique_name(ext='out', **kw)
+            err_name = self._unique_name(ext='err', **kw)
+            log_name = self._unique_name(ext='log', **kw)
+            print('Output = {}/{}\n'.format(self.outDir,out_name))
             s.write('Output = {}/{}\n'.format(self.outDir,out_name))
             s.write('Error = {}/{}\n'.format(self.outDir,err_name))
             s.write('Log = {}/{}\n'.format(self.outDir, log_name))
             s.write('RequestMemory = 250MB\n')
-            s.write('+JobFlavour = "nextweek"\n')
+            s.write('+JobFlavour = "tomorrow"\n')
             s.write('Queue {nruns} {entag}, {etatag} from (\n'.format( nruns=self.p.nRuns, entag=self.clean_tag(self.en_tag),
                                                                        etatag=self.clean_tag(self.eta_tag) ))
             for et in self.p.enList:
@@ -211,7 +210,7 @@ class SubmitProd(SubmitBase):
 
 bval = 'BON' if opt.Bfield>0 else 'BOFF'
 lab = '200u'
-odir = '{}git_{}/version_{}/model_{}/{}/{}/{}'.format(opt.out,opt.gittag,opt.version,opt.model,opt.datatype,bval,lab)
+odir = '{}/git_{}/version_{}/model_{}/{}/{}/{}'.format(opt.out,opt.gittag,opt.version,opt.model,opt.datatype,bval,lab)
 if opt.phi != 0.5: odir='{out}/phi_{n:.{r}f}pi'.format(out=odir,n=opt.phi,r=3)
 edir = '/eos/cms{}/git{}/{}'.format(opt.eos,opt.gittag,opt.datatype)
 
