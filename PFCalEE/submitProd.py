@@ -15,7 +15,6 @@ parser.add_argument('-t', '--git-tag'     , dest='gittag'     , help='git tag ve
 parser.add_argument(      '--nRuns'       , dest='nRuns'      , type=int,   help='number of run, 0-indexed', default=-1)
 parser.add_argument('-v', '--version'     , dest='version'    , type=int,   help='detector version', default=3)
 parser.add_argument('-m', '--model'       , dest='model'      , type=int,   help='detector model', default=3)
-parser.add_argument(      '--granularity' , dest='granularity', type=int,   help='lateral granularity (0=HD,1=LD)', default=1)
 parser.add_argument('-a', '--etas'        , dest='etas'       , type=float, help='incidence eta', nargs='+')
 parser.add_argument('-p', '--phi'         , dest='phi'        , type=float, help='incidence phi angle in pi unit' , default=0.5)
 parser.add_argument(      '--shape'       , dest='shape'      , type=int,   help='shape', default=1) # 1 = hexagons, 2=diamonds, 3=triangles, 4=squares
@@ -45,8 +44,11 @@ class SubmitProd(SubmitBase):
                                           self.shellify_tag(self.en_tag), self.shellify_tag(self.eta_tag),
                                           self.shellify_tag(self.run_tag), 'mac')
 
+        self.tags = (self.en_tag, self.eta_tag, self.run_tag, self.gran_tag)
+        self.labels = ('energy', 'eta', 'run', 'granularity')
+
     def _unique_name(self, pre, en, eta, run, ext):
-        return pre + 'en' + en + '_eta' + eta + '_run' + run + '.' + ext
+        return str(pre) + 'en' + str(en) + '_eta' + str(eta) + '_run' + str(run) + '.' + str(ext)
         
     def gen_uniform_int_random_seeds_(self, low, high, size):
         np.random.seed()
@@ -58,28 +60,21 @@ class SubmitProd(SubmitBase):
             s.write('#!/usr/bin/env bash\n')
 
             #input arguments: energy, eta and run
-            s.write('ARGS=`getopt -o "" -l ",energy:,eta:,run:" -n "getopts_${0}" -- "$@"`\n')
+            s.write('ARGS=`getopt -o "" -l ",energy:,eta:,run:,granularity:" -n "getopts_${0}" -- "$@"`\n')
             s.write('eval set -- "$ARGS"\n')
             s.write('while true; do\n')
             s.write('case "$1" in\n')
-            s.write('--energy)\n')
-            s.write('if [ -n "$2" ]; then\n')
-            s.write('{}="${{2}}";\n'.format(self.clean_tag(self.en_tag)))
-            s.write('echo "Energy: {}";\n'.format(self.shellify_tag(self.en_tag)))
-            s.write('fi\n')
-            s.write('shift 2;;\n')
-            s.write('--eta)\n')
-            s.write('if [ -n "$2" ]; then\n')
-            s.write("{}=$(echo ${{2}} | sed 's/\.//');\n".format(self.clean_tag(self.eta_tag)))
-            s.write("echo \"Eta: {}\";\n".format(self.shellify_tag(self.eta_tag)))
-            s.write('fi\n')
-            s.write('shift 2;;\n')
-            s.write('--run)\n')
-            s.write('if [ -n "$2" ]; then\n')
-            s.write('{}="${{2}}";\n'.format(self.clean_tag(self.run_tag)))
-            s.write('echo "Run: {}";\n'.format(self.shellify_tag(self.run_tag)))
-            s.write('fi\n')
-            s.write('shift 2;;\n')
+            for l,t in zip(self.labels, self.tags):
+                s.write('--'+l+')\n')
+                s.write('if [ -n "$2" ]; then\n')
+                if l=='eta':
+                    tmp = "$(echo ${2} | sed 's/\.//');"
+                    s.write('{}='.format(self.clean_tag(t))+tmp+'\n')
+                else:
+                    s.write('{}="${{2}}";\n'.format(self.clean_tag(t)))
+                s.write('echo "'+l+': {}";\n'.format(self.shellify_tag(t)))
+                s.write('fi\n')
+                s.write('shift 2;;\n')
             s.write('--)\n')
             s.write('shift\n')
             s.write('break;;\n')
@@ -91,16 +86,19 @@ class SubmitProd(SubmitBase):
             s.write('cd {}/\n'.format(os.getcwd()))
             s.write('source g4env.sh\n')
             s.write('cd $localdir\n')
-
             if len(self.p.datafileeos)>0:
                 s.write('eos cp {}/{} {}\n'.format(self.p.datafileeos,self.p.datafile,self.p.datafile))
-
             s.write('cp {}/{} .\n'.format(self.outDir, self.mac_name))
+
             cmd = ( 'PFCalEE {} --model {} --version {} --eta {} --shape {}'
                     .format(self.mac_name, self.p.model, self.p.version,
                             self.shellify_tag(self.eta_tag), self.p.shape) )
-            if not self.p.granularity: cmd += ' --fineGranularity'
+            s.write('if [ "${GRAN}" -eq 0 ]; then\n')
+            s.write(cmd + ' --fineGranularity\n')
+            s.write('else\n')
             s.write(cmd + '\n')
+            s.write('fi\n')
+
             outTag = 'version{}_model{}_{}'.format(self.p.version, self.p.model, self.bfield)
             outTag += '_en{}_eta{}'.format(self.shellify_tag(self.en_tag),self.shellify_tag(self.eta_tag)) 
             if self.p.phi != 0.5: outTag += '_phi{n:.{r}f}pi'.format(n=self.p.phi,r=3)
@@ -152,8 +150,9 @@ class SubmitProd(SubmitBase):
                                 ( iet * len(self.p.etas) ) +
                                 ( ieta ) )
                     assert(gen_idx < niters)
-                    
-                    with open('{}/{}'.format(self.outDir, self.mac_name), 'w') as s:
+
+                    this_mac_name = self._unique_name('g4steer_', et, int(eta*10.), run, 'mac')
+                    with open('{}/{}'.format(self.outDir, this_mac_name), 'w') as s:
                         s.write('/control/verbose 0\n')
                         s.write('/control/saveHistory\n')
                         s.write('/run/verbose 0\n')
@@ -185,32 +184,35 @@ class SubmitProd(SubmitBase):
         with open('{}/{}'.format(self.outDir,self.condor_submit_name), 'w') as s:
             s.write('universe = vanilla\n')
             s.write('Executable = {}/runJob.sh\n'.format(self.outDir))
-            s.write('Arguments = --energy {} --eta {} --run {}\n'.format(self.en_tag, self.eta_tag, self.run_tag))
+            s.write( ('Arguments = --energy {} --eta {} --run {} --granularity {}\n'
+                      .format(self.en_tag, self.eta_tag, self.run_tag, self.gran_tag)) )
             s.write('Requirements = (OpSysAndVer =?= "CentOS7")\n')
 
             kw = dict(pre='', en=self.en_tag, eta=self.eta_tag, run=self.run_tag)
             out_name = self._unique_name(ext='out', **kw)
             err_name = self._unique_name(ext='err', **kw)
             log_name = self._unique_name(ext='log', **kw)
-            print('Output = {}/{}\n'.format(self.outDir,out_name))
             s.write('Output = {}/{}\n'.format(self.outDir,out_name))
             s.write('Error = {}/{}\n'.format(self.outDir,err_name))
             s.write('Log = {}/{}\n'.format(self.outDir, log_name))
             s.write('RequestMemory = 250MB\n')
             s.write('+JobFlavour = "tomorrow"\n')
-            s.write('Queue {nruns} {entag}, {etatag} from (\n'.format( nruns=self.p.nRuns, entag=self.clean_tag(self.en_tag),
-                                                                       etatag=self.clean_tag(self.eta_tag) ))
+            s.write('Queue {nruns} {entag}, {etatag}, {gtag} from (\n'.format( nruns=self.p.nRuns, entag=self.clean_tag(self.en_tag),
+                                                                               etatag=self.clean_tag(self.eta_tag),
+                                                                               gtag=self.clean_tag(self.gran_tag)))
             for et in self.p.enList:
                 for eta in self.p.etas:
-                    s.write('{}, {}\n'.format(et,str(eta),r=3))
+                    gran = 1 if eta < 2.4 else 0
+                    s.write('{}, {}, {}\n'.format(et,str(eta),gran))
             s.write(')')
+
 ###################################################################################################
 ###################################################################################################
 ###################################################################################################
 
 bval = 'BON' if opt.Bfield>0 else 'BOFF'
 lab = '200u'
-odir = '{}/git_{}/version_{}/model_{}/{}/{}/{}'.format(opt.out,opt.gittag,opt.version,opt.model,opt.datatype,bval,lab)
+odir = '{}/git{}/version_{}/model_{}/{}/{}/{}'.format(opt.out,opt.gittag,opt.version,opt.model,opt.datatype,bval,lab)
 if opt.phi != 0.5: odir='{out}/phi_{n:.{r}f}pi'.format(out=odir,n=opt.phi,r=3)
 edir = '/eos/cms{}/git{}/{}'.format(opt.eos,opt.gittag,opt.datatype)
 
