@@ -80,6 +80,7 @@ public:
     v_HGCALHE_v9=71,
     v_HGCALBE_v9=72,
     v_HGCAL_v9=73,
+    v_HGCAL_v10=83,
     v_HGCALEE_TB=100,
     v_HGCALEE_TB_gap0=101,
     v_HGCALEE_TB_allW=102,
