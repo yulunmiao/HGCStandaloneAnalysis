@@ -11,8 +11,6 @@ SignalRegion::SignalRegion(const std::string inputFolder,
 			   const std::vector<double> & zpos,
 			   const unsigned nevt,
 			   HGCSSGeometryConversion & geomConv,
-			   const HGCSSPUenergy & puDensity,
-			   const bool applyPuMixFix,
 			   const unsigned versionNumber,
 			   const bool doHexa,
 			   const unsigned g4trackID){
@@ -41,12 +39,31 @@ SignalRegion::SignalRegion(const std::string inputFolder,
   geomConv_.copytriangleGeom(geomConv.triangleGeom);
   geomConv_.copysquareGeom(geomConv.squareGeom);
 
-  puDensity_ = puDensity;
-  fixForPuMixBug_ = applyPuMixFix;
   firstEvent_ = true;
   nSkipped_ = 0;
 
   zPos_ = zpos;
+  puDensity_ = HGCSSPUenergy();
+  fixForPuMixBug_ =  false;
+
+}
+
+SignalRegion::SignalRegion(const std::string inputFolder,
+			   const unsigned nLayers,
+			   const std::vector<double> & zpos,
+			   const unsigned nevt,
+			   HGCSSGeometryConversion & geomConv,
+			   const HGCSSPUenergy & puDensity,
+			   const bool applyPuMixFix,
+			   const unsigned versionNumber,
+			   const bool doHexa,
+			   const unsigned g4trackID){
+
+
+  SignalRegion(inputFolder,nLayers,zpos,nevt,geomConv,versionNumber,doHexa,g4trackID);
+  puDensity_ = puDensity;
+  fixForPuMixBug_ = applyPuMixFix;
+
 }
 
 SignalRegion::~SignalRegion(){
@@ -273,11 +290,10 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
       //double w = ssvec[iL].voldEdx()/ssvec[1].voldEdx();
       //double w = ssvec[iL].volX0trans()/ssvec[1].volX0trans();
       //absweight_[iL] = 10.0166;
-      absweight_[iL]=iL<(nLayers_-1) ? (ssvec[iL].voldEdx()+ssvec[iL+1].voldEdx())/2. : ssvec[iL].voldEdx();
+      absweight_[iL]=iL<(nLayers_-2) ? (ssvec[iL].voldEdx()+ssvec[iL+1].voldEdx())/2. : absweight_[nLayers_-3];
       std::cout << " - Layer " << iL << " wdEdx=" << ssvec[iL].voldEdx()  << " Wx0=" << ssvec[iL].volX0trans() << " W valeri scheme " << absweight_[iL] << std::endl;
     }
     //absweight_[0] = 20.3628;
-    absweight_[27] = 13.0629;
     //absweight_[nLayers_-1] = 13.0629;
     
     firstEvent_=false;
@@ -402,7 +418,8 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
     wgttotalE_ += energy*absweight_[layer];    
     
     double lradius = sqrt(pow(posx,2)+pow(posy,2));
-    double puE = puDensity_.getDensity(leta,layer,geomConv_.cellSizeInCm(layer,lradius),nPuVtx);
+    double puE = 0;
+    if (nPuVtx>0) puE = puDensity_.getDensity(leta,layer,geomConv_.cellSizeInCm(layer,lradius),nPuVtx);
     double subtractedenergy = std::max(0.,energy - puE);
     //double halfCell = 0.5*geomConv_.cellSize(layer,lradius);
     //hexagons are side up....

@@ -260,12 +260,12 @@ int main(int argc, char** argv){//main
   //myDetector.buildDetector(versionNumber,concept,isCaliceHcal);
 
   const unsigned nLayers = myDetector.nLayers();
-  const unsigned nEcalLayers = 28;
+  const unsigned nEcalLayers = myDetector.nLayers(DetectorEnum::FECAL)+myDetector.nLayers(DetectorEnum::MECAL)+myDetector.nLayers(DetectorEnum::BECAL);
   const unsigned nSections = myDetector.nSections();
 
   std::cout << " -- N layers = " << nLayers << std::endl
+	    << " -- N ECAL layers = " << nEcalLayers << std::endl
 	    << " -- N sections = " << nSections << std::endl;
-
 
   HGCSSGeometryConversion geomConv(model,cellSize,false,3);
   //set granularity to get cellsize for PU subtraction
@@ -308,7 +308,7 @@ int main(int argc, char** argv){//main
 
   ///initialise PU density object
 
-  HGCSSPUenergy puDensity("data/EnergyDensity.dat");
+  //HGCSSPUenergy puDensity("data/EnergyDensity.dat");
 
 
     //////////////////////////////////////////////////
@@ -338,7 +338,8 @@ int main(int argc, char** argv){//main
   }
 
 
-  SignalRegion SignalEnergy(outFolder, nEcalLayers, zpos, nEvts, geomConv, puDensity,applyPuMixFix,versionNumber,doHexa,g4trackID);
+  //SignalRegion SignalEnergy(outFolder, nEcalLayers, zpos, nEvts, geomConv, puDensity,applyPuMixFix,versionNumber,doHexa,g4trackID);
+  SignalRegion SignalEnergy(outFolder, nEcalLayers, zpos, nEvts, geomConv,versionNumber,doHexa,g4trackID);
   SignalEnergy.initialise(outputFile,"Energies");
 
   std::cout << " -- sigenergy initialisation done." << std::endl;

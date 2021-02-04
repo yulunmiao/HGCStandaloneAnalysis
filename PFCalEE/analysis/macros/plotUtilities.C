@@ -49,7 +49,7 @@ void drawChi2(TCanvas *myc,TH1F ** p_chi2ndf,const unsigned nSR){
   
   myc->Update();
   std::ostringstream lsave;
-  lsave << "PLOTS/EnergyFitQuality.pdf";
+  lsave << "PLOTS/EnergyFitQuality.png";
   myc->Print(lsave.str().c_str());
 }
 

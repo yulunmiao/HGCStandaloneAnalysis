@@ -22,10 +22,8 @@ USERLIBS += -L../userlib/lib -lPFCalEEuserlib
 USERLIBS += -Wl,-rpath, -L$(BASEINSTALL)/lib -lfastjettools -lfastjet -lfastjetplugins -lsiscone_spherical -lsiscone -lgfortran
 USERLIBS += -lboost_regex -lboost_program_options -lboost_filesystem
 
-
 #CXXFLAGS = -Wall -W -Wno-unused-function -Wno-parentheses -Wno-char-subscripts -Wno-unused-parameter -O2 
 CXXFLAGS = -Wall -W -O2 #-std=c++0x # -std=c++11 
-#CXXFLAGS = -Wall -W -O2 -std=c++11 
 LDFLAGS = -shared -Wall -W
 
 
@@ -51,8 +49,11 @@ SRCDIR = $(BASEDIR)/src
 OBJDIR = $(BASEDIR)/obj
 TESTDIR = $(BASEDIR)/test
 DOCDIR= $(BASEDIR)/docs
+MACRODIR= $(BASEDIR)/macros
+INCLDIR= $(BASEDIR)/include
 OBJ_EXT=o
 TEST_EXT=cpp
+MACROSRC_EXT=cc
 
 # Build a list of srcs and bins to build
 SRCS=$(wildcard $(BASEDIR)/src/*.cc)
@@ -81,7 +82,7 @@ OBJS=$(subst $(SRCDIR), $(OBJDIR),$(subst cc,$(OBJ_EXT),$(SRCS)))
 
 #BINS=$(EXEDIR)/findMaximumSimEnergy
 
-BINS=$(EXEDIR)/egammaResoWithTruth $(EXEDIR)/mipEperLayer
+BINS=$(EXEDIR)/egammaResoWithTruth #$(EXEDIR)/mipEperLayer
 
 #BINS=$(EXEDIR)/mipAnalysis $(EXEDIR)/mipHistos $(EXEDIR)/mipSelection $(EXEDIR)/mipDeposit $(EXEDIR)/simpleBH
 
@@ -206,6 +207,15 @@ $(OBJDIR)/%.$(OBJ_EXT):  $(SRCDIR)/%.cc $(BASEDIR)/include/%.h*
 
 $(LIBDIR)/lib$(LIBNAME).so:  $(OBJS) $(LIBDEPENDS) 
 	$(LD) $(LDFLAGS) -o $(LIBDIR)/lib$(LIBNAME).so $(OBJS) $(LIBS)
+
+$(MACRODIR)/plots.o: $(MACRODIR)/plotEGReso_standalone.cc
+	$(CXX) -c $(CXXFLAGS) $< -o $@
+
+$(MACRODIR)/InputParserBase.o: $(SRCDIR)/InputParserBase.cc
+	$(CXX) -c $(CXXFLAGS) $< -o $@
+
+plotEGReso: $(MACRODIR)/plots.o $(MACRODIR)/InputParserBase.o
+	$(CXX) -o $@ $(CXXFLAGS) $^ $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
 
 lib: $(LIBDIR)/lib$(LIBNAME).so
 

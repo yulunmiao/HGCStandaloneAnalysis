@@ -184,7 +184,7 @@ int makeResolution(const bool dovsE,
   if (doBackLeakCor) lsave << "BackLeakCor";
   lsave << "_eta" << eta << "_pu" << pu ;
   if (dovsE) lsave << "_vsE";
-  mycR->Print((lsave.str()+".pdf").c_str());
+  mycR->Print((lsave.str()+".png").c_str());
   mycR->Print((lsave.str()+".C").c_str());
   
   foutEfit->cd();
