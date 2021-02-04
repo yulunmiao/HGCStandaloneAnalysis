@@ -671,6 +671,10 @@ int plotVersionRatios(const InputParserPlotEGReso& ip) {
     }
   }
 
+  std::unordered_map<std::string, std::string> vmap;
+  vmap["60"] = "TDR (no neutron moderator)";
+  vmap["70"] = "Scenario 13";
+
   for (unsigned ieta(0); ieta<etas_s; ++ieta)
     {
       const unsigned idx1 = ieta*versions_s;
@@ -721,10 +725,9 @@ int plotVersionRatios(const InputParserPlotEGReso& ip) {
       h2->SetLineColor(kBlue);
       h2->Draw("SAME");
 
-      auto legend = new TLegend(0.1,0.75,0.25,0.9);
-      legend->SetHeader("Versions","L"); // option "C" allows to center the header
-      legend->AddEntry(h1,versions[0].c_str(),"f");
-      legend->AddEntry(h2,versions[1].c_str(),"f");
+      auto legend = new TLegend(0.1,0.72,0.3,0.9);
+      legend->AddEntry(h1,vmap[versions[0]].c_str(),"f");
+      legend->AddEntry(h2,vmap[versions[1]].c_str(),"f");
       legend->Draw();
    
       c->cd(2);
@@ -734,8 +737,11 @@ int plotVersionRatios(const InputParserPlotEGReso& ip) {
       TH1F *div = new TH1F(hdivname.c_str(), hdivtitle.c_str(), npoints, xmin, xmax);
       div->Sumw2();
       div->Divide(h1,h2,1.,1.,"b");
-      div->SetAxisRange(0.85, 1.15,"Y");
+      div->SetAxisRange(0.75, 1.15,"Y");
       div->Draw();
+      TLine *line = new TLine(xmin,1,xmax,1);
+      line->SetLineStyle(2);
+      line->Draw("same");
       c->Update();
       c->SaveAs((dirInBase + title + ".png").c_str());
 
