@@ -113,7 +113,7 @@ public:
       indices_[5] = indices_[3];
       indices_[6] = indices_[3];
     }
-    else if (versionNumber == 30 || versionNumber == 60 || (versionNumber >= 100 && versionNumber < 104)){
+    else if (versionNumber == 30 || versionNumber == 60  || versionNumber==68 || (versionNumber >= 100 && versionNumber < 104)){
       indices_[0] = 0;
       indices_[1] = 10;
       indices_[2] = 20;

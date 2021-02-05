@@ -76,6 +76,7 @@ public:
     v_HGCALEE_v8_Cu=65,
     v_HGCALEE_v8_Cu_12=66,
     v_HGCALEE_v8_air4=67,
+    v_HGCALEE_v8_neutmod=68,
     v_HGCALEE_v9=70,
     v_HGCALHE_v9=71,
     v_HGCALBE_v9=72,
