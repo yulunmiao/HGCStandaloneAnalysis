@@ -28,7 +28,7 @@ parser.add_argument('-S', '--no-submit', dest='nosubmit'  , help='Do not submit 
 parser.add_argument('--enList'         , dest='enList'    , type=int, help='E_T list to use with gun', nargs='+', default=[5,10,20,30,40,60,80,100,150,200])
 parser.add_argument('--interCalib'     , dest='iCalibList', type=int, help='inter calibration list in percentage', nargs='+', default=[3]) #0,1,2,3,4,5,10,15,20,50]
 parser.add_argument('--etamean'        , dest='etamean'   , help='mean value of eta ring to save', default=0,  type=float)
-parser.add_argument('--deta'           , dest='deta'      , help='width of eta ring', default=0,  type=float)
+parser.add_argument('--deta'           , dest='deta'      , help='width of eta ring', default=0, type=float)
 parser.add_argument('--inPathPU'       , dest='inPathPU'  , help='input path for PU files (overrides defaults)', action='store_true')
 opt, _ = parser.parse_known_args()
 
@@ -56,9 +56,6 @@ class SubmitDigi(SubmitBase):
             self.tags = (self.en_tag, self.eta_tag, self.run_tag, self.ic_tag, self.vtx_tag)
             self.labels = ('energy', 'eta', 'run', 'ic', 'npuvtx')
 
-    def _unique_name(self, pre, npuvtx, ic, en, eta, run, ext):
-        return pre + 'npuvtx' + npuvtx + '_ic' + ic + '_en' + en + '_eta' + eta + '_run' + run + '.' + ext
-
     @property
     def condor_submit_name(self):
         return self.condor_submit_name_
@@ -84,9 +81,9 @@ class SubmitDigi(SubmitBase):
                     s.write('{}='.format(self.clean_tag(t))+tmp+'\n')
                 else:
                     s.write('{}="${{2}}";\n'.format(self.clean_tag(t)))
-                    s.write('echo "'+l+': {}";\n'.format(self.shellify_tag(t)))
-                    s.write('fi\n')
-                    s.write('shift 2;;\n')
+                s.write('echo "'+l+': {}";\n'.format(self.shellify_tag(t)))
+                s.write('fi\n')
+                s.write('shift 2;;\n')
             s.write('--)\n')
             s.write('shift\n')
             s.write('break;;\n')
@@ -95,14 +92,14 @@ class SubmitDigi(SubmitBase):
                         
             s.write('localdir=`pwd`\n')
             s.write('export HOME={}\n'.format(os.environ['HOME']))
-            s.write('cd {}/../\n'.format(os.getcwd()))
+            s.write('cd {}\n'.format(os.getcwd()))
             s.write('source g4env.sh\n')
             s.write('echo $PATH\n')
             s.write('cd $localdir\n')
             
             outTag = 'version{}_model{}_{}'.format(self.p.version,self.p.model,bval)
             inTag = outTag
-            addToTag_ = '_en}_eta{}'.format(self.shellify_tag(self.en_tag),self.shellify_tag(self.eta_tag))
+            addToTag_ = '_en{}_eta{}'.format(self.shellify_tag(self.en_tag),self.shellify_tag(self.eta_tag))
             outTag += '_npuvtx{}_ic{}'.format(self.shellify_tag(self.vtx_tag),self.shellify_tag(self.ic_tag))
             inTag  += addToTag_
             outTag += addToTag_
@@ -131,9 +128,9 @@ class SubmitDigi(SubmitBase):
                 s.write("eossize=`eos ls -l {}/Digi_{}{}.root | awk \'{{print $5}}\'`\n".format(self.eosDirOut,self.label,outTag))
                 s.write("localsize=`ls -l DigiPFcal.root | awk \'{print $5}\'`\n")
                 s.write('if [ ${eossize} != ${localsize} ]; then\n')
-                s.write('echo " --- Copy of digi file to eos failed. Localsize = ${{localsize}}, eossize = ${{eossize}}. Keeping locally..."\n')
+                s.write('echo " --- Copy of digi file to eos failed. Localsize = ${localsize}, eossize = ${eossize}. Keeping locally..."\n')
                 s.write('else\n')
-                s.write('echo " --- Size check done: Localsize = ${{localsize}}, eossize = ${{eossize}}"\n')
+                s.write('echo " --- Size check done: Localsize = ${localsize}, eossize = ${eossize}"\n')
                 s.write('echo " --- File DigiPFcal.root successfully copied to EOS: {}/Digi_{}{}.root"\n'.format(self.eosDirOut,self.label,outTag))
                 s.write('rm DigiPFcal.root\n')
                 s.write('fi\n')
@@ -156,11 +153,12 @@ class SubmitDigi(SubmitBase):
                 s.write('\n')
                 s.write('Requirements = (OpSysAndVer =?= "CentOS7")\n')
 
-                kw = dict(pre='', npuvtx=self.vtx_tag, ic=self.ic_tag, en=self.en_tag,
+                kw = dict(pre='digi_', npuvtx=self.vtx_tag, ic=self.ic_tag, en=self.en_tag,
                           eta=self.eta_tag, run=self.run_tag)
                 out_name = self._unique_name(ext='out', **kw)
                 err_name = self._unique_name(ext='err', **kw)
                 log_name = self._unique_name(ext='log', **kw)
+                
                 s.write('Output = {}/{}\n'.format(self.outDir,out_name))
                 s.write('Error = {}/{}\n'.format(self.outDir,err_name))
                 s.write('Log = {}/{}\n'.format(self.outDir,log_name))
@@ -168,11 +166,11 @@ class SubmitDigi(SubmitBase):
                 s.write('+JobFlavour = "microcentury"\n')
                 s.write('Queue {nruns} {n}, {ic}, {en}, {eta} from (\n'.format( nruns=self.p.nRuns, n=self.clean_tag(self.vtx_tag), ic=self.clean_tag(self.ic_tag), en=self.clean_tag(self.en_tag), eta=self.clean_tag(self.eta_tag) ))
                                 
-                for nvid in self.p.nPuVtxList:
+                for nvid in self.p.nPuVtxList:x
                     for icid in self.p.iCalibList:
                         for et in self.p.enList:
                             for eta in self.p.etas:
-                                s.write('{}, {}, {}, {}\n'.format(nvid,icid,et,str(eta),r=3))
+                                s.write('{}, {}, {}, {}\n'.format(nvid,icid,et,str(eta)))
                 s.write(')')
 
 ###################################################################################################

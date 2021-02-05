@@ -46,9 +46,6 @@ class SubmitProd(SubmitBase):
 
         self.tags = (self.en_tag, self.eta_tag, self.run_tag, self.gran_tag)
         self.labels = ('energy', 'eta', 'run', 'granularity')
-
-    def _unique_name(self, pre, en, eta, run, ext):
-        return str(pre) + 'en' + str(en) + '_eta' + str(eta) + '_run' + str(run) + '.' + str(ext)
         
     def gen_uniform_int_random_seeds_(self, low, high, size):
         np.random.seed()
@@ -151,7 +148,7 @@ class SubmitProd(SubmitBase):
                                 ( ieta ) )
                     assert(gen_idx < niters)
 
-                    this_mac_name = self._unique_name('g4steer_', et, int(eta*10.), run, 'mac')
+                    this_mac_name = self._unique_name(pre='g4steer_', en=et, eta=int(eta*10.), run=run, ext='mac')
                     with open('{}/{}'.format(self.outDir, this_mac_name), 'w') as s:
                         s.write('/control/verbose 0\n')
                         s.write('/control/saveHistory\n')
