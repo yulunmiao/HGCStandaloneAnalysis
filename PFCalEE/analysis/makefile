@@ -81,7 +81,7 @@ OBJS=$(subst $(SRCDIR), $(OBJDIR),$(subst cc,$(OBJ_EXT),$(SRCS)))
 
 #BINS=$(EXEDIR)/findMaximumSimEnergy
 
-BINS=$(EXEDIR)/egammaResoWithTruth $(EXEDIR)/mipEperLayer
+BINS=$(EXEDIR)/egammaResoWithTruth #$(EXEDIR)/mipEperLayer
 
 #BINS=$(EXEDIR)/mipAnalysis $(EXEDIR)/mipHistos $(EXEDIR)/mipSelection $(EXEDIR)/mipDeposit $(EXEDIR)/simpleBH
 

@@ -153,7 +153,7 @@ class SubmitDigi(SubmitBase):
                 s.write('\n')
                 s.write('Requirements = (OpSysAndVer =?= "CentOS7")\n')
 
-                kw = dict(pre='digi_', npuvtx=self.vtx_tag, ic=self.ic_tag, en=self.en_tag,
+                kw = dict(pre='digi', npuvtx=self.vtx_tag, ic=self.ic_tag, en=self.en_tag,
                           eta=self.eta_tag, run=self.run_tag)
                 out_name = self._unique_name(ext='out', **kw)
                 err_name = self._unique_name(ext='err', **kw)
@@ -166,7 +166,7 @@ class SubmitDigi(SubmitBase):
                 s.write('+JobFlavour = "microcentury"\n')
                 s.write('Queue {nruns} {n}, {ic}, {en}, {eta} from (\n'.format( nruns=self.p.nRuns, n=self.clean_tag(self.vtx_tag), ic=self.clean_tag(self.ic_tag), en=self.clean_tag(self.en_tag), eta=self.clean_tag(self.eta_tag) ))
                                 
-                for nvid in self.p.nPuVtxList:x
+                for nvid in self.p.nPuVtxList:
                     for icid in self.p.iCalibList:
                         for et in self.p.enList:
                             for eta in self.p.etas:

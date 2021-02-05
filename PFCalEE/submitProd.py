@@ -40,7 +40,7 @@ class SubmitProd(SubmitBase):
 
         #variables
         self.condor_submit_name = 'condorSubmitProd.sub'
-        self.mac_name = self._unique_name('g4steer_',
+        self.mac_name = self._unique_name('g4steer',
                                           self.shellify_tag(self.en_tag), self.shellify_tag(self.eta_tag),
                                           self.shellify_tag(self.run_tag), 'mac')
 
@@ -148,7 +148,7 @@ class SubmitProd(SubmitBase):
                                 ( ieta ) )
                     assert(gen_idx < niters)
 
-                    this_mac_name = self._unique_name(pre='g4steer_', en=et, eta=int(eta*10.), run=run, ext='mac')
+                    this_mac_name = self._unique_name(pre='g4steer', en=et, eta=int(eta*10.), run=run, ext='mac')
                     with open('{}/{}'.format(self.outDir, this_mac_name), 'w') as s:
                         s.write('/control/verbose 0\n')
                         s.write('/control/saveHistory\n')
@@ -185,7 +185,7 @@ class SubmitProd(SubmitBase):
                       .format(self.en_tag, self.eta_tag, self.run_tag, self.gran_tag)) )
             s.write('Requirements = (OpSysAndVer =?= "CentOS7")\n')
 
-            kw = dict(pre='', en=self.en_tag, eta=self.eta_tag, run=self.run_tag)
+            kw = dict(pre='prod', en=self.en_tag, eta=self.eta_tag, run=self.run_tag)
             out_name = self._unique_name(ext='out', **kw)
             err_name = self._unique_name(ext='err', **kw)
             log_name = self._unique_name(ext='log', **kw)

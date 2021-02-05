@@ -189,9 +189,9 @@ int main(int argc, char** argv){//main
     lRecTree->AddFile(inputrec.str().c_str());
   }
   else {
-    for (unsigned i(0);i<nRuns;++i){
+    std::cout << "NRUNS: " << nRuns << std::endl;
+    for (unsigned i(0); i<nRuns; ++i) {
       std::ostringstream lstrsim;
-      std::ostringstream lstrrec;
       lstrsim << inputsim.str() << "_run" << i << ".root";
       if (testInputFile(lstrsim.str(),simFile)){  
 	if (simFile) info =(HGCSSInfo*)simFile->Get("Info");
@@ -201,8 +201,12 @@ int main(int argc, char** argv){//main
 	}
       }
       else continue;
+
+      std::ostringstream lstrrec;
       lstrrec << inputrec.str() << "_run" << i << ".root";
       if (!testInputFile(lstrrec.str(),recFile)) continue;
+      
+      std::cout << "FILENAME " << lstrsim.str().c_str() << std::endl;
       lSimTree->AddFile(lstrsim.str().c_str());
       lRecTree->AddFile(lstrrec.str().c_str());
     }
@@ -227,10 +231,6 @@ int main(int argc, char** argv){//main
   //double cellSize = info->cellSize();
   const unsigned versionNumber = info->version();
   const unsigned model = info->model();
-    //CAMM-dirty fix
-  //const unsigned shape = inputsim.str().find("Diamond")!=inputsim.str().npos? 2: inputsim.str().find("Triangle")!=inputsim.str().npos?3 :1 ;//
-  //const double cellSize = 6.496345;//info->cellSize();
-  //const double calorSizeXY = 2800*2;//info->calorSizeXY();
   const unsigned shape = info->shape();
   const double cellSize = info->cellSize();
   const double calorSizeXY = info->calorSizeXY();
@@ -303,13 +303,19 @@ int main(int argc, char** argv){//main
   else {
     std::cout << " -- output file " << outputFile->GetName() << " successfully opened." << std::endl;
   }
+  std::cout << "WAY BEFORE" << std::endl;
   outputFile->cd();
 
 
   ///initialise PU density object
 
+  std::cout << "BEFORE" << std::endl;
+
+  std::cout << lSimTree->GetEntries() << std::endl;
+  std::cout << "BEFORE2" << std::endl;
   HGCSSPUenergy puDensity("data/EnergyDensity.dat");
 
+  std::cout << "AFTER" << std::endl;
 
     //////////////////////////////////////////////////
     //////////////////////////////////////////////////
@@ -318,7 +324,9 @@ int main(int argc, char** argv){//main
     //////////////////////////////////////////////////
   
   const unsigned nEvts = ((pNevts > lSimTree->GetEntries() || pNevts==0) ? static_cast<unsigned>(lSimTree->GetEntries()) : pNevts) ;
-  
+
+  std::cout << "WAY AFTER " << pNevts << std::endl;
+    
   std::cout << " -- Processing " << nEvts << " events out of " << lSimTree->GetEntries() << " " << lRecTree->GetEntries() << std::endl;
 
   //perform first loop over simhits to find z positions of layers
