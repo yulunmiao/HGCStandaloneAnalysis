@@ -2278,7 +2278,7 @@ G4VSolid *DetectorConstruction::constructSolid (std::string baseName, G4double t
   if (model_ == DetectorConstruction::m_FULLSECTION){
     double minR = tan(2*atan(exp(-1.*etamax)))*(zpos+m_z0pos+m_CalorSizeZ/2);
     double maxR = tan(2*atan(exp(-1.*etamin)))*(zpos+m_z0pos+m_CalorSizeZ/2);
-    std::cout << baseName << " zpos = " << zpos+m_z0pos+m_CalorSizeZ/2 << " radius range " << minR << " " << maxR << " thick " << thick << " width " << width << std::endl;
+    //std::cout << baseName << " zpos = " << zpos+m_z0pos+m_CalorSizeZ/2 << " radius range " << minR << " " << maxR << " thick " << thick << " width " << width << std::endl;
     solid = new G4Tubs(baseName+"box",minR,maxR,thick/2,minL,width);
   }
   return solid;
