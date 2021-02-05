@@ -368,7 +368,7 @@ public:
      else if (versionNumber == 70) {
       indices_[0] = 0;
       indices_[1] = 10;
-      indices_[2] = 20;
+      indices_[2] = 18;
       indices_[3] = 26;
       indices_[4] = indices_[3];
       indices_[5] = indices_[3];
@@ -760,7 +760,7 @@ public:
     else if (versionNumber == 73){
       indices_[0] = 0;
       indices_[1] = 10;
-      indices_[2] = 20;
+      indices_[2] = 18;
       indices_[3] = 26;
       indices_[4] = 48;
       indices_[5] = 52;
