@@ -206,7 +206,6 @@ int main(int argc, char** argv){//main
       lstrrec << inputrec.str() << "_run" << i << ".root";
       if (!testInputFile(lstrrec.str(),recFile)) continue;
       
-      std::cout << "FILENAME " << lstrsim.str().c_str() << std::endl;
       lSimTree->AddFile(lstrsim.str().c_str());
       lRecTree->AddFile(lstrrec.str().c_str());
     }
@@ -303,19 +302,13 @@ int main(int argc, char** argv){//main
   else {
     std::cout << " -- output file " << outputFile->GetName() << " successfully opened." << std::endl;
   }
-  std::cout << "WAY BEFORE" << std::endl;
   outputFile->cd();
 
 
   ///initialise PU density object
-
-  std::cout << "BEFORE" << std::endl;
-
   std::cout << lSimTree->GetEntries() << std::endl;
-  std::cout << "BEFORE2" << std::endl;
-  HGCSSPUenergy puDensity("data/EnergyDensity.dat");
 
-  std::cout << "AFTER" << std::endl;
+  HGCSSPUenergy puDensity("data/EnergyDensity.dat");
 
     //////////////////////////////////////////////////
     //////////////////////////////////////////////////
@@ -324,8 +317,6 @@ int main(int argc, char** argv){//main
     //////////////////////////////////////////////////
   
   const unsigned nEvts = ((pNevts > lSimTree->GetEntries() || pNevts==0) ? static_cast<unsigned>(lSimTree->GetEntries()) : pNevts) ;
-
-  std::cout << "WAY AFTER " << pNevts << std::endl;
     
   std::cout << " -- Processing " << nEvts << " events out of " << lSimTree->GetEntries() << " " << lRecTree->GetEntries() << std::endl;
 

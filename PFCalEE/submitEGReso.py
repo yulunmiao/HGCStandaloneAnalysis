@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os, sys
+import random
 import argparse
 from utils import SubmitBase, create_dir
 
@@ -36,17 +37,19 @@ class SubmitAnalysis(SubmitBase):
     def __init__(self, nSiLayers, label, redofit, **kwargs):
             super(SubmitAnalysis, self).__init__(**kwargs)
             
-            self.condor_submit_name_ = 'condorSubmitEGReso.sub'
+            self.condor_submit_name_ = self.hash_job_name()
             self.jobName_ = 'runEGResoJob.sh'
             self.vtx_tag = '$(NPUVTX)'
             self.ic_tag = '$(IC)'
+            self.nruns_tag = '$(NRUNS)'
             
             self.nSiLayers = nSiLayers
             self.label = label
             self.redofit = redofit
 
-            self.tags = (self.en_tag, self.eta_tag, self.ic_tag, self.vtx_tag)
-            self.labels = ('energy', 'eta', 'ic', 'npuvtx')
+            self.tags = (self.en_tag, self.eta_tag, self.ic_tag,
+                         self.vtx_tag, self.nruns_tag)
+            self.labels = ('energy', 'eta', 'ic', 'npuvtx', 'nruns')
                         
     @property
     def condor_submit_name(self):
@@ -55,13 +58,29 @@ class SubmitAnalysis(SubmitBase):
     @property
     def jobName(self):
         return self.jobName_
+    
+    def hash_job_name(self):
+        """
+        Creates a unique name for the job submission file.
+        """
+        s = 'condorSubmitEGReso_'
+        s += 'En' + str(self.p.enList[0]) + 'to' + str(self.p.enList[-1]) + '_'
+        s += 'Eta' + str(int(self.p.etas[0]*10.)) + 'to' + str(int(self.p.etas[-1]*10.)) + '_'
+        s += 'NRuns' + str(self.p.nRuns) + '_'
+        s +=  str(random.randint(1,100)).zfill(3)
+        s += '.sub'
 
+        if os.path.exists( os.path.join(self.outDir,s) ):
+            raise ValueError('A submission file named `' + s + '` already exists. Exiting.')
+
+        return s
+    
     def write_shell_script_file(self):
         with open( os.path.join(self.outDir,self.jobName_), 'w') as s:
             s.write('#!/bin/bash\n')
 
             #input arguments: energy, eta, run, intercalibration and #pu vertices
-            s.write('ARGS=`getopt -o "" -l ",energy:,eta:,run:,ic:,npuvtx:" -n "getopts_${0}" -- "$@"`\n')
+            s.write('ARGS=`getopt -o "" -l ",energy:,eta:,run:,ic:,npuvtx:,nruns:" -n "getopts_${0}" -- "$@"`\n')
             s.write('eval set -- "$ARGS"\n')
             s.write('while true; do\n')
             s.write('case "$1" in\n')
@@ -102,8 +121,9 @@ class SubmitAnalysis(SubmitBase):
             prefix = 'version{}_model{}_{}'.format(opt.version,opt.model,bval)
             outTag = prefix + outTag
             inTag = prefix + inTag
-            
-            s.write('{}/analysis/bin/egammaResoWithTruth -c scripts/DefaultConfig.cfg -n {} --nRuns={} -i root://eoscms//eos/cms{} --digifilePath=root://eoscms//eos/cms{} -s HGcal_{} -r Digi_{}{} -o {} --redoStep={}\n'.format(os.getcwd(),self.p.nevts,self.p.nRuns,self.eosDirIn,self.eosDirOut,inTag,self.label,outTag,scriptOutFile,int(self.redofit)))
+
+            nr = self.shellify_tag(self.nruns_tag)
+            s.write('{}/analysis/bin/egammaResoWithTruth -c scripts/DefaultConfig.cfg -n {} --nRuns={} -i root://eoscms//eos/cms{} --digifilePath=root://eoscms//eos/cms{} -s HGcal_{} -r Digi_{}{} -o {} --redoStep={}\n'.format(os.getcwd(),self.p.nevts,nr,self.eosDirIn,self.eosDirOut,inTag,self.label,outTag,scriptOutFile,int(self.redofit)))
             s.write('echo "--Local directory is " $localdir\n')
             s.write('ls *\n')
             s.write('echo "--deleting core files: too heavy!!"\n')
@@ -127,20 +147,19 @@ class SubmitAnalysis(SubmitBase):
                   ('en', self.en_tag), ('eta', '$$(['+eta_no_dot+'])') )
             out_name = self._unique_name( t + (('ext', 'out'),) )
             err_name = self._unique_name( t + (('ext', 'err'),) )
-            log_name = self._unique_name( t + (('ext', 'log'),) )
             
             s.write('Output = {}/{}\n'.format(self.outDir,out_name))
             s.write('Error  = {}/{}\n'.format(self.outDir,err_name))
-            s.write('Log    = {}/{}\n'.format(self.outDir,log_name))
+            s.write('Log    = {}/log.log\n'.format(self.outDir))
             s.write('RequestMemory = 10MB\n')
             s.write('+JobFlavour = "espresso"\n')
-            s.write('Queue 1 {n}, {ic}, {en}, {eta} from (\n'.format( n=self.clean_tag(self.vtx_tag), ic=self.clean_tag(self.ic_tag), en=self.clean_tag(self.en_tag), eta=self.clean_tag(self.eta_tag) ))
+            s.write('Queue 1 {nruns}, {n}, {ic}, {en}, {eta} from (\n'.format(nruns=self.clean_tag(self.nruns_tag), n=self.clean_tag(self.vtx_tag), ic=self.clean_tag(self.ic_tag), en=self.clean_tag(self.en_tag), eta=self.clean_tag(self.eta_tag) ))
 
             for nvid in self.p.nPuVtxList:
                 for icid in self.p.iCalibList:
                     for et in self.p.enList:
                         for eta in self.p.etas:
-                            s.write('{}, {}, {}, {}\n'.format(nvid,icid,et,str(eta)))
+                            s.write('{}, {}, {}, {}, {}\n'.format(str(self.p.nRuns),nvid,icid,et,str(eta)))
             s.write(')')
 
 

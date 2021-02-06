@@ -40,9 +40,11 @@ class SubmitProd(SubmitBase):
 
         #variables
         self.condor_submit_name = 'condorSubmitProd.sub'
-        self.mac_name = self._unique_name('g4steer',
-                                          self.shellify_tag(self.en_tag), self.shellify_tag(self.eta_tag),
-                                          self.shellify_tag(self.run_tag), 'mac')
+        self.mac_name = self._unique_name( (('prefix', 'g4steer'),
+                                           ('en', self.shellify_tag(self.en_tag)),
+                                           ('eta', self.shellify_tag(self.eta_tag)),
+                                           ('run', self.shellify_tag(self.run_tag)),
+                                           ('ext', 'mac')) )
 
         self.tags = (self.en_tag, self.eta_tag, self.run_tag, self.gran_tag)
         self.labels = ('energy', 'eta', 'run', 'granularity')
@@ -84,7 +86,7 @@ class SubmitProd(SubmitBase):
             s.write('source g4env.sh\n')
             s.write('cd $localdir\n')
             if len(self.p.datafileeos)>0:
-                s.write('eos cp {}/{} {}\n'.format(self.p.datafileeos,self.p.datafile,self.p.datafile))
+                s.write('eos cp {} {}\n'.format( os.path.join(self.p.datafileeos,self.p.datafile),self.p.datafile))
             s.write('cp {}/{} .\n'.format(self.outDir, self.mac_name))
 
             cmd = ( 'PFCalEE {} --model {} --version {} --eta {} --shape {}'
@@ -112,12 +114,12 @@ class SubmitProd(SubmitBase):
                 s.write('if (( "$?" != "0" )); then\n')
                 s.write('echo " --- Problem with copy of file PFcal.root to EOS. Keeping locally." >> g4{}.log\n'.format(outTag))
                 s.write('else\n')
-                s.write('eossize=`eos ls -l {}/HGcal_{}.root | awk \'{{print $5}}\'`\n'.format(self.eosDirIn,outTag))
+                s.write('eossize=`eos ls -l {}/HGcal_{}.root | awk \'{{print $5}}\'`\n'.format(self.eosDirOut,outTag))
                 s.write('localsize=`ls -l HGcal_{}.root | awk \'{{print $5}}\'`\n'.format(outTag))
-                s.write('if [ $eossize != $localsize ]; then\n')
-                s.write('echo " --- Copy of sim file to eos failed. Localsize = $localsize, eossize = $eossize. Keeping locally..." >> g4_{}.log\n'.format(outTag))
+                s.write('if [ "${eossize}" != "${localsize}" ]; then\n')
+                s.write('echo " --- Copy of sim file to eos failed. Localsize = ${{localsize}}, eossize = ${{eossize}}. Keeping locally..." >> g4_{}.log\n'.format(outTag))
                 s.write('else\n')
-                s.write('echo " --- Size check done: Localsize = $localsize, eossize = $eossize" >> g4_{}.log\n'.format(outTag))
+                s.write('echo " --- Size check done: Localsize = ${{localsize}}, eossize = ${{eossize}}" >> g4_{}.log\n'.format(outTag))
                 s.write('echo " --- File PFcal.root successfully copied to EOS: {ed}/HGcal_{ot}.root" >> g4_{ot}.log\n'.format(ed=self.eosDirOut,ot=outTag))
                 s.write('rm HGcal_{}.root\n'.format(outTag))
                 s.write('fi\n')
@@ -147,8 +149,9 @@ class SubmitProd(SubmitBase):
                                 ( iet * len(self.p.etas) ) +
                                 ( ieta ) )
                     assert(gen_idx < niters)
-
-                    this_mac_name = self._unique_name(pre='g4steer', en=et, eta=int(eta*10.), run=run, ext='mac')
+                    
+                    t = ( ('prefix', 'g4steer'), ('en', et), ('eta', int(eta*10.)), ('run', run), ('ext', 'mac') )
+                    this_mac_name = self._unique_name(t)
                     with open('{}/{}'.format(self.outDir, this_mac_name), 'w') as s:
                         s.write('/control/verbose 0\n')
                         s.write('/control/saveHistory\n')
@@ -185,13 +188,14 @@ class SubmitProd(SubmitBase):
                       .format(self.en_tag, self.eta_tag, self.run_tag, self.gran_tag)) )
             s.write('Requirements = (OpSysAndVer =?= "CentOS7")\n')
 
-            kw = dict(pre='prod', en=self.en_tag, eta=self.eta_tag, run=self.run_tag)
-            out_name = self._unique_name(ext='out', **kw)
-            err_name = self._unique_name(ext='err', **kw)
-            log_name = self._unique_name(ext='log', **kw)
+            t = ( ('prefix', 'prod'), ('en', self.en_tag), ('eta', self.eta_tag),
+                  ('run', self.run_tag) )
+            out_name = self._unique_name( t + (('ext', 'out'),) )
+            err_name = self._unique_name( t + (('ext', 'err'),))
+            log_name = self._unique_name( t + (('ext', 'log'),))
             s.write('Output = {}/{}\n'.format(self.outDir,out_name))
             s.write('Error = {}/{}\n'.format(self.outDir,err_name))
-            s.write('Log = {}/{}\n'.format(self.outDir, log_name))
+            s.write('Log = {}/{}\n'.format(self.outDir,log_name))
             s.write('RequestMemory = 250MB\n')
             s.write('+JobFlavour = "tomorrow"\n')
             s.write('Queue {nruns} {entag}, {etatag}, {gtag} from (\n'.format( nruns=self.p.nRuns, entag=self.clean_tag(self.en_tag),
@@ -211,7 +215,8 @@ bval = 'BON' if opt.Bfield>0 else 'BOFF'
 lab = '200u'
 odir = '{}/git{}/version_{}/model_{}/{}/{}/{}'.format(opt.out,opt.gittag,opt.version,opt.model,opt.datatype,bval,lab)
 if opt.phi != 0.5: odir='{out}/phi_{n:.{r}f}pi'.format(out=odir,n=opt.phi,r=3)
-edir = '/eos/cms{}/git{}/{}'.format(opt.eos,opt.gittag,opt.datatype)
+eos_partial = opt.eos[1:] if os.path.isabs(opt.eos) else opt.eos
+edir = os.path.join('/eos', 'cms', eos_partial, 'git' + opt.gittag, opt.datatype)
 
 subprod = SubmitProd(outDir=odir, eosDirOut=edir, bfield=bval, params=opt)
 subprod.write_shell_script_file()

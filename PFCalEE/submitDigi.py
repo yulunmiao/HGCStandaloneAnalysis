@@ -153,11 +153,11 @@ class SubmitDigi(SubmitBase):
                 s.write('\n')
                 s.write('Requirements = (OpSysAndVer =?= "CentOS7")\n')
 
-                kw = dict(pre='digi', npuvtx=self.vtx_tag, ic=self.ic_tag, en=self.en_tag,
-                          eta=self.eta_tag, run=self.run_tag)
-                out_name = self._unique_name(ext='out', **kw)
-                err_name = self._unique_name(ext='err', **kw)
-                log_name = self._unique_name(ext='log', **kw)
+                t = ( ('prefix', 'digi'), ('npuvtx', self.vtx_tag), ('ic', self.ic_tag),
+                      ('en', self.en_tag), ('eta', self.eta_tag), ('run', self.run_tag) )
+                out_name = self._unique_name( t + (('ext', 'out'),) )
+                err_name = self._unique_name( t + (('ext', 'err'),) )
+                log_name = self._unique_name( t + (('ext', 'log'),) )
                 
                 s.write('Output = {}/{}\n'.format(self.outDir,out_name))
                 s.write('Error = {}/{}\n'.format(self.outDir,err_name))
