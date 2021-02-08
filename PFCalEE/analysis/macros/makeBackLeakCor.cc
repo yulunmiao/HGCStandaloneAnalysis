@@ -37,7 +37,6 @@ int makeBackLeakCor(const unsigned nLayers,
 		    ){
 
   double Eval = E(pT,eta);
-
   
   mycE2D->cd();
   gPad->SetRightMargin(0.15);
@@ -53,21 +52,23 @@ int makeBackLeakCor(const unsigned nLayers,
   lName << " - " << offset << ")/" << calib;
   lName << ":(" << lNameBack << ")/(" << lNameTot << ")";
 
-  //std::cout << lName.str().c_str() << std::endl;
-
+  std::cout << lName.str().c_str() << std::endl;
+  std::exit(0);
   ltree->Draw(lName.str().c_str(),"","colz");
-
 
   lName.str("");
   lName << "energy" << pT << "_vsBackFraction";
-  TH2F * p_ErecovsEback = (TH2F*)(gPad->GetPrimitive("htemp"))->Clone(lName.str().c_str()); // 2D
+
+  const int nxbins = 10, nybins=10;
+  double xbins[nxbins+1] = {0., .01, .02, .03, .04, .05, .06, .07, .08, .09, 0.1};
+  TH2F * p_ErecovsEback = new TH2F(lName.str().c_str(), "", nxbins, xbins, nybins, 0.7*offset, 1.3*offset);
+  //TH2F * p_ErecovsEback = (TH2F*)(gPad->GetPrimitive("htemp"))->Clone(lName.str().c_str()); // 2D
   
   if (!p_ErecovsEback){
     std::cout << " -- ERROR, pointer for histogram " << lName.str() << " is null." << std::endl;
     return 1;
   }
 
-  p_ErecovsEback->Rebin(2);
   p_ErecovsEback->SetTitle(";E_{back}/E_{tot};E_{tot} (GeV)");
   lName << "_pfx";
   TProfile *tmpProf = p_ErecovsEback->ProfileX(lName.str().c_str());

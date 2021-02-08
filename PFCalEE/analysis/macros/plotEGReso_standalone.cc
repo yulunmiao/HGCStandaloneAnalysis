@@ -26,7 +26,7 @@
 #include "TDRStyle.h"
 #include "plotUtilities.C"
 #include "fitEnergy.C"
-#include "makeBackLeakCor.C"
+#include "makeBackLeakCor.cc"
 #include "makePuSigma.C"
 #include "makeCalibration.C"
 #include "makeResolution.C"
@@ -424,7 +424,6 @@ int plotEGReso(const InputParserPlotEGReso& ip) {
 	      std::cout << " - Processing signal region: " << iSR << " with size " << radius[iSR] << std::endl;
 
 	      TString plotDir = saveDir + "version" + version + "/model2/gamma/SR" + std::to_string(iSR) + "/";
-	      std::cout << "PLOTDIR: " << plotDir  << std::endl;
 	      if (system(TString("mkdir -p ")+plotDir)) return 1;
 
 	      double calib = 0, offset = 0, calibErr = 0, offsetErr = 0;
