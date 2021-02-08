@@ -176,6 +176,14 @@ public:
 
   G4double GetMinEtaLayer(int i) { return minEta[i]; } // etaMin for each layer 0:51
 
+  unsigned lastEElayer() { return lastEElayer_;}
+  unsigned firstHFlayer() { return firstHFlayer_;}
+  unsigned firstMixedlayer() { return firstMixedlayer_;}
+  unsigned firstScintlayer() { return firstScintlayer_;}
+  unsigned firstCoarseScintlayer() { return firstCoarseScintlayer_;}
+
+
+
   /**
      @short build the detector
    */
@@ -195,9 +203,11 @@ private:
   bool addPrePCB_;
 
   bool doHF_;
+  unsigned lastEElayer_;
   unsigned firstHFlayer_;
   unsigned firstMixedlayer_;
   unsigned firstScintlayer_;
+  unsigned firstCoarseScintlayer_;
 
   std::vector<G4double> absThickW_;
   std::vector<G4double> absThickPb_;
