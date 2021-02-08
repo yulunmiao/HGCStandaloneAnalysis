@@ -41,6 +41,7 @@ int makeBackLeakCor(const unsigned nLayers,
   
   mycE2D->cd();
   gPad->SetRightMargin(0.15);
+  gPad->SetLogz();
   std::ostringstream lName;
   std::string lNameTot,lNameBack;
   getTotalEnergyString(nLayers,nBack,lNameTot,lNameBack,iSR);
