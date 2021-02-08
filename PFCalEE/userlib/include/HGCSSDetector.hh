@@ -113,7 +113,7 @@ public:
       indices_[5] = indices_[3];
       indices_[6] = indices_[3];
     }
-    else if (versionNumber == 30 || versionNumber == 60 || (versionNumber >= 100 && versionNumber < 104)){
+    else if (versionNumber == 30 || versionNumber == 60  || versionNumber==68 || (versionNumber >= 100 && versionNumber < 104)){
       indices_[0] = 0;
       indices_[1] = 10;
       indices_[2] = 20;
@@ -368,39 +368,66 @@ public:
      else if (versionNumber == 70) {
       indices_[0] = 0;
       indices_[1] = 10;
-      indices_[2] = 20;
+      indices_[2] = 18;
       indices_[3] = 26;
       indices_[4] = indices_[3];
       indices_[5] = indices_[3];
       indices_[6] = indices_[3];
 
       sensitiveZ_.resize(indices_[3],0);
-      sensitiveZ_[0] = 3213.95; //minEta=1.45883 maxEta=3
-      sensitiveZ_[1] = 3223.7; //minEta=1.45883 maxEta=3
-      sensitiveZ_[2] = 3244.9; //minEta=1.461 maxEta=3
-      sensitiveZ_[3] = 3254.65; //minEta=1.461 maxEta=3
-      sensitiveZ_[4] = 3275.85; //minEta=1.46316 maxEta=3
-      sensitiveZ_[5] = 3285.6; //minEta=1.46316 maxEta=3
-      sensitiveZ_[6] = 3306.8; //minEta=1.46533 maxEta=3
-      sensitiveZ_[7] = 3316.55; //minEta=1.46533 maxEta=3
-      sensitiveZ_[8] = 3337.75; //minEta=1.4675 maxEta=3
-      sensitiveZ_[9] = 3347.5;  //minEta=1.4675 maxEta=3
-      sensitiveZ_[10] = 3368.7; //minEta=1.46966 maxEta=3
-      sensitiveZ_[11] = 3378.45; //minEta=1.46966 maxEta=3
-      sensitiveZ_[12] = 3399.65; //minEta=1.47183 maxEta=3
-      sensitiveZ_[13] = 3409.4; //minEta=1.47183 maxEta=3
-      sensitiveZ_[14] = 3430.6; //minEta=1.474 maxEta=3
-      sensitiveZ_[15] = 3440.35; //minEta=1.474 maxEta=3
-      sensitiveZ_[16] = 3461.55; //minEta=1.47617 maxEta=3
-      sensitiveZ_[17] = 3471.3; //minEta=1.47617 maxEta=3
-      sensitiveZ_[18] = 3495.52; //minEta=1.47833 maxEta=3
-      sensitiveZ_[19] = 3505.27; //minEta=1.47833 maxEta=3
-      sensitiveZ_[20] = 3529.49; //minEta=1.4805 maxEta=3
-      sensitiveZ_[21] = 3539.24; //minEta=1.4805 maxEta=3
-      sensitiveZ_[22] = 3563.46; //minEta=1.48267 maxEta=3
-      sensitiveZ_[23] = 3573.21; //minEta=1.48267 maxEta=3
-      sensitiveZ_[24] = 3597.43; //minEta=1.48483 maxEta=3
-      sensitiveZ_[25] = 3607.18; //minEta=1.48483 maxEta=3
+      sensitiveZ_[0] = 3213.95;
+      sensitiveZ_[1] = 3223.7;
+      sensitiveZ_[2] = 3244.9;
+      sensitiveZ_[3] = 3254.65;
+      sensitiveZ_[4] = 3275.85;
+      sensitiveZ_[5] = 3285.6;
+      sensitiveZ_[6] = 3306.8;
+      sensitiveZ_[7] = 3316.55;
+      sensitiveZ_[8] = 3337.75;
+      sensitiveZ_[9] = 3347.5;
+      sensitiveZ_[10] = 3368.7;
+      sensitiveZ_[11] = 3378.45;
+      sensitiveZ_[12] = 3399.65;
+      sensitiveZ_[13] = 3409.4;
+      sensitiveZ_[14] = 3430.6;
+      sensitiveZ_[15] = 3440.35;
+      sensitiveZ_[16] = 3461.55;
+      sensitiveZ_[17] = 3471.3;
+      sensitiveZ_[18] = 3495.52;
+      sensitiveZ_[19] = 3505.27;
+      sensitiveZ_[20] = 3529.49;
+      sensitiveZ_[21] = 3539.24;
+      sensitiveZ_[22] = 3563.46;
+      sensitiveZ_[23] = 3573.21;
+      sensitiveZ_[24] = 3597.43;
+      sensitiveZ_[25] = 3607.18;
+
+      etaBoundary_[0] =1.45883;
+      etaBoundary_[1] =1.45883;
+      etaBoundary_[2] =1.461;
+      etaBoundary_[3] =1.461;
+      etaBoundary_[4] =1.46316;
+      etaBoundary_[5] =1.46316;
+      etaBoundary_[6] =1.46533;
+      etaBoundary_[7] =1.46533;
+      etaBoundary_[8] =1.4675;
+      etaBoundary_[9] =1.4675;
+      etaBoundary_[10] =1.46966;
+      etaBoundary_[11] =1.46966;
+      etaBoundary_[12] =1.47183;
+      etaBoundary_[13] =1.47183;
+      etaBoundary_[14] =1.474;
+      etaBoundary_[15] =1.474;
+      etaBoundary_[16] =1.47617;
+      etaBoundary_[17] =1.47617;
+      etaBoundary_[18] =1.47833;
+      etaBoundary_[19] =1.47833;
+      etaBoundary_[20] =1.4805;
+      etaBoundary_[21] =1.4805;
+      etaBoundary_[22] =1.48267;
+      etaBoundary_[23] =1.48267;
+      etaBoundary_[24] =1.48483;
+      etaBoundary_[25] =1.48483;
     } 
    else if (versionNumber == 33){
       indices_[0] = 0;
@@ -733,11 +760,12 @@ public:
     else if (versionNumber == 73){
       indices_[0] = 0;
       indices_[1] = 10;
-      indices_[2] = 20;
+      indices_[2] = 18;
       indices_[3] = 26;
       indices_[4] = 48;
       indices_[5] = 52;
       indices_[6] = 62;
+
       sensitiveZ_.resize(indices_[6],0);
       sensitiveZ_[0] = 3213.95;
       sensitiveZ_[1] = 3223.7;
@@ -802,7 +830,6 @@ public:
       sensitiveZ_[60] = 5046.38;
       sensitiveZ_[61] = 5128.63;
      
-
       etaBoundary_.resize(indices_[6],0);
       //EE
       etaBoundary_[0] = 1.45883;
@@ -832,13 +859,13 @@ public:
       etaBoundary_[24] = 1.48483;
       etaBoundary_[25] = 1.48483;
       etaBoundary_[26] = 1.487;
+
       etaBoundary_[27] = 1.48786;
       etaBoundary_[28] = 1.48871;
       etaBoundary_[29] = 1.48957;
       etaBoundary_[30] = 1.49043;
       etaBoundary_[31] = 1.49129;
       etaBoundary_[32] = 1.49214;
-
       etaBoundary_[33] = 1.71444;
       etaBoundary_[34] = 1.72866;
       etaBoundary_[35] = 1.74268;
@@ -869,7 +896,208 @@ public:
       etaBoundary_[59] = 2.27151;
       etaBoundary_[60] = 2.28756;
       etaBoundary_[61] = 2.30336;
-      
+    }else if (versionNumber==80) {
+      indices_[0] = 0;
+      indices_[1] = 10;
+      indices_[2] = 20;
+      indices_[3] = 26;
+      indices_[4] = indices_[3];
+      indices_[5] = indices_[3];
+      indices_[6] = indices_[3];
+
+      sensitiveZ_.resize(indices_[3],0);
+      sensitiveZ_[0] = 3213.95;
+      sensitiveZ_[1] = 3223.94;
+      sensitiveZ_[2] = 3245.64;
+      sensitiveZ_[3] = 3255.64;
+      sensitiveZ_[4] = 3277.34;
+      sensitiveZ_[5] = 3287.33;
+      sensitiveZ_[6] = 3309.03;
+      sensitiveZ_[7] = 3319.03;
+      sensitiveZ_[8] = 3340.73;
+      sensitiveZ_[9] = 3350.72;
+      sensitiveZ_[10] = 3372.42;
+      sensitiveZ_[11] = 3382.42;
+      sensitiveZ_[12] = 3404.12;
+      sensitiveZ_[13] = 3414.11;
+      sensitiveZ_[14] = 3435.81;
+      sensitiveZ_[15] = 3445.8;
+      sensitiveZ_[16] = 3467.5;
+      sensitiveZ_[17] = 3477.5;
+      sensitiveZ_[18] = 3499.2;
+      sensitiveZ_[19] = 3509.19;
+      sensitiveZ_[20] = 3530.89;
+      sensitiveZ_[21] = 3540.89;
+      sensitiveZ_[22] = 3562.59;
+      sensitiveZ_[23] = 3572.58;
+      sensitiveZ_[24] = 3594.28;
+      sensitiveZ_[25] = 3604.28;
+
+      etaBoundary_.resize(indices_[3],0);
+      etaBoundary_[0] =1.45883;
+      etaBoundary_[1] =1.45883;
+      etaBoundary_[2] =1.461;
+      etaBoundary_[3] =1.461;
+      etaBoundary_[4] =1.46316;
+      etaBoundary_[5] =1.46316;
+      etaBoundary_[6] =1.46533;
+      etaBoundary_[7] =1.46533;
+      etaBoundary_[8] =1.4675;
+      etaBoundary_[9] =1.4675;
+      etaBoundary_[10] =1.46966;
+      etaBoundary_[11] =1.46966;
+      etaBoundary_[12] =1.47183;
+      etaBoundary_[13] =1.47183;
+      etaBoundary_[14] =1.474;
+      etaBoundary_[15] =1.474;
+      etaBoundary_[16] =1.47617;
+      etaBoundary_[17] =1.47617;
+      etaBoundary_[18] =1.47833;
+      etaBoundary_[19] =1.47833;
+      etaBoundary_[20] =1.4805;
+      etaBoundary_[21] =1.4805;
+      etaBoundary_[22] =1.48267;
+      etaBoundary_[23] =1.48267;
+      etaBoundary_[24] =1.48483;
+      etaBoundary_[25] =1.48483;
+    }else if (versionNumber==83) {
+      indices_[0] = 0;
+      indices_[1] = 10;
+      indices_[2] = 20;
+      indices_[3] = 26;
+      indices_[4] = 48;
+      indices_[5] = 52;
+      indices_[6] = 62;
+
+      sensitiveZ_.resize(indices_[6],0);
+      sensitiveZ_[0] = 3213.95;
+      sensitiveZ_[1] = 3223.94;
+      sensitiveZ_[2] = 3245.64;
+      sensitiveZ_[3] = 3255.64;
+      sensitiveZ_[4] = 3277.34;
+      sensitiveZ_[5] = 3287.33;
+      sensitiveZ_[6] = 3309.03;
+      sensitiveZ_[7] = 3319.03;
+      sensitiveZ_[8] = 3340.73;
+      sensitiveZ_[9] = 3350.72;
+      sensitiveZ_[10] = 3372.42;
+      sensitiveZ_[11] = 3382.42;
+      sensitiveZ_[12] = 3404.12;
+      sensitiveZ_[13] = 3414.11;
+      sensitiveZ_[14] = 3435.81;
+      sensitiveZ_[15] = 3445.8;
+      sensitiveZ_[16] = 3467.5;
+      sensitiveZ_[17] = 3477.5;
+      sensitiveZ_[18] = 3499.2;
+      sensitiveZ_[19] = 3509.19;
+      sensitiveZ_[20] = 3530.89;
+      sensitiveZ_[21] = 3540.89;
+      sensitiveZ_[22] = 3562.59;
+      sensitiveZ_[23] = 3572.58;
+      sensitiveZ_[24] = 3594.28;
+      sensitiveZ_[25] = 3604.28;
+      sensitiveZ_[26] = 3671.83;
+      sensitiveZ_[27] = 3734.88;
+      sensitiveZ_[28] = 3797.93;
+      sensitiveZ_[29] = 3860.98;
+      sensitiveZ_[30] = 3924.03;
+      sensitiveZ_[31] = 3987.08;
+      sensitiveZ_[32] = 4050.13;
+      sensitiveZ_[33] = 4113.18;
+      sensitiveZ_[34] = 4176.23;
+      sensitiveZ_[35] = 4239.28;
+      sensitiveZ_[36] = 4302.33;
+      sensitiveZ_[37] = 4384.58;
+      sensitiveZ_[38] = 4466.83;
+      sensitiveZ_[39] = 4549.08;
+      sensitiveZ_[40] = 4631.33;
+      sensitiveZ_[41] = 4713.58;
+      sensitiveZ_[42] = 4795.83;
+      sensitiveZ_[43] = 4878.08;
+      sensitiveZ_[44] = 4960.33;
+      sensitiveZ_[45] = 5042.58;
+      sensitiveZ_[46] = 5124.83;
+      sensitiveZ_[47] = 0;
+      sensitiveZ_[48] = 4109.88;
+      sensitiveZ_[49] = 4172.93;
+      sensitiveZ_[50] = 4235.98;
+      sensitiveZ_[51] = 4299.03;
+      sensitiveZ_[52] = 4381.28;
+      sensitiveZ_[53] = 4463.53;
+      sensitiveZ_[54] = 4545.78;
+      sensitiveZ_[55] = 4628.03;
+      sensitiveZ_[56] = 4710.28;
+      sensitiveZ_[57] = 4792.53;
+      sensitiveZ_[58] = 4874.78;
+      sensitiveZ_[59] = 4957.03;
+      sensitiveZ_[60] = 5039.28;
+      sensitiveZ_[61] = 5121.53;
+      sensitiveZ_[62] = 0;
+
+      etaBoundary_.resize(indices_[6],0);      
+      etaBoundary_[0] =1.45883;
+      etaBoundary_[1] =1.45883;
+      etaBoundary_[2] =1.461;
+      etaBoundary_[3] =1.461;
+      etaBoundary_[4] =1.46316;
+      etaBoundary_[5] =1.46316;
+      etaBoundary_[6] =1.46533;
+      etaBoundary_[7] =1.46533;
+      etaBoundary_[8] =1.4675;
+      etaBoundary_[9] =1.4675;
+      etaBoundary_[10] =1.46966;
+      etaBoundary_[11] =1.46966;
+      etaBoundary_[12] =1.47183;
+      etaBoundary_[13] =1.47183;
+      etaBoundary_[14] =1.474;
+      etaBoundary_[15] =1.474;
+      etaBoundary_[16] =1.47617;
+      etaBoundary_[17] =1.47617;
+      etaBoundary_[18] =1.47833;
+      etaBoundary_[19] =1.47833;
+      etaBoundary_[20] =1.4805;
+      etaBoundary_[21] =1.4805;
+      etaBoundary_[22] =1.48267;
+      etaBoundary_[23] =1.48267;
+      etaBoundary_[24] =1.48483;
+      etaBoundary_[25] =1.48483;
+      etaBoundary_[26] =1.487;
+      etaBoundary_[27] =1.48786;
+      etaBoundary_[28] =1.48871;
+      etaBoundary_[29] =1.48957;
+      etaBoundary_[30] =1.49043;
+      etaBoundary_[31] =1.49129;
+      etaBoundary_[32] =1.49214;
+      etaBoundary_[33] =1.71444;
+      etaBoundary_[34] =1.72866;
+      etaBoundary_[35] =1.74268;
+      etaBoundary_[36] =1.75653;
+      etaBoundary_[37] =1.87766;
+      etaBoundary_[38] =1.89534;
+      etaBoundary_[39] =2.06002;
+      etaBoundary_[40] =2.07732;
+      etaBoundary_[41] =2.09433;
+      etaBoundary_[42] =2.11106;
+      etaBoundary_[43] =2.2552;
+      etaBoundary_[44] =2.27151;
+      etaBoundary_[45] =2.28756;
+      etaBoundary_[46] =2.30336;
+      etaBoundary_[47] =2.30336;
+      etaBoundary_[48] =1.71444;
+      etaBoundary_[49] =1.72866;
+      etaBoundary_[50] =1.74268;
+      etaBoundary_[51] =1.75653;
+      etaBoundary_[52] =1.87766;
+      etaBoundary_[53] =1.89534;
+      etaBoundary_[54] =2.06002;
+      etaBoundary_[55] =2.07732;
+      etaBoundary_[56] =2.09433;
+      etaBoundary_[57] =2.11106;
+      etaBoundary_[58] =2.2552;
+      etaBoundary_[59] =2.27151;
+      etaBoundary_[60] =2.28756;
+      etaBoundary_[61] =2.30336;
+      etaBoundary_[62] =2.30336;
     }
     else if (versionNumber == 110){
       indices_[0] = 0;

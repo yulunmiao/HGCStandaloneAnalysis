@@ -76,10 +76,13 @@ public:
     v_HGCALEE_v8_Cu=65,
     v_HGCALEE_v8_Cu_12=66,
     v_HGCALEE_v8_air4=67,
+    v_HGCALEE_v8_neutmod=68,
     v_HGCALEE_v9=70,
     v_HGCALHE_v9=71,
     v_HGCALBE_v9=72,
     v_HGCAL_v9=73,
+    v_HGCALEE_v10=80,
+    v_HGCAL_v10=83,
     v_HGCALEE_TB=100,
     v_HGCALEE_TB_gap0=101,
     v_HGCALEE_TB_allW=102,
@@ -173,6 +176,14 @@ public:
 
   G4double GetMinEtaLayer(int i) { return minEta[i]; } // etaMin for each layer 0:51
 
+  unsigned lastEElayer() { return lastEElayer_;}
+  unsigned firstHFlayer() { return firstHFlayer_;}
+  unsigned firstMixedlayer() { return firstMixedlayer_;}
+  unsigned firstScintlayer() { return firstScintlayer_;}
+  unsigned firstCoarseScintlayer() { return firstCoarseScintlayer_;}
+
+
+
   /**
      @short build the detector
    */
@@ -192,9 +203,11 @@ private:
   bool addPrePCB_;
 
   bool doHF_;
+  unsigned lastEElayer_;
   unsigned firstHFlayer_;
   unsigned firstMixedlayer_;
   unsigned firstScintlayer_;
+  unsigned firstCoarseScintlayer_;
 
   std::vector<G4double> absThickW_;
   std::vector<G4double> absThickPb_;

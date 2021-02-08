@@ -66,6 +66,7 @@ private:
   //std::ofstream fout_;
   unsigned shape_;
   bool coarseGranularity_;
+  unsigned firstCoarseScintlayer_;
 
 };
 
