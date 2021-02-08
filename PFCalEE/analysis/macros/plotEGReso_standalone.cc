@@ -117,7 +117,7 @@ int makeEfit(const bool useSigmaEff,
 
   double fitQual = iSR==0?50:30;
 
-
+  
   TH1F *p_chi2ndf;
   std::ostringstream label;
   label << "p_chi2ndf_E_" << pT << "_SR" << iSR;
@@ -424,6 +424,7 @@ int plotEGReso(const InputParserPlotEGReso& ip) {
 	      std::cout << " - Processing signal region: " << iSR << " with size " << radius[iSR] << std::endl;
 
 	      TString plotDir = saveDir + "version" + version + "/model2/gamma/SR" + std::to_string(iSR) + "/";
+	      std::cout << "PLOTDIR: " << plotDir  << std::endl;
 	      if (system(TString("mkdir -p ")+plotDir)) return 1;
 
 	      double calib = 0, offset = 0, calibErr = 0, offsetErr = 0;
@@ -641,123 +642,11 @@ int plotEGReso(const InputParserPlotEGReso& ip) {
 
 };//main
 
-int plotVersionRatios(const InputParserPlotEGReso& ip) {
-  std::vector<float> etas = ip.etas();
-  std::vector<std::string> versions = ip.versions();
-  const unsigned etas_s = etas.size();
-  const unsigned versions_s = versions.size();
-  
-  TGraphErrors *resoV[etas_s*versions_s];
-
-  std::string dirInBase = "/eos/user/b/bfontana/www/RemoveLayers/" + ip.tag() + "/";
-
-  for(unsigned ieta(0); ieta<etas_s; ++ieta) {
-    
-    for(unsigned iversion(0); iversion<versions_s; ++iversion) {
-      const unsigned idx = iversion + ieta*versions_s;
-
-      std::string dirIn = ( dirInBase + "version" + versions[iversion] + "/model2/gamma/SR4/");
-      std::string fileIn = ( dirIn + "IC3_pu0_SR4_Eta" + std::to_string(static_cast<int>(etas[ieta]*10.f))
-			     + "_vsE_backLeakCor_raw.root" );
-
-      TFile *fIn = TFile::Open(fileIn.c_str(),"READ");
-      if(fIn)
-	fIn->cd();
-      else {
-	std::cout << "Problem reading the file."  << std::endl;
-	return 1;
-      }
-      resoV[idx] = (TGraphErrors*)gDirectory->Get("resoRecoFitRaw");    
-    }
-  }
-
-  std::unordered_map<std::string, std::string> vmap;
-  vmap["60"] = "TDR (no neutron moderator)";
-  vmap["70"] = "Scenario 13";
-
-  for (unsigned ieta(0); ieta<etas_s; ++ieta)
-    {
-      const unsigned idx1 = ieta*versions_s;
-      const unsigned idx2 = idx1 + 1;
-
-      std::string name = "cRatio" + std::to_string(ieta);
-      std::string title = "resoRatio" + std::to_string(static_cast<int>(etas[ieta]*10.f));
-
-      TCanvas *c = new TCanvas(name.c_str(), title.c_str(), 1);
-      c->Divide(1,2);
-
-      c->cd(1);
-      int npoints = resoV[idx1]->GetN();
-      std::string hname = "h" + std::to_string(ieta);
-      std::string htitle = "hReso" + std::to_string(ieta);
-      float xmin=0.f, xmax=350.f;
-      
-      TH1F *h1 = new TH1F(hname.c_str(), htitle.c_str(), npoints, xmin, xmax);
-      TH1F *h2 = new TH1F(hname.c_str(), htitle.c_str(), npoints, xmin, xmax);
-      for (int j(0); j<npoints; j++) { 
-	double x1, x2, y1, y2;
-	double ey1, ey2;
-	resoV[idx1]->GetPoint(j,x1,y1);
-	resoV[idx2]->GetPoint(j,x2,y2);
-	h1->SetBinContent(j+1,y1);
-	h2->SetBinContent(j+1,y2);
-	ey1 = resoV[idx1]->GetErrorY(j);
-	ey2 = resoV[idx2]->GetErrorY(j);
-	h1->SetBinError(j+1,ey1);
-	h2->SetBinError(j+1,ey2);
-      }
-      h1->SetMarkerStyle(1);
-      h1->SetMarkerColor(1);
-      h1->SetLineColor(1);
-      h1->SetAxisRange(0.,0.2,"Y");
-      h1->GetXaxis()->SetLabelSize(0.06);
-      h1->GetXaxis()->SetTitleSize(0.06);
-      h1->GetYaxis()->SetLabelSize(0.06);
-      h1->GetYaxis()->SetTitleSize(0.06);
-      h1->GetXaxis()->SetTitleOffset(1.);
-      h1->GetYaxis()->SetTitleOffset(1.);
-      h1->SetMinimum(0.);
-      h1->SetMaximum(0.10);
-      h1->GetXaxis()->SetTitle("E (GeV)");
-      h1->GetYaxis()->SetTitle("#sigma/E");
-      h1->SetLineColor(kRed);
-      h1->Draw();
-      h2->SetLineColor(kBlue);
-      h2->Draw("SAME");
-
-      auto legend = new TLegend(0.1,0.72,0.3,0.9);
-      legend->AddEntry(h1,vmap[versions[0]].c_str(),"f");
-      legend->AddEntry(h2,vmap[versions[1]].c_str(),"f");
-      legend->Draw();
-   
-      c->cd(2);
-      std::string hdivname = "hDiv" + std::to_string(ieta);
-      std::string hdivtitle = "hDivReso" + std::to_string(ieta);
-      
-      TH1F *div = new TH1F(hdivname.c_str(), hdivtitle.c_str(), npoints, xmin, xmax);
-      div->Sumw2();
-      div->Divide(h1,h2,1.,1.,"b");
-      div->SetAxisRange(0.75, 1.15,"Y");
-      div->Draw();
-      TLine *line = new TLine(xmin,1,xmax,1);
-      line->SetLineStyle(2);
-      line->Draw("same");
-      c->Update();
-      c->SaveAs((dirInBase + title + ".png").c_str());
-
-      delete h1;
-      delete h2;
-    }
-  return 0;
-}
-
 //compile with `g++ plotEGReso_standalone.cc $(root-config --glibs --cflags --libs) -o plotEGReso`
 //run with `./plotEGReso --thicknesses 1 200 --tag V08-08-00 --nBack 2 --etas 3 1.7 2.0 2.4 --versions 1 60 --signalRegions 1 4` (example)
 int main(int argc, char** argv)
 {
   InputParserPlotEGReso ip(argc, argv);
-  //plotEGReso(ip);
-  if(ip.versions().size() == 2)
-    plotVersionRatios(ip);
+  plotEGReso(ip);
   return 0;
 }

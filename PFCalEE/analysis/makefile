@@ -211,11 +211,19 @@ $(LIBDIR)/lib$(LIBNAME).so:  $(OBJS) $(LIBDEPENDS)
 $(MACRODIR)/plots.o: $(MACRODIR)/plotEGReso_standalone.cc
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
+$(MACRODIR)/plotsRatios.o: $(MACRODIR)/plotEGResoRatios_standalone.cc
+	$(CXX) -c $(CXXFLAGS) $< -o $@
+
 $(MACRODIR)/InputParserBase.o: $(SRCDIR)/InputParserBase.cc
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
-plotEGReso: $(MACRODIR)/plots.o $(MACRODIR)/InputParserBase.o
+plotEGReso1: $(MACRODIR)/plots.o  $(MACRODIR)/InputParserBase.o
 	$(CXX) -o $@ $(CXXFLAGS) $^ $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
+
+plotEGReso2: $(MACRODIR)/plotsRatios.o  $(MACRODIR)/InputParserBase.o
+	$(CXX) -o $@ $(CXXFLAGS) $^ $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
+
+plotEGReso: plotEGReso1 plotEGReso2
 
 lib: $(LIBDIR)/lib$(LIBNAME).so
 
