@@ -38,11 +38,13 @@ class SubmitProd(SubmitBase):
     def __init__(self, **kwargs):
         super(SubmitProd, self).__init__(**kwargs)
 
+        self.etaint_tag  = '$(ETAX10)'
+        
         #variables
         self.condor_submit_name = 'condorSubmitProd.sub'
         self.mac_name = self._unique_name( (('prefix', 'g4steer'),
                                            ('en', self.shellify_tag(self.en_tag)),
-                                           ('eta', self.shellify_tag(self.eta_tag)),
+                                           ('eta', self.shellify_tag(self.etaint_tag)),
                                            ('run', self.shellify_tag(self.run_tag)),
                                            ('ext', 'mac')) )
 
@@ -68,9 +70,9 @@ class SubmitProd(SubmitBase):
                 s.write('if [ -n "$2" ]; then\n')
                 if l=='eta':
                     tmp = "$(echo ${2} | sed 's/\.//');"
-                    s.write('{}='.format(self.clean_tag(t))+tmp+'\n')
-                else:
-                    s.write('{}="${{2}}";\n'.format(self.clean_tag(t)))
+                    s.write('{}='.format(self.clean_tag(self.etaint_tag))+tmp+'\n')
+                    s.write('echo "'+l+'x10: {}";\n'.format(self.shellify_tag(self.etaint_tag)))
+                s.write('{}="${{2}}";\n'.format(self.clean_tag(t)))
                 s.write('echo "'+l+': {}";\n'.format(self.shellify_tag(t)))
                 s.write('fi\n')
                 s.write('shift 2;;\n')
@@ -99,7 +101,7 @@ class SubmitProd(SubmitBase):
             s.write('fi\n')
 
             outTag = 'version{}_model{}_{}'.format(self.p.version, self.p.model, self.bfield)
-            outTag += '_en{}_eta{}'.format(self.shellify_tag(self.en_tag),self.shellify_tag(self.eta_tag)) 
+            outTag += '_en{}_eta{}'.format(self.shellify_tag(self.en_tag),self.shellify_tag(self.etaint_tag)) 
             if self.p.phi != 0.5: outTag += '_phi{n:.{r}f}pi'.format(n=self.p.phi,r=3)
             outTag += '_run{}'.format(self.shellify_tag(self.run_tag))
             s.write('mv PFcal.root HGcal_{}.root\n'.format(outTag))
