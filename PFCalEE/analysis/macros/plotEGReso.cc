@@ -26,7 +26,7 @@
 #include "TDRStyle.h"
 #include "plotUtilities.C"
 #include "fitEnergy.C"
-#include "makeBackLeakCor.cc"
+#include "makeBackLeakCor.C"
 #include "makePuSigma.C"
 #include "makeCalibration.C"
 #include "makeResolution.C"
@@ -646,6 +646,7 @@ int plotEGReso(const InputParserPlotEGReso& ip) {
 int main(int argc, char** argv)
 {
   InputParserPlotEGReso ip(argc, argv);
+
   plotEGReso(ip);
   return 0;
 }
