@@ -1,3 +1,6 @@
+#ifndef MACROS_PLOTUTILITIES
+#define MACROS_PLOTUTILITIES
+
 #include<string>
 #include<iostream>
 #include<fstream>
@@ -122,3 +125,5 @@ void getTotalEnergyString(const unsigned nLayers,
   backE = lNameBack.str();
   
 };
+
+#endif //MACROS_PLOTUTILITIES

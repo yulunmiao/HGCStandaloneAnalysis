@@ -208,28 +208,34 @@ $(OBJDIR)/%.$(OBJ_EXT):  $(SRCDIR)/%.cc $(BASEDIR)/include/%.h*
 $(LIBDIR)/lib$(LIBNAME).so:  $(OBJS) $(LIBDEPENDS) 
 	$(LD) $(LDFLAGS) -o $(LIBDIR)/lib$(LIBNAME).so $(OBJS) $(LIBS)
 
-$(MACRODIR)/plots.o: $(MACRODIR)/plotEGReso_standalone.cc
+$(MACRODIR)/plotsBase.o: $(MACRODIR)/plotEGReso_standalone.cc
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
-$(MACRODIR)/plotsRatios.o: $(MACRODIR)/plotEGResoRatios_standalone.cc
+$(MACRODIR)/plotsVersionRatios.o: $(MACRODIR)/plotVersionRatios.cc
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
-$(MACRODIR)/plotsEtas.o: $(MACRODIR)/plotEGResoEtas_standalone.cc
+$(MACRODIR)/plotsResoRatios.o: $(MACRODIR)/plotResoRatios.cc
+	$(CXX) -c $(CXXFLAGS) $< -o $@
+
+$(MACRODIR)/plotsResoEtas.o: $(MACRODIR)/plotEGResoEtas_standalone.cc
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
 $(MACRODIR)/InputParserBase.o: $(SRCDIR)/InputParserBase.cc
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
-plotEGResoBase: $(MACRODIR)/plots.o  $(MACRODIR)/InputParserBase.o
+plotResoBase: $(MACRODIR)/plotsBase.o $(MACRODIR)/InputParserBase.o
 	$(CXX) -o $@ $(CXXFLAGS) $^ $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
 
-plotEGResoVersions: $(MACRODIR)/plotsRatios.o  $(MACRODIR)/InputParserBase.o
+plotVersionRatios: $(MACRODIR)/plotsVersionRatios.o  $(MACRODIR)/InputParserBase.o
 	$(CXX) -o $@ $(CXXFLAGS) $^ $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
 
-plotEGResoEtas: $(MACRODIR)/plotsEtas.o  $(MACRODIR)/InputParserBase.o
+plotResoRatios: $(MACRODIR)/plotsResoRatios.o  $(MACRODIR)/InputParserBase.o
 	$(CXX) -o $@ $(CXXFLAGS) $^ $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
 
-plotEGReso: plotEGResoBase plotEGResoVersions plotEGResoEtas
+plotResoEtas: $(MACRODIR)/plotsResoEtas.o  $(MACRODIR)/InputParserBase.o
+	$(CXX) -o $@ $(CXXFLAGS) $^ $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
+
+plotEGReso: plotEGResoBase plotVersionRatios plotResoRatios plotResoEtas
 
 lib: $(LIBDIR)/lib$(LIBNAME).so
 

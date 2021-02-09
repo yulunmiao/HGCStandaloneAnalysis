@@ -19,6 +19,7 @@
 #include "TString.h"
 #include "TLatex.h"
 #include "TGaxis.h"
+#include "TMath.h"
 
 int makeBackLeakCor(const unsigned nLayers,
 		    const unsigned nBack,
@@ -41,6 +42,40 @@ int makeBackLeakCor(const unsigned nLayers,
   mycE2D->cd();
   gPad->SetRightMargin(0.15);
   gPad->SetLogz();
+
+  std::ostringstream hName;
+  hName.str("");
+  hName << "energy" << pT << "_vsBackFraction";
+
+  const int enRegions = 4;
+  const int nxbins[enRegions] = {5,7,6,10};
+  const int nybins[enRegions] = {50,50,50,50};
+  double en0xbins[nxbins[0]+1] = {0.0001,0.003,0.005,0.007,0.02,0.05};
+  double en1xbins[nxbins[1]+1] = {0.0001,0.003,0.005,0.007,0.01,0.02,0.03,0.05};
+  double en2xbins[nxbins[2]+1] = {0.0001,0.004,0.007,0.01,0.015,0.03,0.08};
+  double en3xbins[nxbins[3]+1] = {0.0001,0.004,0.005,0.006,0.008,0.010,0.013,0.016,0.02,0.04,0.11};
+  double *xbins[enRegions];
+  xbins[0] = en0xbins;
+  xbins[1] = en1xbins;
+  xbins[2] = en2xbins;
+  xbins[3] = en3xbins;
+  const double minEnFrac[enRegions] = {0.85,0.90,0.93,0.95};
+  const double maxEnFrac[enRegions] = {1.2,1.1,1.08,1.04};
+
+  TH2F *p_ErecovsEback;
+  unsigned enIdx = 0;
+  if(pT > 101.) enIdx = 3;
+  else if(pT > 31.) enIdx = 2;
+  else if(pT > 11.) enIdx = 1;
+
+  p_ErecovsEback = new TH2F(hName.str().c_str(), "", nxbins[enIdx], xbins[enIdx], nybins[enIdx],
+			    minEnFrac[enIdx]*Eval, maxEnFrac[enIdx]*Eval);
+  
+  if (!p_ErecovsEback){
+    std::cout << " -- ERROR, pointer for histogram " << hName.str() << " is null." << std::endl;
+    return 1;
+  }
+
   std::ostringstream lName;
   std::string lNameTot,lNameBack;
   getTotalEnergyString(nLayers,nBack,lNameTot,lNameBack,iSR);
@@ -51,31 +86,29 @@ int makeBackLeakCor(const unsigned nLayers,
   lName << lNameTot;
   lName << " - " << offset << ")/" << calib;
   lName << ":(" << lNameBack << ")/(" << lNameTot << ")";
-
-  std::cout << lName.str().c_str() << std::endl;
-  std::exit(0);
+  lName << ">>"+hName.str();  
   ltree->Draw(lName.str().c_str(),"","colz");
 
-  lName.str("");
-  lName << "energy" << pT << "_vsBackFraction";
-
-  const int nxbins = 10, nybins=10;
-  double xbins[nxbins+1] = {0., .01, .02, .03, .04, .05, .06, .07, .08, .09, 0.1};
-  TH2F * p_ErecovsEback = new TH2F(lName.str().c_str(), "", nxbins, xbins, nybins, 0.7*offset, 1.3*offset);
-  //TH2F * p_ErecovsEback = (TH2F*)(gPad->GetPrimitive("htemp"))->Clone(lName.str().c_str()); // 2D
-  
-  if (!p_ErecovsEback){
-    std::cout << " -- ERROR, pointer for histogram " << lName.str() << " is null." << std::endl;
-    return 1;
-  }
+  std::cout << lName.str()  << std::endl;
 
   p_ErecovsEback->SetTitle(";E_{back}/E_{tot};E_{tot} (GeV)");
+  p_ErecovsEback->Draw("colz");
+
+  //normalize histogram by x bin width before the fit
+  for(int i(1); i<=nxbins[enIdx]; ++i) {
+    for(int j(1); j<=nybins[enIdx]; ++j) {
+      double cont = p_ErecovsEback->GetBinContent(i, j);
+      double width = p_ErecovsEback->GetXaxis()->GetBinWidth(i);
+      p_ErecovsEback->SetBinContent(i, j, cont/width);
+    }
+  }
+      
   lName << "_pfx";
   TProfile *tmpProf = p_ErecovsEback->ProfileX(lName.str().c_str());
   tmpProf->SetMarkerStyle(20);
   tmpProf->SetMarkerColor(1);
+  //tmpProf->SetMarkerSize(5);
   tmpProf->SetLineColor(1);
-  p_ErecovsEback->Draw("colz");
   tmpProf->Draw("PEsame");
   tmpProf->Fit("pol1","","same");
   
