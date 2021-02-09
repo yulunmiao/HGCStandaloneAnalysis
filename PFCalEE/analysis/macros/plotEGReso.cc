@@ -13,6 +13,7 @@
 #include "TProfile.h"
 #include "TLine.h"
 #include "TCanvas.h"
+#include "TPad.h"
 #include "TStyle.h"
 #include "TGraphErrors.h"
 #include "TLegend.h"
@@ -36,12 +37,12 @@ class InputParserPlotEGReso: public InputParserBase {
 public:
   explicit InputParserPlotEGReso(int argc, char** argv): InputParserBase(argc, argv) { run(); }
 
-  const std::string tag() const { return tag_; }
-  const std::vector<float> etas() const { return etas_; }
-  const std::vector<std::string> versions() const { return versions_; }
-  const std::vector<unsigned> thicknesses() const { return thicknesses_; }
-  const std::vector<unsigned> signalRegions() const { return signalRegions_; }
-  const unsigned nBack() const { return nBack_; }
+  std::string tag() const { return tag_; }
+  std::vector<float> etas() const { return etas_; }
+  std::vector<std::string> versions() const { return versions_; }
+  std::vector<unsigned> thicknesses() const { return thicknesses_; }
+  std::vector<unsigned> signalRegions() const { return signalRegions_; }
+  unsigned nBack() const { return nBack_; }
 
 private:
   std::string tag_;
@@ -116,7 +117,7 @@ int makeEfit(const bool useSigmaEff,
 
   double fitQual = iSR==0?50:30;
 
-
+  
   TH1F *p_chi2ndf;
   std::ostringstream label;
   label << "p_chi2ndf_E_" << pT << "_SR" << iSR;
@@ -277,7 +278,6 @@ int plotEGReso(const InputParserPlotEGReso& ip) {
   SetTdrStyle();
   
   const std::array<unsigned,1> ICvals = {3}; //0,1,2,3,4,5,10,15,20,50};
-  const unsigned nIC = ICvals.size();
 
   const bool useSigmaEff = true;
   const bool dovsE = true;
@@ -360,7 +360,6 @@ int plotEGReso(const InputParserPlotEGReso& ip) {
 	    sigmaStochErr[ipu] = 0;
 	    sigmaConstErr[ipu] = 0;
 	    sigmaNoiseErr[ipu] = 0;
-
 
 	    //loop over energies
 	    //check energy point is valid
@@ -633,6 +632,7 @@ int plotEGReso(const InputParserPlotEGReso& ip) {
 	}//loop on eta
 
       }//loop on scenario
+	 
     }//loop on version
   }//loop on intercalib
 
@@ -642,10 +642,11 @@ int plotEGReso(const InputParserPlotEGReso& ip) {
 };//main
 
 //compile with `g++ plotEGReso_standalone.cc $(root-config --glibs --cflags --libs) -o plotEGReso`
-//run with `./plotEGReso --thicknesses 1 200 --tag tag1 --nBack 2 --etas 3 1.7 2.0 2.4 --versions 1 60 --signalRegions 1 4` (example)
+//run with `./plotEGReso --thicknesses 1 200 --tag V08-08-00 --nBack 2 --etas 3 1.7 2.0 2.4 --versions 1 60 --signalRegions 1 4` (example)
 int main(int argc, char** argv)
 {
   InputParserPlotEGReso ip(argc, argv);
+
   plotEGReso(ip);
   return 0;
 }
