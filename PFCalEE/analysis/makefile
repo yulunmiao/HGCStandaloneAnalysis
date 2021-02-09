@@ -217,7 +217,7 @@ $(MACRODIR)/plotsVersionRatios.o: $(MACRODIR)/plotVersionRatios.cc
 $(MACRODIR)/plotsResoRatios.o: $(MACRODIR)/plotResoRatios.cc
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
-$(MACRODIR)/plotsResoEtas.o: $(MACRODIR)/plotEGResoEtas_standalone.cc
+$(MACRODIR)/plotsResoEtas.o: $(MACRODIR)/plotResoEtas.cc
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
 $(MACRODIR)/InputParserBase.o: $(SRCDIR)/InputParserBase.cc
