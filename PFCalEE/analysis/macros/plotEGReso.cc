@@ -335,11 +335,12 @@ int plotEGReso(const InputParserPlotEGReso& ip) {
 
     for (auto&& version: ip.versions()) {
       TString baseDir = "/afs/cern.ch/work/b/bfontana/PFCalEEAna/HGCalTDR/gitv" + version + "/";
+      //TString baseDir = "/afs/cern.ch/work/b/bfontana/PFCalEEAna/HGCalTDR/git" + ip.tag() + "/";
       const unsigned nLayers = version=="70" ? 26 : 28;
 
       for (auto&& scenario: scenarios) {
 
-	TString inputDir = baseDir+"version"+version+"/"+scenario+"/";
+	TString inputDir = baseDir+"version"+version+"/"+scenario;
 
 	for (auto&& eta: ip.etas()) {
 	  unsigned etax10 = static_cast<unsigned>(eta*10.);
@@ -360,7 +361,7 @@ int plotEGReso(const InputParserPlotEGReso& ip) {
 	    sigmaStochErr[ipu] = 0;
 	    sigmaConstErr[ipu] = 0;
 	    sigmaNoiseErr[ipu] = 0;
-
+	    
 	    //loop over energies
 	    //check energy point is valid
 	    bool skip[nGenEnAll];
@@ -374,9 +375,13 @@ int plotEGReso(const InputParserPlotEGReso& ip) {
 	    for (unsigned iE(0); iE<nGenEnAll; ++iE){
 	      std::ostringstream linputStr;
 	      linputStr << inputDir ;
+      
 	      linputStr << "eta" << etax10 << "_et" << genEnAll[iE];// << "_pu" << pu[ipu];
 	      if (pu[ipu]>0) linputStr << "_Pu" << pu[ipu];
 	      linputStr << "_IC" << icval;// << "_Si2";
+	      /*
+	      linputStr << "ana_npuvtx" << pu[ipu] << "_ic" << icval << "_en" << genEnAll[iE] << "_eta" << etax10;
+	      */
 	      linputStr << ".root";
 	      inputFile[iE] = TFile::Open(linputStr.str().c_str());
 	      if (!inputFile[iE]) {
@@ -613,6 +618,7 @@ int plotEGReso(const InputParserPlotEGReso& ip) {
 
 		makeResolution(dovsE,doRaw,doBackLeakCor,
 			       etax10,pu[ipu],iSR,radius[iSR],
+			       version,
 			       resoRecoFit,
 			       sigmaStoch[0],
 			       sigmaConst[0],

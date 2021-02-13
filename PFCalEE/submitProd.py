@@ -9,8 +9,6 @@ from utils import create_dir, SubmitBase
 git_tag=os.popen('git describe --tags --abbrev=0').read()
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument('-s', '--short-queue' , dest='squeue'     , help='short batch queue', default='tomorrow')
-parser.add_argument('-q', '--long-queue'  , dest='lqueue'     , help='long batch queue', default='nextweek')
 parser.add_argument('-t', '--git-tag'     , dest='gittag'     , help='git tag version', default=git_tag)
 parser.add_argument(      '--nRuns'       , dest='nRuns'      , type=int,   help='number of run, 0-indexed', default=-1)
 parser.add_argument('-v', '--version'     , dest='version'    , type=int,   help='detector version', default=3)
@@ -89,7 +87,6 @@ class SubmitProd(SubmitBase):
             s.write('cd $localdir\n')
             if len(self.p.datafileeos)>0:
                 s.write('eos cp {} {}\n'.format( os.path.join(self.p.datafileeos,self.p.datafile),self.p.datafile))
-            s.write('cp {}/{} .\n'.format(self.outDir, self.mac_name))
 
             cmd = ( 'PFCalEE {} --model {} --version {} --eta {} --shape {}'
                     .format(self.mac_name, self.p.model, self.p.version,
@@ -199,7 +196,7 @@ class SubmitProd(SubmitBase):
             s.write('Error = {}/{}\n'.format(self.outDir,err_name))
             s.write('Log = {}/{}\n'.format(self.outDir,log_name))
             s.write('RequestMemory = 250MB\n')
-            s.write('+JobFlavour = "tomorrow"\n')
+            s.write('+JobFlavour = "testmatch"\n')
             s.write('Queue {nruns} {entag}, {etatag}, {gtag} from (\n'.format( nruns=self.p.nRuns, entag=self.clean_tag(self.en_tag),
                                                                                etatag=self.clean_tag(self.eta_tag),
                                                                                gtag=self.clean_tag(self.gran_tag)))

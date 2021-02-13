@@ -119,7 +119,7 @@ int makeBackLeakCor(const unsigned nLayers,
     std::cout << " Fit failed for back leakage correction" << std::endl;
     mycE2D->Update();
     backLeakCor = 0;
-    if (Eval < 50) {
+    if (Eval < 1000) {
       //for low energies: ignore the fit and return success....
       return 0;
     }
