@@ -162,8 +162,8 @@ class SubmitDigi(SubmitBase):
                 s.write('Output = {}/{}\n'.format(self.outDir,out_name))
                 s.write('Error = {}/{}\n'.format(self.outDir,err_name))
                 s.write('Log = {}/{}\n'.format(self.outDir,log_name))
-                s.write('RequestMemory = 30MB\n')
-                s.write('+JobFlavour = "microcentury"\n')
+                s.write('RequestMemory = 150MB\n')
+                s.write('+JobFlavour = "longlunch"\n')
                 s.write('Queue {nruns} {n}, {ic}, {en}, {eta} from (\n'.format( nruns=self.p.nRuns, n=self.clean_tag(self.vtx_tag), ic=self.clean_tag(self.ic_tag), en=self.clean_tag(self.en_tag), eta=self.clean_tag(self.eta_tag) ))
                                 
                 for nvid in self.p.nPuVtxList:

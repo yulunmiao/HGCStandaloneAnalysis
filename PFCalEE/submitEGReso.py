@@ -151,8 +151,8 @@ class SubmitAnalysis(SubmitBase):
             s.write('Output = {}/{}\n'.format(self.outDir,out_name))
             s.write('Error  = {}/{}\n'.format(self.outDir,err_name))
             s.write('Log    = {}/log.log\n'.format(self.outDir))
-            s.write('RequestMemory = 10MB\n')
-            s.write('+JobFlavour = "espresso"\n')
+            s.write('RequestMemory = 100MB\n')
+            s.write('+JobFlavour = "microcentury"\n')
             s.write('Queue 1 {nruns}, {n}, {ic}, {en}, {eta} from (\n'.format(nruns=self.clean_tag(self.nruns_tag), n=self.clean_tag(self.vtx_tag), ic=self.clean_tag(self.ic_tag), en=self.clean_tag(self.en_tag), eta=self.clean_tag(self.eta_tag) ))
 
             for nvid in self.p.nPuVtxList:
