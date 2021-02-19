@@ -117,6 +117,9 @@ unsigned fitEnergy(TH1F *hist,
   lres.mean = fitResult->GetParameter(1);
   lres.meanerr = fitResult->GetParError(1);
   lres.sigma = useSigmaEff ? sigmaeff : fitResult->GetParameter(2);
+  std::cout << "!!!!!!!!! " << std::endl;
+  std::cout << "SIGMA: " << sigmaeff << ", " << fitResult->GetParameter(2) << std::endl;
+  std::cout << "!!!!!!!!! " << std::endl;
   lres.sigmaerr = useSigmaEff ? hist->GetRMSError() : fitResult->GetParError(2);
 
   return 0;

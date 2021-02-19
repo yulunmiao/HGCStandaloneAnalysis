@@ -43,6 +43,7 @@ public:
   std::vector<unsigned> thicknesses() const { return thicknesses_; }
   std::vector<unsigned> signalRegions() const { return signalRegions_; }
   unsigned nBack() const { return nBack_; }
+  bool useSigmaEff() const { return useSigmaEff_; }
 
 private:
   std::string tag_;
@@ -51,11 +52,13 @@ private:
   std::vector<unsigned> signalRegions_;
   std::vector<std::string> versions_;
   unsigned nBack_;
+  bool useSigmaEff_;
 
   void set_args_final_()
   {
     tag_ = chosen_args_["--tag"];
     nBack_ = static_cast<unsigned>( std::stoi(chosen_args_["--nBack"]) );
+    useSigmaEff_ = chosen_args_["--useSigmaEff"]=="true" ? true : false;
     for(auto&& x: chosen_args_v_["--etas"])
       etas_.push_back( std::stof(x) );
     for(auto&& x: chosen_args_v_["--thicknesses"])
@@ -69,6 +72,7 @@ private:
   {
     required_args_ = { "--nBack", "--thicknesses", "--signalRegions",
 		       "--versions", "--tag", "--etas" };
+    optional_args_ = {"--useSigmaEff"};
 
     valid_args_["--nBack"] = {"0", "1", "2", "3", "4"};
     valid_args_v_["--thicknesses"] = {"100", "200", "300"};
@@ -76,7 +80,6 @@ private:
     valid_args_v_["--versions"] = {"60", "70"};
     free_args_ = {"--tag"};
     free_args_v_ = {"--etas"};
-    optional_args_ = {""};
   }
 };
 
@@ -200,6 +203,7 @@ int makeEfit(const bool useSigmaEff,
   if (p_Ereco->GetEntries()<nEvtMin) {
     gPad->Clear();
     return 1;
+    
   }
   
   
@@ -274,12 +278,11 @@ int makeEfit(const bool useSigmaEff,
 };//makeEfit
 
 int plotEGReso(const InputParserPlotEGReso& ip) {
-
+ 
   SetTdrStyle();
   
   const std::array<unsigned,1> ICvals = {3}; //0,1,2,3,4,5,10,15,20,50};
 
-  const bool useSigmaEff = true;
   const bool dovsE = true;
   const bool doBackLeakCor = true;
   const bool redoCalib = true;
@@ -584,7 +587,7 @@ int plotEGReso(const InputParserPlotEGReso& ip) {
 
 		  }
 		  
-		  int success = makeEfit(useSigmaEff, dovsE, doRaw,
+		  int success = makeEfit(ip.useSigmaEff(), dovsE, doRaw,
 					 doBackLeakCor, ip.nBack(),
 					 pu[ipu], icval,
 					 scenario, version, nLayers,

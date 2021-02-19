@@ -40,6 +40,7 @@ class SubmitProd(SubmitBase):
         
         #variables
         self.condor_submit_name = 'condorSubmitProd.sub'
+        self.mac_var = '$(MACFILE)'
         self.mac_name = self._unique_name( (('prefix', 'g4steer'),
                                            ('en', self.shellify_tag(self.en_tag)),
                                            ('eta', self.shellify_tag(self.etaint_tag)),
@@ -81,6 +82,8 @@ class SubmitProd(SubmitBase):
             s.write('done\n\n')
             
             s.write('localdir=`pwd`\n')
+            s.write('echo "Job local dir: ${localdir}"\n')
+            s.write('{}="{}/{}"\n'.format(self.clean_tag(self.mac_var),self.outDir,self.mac_name))
             s.write('export HOME={}\n'.format(os.environ['HOME']))
             s.write('cd {}/\n'.format(os.getcwd()))
             s.write('source g4env.sh\n')
@@ -88,9 +91,8 @@ class SubmitProd(SubmitBase):
             if len(self.p.datafileeos)>0:
                 s.write('eos cp {} {}\n'.format( os.path.join(self.p.datafileeos,self.p.datafile),self.p.datafile))
 
-            cmd = ( 'PFCalEE {} --model {} --version {} --eta {} --shape {}'
-                    .format(self.mac_name, self.p.model, self.p.version,
-                            self.shellify_tag(self.eta_tag), self.p.shape) )
+            cmd = ( 'PFCalEE "{}" --model {} --version {} --eta {} --shape {}'
+                    .format(self.shellify_tag(self.mac_var), self.p.model, self.p.version, self.shellify_tag(self.eta_tag), self.p.shape) )
             s.write('if [ "${GRAN}" -eq 0 ]; then\n')
             s.write(cmd + ' --fineGranularity\n')
             s.write('else\n')

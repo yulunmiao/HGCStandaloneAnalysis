@@ -53,7 +53,6 @@ MACRODIR= $(BASEDIR)/macros
 INCLDIR= $(BASEDIR)/include
 OBJ_EXT=o
 TEST_EXT=cpp
-MACROSRC_EXT=cc
 
 # Build a list of srcs and bins to build
 SRCS=$(wildcard $(BASEDIR)/src/*.cc)
@@ -93,7 +92,7 @@ BINS=$(EXEDIR)/egammaResoWithTruth #$(EXEDIR)/mipEperLayer
 SUBDIRS = ../userlib
 
 .PHONY: $(SUBDIRS) all
-all: $(SUBDIRS) lib $(BINS)
+all: $(SUBDIRS) lib $(BINS) $(MACRODIR)
 
 docs: all
 	doxygen Doxyfile
@@ -220,9 +219,12 @@ $(MACRODIR)/plotsResoRatios.o: $(MACRODIR)/plotResoRatios.cc
 $(MACRODIR)/plotsResoEtas.o: $(MACRODIR)/plotResoEtas.cc
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
+$(MACRODIR)/plotsRatiosTagSummary.o: $(MACRODIR)/plotRatiosTagSummary.cc
+	$(CXX) -c $(CXXFLAGS) $< -o $@
+
 $(MACRODIR)/InputParserBase.o: $(SRCDIR)/InputParserBase.cc
 	$(CXX) -c $(CXXFLAGS) $< -o $@
- 	
+
 plotResoBase: $(MACRODIR)/plotsBase.o $(MACRODIR)/InputParserBase.o
 	$(CXX) -o $@ $(CXXFLAGS) $^ $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
 
@@ -235,7 +237,10 @@ plotResoRatios: $(MACRODIR)/plotsResoRatios.o  $(MACRODIR)/InputParserBase.o
 plotResoEtas: $(MACRODIR)/plotsResoEtas.o  $(MACRODIR)/InputParserBase.o
 	$(CXX) -o $@ $(CXXFLAGS) $^ $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
 
-plotEGReso: plotResoBase plotVersionRatios plotResoRatios plotResoEtas
+plotRatiosTagSummary: $(MACRODIR)/plotsRatiosTagSummary.o  $(MACRODIR)/InputParserBase.o
+	$(CXX) -o $@ $(CXXFLAGS) $^ $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
+
+$(MACRODIR): plotResoBase plotVersionRatios plotResoRatios plotResoEtas plotRatiosTagSummary
 
 lib: $(LIBDIR)/lib$(LIBNAME).so
 

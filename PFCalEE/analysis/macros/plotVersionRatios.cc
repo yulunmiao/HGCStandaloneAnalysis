@@ -64,15 +64,18 @@ int plotVersionRatios(const InputParserPlotEGResoRatios& ip) {
   radius_map[4] = 26.0;
 
   TGraphErrors *resoV[etas_s*versions_s];
+  std::string dirInBase1 = "/eos/user/b/bfontana/www/RemoveLayers/";
+  std::string dirInBase2 = dirInBase1 + ip.tag() + "/";
 
-  std::string dirInBase = "/eos/user/b/bfontana/www/RemoveLayers/" + ip.tag() + "/";
+  std::string fname = dirInBase1 + "fOutReso.root";
+  TFile *foutReso = TFile::Open(fname.c_str(),"UPDATE");
 
   for(unsigned ieta(0); ieta<etas_s; ++ieta) {
     
     for(unsigned iversion(0); iversion<versions_s; ++iversion) {
       const unsigned idx = iversion + ieta*versions_s;
 
-      std::string dirIn = ( dirInBase + "version" + versions[iversion] + "/model2/gamma/SR4/");
+      std::string dirIn = ( dirInBase2 + "version" + versions[iversion] + "/model2/gamma/SR4/");
       std::string fileIn = ( dirIn + "IC3_pu0_SR4_Eta" + std::to_string(static_cast<int>(etas[ieta]*10.f))
 			     + "_vsE_backLeakCor_raw.root" );
 
@@ -154,8 +157,8 @@ int plotVersionRatios(const InputParserPlotEGResoRatios& ip) {
       p1->Draw();
       p1->cd();
 
-      std::string hname = "h" + std::to_string(static_cast<int>(etas[ieta]*10.));
-      std::string htitle = "hReso" + std::to_string(static_cast<int>(etas[ieta]*10.));
+      std::string hname = "h" + std::to_string(static_cast<int>(etas[ieta]*10.)) + "_" + ip.tag();
+      std::string htitle = "hReso" + std::to_string(static_cast<int>(etas[ieta]*10.)) + "_" + ip.tag();;
       TH1F *h1 = new TH1F(hname.c_str(), htitle.c_str(), x1v.size(), xbins);
       TH1F *h2 = new TH1F(hname.c_str(), htitle.c_str(), x1v.size(), xbins);
       for(unsigned q(0); q<x1v.size(); ++q) {
@@ -206,9 +209,9 @@ int plotVersionRatios(const InputParserPlotEGResoRatios& ip) {
       p2->SetTopMargin(0.0);
       p2->Draw();
       p2->cd();
-      
-      std::string hdivname = "hdiv" + std::to_string(static_cast<int>(etas[ieta]*10.));
-      std::string hdivtitle = "hResodiv" + std::to_string(static_cast<int>(etas[ieta]*10.));
+
+      std::string hdivname = "hdiv" + std::to_string(static_cast<int>(etas[ieta]*10.)) + "_" + ip.tag();
+      std::string hdivtitle = "hResodiv" + std::to_string(static_cast<int>(etas[ieta]*10.)) + "_" + ip.tag();
       TH1F *div = new TH1F(hdivname.c_str(), hdivtitle.c_str(), x1v.size(), xbins);
       div->Sumw2();
       div->Divide(h1,h2,1.,1.,"b");
@@ -229,7 +232,11 @@ int plotVersionRatios(const InputParserPlotEGResoRatios& ip) {
       line2->SetLineStyle(5);
       line2->Draw("same");
 
-      c->SaveAs((dirInBase + title + ".png").c_str());
+      foutReso->cd();
+      div->Write();
+      foutReso->Write();
+      
+      c->SaveAs((dirInBase2 + title + ".png").c_str());
     }
 
   return 0;
@@ -247,5 +254,6 @@ int main(int argc, char** argv)
     plotVersionRatios(ip);
   else
     std::cout << "Please specify the two versions." << std::endl;
+      
   return 0;
 }
