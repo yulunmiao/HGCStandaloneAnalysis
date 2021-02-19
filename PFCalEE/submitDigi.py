@@ -235,6 +235,7 @@ vdict = {8:   dict(puFile='root://eoscms//eos/cms/store/cmst3/group/hgcal/Standa
                    granularity='0-27:1', threshold='0-27:5', noise=get_noise(nmult,lab)),
          70:  dict(puFile=pudflt, granularity='0-25:1', threshold='0-25:5', noise=get_noise(n70,lab)),
          73:  dict(puFile=pudflt, granularity='0-61:1', threshold='0-61:5', noise=get_noise(n70,lab)),
+         83:  dict(puFile=pudflt, granularity='0-61:1', threshold='0-61:5', noise=get_noise(n70,lab)),
          100: dict(puFile=pudflt, granularity='0-27:4', noise='0-27:0.14', threshold='0-27:5'),
          110: dict(puFile=pudflt, granularity='0-27:4', noise='0-27:0.14', threshold='0-27:5'),
 }
