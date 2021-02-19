@@ -229,8 +229,10 @@ int plotEGReso(){//main
 
   SetTdrStyle();
   
-  TString baseDir = "/afs/cern.ch/work/b/bfontana/PFCalEEAna/HGCalTDR/gitv60/";
-  TString saveDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalTDR/gitV08-07-01/";
+  //TString baseDir = "/afs/cern.ch/work/b/bfontana/PFCalEEAna/HGCalTDR/gitv60/";
+  //TString saveDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalTDR/gitV08-07-01/";
+  TString baseDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalTDR/gitV08-08-00/";
+  TString saveDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalTDR/gitV08-08-00/";
   //TString baseDir = "../v60/";
   //TString saveDir = "PlotsEreso/";
 
@@ -239,9 +241,9 @@ int plotEGReso(){//main
 
   const bool useSigmaEff = true;
   const bool dovsE = true;
-  const bool doBackLeakCor = true;
+  const bool doBackLeakCor = false;
   const bool redoCalib = true;
-  const bool redoLeakCor = true;
+  const bool redoLeakCor = false;
   const unsigned nBack = 2;
 
   const unsigned nPu = 1;//4;
@@ -252,16 +254,16 @@ int plotEGReso(){//main
     //"model2/gamma/",
     "model2/gamma/200u/"
   };
-  const unsigned nV = 1;
-  TString version[nV] = {"60"};
+  const unsigned nV = 2;
+  TString version[nV] = {"60","68"};
 
   const unsigned neta = 1;
-  unsigned eta[neta]={17};
+  unsigned eta[neta]={20};
   //const unsigned neta = 7;
   //unsigned eta[neta]={17,19,21,23,25,27,29};
 
   //unsigned genEnAll[]={3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200};
-  unsigned genEnAll[]={5,10,20,30,40,60,80,100,150,200};
+  unsigned genEnAll[]={5,10,15,20};//,30,40,60,80,100,150,200};
   //unsigned genEnAll[]={5,20,60};
   //unsigned genEnAll[]={7,10,20,30,40};
   const unsigned nGenEnAll=sizeof(genEnAll)/sizeof(unsigned);

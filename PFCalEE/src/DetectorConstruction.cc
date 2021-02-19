@@ -1638,6 +1638,7 @@ void DetectorConstruction::DefineMaterials()
   G4cout << m_materials["Scintillator"] << G4endl;
   G4cout << m_materials["Si"] << G4endl;
   G4cout << m_materials["Pb"] << G4endl;
+  G4cout << m_materials["W"] << G4endl;
   G4cout << m_materials["WCu"] << G4endl;
   G4cout << m_materials["Cu"] << G4endl;
   G4cout << m_materials["SSteel"] << G4endl;
