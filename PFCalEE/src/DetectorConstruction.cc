@@ -38,7 +38,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 					   std::string absThickW,
 					   std::string absThickPb,
 					   std::string dropLayer,
-                                           bool coarseGranularity) :
+                                           int coarseGranularity) :
   version_(ver), model_(mod), shape_(shape), addPrePCB_(false), m_coarseGranularity(coarseGranularity)
 {
   doHF_ = false;
@@ -1679,7 +1679,7 @@ void DetectorConstruction::UpdateCalorSize(){
   }
   else if (model_ == DetectorConstruction::m_2016TB ){
     m_nSectors    = 1;
-    m_sectorWidth = (m_coarseGranularity ? CELL_SIZE_X : FINE_CELL_SIZE_X) * 2 *11;
+    m_sectorWidth = (m_coarseGranularity>0 ? CELL_SIZE_X : m_coarseGranularity<0 ? ULTRAFINE_CELL_SIZE_X : FINE_CELL_SIZE_X) * 2 *11;
     m_interSectorWidth = 0;
     m_CalorSizeXY = m_sectorWidth*m_nSectors;
     m_minRadius   = m_CalorSizeXY/(2*sqrt(3)); // center-to-side radius of hexagon

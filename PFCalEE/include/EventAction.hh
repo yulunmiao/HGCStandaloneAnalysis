@@ -65,7 +65,7 @@ private:
   EventActionMessenger*  eventMessenger;
   //std::ofstream fout_;
   unsigned shape_;
-  bool coarseGranularity_;
+  int coarseGranularity_;
   unsigned firstCoarseScintlayer_;
 
 };
