@@ -501,6 +501,7 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
       Esum += lhitvec[iL][iH].E;
       p_EsumfracvsdR[iL]->Fill(lhitvec[iL][iH].dR,Esum/E100_[iL]);
       p_EvsdR[iL]->Fill(lhitvec[iL][iH].dR,lhitvec[iL][iH].E);
+      p_dR[iL]->Fill(lhitvec[iL][iH].dR,lhitvec[iL][iH].E);
       if (Esum<0.68*E100_[iL]) {
 	dR68_[iL] = lhitvec[iL][iH].dR;
 	E68_[iL] = Esum;
@@ -651,6 +652,7 @@ void SignalRegion::initialiseHistograms(){
 
     p_EsumfracvsdR.resize(nLayers_,0);
     p_EvsdR.resize(nLayers_,0);
+    p_dR.resize(nLayers_,0);
     for (unsigned iL(0); iL<nLayers_;++iL){
       label.str("");
       label << "EsumfracvsdR_" << iL;
@@ -660,6 +662,10 @@ void SignalRegion::initialiseHistograms(){
       label << "EvsdR_" << iL;
       p_EvsdR[iL] = new TH2F(("p_"+label.str()).c_str(),";dR (mm);Ehit (mips);events", 2000,0,200,5000,0,5000);
       p_EvsdR[iL]->StatOverflows();   
+      label.str("");
+      label << "dR_" << iL;
+      p_dR[iL] = new TH1F(("p_"+label.str()).c_str(),";dR (mm);E-weighted events", 2000,0,200);
+      p_dR[iL]->StatOverflows();   
     }
 
 
