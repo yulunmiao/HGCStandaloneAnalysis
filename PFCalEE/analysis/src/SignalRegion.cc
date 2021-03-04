@@ -292,9 +292,16 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
       //absweight_[iL] = 10.0166;
       absweight_[iL]=iL<(nLayers_-2) ? (ssvec[iL].voldEdx()+ssvec[iL+1].voldEdx())/2. : absweight_[nLayers_-3];
       std::cout << " - Layer " << iL << " wdEdx=" << ssvec[iL].voldEdx()  << " Wx0=" << ssvec[iL].volX0trans() << " W valeri scheme " << absweight_[iL] << std::endl;
+      //if (fabs(zPos_[iL]-ssvec[iL].sensitiveZ()) > 0.5){
+      //std::cout << " -- error with zPos: not aligned with value in tree." << std::endl;
+	//zPos_[iL]=ssvec[iL].sensitiveZ();
+      //}
     }
     //absweight_[0] = 20.3628;
     //absweight_[nLayers_-1] = 13.0629;
+    for(unsigned iL(0); iL<nLayers_; iL++){
+      std::cout << zPos_[iL] << " " << ssvec[iL].sensitiveZ() << std::endl;
+    }
     
     firstEvent_=false;
   }
