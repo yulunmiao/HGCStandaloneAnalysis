@@ -141,8 +141,8 @@ int main(int argc, char** argv){//main
 	    << " -- Output file path: " << outPath << std::endl
 	    << " -- Output folder: " << outFolder << std::endl
 	    << " -- Requiring " << nSiLayers << " si layers." << std::endl
-	    << " -- Number cells in signal region for fit: " << nSR << " cells" << std::endl
-	    << " -- Residual max considered for filling matrix and fitting: " << residualMax << " mm" << std::endl
+    //<< " -- Number cells in signal region for fit: " << nSR << " cells" << std::endl
+    //	    << " -- Residual max considered for filling matrix and fitting: " << residualMax << " mm" << std::endl
 	    << " -- Apply PUMix fix? " << applyPuMixFix << std::endl
 	    << " -- Processing ";
   if (pNevts == 0) std::cout << "all events." << std::endl;
@@ -249,6 +249,7 @@ int main(int argc, char** argv){//main
 	    << ", version number = " << versionNumber 
 	    << ", model = " << model
 	    << ", cellSize = " << cellSize
+	    << ", doHexa = " << doHexa
 	    << std::endl;
 
 
@@ -266,6 +267,7 @@ int main(int argc, char** argv){//main
 	    << " -- N ECAL layers = " << nEcalLayers << std::endl
 	    << " -- N sections = " << nSections << std::endl;
 
+  //bypassR,nSiLayers
   HGCSSGeometryConversion geomConv(model,cellSize,false,3);
   //set granularity to get cellsize for PU subtraction
   std::vector<unsigned> granularity;
@@ -280,8 +282,8 @@ int main(int argc, char** argv){//main
   else if (shape==1) geomConv.initialiseHoneyComb(calorSizeXY,cellSize);
   else if (shape==4) geomConv.initialiseSquareMap(calorSizeXY,10.);
   //square map for BHCAL
-  geomConv.initialiseSquareMap1(1.3,3.0,-1.*TMath::Pi(),TMath::Pi(),2./360.);//eta phi segmentation
-  geomConv.initialiseSquareMap2(1.3,3.0,-1.*TMath::Pi(),TMath::Pi(),2./288.);//eta phi segmentation
+  //geomConv.initialiseSquareMap1(1.3,3.0,-1.*TMath::Pi(),TMath::Pi(),2./360.);//eta phi segmentation
+  //geomConv.initialiseSquareMap2(1.3,3.0,-1.*TMath::Pi(),TMath::Pi(),2./288.);//eta phi segmentation
   if (doPaul) geomConv.initialiseSquareMap(calorSizeXY,cellSize>5?83.:62);
 
   geomConv.initialiseHistos();
@@ -334,6 +336,7 @@ int main(int argc, char** argv){//main
   zpos.resize(myDetector.nLayers(),0);
   for (unsigned iL(0); iL<myDetector.nLayers(); ++iL){//loop on layers
     zpos[iL] = myDetector.sensitiveZ(iL);
+    std::cout << "zpos[" << iL << "] = " << zpos[iL] << ";" << std::endl;
   }
 
 
@@ -371,7 +374,7 @@ int main(int argc, char** argv){//main
     lRecTree->GetEntry(ievtRec);
     //std::cout << " Getting entries " << ievt << " " << ievtRec;
     if (nPuVtx>0 && eventRec->eventNumber()==0 && event->eventNumber()!=0) {
-      std::cout << " skip !" << ievt << " " << ievtRec << std::endl;
+      if (debug) std::cout << " skip !" << ievt << " " << ievtRec << std::endl;
       nSkipped++;
       continue;
     }
