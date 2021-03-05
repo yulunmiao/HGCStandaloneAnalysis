@@ -123,7 +123,7 @@ public:
   inline void nSiHits(const unsigned & aVal){
     nSiHits_ = aVal;
   };
-  inline void sensitiveZ(const unsigned & aVal){
+  inline void sensitiveZ(const double & aVal){
     sensitiveZ_ = aVal;
   };
 

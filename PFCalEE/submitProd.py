@@ -96,6 +96,8 @@ class SubmitProd(SubmitBase):
                             self.shellify_tag(self.eta_tag), self.p.shape) )
             s.write('if [ "${GRAN}" -eq 0 ]; then\n')
             s.write(cmd + ' --fineGranularity\n')
+            s.write('elif [ "${GRAN}" -eq -1 ]; then\n')
+            s.write(cmd + ' --ultraFineGranularity\n')
             s.write('else\n')
             s.write(cmd + '\n')
             s.write('fi\n')
@@ -206,6 +208,7 @@ class SubmitProd(SubmitBase):
             for et in self.p.enList:
                 for eta in self.p.etas:
                     gran = 1 if eta < 2.4 else 0
+                    if (opt.model==3): gran = -1
                     s.write('{}, {}, {}\n'.format(et,str(eta),gran))
             s.write(')')
 
