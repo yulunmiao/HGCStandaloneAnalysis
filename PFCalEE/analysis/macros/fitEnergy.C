@@ -54,41 +54,34 @@ unsigned fitEnergy(TH1F *hist,
       }
     }
     }*/
-  fitResult->SetParameters(hist->Integral(),
-			   tmpmean,
-			   hist->GetRMS());
+  fitResult->SetParameters(hist->Integral()/10., tmpmean, hist->GetRMS());
+  std::cout << "HIST Integral: "  << hist->Integral() << std::endl;
+  std::cout << " Initial params: "  << fitResult->GetParameter(0) << " "<< fitResult->GetParameter(1) << " " << fitResult->GetParameter(2)
+	    << std::endl;
 
-  //std::cout << " Initial params: "  << fitResult->GetParameter(0) << " "<< fitResult->GetParameter(1) << " " << fitResult->GetParameter(2)
-  //<< std::endl;
-
-
-  int status = hist->Fit("fitResult","L0QEMI","",
+  int status = hist->Fit("fitResult","BL0QEMI","",
 			 fitResult->GetParameter(1)-nRMSm*fitResult->GetParameter(2),
 			 fitResult->GetParameter(1)+nRMSp*fitResult->GetParameter(2));
   
   
-  //std::cout << " First fit: " << status << " " << fitResult->GetParameter(1) << " " << fitResult->GetParameter(2)
-  //<< std::endl;
+  std::cout << " First fit: " << status << " " << fitResult->GetParameter(0) << " " << fitResult->GetParameter(1) << " " << fitResult->GetParameter(2)
+	    << std::endl;
   
   if ((status != 0 && status != 4000) || fitResult->GetChisquare()/fitResult->GetNDF()>20){
     std::cout << " -- Bad fit ! Try again..." << std::endl;
-    status = hist->Fit("fitResult","L0QEMI","",
+    status = hist->Fit("fitResult","BL0QEMI","",
    		       fitResult->GetParameter(1)-1*fitResult->GetParameter(2),
 		       fitResult->GetParameter(1)+2*fitResult->GetParameter(2));
-    
-    //   std::cout << " Second fit: " << status << " " << fitResult->GetParameter(1) << " " << fitResult->GetParameter(2)
-    // 	      << std::endl;
+    std::cout << " Second fit: " << status << " " << fitResult->GetParameter(0) << " " << fitResult->GetParameter(1) << " " << fitResult->GetParameter(2)
+	    << std::endl;
+
   }
-  
-  // std::cout << " Final fit: " << fitResult->GetParameter(1) << " " << fitResult->GetParameter(2)
-  // 	    << std::endl;
-  
   fitResult->SetLineColor(2);
   fitResult->Draw("same");
   
   if (status != 0 && status != 4000) {
     std::cout << " Warning! Fit failed with status " << status << "! Please have a look at the verbose output below...." << std::endl;
-    hist->Fit("fitResult","L0EMI","",
+    hist->Fit("fitResult","BL0EMI","",
 	      fitResult->GetParameter(1)-nRMSm*fitResult->GetParameter(2),
 	      fitResult->GetParameter(1)+nRMSp*fitResult->GetParameter(2));
     //totalE for pu140 is expected to be pathological :/

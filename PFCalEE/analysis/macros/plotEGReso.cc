@@ -77,7 +77,7 @@ private:
     valid_args_["--nBack"] = {"0", "1", "2", "3", "4"};
     valid_args_v_["--thicknesses"] = {"100", "200", "300"};
     valid_args_v_["--signalRegions"] = {"0", "1", "2", "3", "4", "5"};
-    valid_args_v_["--versions"] = {"60", "70"};
+    valid_args_v_["--versions"] = {"60", "70", "80"};
     free_args_ = {"--tag"};
     free_args_v_ = {"--etas"};
   }
@@ -159,25 +159,28 @@ int makeEfit(const bool useSigmaEff,
     lName << " - " << backLeakCor << "*(" << lNameBack << ")/(" << lNameTot << ")";
   }
   
-  //cut low outliers....
-  std::ostringstream lcut;
-  if (iSR>0 && !doRaw){
-    lcut << lName.str() << ">0.7*" << Eval;
-  }
+  //low energy cut
+  std::ostringstream ecut;
+  ecut << lName.str() << ">0.01";
   
-  ltree->Draw(lName.str().c_str(),lcut.str().c_str(),"");
+  //cut low outliers....
+  if (iSR>0 && !doRaw){
+    ecut << " && " << lName.str() << ">0.7*" << Eval;
+  }
+
+  ltree->Draw(lName.str().c_str(),ecut.str().c_str(),"");
   TH1F  *hTmp =  (TH1F*)gPad->GetPrimitive("htemp");
   if (!hTmp) {
     std::cout << " -- Problem with tree Draw for "
-	      <<  lName.str() << " cut " << lcut.str()
+	      <<  lName.str() << " cut " << ecut.str()
 	      << " -> not drawn. Exiting..." << std::endl;
     return 1;
   }
-
+  
   //get mean and rms, and choose binning accordingly then redraw.
-  TH1F *hE = new TH1F("hE","",40,hTmp->GetMean()-6*hTmp->GetRMS(),hTmp->GetMean()+6*hTmp->GetRMS());
-
-  ltree->Draw((lName.str()+">>hE").c_str(),lcut.str().c_str(),"");
+  unsigned nrms = 5;
+  TH1F *hE = new TH1F("hE","",50,hTmp->GetMean()-nrms*hTmp->GetRMS(),hTmp->GetMean()+nrms*hTmp->GetRMS());
+  ltree->Draw((lName.str()+">>hE").c_str(),ecut.str().c_str(),"");
 
   lName.str("");
   lName << "energy" << pT << "_SR" << iSR ;
@@ -189,7 +192,8 @@ int makeEfit(const bool useSigmaEff,
   }
   std::cout << " --- Reco E = entries " << p_Ereco->GetEntries() 
 	    << " mean " << p_Ereco->GetMean() 
-	    << " rms " << p_Ereco->GetRMS() 
+	    << " rms " << p_Ereco->GetRMS()
+    	    << " nbinsx " << p_Ereco->GetNbinsX()
 	    << " overflows " << p_Ereco->GetBinContent(p_Ereco->GetNbinsX()+1)
 	    << std::endl;
   
@@ -298,6 +302,7 @@ int plotEGReso(const InputParserPlotEGReso& ip) {
     scenarios[inS] = std::string("model2/gamma/") + std::to_string(thicknesses[inS]) + "u/";
   
   const std::array<unsigned,10> genEnAll = {5,10,20,30,40,60,80,100,150,200};
+  //const std::array<unsigned,10> genEnAll = {150};
   const unsigned nGenEnAll = genEnAll.size();
 
   const unsigned nEvtMin = 150;
@@ -332,14 +337,21 @@ int plotEGReso(const InputParserPlotEGReso& ip) {
     }
   }
 
+  //strip the 'noSigmaEff' substring from the tag name
+  std::string tag_modif;
+  std::string ext("-noSigmaEff");
+  if(ip.tag().size() > ext.size() and ip.tag().substr(ip.tag().size() - ext.size()) == ext)
+    tag_modif = ip.tag().substr(0, ip.tag().size() - ext.size());
+  else
+    tag_modif = ip.tag();
   TString saveDir = "/eos/user/b/bfontana/www/RemoveLayers/" + ip.tag() + "/";
 
   for (auto&& icval: ICvals){//loop on intercalib
 
     for (auto&& version: ip.versions()) {
-      TString baseDir = "/afs/cern.ch/work/b/bfontana/PFCalEEAna/HGCalTDR/gitv" + version + "/";
-      //TString baseDir = "/afs/cern.ch/work/b/bfontana/PFCalEEAna/HGCalTDR/git" + ip.tag() + "/";
-      const unsigned nLayers = version=="70" ? 26 : 28;
+      //TString baseDir = "/afs/cern.ch/work/b/bfontana/PFCalEEAna/HGCalTDR/gitv" + version + "/";
+      TString baseDir = "/afs/cern.ch/work/b/bfontana/PFCalEEAna/HGCalTDR/git" + tag_modif + "/";
+      const unsigned nLayers = version=="60" ? 28 : 26;
 
       for (auto&& scenario: scenarios) {
 
@@ -378,13 +390,13 @@ int plotEGReso(const InputParserPlotEGReso& ip) {
 	    for (unsigned iE(0); iE<nGenEnAll; ++iE){
 	      std::ostringstream linputStr;
 	      linputStr << inputDir ;
-      
+	      /*      
 	      linputStr << "eta" << etax10 << "_et" << genEnAll[iE];// << "_pu" << pu[ipu];
 	      if (pu[ipu]>0) linputStr << "_Pu" << pu[ipu];
 	      linputStr << "_IC" << icval;// << "_Si2";
-	      /*
-	      linputStr << "ana_npuvtx" << pu[ipu] << "_ic" << icval << "_en" << genEnAll[iE] << "_eta" << etax10;
 	      */
+	      linputStr << "ana_npuvtx" << pu[ipu] << "_ic" << icval << "_en" << genEnAll[iE] << "_eta" << etax10;
+
 	      linputStr << ".root";
 	      inputFile[iE] = TFile::Open(linputStr.str().c_str());
 	      if (!inputFile[iE]) {
@@ -410,7 +422,7 @@ int plotEGReso(const InputParserPlotEGReso& ip) {
 		}
 	      }
 	    }//loop on energies
-	    
+
 	    
 	    if (nValid < 1) return 1;
 

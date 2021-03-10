@@ -47,7 +47,7 @@ private:
   {
     required_args_ = { "--versions", "--tag", "--etas", "--signalRegions" };
 
-    valid_args_v_["--versions"] = {"60", "70"};
+    valid_args_v_["--versions"] = {"60", "70", "80"};
     valid_args_v_["--signalRegions"] = {"0", "1", "2", "3", "4", "5"};
     free_args_ = {"--tag"};
     free_args_v_ = {"--etas"};
@@ -63,8 +63,9 @@ int plotEtas(const InputParserPlotEGResoEtas& ip, std::string thisvers) {
   radius_map[4] = 26.0;
 
   std::unordered_map<std::string, std::string> vmap;
-  vmap["60"] = "TDR (no neutron moderator)";
+  vmap["60"] = "TDR";
   vmap["70"] = "Scenario 13";
+  vmap["80"] = "Uniform";
 
   TGraphErrors *resoV[etas_s];
 
@@ -72,7 +73,7 @@ int plotEtas(const InputParserPlotEGResoEtas& ip, std::string thisvers) {
 			thisvers + "/model2/gamma/SR4/" );
 
 
-    auto legend = new TLegend(0.77,0.74,0.91,0.9);
+    auto legend = new TLegend(0.79,0.74,0.91,0.9);
     legend->SetTextSize(0.05);
   
     std::string name = "c" + thisvers;
@@ -80,7 +81,7 @@ int plotEtas(const InputParserPlotEGResoEtas& ip, std::string thisvers) {
     TCanvas *c = new TCanvas(name.c_str(), title.c_str(), 1000, 600);
     c->SetRightMargin(0.09);
     c->SetLeftMargin(0.15);
-    c->SetBottomMargin(0.15);
+    c->SetBottomMargin(0.13);
     c->Draw();
     for(unsigned ieta(0); ieta<etas_s; ++ieta) {
 
@@ -100,12 +101,16 @@ int plotEtas(const InputParserPlotEGResoEtas& ip, std::string thisvers) {
       resoV[ieta]->GetFunction("resoRaw")->SetLineColor(ieta+2);
       resoV[ieta]->SetMarkerColor(ieta+2);
       resoV[ieta]->SetMaximum(0.1);
+      resoV[ieta]->GetXaxis()->SetTitle("E [GeV]");
+      resoV[ieta]->GetXaxis()->SetLabelSize(0.05);
+      resoV[ieta]->GetYaxis()->SetLabelSize(0.05);
+      resoV[ieta]->GetYaxis()->SetRangeUser(0.,0.09);
       std::string opt = ieta==0 ? "ap" : "p same";
       resoV[ieta]->Draw(opt.c_str());
 
       std::stringstream etavalstr;
       etavalstr << std::fixed << std::setprecision(1) << etas[ieta];
-      legend->AddEntry(resoV[ieta], ("eta="+etavalstr.str()).c_str(), "p");
+      legend->AddEntry(resoV[ieta], ("|#eta|="+etavalstr.str()).c_str(), "p");
       legend->Draw("same");  
     }
   
@@ -118,7 +123,8 @@ int plotEtas(const InputParserPlotEGResoEtas& ip, std::string thisvers) {
     lat1.DrawLatexNDC(0.20,0.80,buf1);
     sprintf(buf1,vmap[thisvers].c_str());
     lat1.DrawLatexNDC(0.20,0.75,buf1);
-    lat1.DrawLatexNDC(0.01,0.01,"HGCAL G4 standalone");
+    lat1.SetTextSize(0.06);
+    lat1.DrawLatexNDC(0.01,0.94,"HGCAL G4 standalone");
 
     c->SaveAs((dirIn + title + ".png").c_str());
 

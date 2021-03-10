@@ -59,9 +59,48 @@ int makeBackLeakCor(const unsigned nLayers,
   xbins[1] = en1xbins;
   xbins[2] = en2xbins;
   xbins[3] = en3xbins;
-  const double minEnFrac[enRegions] = {0.85,0.90,0.93,0.95};
-  const double maxEnFrac[enRegions] = {1.2,1.1,1.08,1.04};
 
+  double minEnFrac[enRegions];
+  double maxEnFrac[enRegions];
+  if(nBack==2) {
+    minEnFrac[0] = 0.85;
+    minEnFrac[1] = 0.90;
+    minEnFrac[2] = 0.93;
+    minEnFrac[3] = 0.95;
+
+    maxEnFrac[0] = 1.2;
+    maxEnFrac[1] = 1.1;
+    maxEnFrac[2] = 1.4;
+    maxEnFrac[3] = 1.04;
+  }
+  else if(nBack==3) {
+    minEnFrac[0] = 0.80;
+    minEnFrac[1] = 0.90;
+    minEnFrac[2] = 0.88;
+    minEnFrac[3] = 0.9;
+
+    maxEnFrac[0] = 1.2;
+    maxEnFrac[1] = 1.1;
+    maxEnFrac[2] = 1.1;
+    maxEnFrac[3] = 1.1;
+  }
+  else if(nBack==4) {
+    minEnFrac[0] = 0.75;
+    minEnFrac[1] = 0.85;
+    minEnFrac[2] = 0.85;
+    minEnFrac[3] = 0.85;
+
+    maxEnFrac[0] = 1.25;
+    maxEnFrac[1] = 1.15;
+    maxEnFrac[2] = 1.15;
+    maxEnFrac[3] = 1.15;
+  }
+  else {
+  std::cout << "fix!" << std::endl;
+  std::exit(0);
+}
+
+    
   TH2F *p_ErecovsEback;
   unsigned enIdx = 0;
   if(pT > 101.) enIdx = 3;
@@ -91,8 +130,26 @@ int makeBackLeakCor(const unsigned nLayers,
 
   std::cout << lName.str()  << std::endl;
 
-  p_ErecovsEback->SetTitle(";E_{back}/E_{tot};E_{tot} (GeV)");
+  p_ErecovsEback->SetTitle(";f_{back} #equiv E_{back}/E_{tot};E_{tot} [GeV]");
   p_ErecovsEback->Draw("colz");
+
+  std::unordered_map<unsigned,float> radius_map;
+  radius_map[4] = 26.0;
+
+  char buf1[500];
+  sprintf(buf1,"#gamma, PU 0");
+  TLatex lat1;
+  lat1.SetTextSize(0.03);
+  lat1.DrawLatexNDC(0.15,0.9,buf1);
+  sprintf(buf1,"r = %3.0f mm", radius_map[iSR]);
+  lat1.DrawLatexNDC(0.15,0.87,buf1);
+  sprintf(buf1,(("|#eta| = " + std::to_string(eta)).c_str()));
+  lat1.DrawLatexNDC(0.15,0.84,buf1);
+  sprintf(buf1,(("pT = " + std::to_string(pT) + "GeV").c_str()));
+  lat1.DrawLatexNDC(0.15,0.81,buf1);
+  lat1.SetTextSize(0.05);
+  lat1.DrawLatexNDC(0.13,0.95,"HGCAL G4 standalone");
+  lat1.DrawLatexNDC(0.71,0.95,("nBack="+std::to_string(nBack)).c_str());
 
   //normalize histogram by x bin width before the fit
   for(int i(1); i<=nxbins[enIdx]; ++i) {
@@ -130,8 +187,9 @@ int makeBackLeakCor(const unsigned nLayers,
     std::cout << " ---- back leakage correction factor: " << backLeakCor << " +/- " << fitcor->GetParError(1) << std::endl;
     char buf[500];
     TLatex lat;
+    lat.SetTextSize(0.03);
     sprintf(buf,"E=%3.3f #times f_{back} + %3.3f",backLeakCor,fitcor->GetParameter(0));
-    lat.DrawLatexNDC(0.2,0.85,buf);
+    lat.DrawLatexNDC(0.45,0.90,buf);
 		    
     Int_t np=corrBackLeakFit->GetN();
     //if (!dovsE) corrBackLeakFit[iSR]->SetPoint(np,genEn[iE],backLeakCor[oldIdx[iE]][iSR]);
@@ -166,7 +224,7 @@ int plotBackLeakFit(const TString & plotDir,
   
   TCanvas *myc = new TCanvas("mycBF","mycBF",1);
   myc->cd();
-  corrBackLeakFit->SetTitle(";E (GeV);back cor");
+  corrBackLeakFit->SetTitle(";E [GeV];back cor");
   corrBackLeakFit->Draw("APE");
   myc->Update();
   std::ostringstream lsave;

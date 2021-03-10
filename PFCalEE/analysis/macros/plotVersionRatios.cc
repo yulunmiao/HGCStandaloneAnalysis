@@ -1,15 +1,16 @@
-#include<iostream>
-#include<iomanip>
-#include<sstream>
-#include<string>
-#include<vector>
+#include <iostream>
+#include <iomanip>
+#include <sstream>
+#include <string>
+#include <vector>
+#include <algorithm>
 
 #include "TCanvas.h"
 #include "TStyle.h"
 #include "TPad.h"
 #include "TFile.h"
 #include "TF1.h"
-#include "TH1F.h"
+#include "TH1.h"
 #include "TLine.h"
 #include "TLegend.h"
 #include "TMath.h"
@@ -47,7 +48,7 @@ private:
   {
     required_args_ = { "--versions", "--tag", "--etas", "--signalRegions"  };
 
-    valid_args_v_["--versions"] = {"60", "70"};
+    valid_args_v_["--versions"] = {"60", "70", "80"};
     valid_args_v_["--signalRegions"] = {"0", "1", "2", "3", "4", "5"};
     free_args_ = {"--tag"};
     free_args_v_ = {"--etas"};
@@ -78,7 +79,7 @@ int plotVersionRatios(const InputParserPlotEGResoRatios& ip) {
 
       std::string dirIn = ( dirInBase2 + "version" + versions[iversion] + "/model2/gamma/SR4/");
       std::string fileIn = ( dirIn + "IC3_pu0_SR4_Eta" + std::to_string(static_cast<int>(etas[ieta]*10.f))
-			     + "_vsE_backLeakCor_raw.root" );
+			     + "_vsE_backLeakCor.root" );
 
       TFile *fIn = TFile::Open(fileIn.c_str(),"READ");
       if(fIn)
@@ -87,13 +88,14 @@ int plotVersionRatios(const InputParserPlotEGResoRatios& ip) {
 	std::cout << "Problem reading the file."  << std::endl;
 	return 1;
       }
-      resoV[idx] = (TGraphErrors*)gDirectory->Get("resoRecoFitRaw");    
+      resoV[idx] = (TGraphErrors*)gDirectory->Get("resoRecoFit");    
     }
   }
 
   std::unordered_map<std::string, std::string> vmap;
   vmap["60"] = "TDR";
   vmap["70"] = "Scenario 13";
+  vmap["80"] = "Uniform";
 
   for (unsigned ieta(0); ieta<etas_s; ++ieta)
     {
@@ -137,8 +139,8 @@ int plotVersionRatios(const InputParserPlotEGResoRatios& ip) {
       assert(x1v == x2v);
       assert(x1v.size() == y1v.size());
       
-      std::string name = "cRatio" + std::to_string(ieta);
-      std::string title = "resoRatio" + std::to_string(static_cast<int>(etas[ieta]*10.f));
+      std::string name = "cRatio" + std::to_string(ieta) + "_" + ip.tag();
+      std::string title = "resoRatio" + std::to_string(static_cast<int>(etas[ieta]*10.f)) + "_" + ip.tag() + "_" + versions[0] + "_" + versions[1];
       TCanvas *c = new TCanvas(name.c_str(), title.c_str(), 800, 600);
       c->SetRightMargin(0.1);
       c->SetLeftMargin(0.1);
@@ -160,12 +162,12 @@ int plotVersionRatios(const InputParserPlotEGResoRatios& ip) {
       resoV[idx1]->SetMarkerStyle(20);
       resoV[idx1]->SetMarkerSize(1.5);
       resoV[idx1]->SetMarkerColor(kRed);
-      resoV[idx1]->GetFunction("resoRaw")->SetLineColor(kRed);
+      resoV[idx1]->GetFunction("reso")->SetLineColor(kRed);
       resoV[idx1]->Draw("APE");
       resoV[idx2]->SetMarkerStyle(22);
       resoV[idx2]->SetMarkerSize(1.5);
       resoV[idx2]->SetMarkerColor(kBlue);
-      resoV[idx2]->GetFunction("resoRaw")->SetLineColor(kBlue);
+      resoV[idx2]->GetFunction("reso")->SetLineColor(kBlue);
       resoV[idx2]->Draw("PE SAME");
 
       std::stringstream etavalstr;
@@ -200,40 +202,54 @@ int plotVersionRatios(const InputParserPlotEGResoRatios& ip) {
 	//error propagation of division
 	eyvals[i] = (y1v[i]*y1v[i])/(y2v[i]*y2v[i]) * std::sqrt( (e1v[i]*e1v[i])/(y1v[i]*y1v[i]) + (e2v[i]*e2v[i])/(y2v[i]*y2v[i]) );
       }
-      
+
       TGraphErrors *div = new TGraphErrors(x1v.size(), xvals, yvals, exvals, eyvals);
-      div->SetTitle("");
+      div->SetTitle();
+      div->SetName(title.c_str());
       div->GetXaxis()->SetTitle("E [GeV] ");
       div->GetXaxis()->SetTitleSize(0.11);
       div->GetXaxis()->SetLabelSize(0.1);
       div->GetXaxis()->SetTitleOffset(-0.4);
       div->GetYaxis()->SetLabelSize(0.08);
+      div->GetYaxis()->SetRangeUser(0.93,1.015);
       div->SetMarkerColor(kGreen);
       div->SetMarkerStyle(20);
       div->SetMarkerSize(1.3);
       div->Draw("ap");
-
+      
       float bol = div->GetXaxis()->GetBinLowEdge(div->GetXaxis()->GetFirst());
       float eol = div->GetXaxis()->GetBinUpEdge(div->GetXaxis()->GetLast());
 
       TLine *line = new TLine(bol,1,eol,1);
       line->SetLineStyle(2);
-      line->Draw("same");
+      line->Draw();
 
-      double factor = TMath::Sqrt(26./28.);
-      TLine *line2 = new TLine(bol,factor,eol,factor);
-      line2->SetLineColor(kMagenta);
-      line2->SetLineStyle(5);
-      line2->Draw("same");
-
+      TLine *line2 = nullptr;
+      std::pair<float,float> legendy;
+      if (! (std::find(versions.begin(), versions.end(), "70") != versions.end()
+	     and std::find(versions.begin(), versions.end(), "80") != versions.end()) )
+	{
+	  double factor = TMath::Sqrt(26./28.);
+	  line2 = new TLine(bol,factor,eol,factor);
+	  line2->SetLineColor(kMagenta);
+	  line2->SetLineStyle(5);
+	  line2->Draw("same");
+	  div->Draw("p"); //draw data points above the lines
+	  legendy = std::make_pair(0.9-0.12*(versions_s+1),0.9);
+	}
+      else
+	legendy = std::make_pair(0.9-0.12*versions_s,0.9);
+      
       p1->cd();
-      auto legend = new TLegend(0.6,0.55,0.9,0.9);
+      auto legend = new TLegend(0.55,legendy.first,0.9,legendy.second); //0.15 heigth per entry
       legend->SetTextSize(0.07);
-      legend->AddEntry(resoV[idx1],vmap[versions[0]].c_str(),"lep");
-      legend->AddEntry(resoV[idx2],vmap[versions[1]].c_str(),"lep");
+      legend->AddEntry(resoV[idx1],vmap[versions[0]].c_str(),"ep");
+      legend->AddEntry(resoV[idx2],vmap[versions[1]].c_str(),"ep");
       std::string ratiostr = vmap[versions[0]] + " / " + vmap[versions[1]];
-      legend->AddEntry(div,ratiostr.c_str(),"lep");
-      legend->AddEntry(line2,"sqrt(26/28)","l");
+      legend->AddEntry(div,ratiostr.c_str(),"ep");
+      if ( !(std::find(versions.begin(), versions.end(), "70") != versions.end()
+	     and std::find(versions.begin(), versions.end(), "80") != versions.end()) )
+	legend->AddEntry(line2,"sqrt(26/28)","l");
       legend->Draw();
 
       foutReso->cd();

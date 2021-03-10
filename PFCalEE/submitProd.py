@@ -198,7 +198,7 @@ class SubmitProd(SubmitBase):
             s.write('Output = {}/{}\n'.format(self.outDir,out_name))
             s.write('Error = {}/{}\n'.format(self.outDir,err_name))
             s.write('Log = {}/{}\n'.format(self.outDir,log_name))
-            s.write('RequestMemory = 250MB\n')
+            s.write('RequestMemory = 2GB\n')
             s.write('+JobFlavour = "testmatch"\n')
             s.write('Queue {nruns} {entag}, {etatag}, {gtag} from (\n'.format( nruns=self.p.nRuns, entag=self.clean_tag(self.en_tag),
                                                                                etatag=self.clean_tag(self.eta_tag),
