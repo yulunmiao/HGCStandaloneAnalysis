@@ -31,7 +31,7 @@ EventAction::EventAction()
   //save some info
   HGCSSInfo *info = new HGCSSInfo();
   info->calorSizeXY(xysize);
-  info->cellSize(coarseGranularity_ ? CELL_SIZE_X : FINE_CELL_SIZE_X);
+  info->cellSize(coarseGranularity_>0 ? CELL_SIZE_X : coarseGranularity_<0 ? ULTRAFINE_CELL_SIZE_X : FINE_CELL_SIZE_X);
   info->model(((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->getModel());
   info->version(((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->getVersion());
   info->shape(shape_);
@@ -42,10 +42,10 @@ EventAction::EventAction()
   outF_->WriteObjectAny(info,"HGCSSInfo","Info");
 
   //honeycomb or diamond or triangles
-  geomConv_ = new HGCSSGeometryConversion(info->model(),coarseGranularity_ ? CELL_SIZE_X : FINE_CELL_SIZE_X);
+  geomConv_ = new HGCSSGeometryConversion(info->model(),coarseGranularity_>0 ? CELL_SIZE_X : coarseGranularity_<0 ? ULTRAFINE_CELL_SIZE_X : FINE_CELL_SIZE_X);
   if (shape_==2) geomConv_->initialiseDiamondMap(xysize,10.);
   else if (shape_==3) geomConv_->initialiseTriangleMap(xysize,10.*sqrt(2.));
-  else if (shape_==1) geomConv_->initialiseHoneyComb(xysize,coarseGranularity_ ? CELL_SIZE_X : FINE_CELL_SIZE_X);
+  else if (shape_==1) geomConv_->initialiseHoneyComb(xysize,coarseGranularity_>0 ? CELL_SIZE_X : coarseGranularity_<0 ? ULTRAFINE_CELL_SIZE_X : FINE_CELL_SIZE_X);
   else if (shape_==4) geomConv_->initialiseSquareMap(xysize,100.);
   //square map for FHCAL Scint + BH Scint
   double etamin = ((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->GetMinEta();
@@ -171,7 +171,7 @@ void EventAction::EndOfEventAction(const G4Event* g4evt)
 
 	for (unsigned iSiHit(0); iSiHit<(*detector_)[i].getSiHitVec(idx).size();++iSiHit){
 	  G4SiHit lSiHit = (*detector_)[i].getSiHitVec(idx)[iSiHit];
-	  HGCSSSimHit lHit(lSiHit,idx,is_scint? (i<firstCoarseScintlayer_?geomConv_->squareMap1():geomConv_->squareMap2()) : (shape_==4 ?geomConv_->squareMap() : shape_==2?geomConv_->diamondMap():shape_==3?geomConv_->triangleMap():geomConv_->hexagonMap()),(coarseGranularity_ ? CELL_SIZE_X : FINE_CELL_SIZE_X),is_scint?true:false);
+	  HGCSSSimHit lHit(lSiHit,idx,is_scint? (i<firstCoarseScintlayer_?geomConv_->squareMap1():geomConv_->squareMap2()) : (shape_==4 ?geomConv_->squareMap() : shape_==2?geomConv_->diamondMap():shape_==3?geomConv_->triangleMap():geomConv_->hexagonMap()),(coarseGranularity_ ? CELL_SIZE_X : coarseGranularity_<0 ? ULTRAFINE_CELL_SIZE_X : FINE_CELL_SIZE_X),is_scint?true:false);
 
 	  isInserted = lHitMap.insert(std::pair<unsigned,HGCSSSimHit>(lHit.cellid(),lHit));
 	  if (!isInserted.second) isInserted.first->second.Add(lSiHit);

@@ -223,7 +223,7 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
        //fit.tanangle_x = -1.*genvec[iP].px()/genvec[iP].pz();
        //fit.tanangle_y = -1.*genvec[iP].py()/genvec[iP].pz();
        fit.found = true;
-       //std::cout << " True particle pdgid=" << genvec[iP].pdgid() << " z eta phi = " << genvec[iP].z() << " " << genvec[iP].eta() << " " << genvec[iP].phi() << std::endl;
+       //std::cout << " True particle pdgid=" << genvec[iP].pdgid() << " E = " << trueE_ << " z eta phi = " << genvec[iP].z() << " " << genvec[iP].eta() << " " << genvec[iP].phi() << std::endl;
      }
    }
    if (!found){
@@ -255,7 +255,7 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
 				const FitResult & fit){
 
   if(!fit.found) {
-    //std::cout << " -- Event " << ievt << " skipped, accurate position not found." << std::endl;
+    std::cout << " -- Event " << ievt << " skipped, accurate position not found." << std::endl;
     nSkipped_++;
     //fill tree to find correspondance between noPu and PU...
     outtree_->Fill();
@@ -292,9 +292,16 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
       //absweight_[iL] = 10.0166;
       absweight_[iL]=iL<(nLayers_-2) ? (ssvec[iL].voldEdx()+ssvec[iL+1].voldEdx())/2. : absweight_[nLayers_-3];
       std::cout << " - Layer " << iL << " wdEdx=" << ssvec[iL].voldEdx()  << " Wx0=" << ssvec[iL].volX0trans() << " W valeri scheme " << absweight_[iL] << std::endl;
+      //if (fabs(zPos_[iL]-ssvec[iL].sensitiveZ()) > 0.5){
+      //std::cout << " -- error with zPos: not aligned with value in tree." << std::endl;
+	//zPos_[iL]=ssvec[iL].sensitiveZ();
+      //}
     }
     //absweight_[0] = 20.3628;
     //absweight_[nLayers_-1] = 13.0629;
+    for(unsigned iL(0); iL<nLayers_; iL++){
+      std::cout << zPos_[iL] << " " << ssvec[iL].sensitiveZ() << std::endl;
+    }
     
     firstEvent_=false;
   }
@@ -335,10 +342,10 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
     refx[iL] = doHexa_ ? geomConv_.hexaGeom[refid].first : geomConv_.squareGeom[refid].first;
     refy[iL] = doHexa_ ? geomConv_.hexaGeom[refid].second : geomConv_.squareGeom[refid].second;
   }
-
+  
   //std::cout << " -- Accurate direction for evt " << ievt << ": " << std::endl;
   //getAccurateDirection(ievt).Print();
-
+  
   //double etacor = 1./tanh(getAccurateDirection(ievt).eta());
 
   //get event-by-event PU
@@ -423,10 +430,11 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
     double subtractedenergy = std::max(0.,energy - puE);
     //double halfCell = 0.5*geomConv_.cellSize(layer,lradius);
     //hexagons are side up....
-    double distance = sqrt(3.)*6.496345;//geomConv_.cellSize(layer,lradius);
+    //std::cout << geomConv_.cellSize(layer,lradius) << std::endl;
+    double distance = sqrt(3.)*geomConv_.cellSize(layer,lradius);
     double halfCelly = 0.5*distance;
     //double halfCellx = doHexa_?geomConv_.cellSize(layer,lradius):geomConv_.cellSize(layer,lradius)/2.;
-    double halfCellx = doHexa_?6.496345:5;
+    double halfCellx = doHexa_?geomConv_.cellSize(layer,lradius):5;
     //std::cout << " halfcell = " << halfCell << std::endl;
 
     //SR0-4
@@ -462,26 +470,28 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
 	  int ix = doHexa_ ? dx/halfCellx : dx/(2*halfCelly);
 	  int iy = doHexa_ ? dy/(1.5*halfCelly) : dy/(2*halfCelly);
 	  unsigned idx = 0;
-	  if (((doHexa_ && (ix > 2 || ix < -2)) || (!doHexa_ && (ix > 1 || ix < -1))) || (iy>1 || iy<-1)) {
-	    std::cout << " error, isr = " << isr << " check ix=" << ix << " iy=" << iy << " posx,y-max=" << dx << " " << dy << " step " ;
-	    if (!doHexa_) std::cout << (isr+1)*halfCelly;
-	    else std::cout << isr*halfCelly+0.1;
-	    std::cout << std::endl;
-	    continue;
-	  }
-	  else {
-	    if (!doHexa_) idx = 3*(iy+1)+(ix+1);	    
-	    else {
-	      if (ix==-1 && iy==-1) idx=0;
-	      else if (ix==1 && iy==-1) idx = 1;
-	      else if (ix==-2 && iy==0) idx = 2;
-	      else if (ix==0 && iy==0) idx = 3;
-	      else if (ix==2 && iy==0) idx = 4;
-	      else if (ix==-1 && iy==1) idx = 5;
-	      else if (ix==1 && iy==1) idx = 6;
+	  if (halfCellx>1) {
+	    if (((doHexa_ && (ix > 2 || ix < -2)) || (!doHexa_ && (ix > 1 || ix < -1))) || (iy>1 || iy<-1)) {
+	      std::cout << " error, isr = " << isr << " check ix=" << ix << " iy=" << iy << " posx,y-max=" << dx << " " << dy << " step " ;
+	      if (!doHexa_) std::cout << (isr+1)*halfCelly;
+	      else std::cout << isr*halfCelly+0.1;
+	      std::cout << std::endl;
+	      continue;
 	    }
+	    else {
+	      if (!doHexa_) idx = 3*(iy+1)+(ix+1);	    
+	      else {
+		if (ix==-1 && iy==-1) idx=0;
+		else if (ix==1 && iy==-1) idx = 1;
+		else if (ix==-2 && iy==0) idx = 2;
+		else if (ix==0 && iy==0) idx = 3;
+		else if (ix==2 && iy==0) idx = 4;
+		else if (ix==-1 && iy==1) idx = 5;
+		else if (ix==1 && iy==1) idx = 6;
+	      }
+	    }
+	    Exy_[layer][idx] = energy;	  
 	  }
-	  Exy_[layer][idx] = energy;	  
 	}
 
       }
@@ -495,12 +505,20 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
   for (unsigned iL(0);iL<nLayers_;++iL){
     std::sort(lhitvec[iL].begin(), lhitvec[iL].end(), customdRsort);
     double Esum = 0;
+    //std::cout << " -- Layer: " << iL << " nH = " << lhitvec[iL].size() << std::endl;
     for (unsigned iH(0); iH<lhitvec[iL].size(); ++iH){
-      //std::cout << iL << " " << iH << " " << lhitvec[iL][iH].dR << std::endl;
+      //std::cout << " ---- " << iH << " dR " << lhitvec[iL][iH].dR 
+      //	<< " Esum " << Esum
+      //	<< " E100 " << E100_[iL] 
+      //	<< " (68%=" << 0.68*E100_[iL] << ")"
+      //	<< " E68 " << E68_[iL]
+      //	<< " dR68 " << dR68_[iL]
+      //	<< std::endl;
       //if (lhitvec[iL][iH].dR>0) 
       Esum += lhitvec[iL][iH].E;
       p_EsumfracvsdR[iL]->Fill(lhitvec[iL][iH].dR,Esum/E100_[iL]);
       p_EvsdR[iL]->Fill(lhitvec[iL][iH].dR,lhitvec[iL][iH].E);
+      p_dR[iL]->Fill(lhitvec[iL][iH].dR,lhitvec[iL][iH].E);
       if (Esum<0.68*E100_[iL]) {
 	dR68_[iL] = lhitvec[iL][iH].dR;
 	E68_[iL] = Esum;
@@ -651,6 +669,7 @@ void SignalRegion::initialiseHistograms(){
 
     p_EsumfracvsdR.resize(nLayers_,0);
     p_EvsdR.resize(nLayers_,0);
+    p_dR.resize(nLayers_,0);
     for (unsigned iL(0); iL<nLayers_;++iL){
       label.str("");
       label << "EsumfracvsdR_" << iL;
@@ -660,6 +679,10 @@ void SignalRegion::initialiseHistograms(){
       label << "EvsdR_" << iL;
       p_EvsdR[iL] = new TH2F(("p_"+label.str()).c_str(),";dR (mm);Ehit (mips);events", 2000,0,200,5000,0,5000);
       p_EvsdR[iL]->StatOverflows();   
+      label.str("");
+      label << "dR_" << iL;
+      p_dR[iL] = new TH1F(("p_"+label.str()).c_str(),";dR (mm);E-weighted events", 2000,0,200);
+      p_dR[iL]->StatOverflows();   
     }
 
 
