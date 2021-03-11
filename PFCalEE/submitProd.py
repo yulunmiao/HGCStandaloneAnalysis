@@ -9,8 +9,6 @@ from utils import create_dir, SubmitBase
 git_tag=os.popen('git describe --tags --abbrev=0').read()
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument('-s', '--short-queue' , dest='squeue'     , help='short batch queue', default='tomorrow')
-parser.add_argument('-q', '--long-queue'  , dest='lqueue'     , help='long batch queue', default='nextweek')
 parser.add_argument('-t', '--git-tag'     , dest='gittag'     , help='git tag version', default=git_tag)
 parser.add_argument(      '--nRuns'       , dest='nRuns'      , type=int,   help='number of run, 0-indexed', default=-1)
 parser.add_argument('-v', '--version'     , dest='version'    , type=int,   help='detector version', default=3)
@@ -42,6 +40,7 @@ class SubmitProd(SubmitBase):
         
         #variables
         self.condor_submit_name = 'condorSubmitProd.sub'
+        self.mac_var = '$(MACFILE)'
         self.mac_name = self._unique_name( (('prefix', 'g4steer'),
                                            ('en', self.shellify_tag(self.en_tag)),
                                            ('eta', self.shellify_tag(self.etaint_tag)),
@@ -83,17 +82,17 @@ class SubmitProd(SubmitBase):
             s.write('done\n\n')
             
             s.write('localdir=`pwd`\n')
+            s.write('echo "Job local dir: ${localdir}"\n')
+            s.write('{}="{}/{}"\n'.format(self.clean_tag(self.mac_var),self.outDir,self.mac_name))
             s.write('export HOME={}\n'.format(os.environ['HOME']))
             s.write('cd {}/\n'.format(os.getcwd()))
             s.write('source g4env.sh\n')
             s.write('cd $localdir\n')
             if len(self.p.datafileeos)>0:
                 s.write('eos cp {} {}\n'.format( os.path.join(self.p.datafileeos,self.p.datafile),self.p.datafile))
-            s.write('cp {}/{} .\n'.format(self.outDir, self.mac_name))
 
-            cmd = ( 'PFCalEE {} --model {} --version {} --eta {} --shape {}'
-                    .format(self.mac_name, self.p.model, self.p.version,
-                            self.shellify_tag(self.eta_tag), self.p.shape) )
+            cmd = ( 'PFCalEE "{}" --model {} --version {} --eta {} --shape {}'
+                    .format(self.shellify_tag(self.mac_var), self.p.model, self.p.version, self.shellify_tag(self.eta_tag), self.p.shape) )
             s.write('if [ "${GRAN}" -eq 0 ]; then\n')
             s.write(cmd + ' --fineGranularity\n')
             s.write('elif [ "${GRAN}" -eq -1 ]; then\n')
@@ -106,25 +105,26 @@ class SubmitProd(SubmitBase):
             outTag += '_en{}_eta{}'.format(self.shellify_tag(self.en_tag),self.shellify_tag(self.etaint_tag)) 
             if self.p.phi != 0.5: outTag += '_phi{n:.{r}f}pi'.format(n=self.p.phi,r=3)
             outTag += '_run{}'.format(self.shellify_tag(self.run_tag))
+            logfile = os.path.join(self.outDir, 'g4_'+outTag+'.log')
             s.write('mv PFcal.root HGcal_{}.root\n'.format(outTag))
-            s.write('echo "--Local directory is " $localdir >> g4_{}.log\n'.format(outTag))
-            s.write('echo home=$HOME >> g4_{}.log\n'.format(outTag))
-            s.write('echo path=$PATH >> g4_{}.log\n'.format(outTag))
-            s.write('echo ldlibpath=$LD_LIBRARY_PATH >> g4_{}.log\n'.format(outTag))
-            s.write('ls -ltrh * >> g4_{}.log\n'.format(outTag))
+            s.write('echo "--Local directory is $localdir" >> {}\n'.format(logfile))
+            s.write('echo home=$HOME >> {}\n'.format(logfile))
+            s.write('echo path=$PATH >> {}\n'.format(logfile))
+            s.write('echo ldlibpath=$LD_LIBRARY_PATH >> {}\n'.format(logfile))
+            s.write('ls -ltrh * >> {}\n'.format(logfile))
             if len(self.p.eos)>0:
                 s.write('eos mkdir -p {}\n'.format(self.eosDirOut))
                 s.write('eos cp HGcal_{}.root {}/HGcal_{}.root\n'.format(outTag,self.eosDirOut,outTag))
                 s.write('if (( "$?" != "0" )); then\n')
-                s.write('echo " --- Problem with copy of file PFcal.root to EOS. Keeping locally." >> g4{}.log\n'.format(outTag))
+                s.write('echo " --- Problem with copy of file PFcal.root to EOS. Keeping locally." >> {}\n'.format(logfile))
                 s.write('else\n')
                 s.write('eossize=`eos ls -l {}/HGcal_{}.root | awk \'{{print $5}}\'`\n'.format(self.eosDirOut,outTag))
                 s.write('localsize=`ls -l HGcal_{}.root | awk \'{{print $5}}\'`\n'.format(outTag))
                 s.write('if [ "${eossize}" != "${localsize}" ]; then\n')
-                s.write('echo " --- Copy of sim file to eos failed. Localsize = ${{localsize}}, eossize = ${{eossize}}. Keeping locally..." >> g4_{}.log\n'.format(outTag))
+                s.write('echo " --- Copy of sim file to eos failed. Localsize = ${{localsize}}, eossize = ${{eossize}}. Keeping locally..." >> {}\n'.format(logfile))
                 s.write('else\n')
-                s.write('echo " --- Size check done: Localsize = ${{localsize}}, eossize = ${{eossize}}" >> g4_{}.log\n'.format(outTag))
-                s.write('echo " --- File PFcal.root successfully copied to EOS: {ed}/HGcal_{ot}.root" >> g4_{ot}.log\n'.format(ed=self.eosDirOut,ot=outTag))
+                s.write('echo " --- Size check done: Localsize = ${{localsize}}, eossize = ${{eossize}}" >> {}\n'.format(logfile))
+                s.write('echo " --- File PFcal.root successfully copied to EOS: {}/HGcal_{}.root" >> {}\n'.format(self.eosDirOut,outTag,logfile))
                 s.write('rm HGcal_{}.root\n'.format(outTag))
                 s.write('fi\n')
                 s.write('fi\n')
@@ -200,8 +200,8 @@ class SubmitProd(SubmitBase):
             s.write('Output = {}/{}\n'.format(self.outDir,out_name))
             s.write('Error = {}/{}\n'.format(self.outDir,err_name))
             s.write('Log = {}/{}\n'.format(self.outDir,log_name))
-            s.write('RequestMemory = 250MB\n')
-            s.write('+JobFlavour = "tomorrow"\n')
+            s.write('RequestMemory = 2GB\n')
+            s.write('+JobFlavour = "testmatch"\n')
             s.write('Queue {nruns} {entag}, {etatag}, {gtag} from (\n'.format( nruns=self.p.nRuns, entag=self.clean_tag(self.en_tag),
                                                                                etatag=self.clean_tag(self.eta_tag),
                                                                                gtag=self.clean_tag(self.gran_tag)))

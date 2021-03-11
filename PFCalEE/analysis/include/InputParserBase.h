@@ -55,7 +55,9 @@ class InputParserBase {
   bool are_required_args_present_();
   bool are_args_supported_();
   void check_required_args_are_present_();
+  void set_optional_args_to_false_();
   bool is_arg_absent_(char*);
+  bool is_arg_mistyped_(char*);
   bool help_();
   void parse_chosen_args_();
   void print_vector_elements_(const std::vector<std::string>&);

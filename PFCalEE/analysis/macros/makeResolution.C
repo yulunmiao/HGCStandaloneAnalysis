@@ -121,6 +121,7 @@ int makeResolution(const bool dovsE,
 		   const unsigned pu,
 		   const unsigned iSR,
 		   const double radius,
+		   const std::string version,
 		   TGraphErrors *resoRecoFit,
 		   const double sigmaStochRef,
 		   const double sigmaConstRef,
@@ -134,6 +135,10 @@ int makeResolution(const bool dovsE,
 		   TString plotDir,
 		   TFile *foutEfit)
 {
+  std::unordered_map<std::string, std::string> vmap;
+  vmap["60"] = "TDR (no neutron moderator)";
+  vmap["70"] = "Scenario 13";
+
   double etaval = eta/10.;
   
   TCanvas *mycR = new TCanvas("mycR","mycReso",1);
@@ -163,9 +168,11 @@ int makeResolution(const bool dovsE,
   sprintf(buf,"#gamma #eta=%3.1f + PU %d",etaval,pu);
   TLatex lat;
   lat.SetTextSize(0.04);
-  lat.DrawLatexNDC(0.16,0.85,buf);
+  lat.DrawLatexNDC(0.16,0.87,buf);
   sprintf(buf,"r = %3.0f mm",radius);
-  lat.DrawLatexNDC(0.16,0.75,buf);
+  lat.DrawLatexNDC(0.16,0.81,buf);
+  sprintf(buf,vmap[version].c_str());
+  lat.DrawLatexNDC(0.16,0.95,buf);
   lat.DrawLatexNDC(0.01,0.01,"HGCAL G4 standalone");
   
   if (!success) {

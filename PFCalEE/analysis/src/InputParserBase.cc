@@ -21,6 +21,11 @@ bool InputParserBase::are_required_args_present_()
 bool InputParserBase::are_args_supported_()
 {
   for(int iarg=0; iarg<argc_; ++iarg) {
+    if(is_arg_mistyped_(argv_[iarg]))
+      {
+	std::cout << "You mistyped " << std::string(argv_[iarg]) << "." << std::endl;
+	return 0;
+      }
     if(is_arg_absent_(argv_[iarg]))
       {
 	std::cout << "Argument " << std::string(argv_[iarg]) << " was not recognized." << std::endl;
@@ -32,6 +37,8 @@ bool InputParserBase::are_args_supported_()
 	for(auto& elem : free_args_)
 	  std::cout << elem << std::endl;
 	for(auto& elem : free_args_v_)
+	  std::cout << elem << std::endl;
+	for(auto& elem : optional_args_)
 	  std::cout << elem << std::endl;
 	return 0;
       }
@@ -53,6 +60,12 @@ void InputParserBase::check_required_args_are_present_()
     }
 }
 
+void InputParserBase::set_optional_args_to_false_()
+{
+  for(auto&& opt: optional_args_)
+    chosen_args_[opt] = "false";
+}
+
 //returns true if the passed argument was not defined by the user
 bool InputParserBase::is_arg_absent_(char* s)
 {
@@ -63,6 +76,14 @@ bool InputParserBase::is_arg_absent_(char* s)
 	   std::find(free_args_v_.begin(), free_args_v_.end(), std::string(s)) == free_args_v_.end() and
 	   std::find(optional_args_.begin(), optional_args_.end(), std::string(s)) == optional_args_.end() );
 }
+
+bool InputParserBase::is_arg_mistyped_(char* s)
+{
+  if(std::string(s).find("--") == std::string::npos and s[0] == '-')
+    return true;
+  return false;
+}
+
 
 bool InputParserBase::help_()
 {     
@@ -91,7 +112,11 @@ bool InputParserBase::help_()
       elem2.erase(0,2);
       std::cout << elem2 + ": vector required, any choice allowed" << std::endl;
     }
-    std::cout << "last_step_only: optional" << std::endl;
+    for(std::string& elem : optional_args_) {
+      std::string elem2 = elem;
+      elem2.erase(0,2);    
+      std::cout << elem2 + ": optional" << std::endl;
+    }
     std::cout << "Note: vector arguments must obbey the "
       "`--arg length val1 val2 val3 ...` structure. " << std::endl;
     std::cout << "=====================" <<  std::endl;
@@ -162,8 +187,9 @@ void InputParserBase::set_chosen_args_()
 	  for(int i(1); i<=std::stoi(argv_[idx]); ++i)
 	    chosen_args_v_[argvstr].push_back( std::string(argv_[idx+i]) );
 	}
-      else if(std::find(optional_args_.begin(), optional_args_.end(), std::string(argv_[iarg])) == optional_args_.end())
+      else if(std::find(optional_args_.begin(), optional_args_.end(), std::string(argv_[iarg])) != optional_args_.end()) {
 	chosen_args_[argvstr] = "true";
+      }
     }
 }
 
