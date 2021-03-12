@@ -234,6 +234,10 @@ vdict = {8:   dict(puFile='root://eoscms//eos/cms/store/cmst3/group/hgcal/Standa
          67:  dict(puFile=( 'root://eoscms//eos/cms/store/group/dpg_hgcal/comm_hgcal/amagnan/HGCalTDR/gitV08-05-00/MinBiasSmall/' if lab=='' else
                             'root://eoscms//eos/cms/store/group/dpg_hgcal/comm_hgcal/amagnan/HGCalTDR/gitV08-05-00/MinBiasLarge/' ),
                    granularity='0-27:1', threshold='0-27:5', noise=get_noise(nmult,lab)),
+         69:  dict(puFile=('root://eoscms//eos/cms/store/cmst3/group/hgcal/HGCalTDR/gittestV8/MinBiasSmall/'
+                           if lab==''
+                           else 'root://eoscms//eos/cms/store/group/dpg_hgcal/comm_hgcal/amagnan/HGCalTDR/gitV08-01-00/MinBiasLarge/'),
+                   granularity='0-68:1', threshold='0-68:5', noise=get_noise(n63,lab)),
          70:  dict(puFile=pudflt, granularity='0-25:1', threshold='0-25:5', noise=get_noise(n70,lab)),
          80:  dict(puFile=pudflt, granularity='0-25:1', threshold='0-25:5', noise=get_noise(n70,lab)),
          73:  dict(puFile=pudflt, granularity='0-61:1', threshold='0-61:5', noise=get_noise(n73,lab)),
