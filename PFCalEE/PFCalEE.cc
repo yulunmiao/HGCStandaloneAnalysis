@@ -29,6 +29,7 @@ void printHelp() {
             << "\t--absThick{W,Pb} - csv list of the thicknesses for W and Pb absorbers" << std::endl
             << "\t--dropLayers - csv list of layers to drop" << std::endl
             << "\t--fineGranularity - use fine granularity cells" << std::endl
+            << "\t--ultraFineGranularity - use ultra fine granularity cells" << std::endl
             << "\t--ui - do not run in batch mode" << std::endl
             << "===========================================================================" << std::endl << std::endl;
 }
@@ -51,7 +52,7 @@ int main(int argc,char** argv)
   int version=73;
   //int version=DetectorConstruction::v_HGCALEE_TB;
   int model=DetectorConstruction::m_FULLSECTION;
-  bool coarseGranularity(true);
+  int coarseGranularity(1);
   int shape = 4;
   double eta=0;
 
@@ -77,7 +78,8 @@ int main(int argc,char** argv)
     else if(arg.find("--absThickW")!=std::string::npos)          { absThickW=argv[i+1]; i++;}
     else if(arg.find("--absThickPb")!=std::string::npos)         { absThickPb=argv[i+1]; i++;}
     else if(arg.find("--dropLayers")!=std::string::npos)         { dropLayers=argv[i+1]; i++;}
-    else if(arg.find("--fineGranularity")!=std::string::npos)    { coarseGranularity=false;} 
+    else if(arg.find("--fineGranularity")!=std::string::npos)    { coarseGranularity=0;} 
+    else if(arg.find("--ultraFineGranularity")!=std::string::npos)    { coarseGranularity=-1;} 
     else if(arg.find("--ui")!=std::string::npos)                 { batchMode=false;} 
   }
 

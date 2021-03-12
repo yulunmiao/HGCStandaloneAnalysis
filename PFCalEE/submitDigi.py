@@ -219,8 +219,8 @@ vdict = {8:   dict(puFile='root://eoscms//eos/cms/store/cmst3/group/hgcal/Standa
          37:  dict(puFile=pudflt, granularity='0-17:4,18-26:4,27-38:8', noise='0-26:0.14,27-38:0.2', threshold='0-38:5'),
          38:  dict(puFile=pudflt, granularity='0-10:4,11-22:8', noise='0-10:0.14,11-22:0.2', threshold='0-22:5'),
          39:  dict(puFile=pudflt, granularity='0-8:4,9-20:8', noise='0-8:0.14,9-20:0.2', threshold='0-20:5'),
-         60:  dict(puFile=( 'root://eoscms//eos/cms/store/group/dpg_hgcal/comm_hgcal/amagnan/HGCalTDR/gitV08-05-00/MinBiasLarge/' if lab=='' else
-                            'root://eoscms//eos/cms/store/group/dpg_hgcal/comm_hgcal/amagnan/HGCalTDR/gitV08-05-00/MinBiasSmall/' ),
+         60:  dict(puFile=( 'root://eoscms//eos/cms/store/group/dpg_hgcal/comm_hgcal/amagnan/HGCalTDR/gitV08-05-00/MinBiasSmall/' if lab=='' else
+                            'root://eoscms//eos/cms/store/group/dpg_hgcal/comm_hgcal/amagnan/HGCalTDR/gitV08-05-00/MinBiasLarge/' ),
                    granularity='0-27:1', threshold='0-27:5', noise=get_noise(nmult,lab)),     
          61:  dict(puFile=pudflt, granularity='0-39:1', noise='0-23:0.12,24-39:0.15', threshold='0-39:5'),
          62:  dict(puFile=pudflt, granularity='0-15:1', noise='0-15:0.15', threshold='0-15:5'),
@@ -231,13 +231,13 @@ vdict = {8:   dict(puFile='root://eoscms//eos/cms/store/cmst3/group/hgcal/Standa
          64:  dict(puFile=pudflt, granularity='0-27:1', threshold='0-27:5', noise=get_noise(nmult,lab)),
          65:  dict(puFile=pudflt, granularity='0-27:1', threshold='0-27:5', noise=get_noise(nmult,lab)),
          66:  dict(puFile=pudflt, granularity='0-23:1', noise='0-23:0.12', threshold='0-23:5'),
-         67:  dict(puFile=( 'root://eoscms//eos/cms/store/group/dpg_hgcal/comm_hgcal/amagnan/HGCalTDR/gitV08-05-00/MinBiasLarge/' if lab=='' else
-                            'root://eoscms//eos/cms/store/group/dpg_hgcal/comm_hgcal/amagnan/HGCalTDR/gitV08-05-00/MinBiasSmall/' ),
+         67:  dict(puFile=( 'root://eoscms//eos/cms/store/group/dpg_hgcal/comm_hgcal/amagnan/HGCalTDR/gitV08-05-00/MinBiasSmall/' if lab=='' else
+                            'root://eoscms//eos/cms/store/group/dpg_hgcal/comm_hgcal/amagnan/HGCalTDR/gitV08-05-00/MinBiasLarge/' ),
                    granularity='0-27:1', threshold='0-27:5', noise=get_noise(nmult,lab)),
          70:  dict(puFile=pudflt, granularity='0-25:1', threshold='0-25:5', noise=get_noise(n70,lab)),
-         73:  dict(puFile=pudflt, granularity='0-61:1', threshold='0-61:5', noise=get_noise(n73,lab)),
          80:  dict(puFile=pudflt, granularity='0-25:1', threshold='0-25:5', noise=get_noise(n70,lab)),
-         83:  dict(puFile=pudflt, granularity='0-61:1', threshold='0-61:5', noise=get_noise(n70,lab)),
+         73:  dict(puFile=pudflt, granularity='0-61:1', threshold='0-61:5', noise=get_noise(n73,lab)),
+         83:  dict(puFile=pudflt, granularity='0-61:1', threshold='0-61:5', noise=get_noise(n73,lab)),
          100: dict(puFile=pudflt, granularity='0-27:4', noise='0-27:0.14', threshold='0-27:5'),
          110: dict(puFile=pudflt, granularity='0-27:4', noise='0-27:0.14', threshold='0-27:5'),
 }
