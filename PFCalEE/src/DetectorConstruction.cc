@@ -496,6 +496,8 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 
         G4cout << "[DetectorConstruction] starting v_HGCAL(EE)_v9/10"<< G4endl;
 	
+        G4double z0(2980);
+
         //hard-point extension
         G4double hpAirThick = 0.1*mm;
 
@@ -526,11 +528,6 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
         }
         //cooling plate
         G4double coolingCuThick(6.05*mm);
-
-        //these values are adapted from
-        //https://espace.cern.ch/project-HGCAL/Shared%20Documents/2D%20DRAWINGS/PARAMETER%20DRAWINGS/PDF/20200629_HGCAL_PARAMETER_DRAWING.pdf
-        //there is one more value at the moment because the drawing is for 14 cassettes
-        G4double cassetteVsEta_param[2]={0.002167,1.45883};
 
         std::vector<G4double> a_lThick, b_lThick;
         std::vector<std::string> a_lEle, b_lEle;
@@ -617,13 +614,20 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 
           m_caloStruct.push_back( SamplingSection(a_lThick,a_lEle) );
           totalThick += m_caloStruct[m_caloStruct.size()-1].Total_thick;
-          m_minEta.push_back(cassetteVsEta_param[0]*i+cassetteVsEta_param[1]);
-          m_maxEta.push_back(m_maxEta0);
+          
+          float z=z0+totalThick;
+          float rinner=getRealisticRho(z,"inner");
+          float router=getRealisticRho(z,"outer");
+          m_minEta.push_back(getEtaFromRZ(router,z));
+          m_maxEta.push_back(getEtaFromRZ(rinner,z));
 
           m_caloStruct.push_back( SamplingSection(b_lThick,b_lEle) );
           totalThick += m_caloStruct[m_caloStruct.size()-1].Total_thick;
-          m_minEta.push_back(cassetteVsEta_param[0]*i+cassetteVsEta_param[1]);
-          m_maxEta.push_back(m_maxEta0);
+          z=z0+totalThick;
+          rinner=getRealisticRho(z,"inner");
+          router=getRealisticRho(z,"outer");
+          m_minEta.push_back(getEtaFromRZ(router,z));
+          m_maxEta.push_back(getEtaFromRZ(rinner,z));
         }
 
 	lastEElayer_ = m_caloStruct.size()-1;
@@ -1061,16 +1065,13 @@ void DetectorConstruction::buildHGCALFHE(const unsigned aVersion){
 
   //Jan2021 version
   else if (aVersion==9){
+
+    G4double z0(2980);
+    G4double totalThick(0.);
+    for(size_t i=0; i<m_caloStruct.size(); i++)
+      totalThick += m_caloStruct[i].Total_thick;  
+    std::cout << "HGCALFHE starting at " << z0 << " + " << totalThick << " = " << z0+totalThick << std::endl;
     
-    G4double innerRadiusFineMixed=383.6*mm;
-    G4double innerRadiusCoarse=448.4*mm;    
-    G4double outerEtaFineNonMixed[2]={0.0008571428571,1.487}; //eta=eta(layer) from technical drawing
-    G4double outerRadiusFineMixed[]={1537.05, 1537.05, 1537.05, 1537.05};
-    G4double outerRadiusCoarse[]={1378.52, 1378.52, 1182.99, 1182.99, 1182.99, 
-                                  1182.99, 1037.83, 1037.83,1037.83, 1037.83};
-    G4double zFineMixed[] = {4129.68, 4192.73, 4255.78, 4318.83};
-    G4double zCoarse[] = {4401.08, 4483.33, 4565.58, 4647.83, 4730.08, 
-                          4812.33, 4894.58, 4976.83, 5059.08, 5141.33};
 
     //
     // CE-H fine
@@ -1088,11 +1089,11 @@ void DetectorConstruction::buildHGCALFHE(const unsigned aVersion){
     std::vector<std::string> gap_lEle;    
     gap_lThick.push_back(0.7*mm);   gap_lEle.push_back("Air");
     gap_lThick.push_back(2.5*mm);   gap_lEle.push_back("Cu");
-    gap_lThick.push_back(2.5*mm);     gap_lEle.push_back("Air");
+    gap_lThick.push_back(2.5*mm);   gap_lEle.push_back("Air");
     gap_lThick.push_back(1.6*mm);   gap_lEle.push_back("PCB");
-    gap_lThick.push_back(2.5*mm);     gap_lEle.push_back("Air");
+    gap_lThick.push_back(2.5*mm);   gap_lEle.push_back("Air");
     gap_lThick.push_back(1.6*mm);   gap_lEle.push_back("PCB");
-    gap_lThick.push_back(2.5*mm);     gap_lEle.push_back("Air");
+    gap_lThick.push_back(2.5*mm);   gap_lEle.push_back("Air");
     for(int i=0; i<3; i++){
       gap_lThick.push_back(0.1*mm); gap_lEle.push_back("Si");
     }
@@ -1102,8 +1103,13 @@ void DetectorConstruction::buildHGCALFHE(const unsigned aVersion){
     lThick.insert(lThick.end(), gap_lThick.begin(), gap_lThick.end());
     lEle.insert(lEle.end(),     gap_lEle.begin(),   gap_lEle.end());
     m_caloStruct.push_back( SamplingSection(lThick,lEle) );
-    m_minEta.push_back(1.487);      //this matches the last CE-E layer
-    m_maxEta.push_back(m_maxEta0);
+    totalThick += m_caloStruct[m_caloStruct.size()-1].Total_thick;
+    float z=z0+totalThick;
+    float rinner=getRealisticRho(z,"inner");
+    float router=getRealisticRho(z,"outer");
+    float rmixed=getRealisticRho(z,"mixed");
+    m_minEta.push_back(getEtaFromRZ(router,z));
+    m_maxEta.push_back(getEtaFromRZ(rinner,z));
 
     //CE-H layers 2-10
     lThick.clear(); lEle.clear();
@@ -1112,14 +1118,22 @@ void DetectorConstruction::buildHGCALFHE(const unsigned aVersion){
     lEle.insert(lEle.end(), gap_lEle.begin(), gap_lEle.end());
     for(unsigned i=0; i<6; i++) {
       m_caloStruct.push_back( SamplingSection(lThick,lEle) );
-      m_minEta.push_back(outerEtaFineNonMixed[0]*(i+1)+outerEtaFineNonMixed[1]);
-      m_maxEta.push_back(m_maxEta0);
+      totalThick += m_caloStruct[m_caloStruct.size()-1].Total_thick;
+      z=z0+totalThick;
+      rinner=getRealisticRho(z,"inner");
+      router=getRealisticRho(z,"outer");      
+      m_minEta.push_back(getEtaFromRZ(router,z));
+      m_maxEta.push_back(getEtaFromRZ(rinner,z));
     }
     firstMixedlayer_ = m_caloStruct.size();
     for(unsigned i=0; i<4; i++){
       m_caloStruct.push_back( SamplingSection(lThick,lEle) );
-      m_minEta.push_back(getEtaFromRZ(outerRadiusFineMixed[i], zFineMixed[i]));
-      m_maxEta.push_back(getEtaFromRZ(innerRadiusFineMixed,    zFineMixed[i]));
+      totalThick += m_caloStruct[m_caloStruct.size()-1].Total_thick;
+      z=z0+totalThick;
+      rinner=getRealisticRho(z,"inner");
+      rmixed=getRealisticRho(z,"mixed");
+      m_minEta.push_back(getEtaFromRZ(rmixed,z));
+      m_maxEta.push_back(getEtaFromRZ(rinner,z));
     }
 
     //
@@ -1132,8 +1146,12 @@ void DetectorConstruction::buildHGCALFHE(const unsigned aVersion){
     lEle.insert(lEle.end(), gap_lEle.begin(), gap_lEle.end());
     for(unsigned i=0; i<10; i++) {
       m_caloStruct.push_back( SamplingSection(lThick,lEle) );
-      m_minEta.push_back(getEtaFromRZ(outerRadiusCoarse[i], zCoarse[i]));
-      m_maxEta.push_back(getEtaFromRZ(innerRadiusCoarse,    zCoarse[i]));
+      totalThick += m_caloStruct[m_caloStruct.size()-1].Total_thick;
+      z=z0+totalThick;
+      rinner=getRealisticRho(z,"inner");
+      rmixed=getRealisticRho(z,"mixed");
+      m_minEta.push_back(getEtaFromRZ(rmixed,z));
+      m_maxEta.push_back(getEtaFromRZ(rinner,z));
     }
     
     //end of last layer
@@ -1320,15 +1338,11 @@ void DetectorConstruction::buildHGCALBHE(const unsigned aVersion){
   else if (aVersion==9){
 
     firstScintlayer_ = m_caloStruct.size();
-
-    G4double outerEtaFine[2]={-0.029625,1.4345};//parametrized from v8 for 4 mixed layers
-    G4double outerEtaCoarse[2]={0.008666666667,1.332}; //parametrized from v8 for 10 layers
-    G4double outerRadiusFine[]={1537.05, 1537.05, 1537.05, 1537.05};
-    G4double outerRadiusCoarse[]={1378.52, 1378.52, 1182.99, 1182.99, 1182.99, 
-                                  1182.99, 1037.83, 1037.83,1037.83, 1037.83};
-    G4double zFine[]   = {4129.68, 4192.73, 4255.78, 4318.83};
-    G4double zCoarse[] = {4401.08, 4483.33, 4565.58, 4647.83, 4730.08, 
-                          4812.33, 4894.58, 4976.83, 5059.08, 5141.33};
+    G4double z0(2980);
+    G4double totalThick(0.);
+    for(size_t i=0; i<firstMixedlayer_; i++)
+      totalThick += m_caloStruct[i].Total_thick;
+    std::cout << "HGCALBHE starting at " << z0 << " + " << totalThick << " = " << z0+totalThick << std::endl;
 
     //
     // CE-H fine
@@ -1354,8 +1368,12 @@ void DetectorConstruction::buildHGCALBHE(const unsigned aVersion){
     lEle.insert(lEle.end(), gap_lEle.begin(), gap_lEle.end());
     for(unsigned i=0; i<4; i++){
       m_caloStruct.push_back( SamplingSection(lThick,lEle) );
-      m_minEta.push_back(outerEtaFine[0]*(i+1)+outerEtaFine[1]);
-      m_maxEta.push_back(getEtaFromRZ(outerRadiusFine[i], zFine[i]));      
+      totalThick += m_caloStruct[m_caloStruct.size()-1].Total_thick;
+      float z=z0+totalThick;
+      float router=getRealisticRho(z,"outer");
+      float rmixed=getRealisticRho(z,"mixed");
+      m_minEta.push_back(getEtaFromRZ(router,z));
+      m_maxEta.push_back(getEtaFromRZ(rmixed,z));
     }
 
     firstCoarseScintlayer_ = m_caloStruct.size();
@@ -1369,8 +1387,12 @@ void DetectorConstruction::buildHGCALBHE(const unsigned aVersion){
     lEle.insert(lEle.end(), gap_lEle.begin(), gap_lEle.end());
     for(unsigned i=0; i<10; i++) {
       m_caloStruct.push_back( SamplingSection(lThick,lEle) );
-      m_minEta.push_back(outerEtaCoarse[0]*i+outerEtaCoarse[1]);
-      m_maxEta.push_back(getEtaFromRZ(outerRadiusCoarse[i], zCoarse[i]));
+      totalThick += m_caloStruct[m_caloStruct.size()-1].Total_thick;
+      float z=z0+totalThick;
+      float router=getRealisticRho(z,"outer");
+      float rmixed=getRealisticRho(z,"mixed");
+      m_minEta.push_back(getEtaFromRZ(router,z));
+      m_maxEta.push_back(getEtaFromRZ(rmixed,z));
     }
     
     //end of last layer
@@ -2302,4 +2324,28 @@ G4VSolid *DetectorConstruction::constructSupportCone (std::string baseName, G4do
   solid = new G4Tubs(baseName+"box",minR,maxR,thick/2,minL,width);
 
   return solid;
+}
+
+//
+float DetectorConstruction::getRealisticRho(float z,std::string boundary){
+  if(boundary=="outer") {
+    if(z<3870) return 0.3198*z+495.5339;
+    if(z>=3870 && z<4582) return 1.2598*z-3142.5478;
+    if(z>=4582 && z<5056) return 2630.0000;
+    if(z>=5056) return 0.0159*z+2409.7460;
+  }
+  if(boundary=="inner") {
+    if(z<3662) return 325.0000;
+    if(z>=3662 && z<4117) return 364.0000;
+    if(z>=4117 && z<4369) return 412.0000;
+    if(z>=4369) return 511.0000;
+  }
+  if(boundary=="mixed") {
+    if(z<4407) return 1540.0000;
+    if(z>=4407 && z<4550) return 1388.0000;
+    if(z>=4550 && z<4885) return 1236.0000;
+    if(z>=4885) return 1064.0000;
+  }
+
+  return 0;
 }

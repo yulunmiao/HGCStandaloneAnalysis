@@ -77,6 +77,7 @@ public:
     v_HGCALEE_v8_Cu_12=66,
     v_HGCALEE_v8_air4=67,
     v_HGCALEE_v8_neutmod=68,
+    v_HGCALEE_v8_envelope=69,
     v_HGCALEE_v9=70,
     v_HGCALHE_v9=71,
     v_HGCALBE_v9=72,
@@ -182,6 +183,13 @@ public:
   unsigned firstScintlayer() { return firstScintlayer_;}
   unsigned firstCoarseScintlayer() { return firstCoarseScintlayer_;}
 
+  /**
+     @returns a realistic rho boundary as function of z
+     boundary=outer, inner, mixed
+     these values are based on a digitization of 
+     https://espace.cern.ch/project-HGCAL/Shared%20Documents/2D%20DRAWINGS/PARAMETER%20DRAWINGS/PDF/20210308%20HGCAL%20PARAMETER%20DRAWING.pdf
+   */
+  float getRealisticRho(float z,std::string boundary);
 
 
   /**
