@@ -86,7 +86,7 @@ class SubmitProd(SubmitBase):
             s.write('{}="{}/{}"\n'.format(self.clean_tag(self.mac_var),self.outDir,self.mac_name))
             s.write('export HOME={}\n'.format(os.environ['HOME']))
             s.write('cd {}/\n'.format(os.getcwd()))
-            s.write('source g4env.sh\n')
+            s.write('source {}/g4env.sh\n'.format(os.getcwd()))
             s.write('cd $localdir\n')
             if len(self.p.datafileeos)>0:
                 s.write('eos cp {} {}\n'.format( os.path.join(self.p.datafileeos,self.p.datafile),self.p.datafile))
