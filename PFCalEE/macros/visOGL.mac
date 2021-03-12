@@ -44,8 +44,10 @@
 
 # y vs z
 /vis/viewer/set/viewpointThetaPhi 90. 0.
-/vis/viewer/zoom 2
+#/vis/viewer/zoom 2
 
+#background white
+/vis/viewer/set/background white
 #
 # Specify style (surface or wireframe):
 /vis/viewer/set/style wireframe
