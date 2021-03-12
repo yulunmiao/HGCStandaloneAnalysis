@@ -164,6 +164,7 @@ class SubmitDigi(SubmitBase):
                 s.write('Log = {}/{}\n'.format(self.outDir,log_name))
                 s.write('RequestMemory = 150MB\n')
                 s.write('+JobFlavour = "longlunch"\n')
+                s.write('JobBatchName = digi_' + self.p.gittag + '_' + str(self.p.version) + '_' + self.p.datatype + '\n')
                 s.write('Queue {nruns} {n}, {ic}, {en}, {eta} from (\n'.format( nruns=self.p.nRuns, n=self.clean_tag(self.vtx_tag), ic=self.clean_tag(self.ic_tag), en=self.clean_tag(self.en_tag), eta=self.clean_tag(self.eta_tag) ))
                                 
                 for nvid in self.p.nPuVtxList:
