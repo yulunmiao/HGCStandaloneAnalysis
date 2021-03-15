@@ -60,20 +60,21 @@ unsigned HGCSSGeometryConversion::getNumberOfSiLayers(const DetectorEnum type,
   }*/
 
 unsigned HGCSSGeometryConversion::getNumberOfSiLayers(const DetectorEnum type,
-						      const double & radius) const
+						      const double radius,
+						      const double z) const
 {
   if (theDetector().subDetectorByEnum(type).isScint) return 3;
   if (model_ != 2) return nSiLayers_;
 
-  double r1 = 1200;
-  if (type == DetectorEnum::FHCAL) {
-    r1 = 1000;
-  }
-  double r2 = theDetector().subDetectorByEnum(type).radiusLim;
-  if (radius>r1) return 3;
-  else if (radius>r2) return 2;
-  else return 1;
-  return 3;
+  double z2 = z * z;
+  double z3 = z2 * z;
+  double z4 = z3 * z;
+  double r100 = -z4*1.60163e-06 + z3*2.50640E-03 - z2*1.46943e+00 + z*3.82025e+02 - 3.705690e+04;
+  double r200 = -z4*4.43240E-07 + z3*7.70078E-04 - z2*4.97013E-01 + z*1.40778E+02 - 1.46340E+04;
+  
+  if (radius<r100) return 1;
+  else if(radius<r200) return 2;
+  else return 3;
 }
 
 HGCSSGeometryConversion::~HGCSSGeometryConversion(){
