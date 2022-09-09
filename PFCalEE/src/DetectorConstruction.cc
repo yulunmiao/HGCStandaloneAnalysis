@@ -177,6 +177,50 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 	break;
       }//TB setup
 
+    case v_HGCAL_2022TB:
+      {
+	G4cout << "[DetectorConstruction] starting v_HGCAL for 2022 testbeam"<< G4endl;
+
+	std::vector<G4double> lThick;
+	std::vector<std::string> lEle;
+
+        //ABSORBER + AIR VOLUME
+        G4double absWThick(10.*mm);
+        G4double flypathAirThick(100.*mm);
+        G4cout << " Wabs=" << absWThick << " air=" << flypathAirThick << G4endl;
+        lThick.push_back(absWThick);   lEle.push_back("W");
+        lThick.push_back(flypathAirThick);   lEle.push_back("Air");
+
+        //MODULE - COOLING PLATE
+
+        //module
+        G4double modPCBThick(1.6*mm);
+        G4double modAirThick1(0.4*mm);
+        G4double modSiThick(0.1*mm); //x3 below
+        G4double modAirThick2(0.3*mm);
+        G4double modWCuThick(1.4*mm);
+        if(version_==v_HGCAL_v10 || version_==v_HGCALEE_v10) {
+          modWCuThick=1.521929934;
+        }
+        lThick.push_back(modPCBThick);   lEle.push_back("PCB");
+        lThick.push_back(modAirThick1);  lEle.push_back("Air");
+        for(int j=0; j<3; j++){
+          lThick.push_back(modSiThick);  lEle.push_back("Si");
+        }
+        lThick.push_back(modAirThick2);  lEle.push_back("Air");
+        lThick.push_back(modWCuThick);   lEle.push_back("WCu");
+
+        //cooling plate
+        G4double coolingCuThick(6.05*mm);
+        lThick.push_back(coolingCuThick);   lEle.push_back("Cu");
+
+        //single structure
+        m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+	
+	break;
+      }//TB setup
+
+
     case v_HGCAL_2016TB:
       {
 	G4cout << "[DetectorConstruction] starting v_HGCAL for testbeam 2016"<< G4endl;
@@ -2085,11 +2129,14 @@ void DetectorConstruction::buildSectorStack(const unsigned sectorNum,
   for (size_t i=0; i<m_caloStruct.size(); i++) {
     std::cout << "sensitiveZ_[" << i << "] = " << m_caloStruct[i].sensitiveZ << ";"  << std::endl;
   }
-  std::cout << " Eta boundary of sensitive layers for HGCSSDetector class: " << std::endl;
-  for (size_t i=0; i<m_caloStruct.size(); i++) {
-    //<< " maxRadius=" <<
-    if (i<firstScintlayer_) std::cout << " etaBoundary_[" << i << "] =" << m_minEta[i] << ";"  << std::endl;
-    else std::cout << " etaBoundary_[" << i << "] =" << m_maxEta[i] << ";"  << std::endl;
+
+  if (model_ == DetectorConstruction::m_FULLSECTION) {
+    std::cout << " Eta boundary of sensitive layers for HGCSSDetector class: " << std::endl;
+    for (size_t i=0; i<m_caloStruct.size(); i++) {
+      //<< " maxRadius=" <<
+      if (i<firstScintlayer_) std::cout << " etaBoundary_[" << i << "] =" << m_minEta[i] << ";"  << std::endl;
+      else std::cout << " etaBoundary_[" << i << "] =" << m_maxEta[i] << ";"  << std::endl;
+    }
   }
 
   //dummy layer to get genparticles

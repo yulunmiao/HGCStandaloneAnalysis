@@ -89,6 +89,7 @@ public:
     v_HGCALEE_TB_allW=102,
     v_HGCALEE_TB_samedEdx=103,
     v_HGCAL_2016TB=110,
+    v_HGCAL_2022TB=120,
     v_testCu=200
   };
 

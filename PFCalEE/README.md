@@ -16,9 +16,13 @@ https://twiki.cern.ch/twiki/bin/view/Sandbox/AnnemarieMagnanSandbox
 for what needs to be put in the homemade classes and makefile for root to
 understand them (see also example in class userlib/include/HGCSSSimHit.hh).
 
-## Setup the environment
+## Setup the environment (lxplus SLC7)
 
+```
+git clone git@github.com:pfs/PFCal.git
+cd PFCal/PFCalEE
 source g4env.sh
+```
 
 ## Compile
 
@@ -57,28 +61,30 @@ done
 
 ## Visualization
 
-To produce a `prim` file which can be given as input to DAWN you can run the following command
+To produce a `prim` file which can be given as input to OGL you can run the following command
 ```
-PFCalEE vis.mac --version 70 --model 2 --ui
+PFCalEE macros/visOGL.mac --version 70 --model 2 --ui
 ```
-and then in the gui execute
-```
-/control/execute vis.mac
-```
-The output will be a `.prim` file.
-To run it with DAWN you have to follow the installation procedure which is found in https://geant4.kek.jp/~tanaka/DAWN/About_DAWN.html.
+
+Alternatively you can also do it with the old DAWN executable using `macros/vis.mac`.
+But before, you need to install DAWN.
+The installation procedure which is found in https://geant4.kek.jp/~tanaka/DAWN/About_DAWN.html.
 Below is a summary:
 ```
 gunzip dawn_3_91a.tgz 
 tar -xvf dawn_3_91a.tar 
 cd dawn_3_91a
 cp Makefile.default Makefile
+#at this point edit the INSTALL_DIR location in the make file and make sure it exists
 make clean
 make guiclean
 make
 make install 
+#make sure the files dawn and DAWN_GUI in INSTALL_DIR are executables with `chmod u+x`
+#add the INSTALL_DIR to the PATH with `export PATH=$PATH:INSTALL_DIR
 ```
-Then it runs simply as
+
+You can also run on the so called .prim files using
 ```
 dawn prim_file
 ```
