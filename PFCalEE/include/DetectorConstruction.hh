@@ -89,7 +89,15 @@ public:
     v_HGCALEE_TB_allW=102,
     v_HGCALEE_TB_samedEdx=103,
     v_HGCAL_2016TB=110,
-    v_HGCAL_2022TB=120,
+    v_HGCAL_2022TB_05_05=120,
+    v_HGCAL_2022TB_1_05=121,
+    v_HGCAL_2022TB_2_05=122,
+    v_HGCAL_2022TB_05_1=123,
+    v_HGCAL_2022TB_1_1=124,
+    v_HGCAL_2022TB_2_1=125,
+    v_HGCAL_2022TB_05_2=126,
+    v_HGCAL_2022TB_1_2=127,
+    v_HGCAL_2022TB_2_2=128,
     v_testCu=200
   };
 
