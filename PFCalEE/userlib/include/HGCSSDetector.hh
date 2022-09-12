@@ -1308,6 +1308,17 @@ public:
       indices_[5] = indices_[1];
       indices_[6] = indices_[1];
     }
+    else if (versionNumber>=120 && versionNumber<130){
+      indices_[0] = 0;
+      indices_[1] = 0;
+      indices_[2] = 0;
+      indices_[3] = 1;
+      indices_[4] = indices_[3];
+      indices_[5] = indices_[3];
+      indices_[6] = indices_[3];
+      sensitiveZ_.resize(indices_[3],0);
+      sensitiveZ_[0] = 47.0626;
+    }
     else {
       indices_[0] = 0;
       indices_[1] = versionNumber==24?11:10;

@@ -238,11 +238,11 @@ class SubmitDigi(SubmitBase):
 ###################################################################################################
 ###################################################################################################
 bval = 'BON' if opt.Bfield>0 else 'BOFF'
-lab = '200u'
+nSiLayers = 3
+lab = '{}00u'.format(nSiLayers)
 odir = '{}/git{}/version_{}/model_{}/{}/{}/{}'.format(opt.out,opt.gittag,opt.version,opt.model,opt.datatype,bval,lab)
 edirout = '/eos/cms{}/git{}/{}'.format(opt.eosout,opt.gittag,opt.datatype)
 edirin = 'root://eoscms//eos/cms{}/git{}/{}'.format(opt.eosin,opt.gittag,opt.datatype) if opt.eosin != '' else edirout
-nSiLayers = 2
 
 nmult = ('0-27:0.27', '0-27:0.13', '0-27:0.07', '0-27:0.13')
 n63 = ('0-51:0.27,53-68:0.15', '0-51:0.13,53-68:0.15', '0-51:0.07,53-68:0.15', '0-51:0.13,53-68:0.15')
@@ -304,6 +304,15 @@ vdict = {8:   dict(puFile='root://eoscms//eos/cms/store/cmst3/group/hgcal/Standa
          83:  dict(puFile=pudflt, granularity='0-61:1', threshold='0-61:5', noise=get_noise(n73,lab)),
          100: dict(puFile=pudflt, granularity='0-27:4', noise='0-27:0.14', threshold='0-27:5'),
          110: dict(puFile=pudflt, granularity='0-27:4', noise='0-27:0.14', threshold='0-27:5'),
+         120: dict(puFile=pudflt, granularity='0-61:1', threshold='0-61:5', noise=get_noise(n73,lab)),
+         121: dict(puFile=pudflt, granularity='0-61:1', threshold='0-61:5', noise=get_noise(n73,lab)),
+         122: dict(puFile=pudflt, granularity='0-61:1', threshold='0-61:5', noise=get_noise(n73,lab)),
+         123: dict(puFile=pudflt, granularity='0-61:1', threshold='0-61:5', noise=get_noise(n73,lab)),
+         124: dict(puFile=pudflt, granularity='0-61:1', threshold='0-61:5', noise=get_noise(n73,lab)),
+         125: dict(puFile=pudflt, granularity='0-61:1', threshold='0-61:5', noise=get_noise(n73,lab)),
+         126: dict(puFile=pudflt, granularity='0-61:1', threshold='0-61:5', noise=get_noise(n73,lab)),
+         127: dict(puFile=pudflt, granularity='0-61:1', threshold='0-61:5', noise=get_noise(n73,lab)),
+         128: dict(puFile=pudflt, granularity='0-61:1', threshold='0-61:5', noise=get_noise(n73,lab)),
 }
 
 gran = vdict[opt.version]['granularity']

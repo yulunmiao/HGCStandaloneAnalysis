@@ -28,6 +28,7 @@ parser.add_argument(      '--enList'      , dest='enList'     , type=int,   help
 parser.add_argument('-S', '--no-submit'   , dest='nosubmit'   ,             help='Do not submit batch job.', action="store_true")
 opt, _ = parser.parse_known_args()
 
+print(opt)
 
 ###################################################################################################
 ###################################################################################################
