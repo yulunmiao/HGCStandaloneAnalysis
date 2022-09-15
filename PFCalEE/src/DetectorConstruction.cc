@@ -177,9 +177,9 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 	break;
       }//TB setup
 
-    case v_HGCAL_2022TB_05_05: case v_HGCAL_2022TB_1_05: case v_HGCAL_2022TB_2_05:
-    case v_HGCAL_2022TB_05_1:  case v_HGCAL_2022TB_1_1:  case v_HGCAL_2022TB_2_1:
-    case v_HGCAL_2022TB_05_2:  case v_HGCAL_2022TB_1_2:  case v_HGCAL_2022TB_2_2:
+    case v_HGCAL_2022TB_1_1:     case v_HGCAL_2022TB_2_1:     case v_HGCAL_2022TB_3_1:     case v_HGCAL_2022TB_4_1: 
+    case v_HGCAL_2022TB_5_1:     case v_HGCAL_2022TB_6_1:     case v_HGCAL_2022TB_7_1:     case v_HGCAL_2022TB_8_1: 
+    case v_HGCAL_2022TB_9_1:     case v_HGCAL_2022TB_10_1: 
       {
 	G4cout << "[DetectorConstruction] starting v_HGCAL for 2022 testbeam"<< G4endl;
 
@@ -187,20 +187,22 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 	std::vector<std::string> lEle;
 
         //ABSORBER + AIR VOLUME
-        G4double absWThick(0.3504);
+        G4double absWThick(0.3503*cm);
         G4double flypathAirThick(100.*mm);
-        if(version_==v_HGCAL_2022TB_05_1 || version_==v_HGCAL_2022TB_05_05 || version_==v_HGCAL_2022TB_05_2) {
-          absWThick *=0.5;
-        }
-        if(version_==v_HGCAL_2022TB_2_1 || version_==v_HGCAL_2022TB_2_05 || version_==v_HGCAL_2022TB_2_2) {
-          absWThick *=2;
-        }
-        if(version_==v_HGCAL_2022TB_1_05 || version_==v_HGCAL_2022TB_05_2 || version_==v_HGCAL_2022TB_2_05) {
-          flypathAirThick*=0.5;
-        }
-        if(version_==v_HGCAL_2022TB_1_2 || version_==v_HGCAL_2022TB_05_2 || version_==v_HGCAL_2022TB_2_2) {
-          flypathAirThick*=2;
-        }
+        if(version_ == v_HGCAL_2022TB_2_1)  absWThick *=2;
+        if(version_ == v_HGCAL_2022TB_3_1)  absWThick *=3;
+        if(version_ == v_HGCAL_2022TB_4_1)  absWThick *=4;
+        if(version_ == v_HGCAL_2022TB_5_1)  absWThick *=5;
+        if(version_ == v_HGCAL_2022TB_6_1)  absWThick *=6;
+        if(version_ == v_HGCAL_2022TB_7_1)  absWThick *=7;
+        if(version_ == v_HGCAL_2022TB_8_1)  absWThick *=8;
+        if(version_ == v_HGCAL_2022TB_9_1)  absWThick *=9;
+        if(version_ == v_HGCAL_2022TB_10_1) absWThick *=10;
+        
+        //if(version_==v_HGCAL_2022TB_1_05 || version_==v_HGCAL_2022TB_05_2 || version_==v_HGCAL_2022TB_2_05) {
+        //  flypathAirThick*=0.5;
+        // }
+
         G4cout << " Wabs=" << absWThick << " air=" << flypathAirThick << G4endl;
         lThick.push_back(absWThick);   lEle.push_back("W");
         lThick.push_back(flypathAirThick);   lEle.push_back("Air");

@@ -1308,7 +1308,7 @@ public:
       indices_[5] = indices_[1];
       indices_[6] = indices_[1];
     }
-    else if (versionNumber>=120 && versionNumber<130){
+    else if (versionNumber>=120 && versionNumber<140){
       indices_[0] = 0;
       indices_[1] = 0;
       indices_[2] = 0;
