@@ -1317,8 +1317,17 @@ public:
       indices_[5] = indices_[3];
       indices_[6] = indices_[3];
       sensitiveZ_.resize(indices_[3],0);
-      sensitiveZ_[0] = 47.0626;
-    }
+      if(versionNumber==120) sensitiveZ_[0] = 48.727;
+      if(versionNumber==121) sensitiveZ_[0] = 50.478;
+      if(versionNumber==122) sensitiveZ_[0] = 52.2295;
+      if(versionNumber==123) sensitiveZ_[0] = 53.981;
+      if(versionNumber==124) sensitiveZ_[0] = 55.7325;
+      if(versionNumber==125) sensitiveZ_[0] = 57.484;
+      if(versionNumber==126) sensitiveZ_[0] = 59.2355;
+      if(versionNumber==127) sensitiveZ_[0] = 60.987;
+      if(versionNumber==128) sensitiveZ_[0] = 62.7385;
+      if(versionNumber==129) sensitiveZ_[0] = 64.49;
+    }      
     else {
       indices_[0] = 0;
       indices_[1] = versionNumber==24?11:10;

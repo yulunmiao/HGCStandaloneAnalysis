@@ -881,7 +881,7 @@ int main(int argc, char** argv){//main
       if (debug>0){
 	std::cout << " -- Layer " << iL << " " << subdet.name << " z=" << meanZpos
 		  << " bins = " << nBins << " histE entries = " << histE.size() << std::endl;
-      }
+    }
 
       //cell-to-cell cross-talk for scintillator
       if (isScint){
