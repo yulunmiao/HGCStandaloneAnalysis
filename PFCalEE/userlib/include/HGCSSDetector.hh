@@ -1327,6 +1327,9 @@ public:
       if(versionNumber==127) sensitiveZ_[0] = 60.987;
       if(versionNumber==128) sensitiveZ_[0] = 62.7385;
       if(versionNumber==129) sensitiveZ_[0] = 64.49;
+      if(versionNumber==130) sensitiveZ_[0] = 37.7385;
+      if(versionNumber==131) sensitiveZ_[0] = 112.738;
+      if(versionNumber==132) sensitiveZ_[0] = 262.739;
     }      
     else {
       indices_[0] = 0;

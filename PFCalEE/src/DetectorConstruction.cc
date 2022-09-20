@@ -180,6 +180,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
     case v_HGCAL_2022TB_1_1:     case v_HGCAL_2022TB_2_1:     case v_HGCAL_2022TB_3_1:     case v_HGCAL_2022TB_4_1: 
     case v_HGCAL_2022TB_5_1:     case v_HGCAL_2022TB_6_1:     case v_HGCAL_2022TB_7_1:     case v_HGCAL_2022TB_8_1: 
     case v_HGCAL_2022TB_9_1:     case v_HGCAL_2022TB_10_1: 
+    case v_HGCAL_2022TB_9_05:    case v_HGCAL_2022TB_9_2:     case v_HGCAL_2022TB_9_5:
       {
 	G4cout << "[DetectorConstruction] starting v_HGCAL for 2022 testbeam"<< G4endl;
 
@@ -198,10 +199,18 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
         if(version_ == v_HGCAL_2022TB_8_1)  absWThick *=8;
         if(version_ == v_HGCAL_2022TB_9_1)  absWThick *=9;
         if(version_ == v_HGCAL_2022TB_10_1) absWThick *=10;
-        
-        //if(version_==v_HGCAL_2022TB_1_05 || version_==v_HGCAL_2022TB_05_2 || version_==v_HGCAL_2022TB_2_05) {
-        //  flypathAirThick*=0.5;
-        // }
+        if(version_ == v_HGCAL_2022TB_9_05) {
+          absWThick *=9;
+          flypathAirThick *= 0.5;
+        }
+        if(version_ == v_HGCAL_2022TB_9_2) {
+          absWThick *=9;
+          flypathAirThick *= 2;
+        }
+        if(version_ == v_HGCAL_2022TB_9_5) {
+          absWThick *=9;
+          flypathAirThick *= 5;
+        }
 
         G4cout << " Wabs=" << absWThick << " air=" << flypathAirThick << G4endl;
         lThick.push_back(absWThick);   lEle.push_back("W");

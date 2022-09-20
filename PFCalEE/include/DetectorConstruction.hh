@@ -99,6 +99,9 @@ public:
     v_HGCAL_2022TB_8_1=127,
     v_HGCAL_2022TB_9_1=128,
     v_HGCAL_2022TB_10_1=129,
+    v_HGCAL_2022TB_9_05=130,
+    v_HGCAL_2022TB_9_2=131,
+    v_HGCAL_2022TB_9_5=132,
     v_testCu=200
   };
 

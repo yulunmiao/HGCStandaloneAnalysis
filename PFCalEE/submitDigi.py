@@ -305,16 +305,10 @@ vdict = {8:   dict(puFile='root://eoscms//eos/cms/store/cmst3/group/hgcal/Standa
          100: dict(puFile=pudflt, granularity='0-27:4', noise='0-27:0.14', threshold='0-27:5'),
          110: dict(puFile=pudflt, granularity='0-27:4', noise='0-27:0.14', threshold='0-27:5'),
          120: dict(puFile=pudflt, granularity='0-1:1', threshold='0-1:5', noise=get_noise(n73,lab)),
-         121: dict(puFile=pudflt, granularity='0-1:1', threshold='0-1:5', noise=get_noise(n73,lab)),
-         122: dict(puFile=pudflt, granularity='0-1:1', threshold='0-1:5', noise=get_noise(n73,lab)),
-         123: dict(puFile=pudflt, granularity='0-1:1', threshold='0-1:5', noise=get_noise(n73,lab)),
-         124: dict(puFile=pudflt, granularity='0-1:1', threshold='0-1:5', noise=get_noise(n73,lab)),
-         125: dict(puFile=pudflt, granularity='0-1:1', threshold='0-1:5', noise=get_noise(n73,lab)),
-         126: dict(puFile=pudflt, granularity='0-1:1', threshold='0-1:5', noise=get_noise(n73,lab)),
-         127: dict(puFile=pudflt, granularity='0-1:1', threshold='0-1:5', noise=get_noise(n73,lab)),
-         128: dict(puFile=pudflt, granularity='0-1:1', threshold='0-1:5', noise=get_noise(n73,lab)),
-         129: dict(puFile=pudflt, granularity='0-1:1', threshold='0-1:5', noise=get_noise(n73,lab)),
 }
+
+for i in range(121,140):
+    vdict[i]=vdict[120].copy()
 
 gran = vdict[opt.version]['granularity']
 thr  = vdict[opt.version]['threshold']
