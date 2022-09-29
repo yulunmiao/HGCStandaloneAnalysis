@@ -224,9 +224,6 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
         G4double modSiThick(0.1*mm); //x3 below
         G4double modAirThick2(0.3*mm);
         G4double modWCuThick(1.4*mm);
-        if(version_==v_HGCAL_v10 || version_==v_HGCALEE_v10) {
-          modWCuThick=1.521929934;
-        }
         lThick.push_back(modPCBThick);   lEle.push_back("PCB");
         lThick.push_back(modAirThick1);  lEle.push_back("Air");
         for(int j=0; j<3; j++){
