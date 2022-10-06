@@ -114,7 +114,7 @@
 #particle gun
 /tracking/storeTrajectory 1
 /gun/particle e+
-/gun/energy 100 GeV
+/gun/energy 80 GeV
 /gun/direction 0 0 1
 /gun/position 0 0 -61 cm
 /run/beamOn 1

@@ -187,46 +187,65 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 	std::vector<G4double> lThick;
 	std::vector<std::string> lEle;
 
+        //UPSTREAM HODOSCOPE
+        G4double sciThick(1*cm);
+        G4double sciAirGap(20*cm),sciAirGapToAbsorber(122*cm);
+        lThick.push_back(sciThick);lEle.push_back("Scintillator");
+        lThick.push_back(sciAirGap);lEle.push_back("Air");
+        lThick.push_back(sciThick);lEle.push_back("Scintillator");
+        lThick.push_back(sciAirGap);lEle.push_back("Air");
+        lThick.push_back(sciThick);lEle.push_back("Scintillator");
+        lThick.push_back(sciAirGap);lEle.push_back("Air");
+        lThick.push_back(sciThick);lEle.push_back("Scintillator");
+        lThick.push_back(sciAirGapToAbsorber);lEle.push_back("Air");
+
         //ABSORBER + AIR VOLUME
-        G4double absWThick(0.3503*cm);
-        G4double flypathAirThick(100.*mm);
-        if(version_ == v_HGCAL_2022TB_2_1)  absWThick *=2;
-        if(version_ == v_HGCAL_2022TB_3_1)  absWThick *=3;
-        if(version_ == v_HGCAL_2022TB_4_1)  absWThick *=4;
-        if(version_ == v_HGCAL_2022TB_5_1)  absWThick *=5;
-        if(version_ == v_HGCAL_2022TB_6_1)  absWThick *=6;
-        if(version_ == v_HGCAL_2022TB_7_1)  absWThick *=7;
-        if(version_ == v_HGCAL_2022TB_8_1)  absWThick *=8;
-        if(version_ == v_HGCAL_2022TB_9_1)  absWThick *=9;
-        if(version_ == v_HGCAL_2022TB_10_1) absWThick *=10;
+        G4double absFeThick(0.3*mm),absPbThick(0.3503*cm),absAirGap(0.4*mm),flypathAirThick(1.7*cm);
+        G4int nplates(1);
+        if(version_ == v_HGCAL_2022TB_2_1)  nplates=2;
+        if(version_ == v_HGCAL_2022TB_3_1)  nplates=3;
+        if(version_ == v_HGCAL_2022TB_4_1)  nplates=4;
+        if(version_ == v_HGCAL_2022TB_5_1)  nplates=5;
+        if(version_ == v_HGCAL_2022TB_6_1)  nplates=6;
+        if(version_ == v_HGCAL_2022TB_7_1)  nplates=7;
+        if(version_ == v_HGCAL_2022TB_8_1)  nplates=9;
+        if(version_ == v_HGCAL_2022TB_9_1)  nplates=11;
+        if(version_ == v_HGCAL_2022TB_10_1) nplates=13;
         if(version_ == v_HGCAL_2022TB_9_05) {
-          absWThick *=9;
+          nplates=11;
           flypathAirThick *= 0.5;
         }
         if(version_ == v_HGCAL_2022TB_9_2) {
-          absWThick *=9;
+          nplates=11;
           flypathAirThick *= 2;
         }
         if(version_ == v_HGCAL_2022TB_9_5) {
-          absWThick *=9;
+          nplates=11;
           flypathAirThick *= 5;
         }
 
-        G4cout << " Wabs=" << absWThick << " air=" << flypathAirThick << G4endl;
-        lThick.push_back(absWThick);   lEle.push_back("W");
-        lThick.push_back(flypathAirThick);   lEle.push_back("Air");
-
+        G4cout << " Nplates=" << nplates << " air=" << flypathAirThick << G4endl;
+        for(int iplate=0; iplate<nplates; iplate++) {
+          lThick.push_back(absFeThick);  lEle.push_back("Fe");
+          lThick.push_back(absPbThick);  lEle.push_back("Pb");
+          lThick.push_back(absFeThick);  lEle.push_back("Fe");
+          if(iplate==nplates-1) continue;
+          lThick.push_back(absAirGap);   lEle.push_back("Air");
+        }
+          
         //MODULE - COOLING PLATE
 
         //module
-        G4double modPCBThick(1.6*mm);
+        G4double modPCBThick(1.3*mm);  //add more copper?
         G4double modAirThick1(0.4*mm);
         G4double modSiThick(0.1*mm); //x3 below
         G4double modAirThick2(0.3*mm);
-        G4double modWCuThick(1.4*mm);
-        if(version_==v_HGCAL_v10 || version_==v_HGCALEE_v10) {
-          modWCuThick=1.521929934;
-        }
+        G4double modWCuThick(1.4*mm); //add gold?
+
+        //FLY PATH between absorber and colling plate
+        flypathAirThick -= modPCBThick+modAirThick1+3*modSiThick+modAirThick2;
+        lThick.push_back(flypathAirThick);   lEle.push_back("Air");
+
         lThick.push_back(modPCBThick);   lEle.push_back("PCB");
         lThick.push_back(modAirThick1);  lEle.push_back("Air");
         for(int j=0; j<3; j++){
