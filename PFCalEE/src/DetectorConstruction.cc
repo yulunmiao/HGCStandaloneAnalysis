@@ -200,7 +200,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
         lThick.push_back(sciAirGapToAbsorber);lEle.push_back("Air");
 
         //ABSORBER + AIR VOLUME
-        G4double absFeThick(0.3*mm),absPbThick(0.3503*cm),absAirGap(0.4*mm),flypathAirThick(1.7*cm);
+        G4double absFeThick(0.3*mm),absPbThick(0.485*cm),absAirGap(0.4*mm),flypathAirThick(1.7*cm);
         G4int nplates(1);
         if(version_ == v_HGCAL_2022TB_2_1)  nplates=2;
         if(version_ == v_HGCAL_2022TB_3_1)  nplates=3;
