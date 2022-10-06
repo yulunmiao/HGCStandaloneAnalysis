@@ -1317,19 +1317,19 @@ public:
       indices_[5] = indices_[3];
       indices_[6] = indices_[3];
       sensitiveZ_.resize(indices_[3],0);
-      if(versionNumber==120) sensitiveZ_[0] = 48.727;
-      if(versionNumber==121) sensitiveZ_[0] = 50.478;
-      if(versionNumber==122) sensitiveZ_[0] = 52.2295;
-      if(versionNumber==123) sensitiveZ_[0] = 53.981;
-      if(versionNumber==124) sensitiveZ_[0] = 55.7325;
-      if(versionNumber==125) sensitiveZ_[0] = 57.484;
-      if(versionNumber==126) sensitiveZ_[0] = 59.2355;
-      if(versionNumber==127) sensitiveZ_[0] = 60.987;
-      if(versionNumber==128) sensitiveZ_[0] = 62.7385;
-      if(versionNumber==129) sensitiveZ_[0] = 64.49;
-      if(versionNumber==130) sensitiveZ_[0] = 37.7385;
-      if(versionNumber==131) sensitiveZ_[0] = 112.738;
-      if(versionNumber==132) sensitiveZ_[0] = 262.739;
+      if(versionNumber==120) sensitiveZ_[0] = 936.227;
+      if(versionNumber==121) sensitiveZ_[0] = 938.478;
+      if(versionNumber==122) sensitiveZ_[0] = 940.73;
+      if(versionNumber==123) sensitiveZ_[0] = 942.981;
+      if(versionNumber==124) sensitiveZ_[0] = 945.232;
+      if(versionNumber==125) sensitiveZ_[0] = 947.484;
+      if(versionNumber==126) sensitiveZ_[0] = 949.735;
+      if(versionNumber==127) sensitiveZ_[0] = 954.238;
+      if(versionNumber==128) sensitiveZ_[0] = 958.741;
+      if(versionNumber==129) sensitiveZ_[0] = 963.244;
+      if(versionNumber==130) sensitiveZ_[0] = 954.491;
+      if(versionNumber==131) sensitiveZ_[0] = 967.241;
+      if(versionNumber==132) sensitiveZ_[0] = 992.741;
     }      
     else {
       indices_[0] = 0;
