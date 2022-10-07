@@ -190,17 +190,17 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
         //UPSTREAM HODOSCOPE
         G4double sciThick(1*cm);
         G4double sciAirGap(20*cm),sciAirGapToAbsorber(122*cm);
-        lThick.push_back(sciThick);lEle.push_back("Scintillator");
+        lThick.push_back(sciThick);lEle.push_back("Hodoscope");
         lThick.push_back(sciAirGap);lEle.push_back("Air");
-        lThick.push_back(sciThick);lEle.push_back("Scintillator");
+        lThick.push_back(sciThick);lEle.push_back("Hodoscope");
         lThick.push_back(sciAirGap);lEle.push_back("Air");
-        lThick.push_back(sciThick);lEle.push_back("Scintillator");
+        lThick.push_back(sciThick);lEle.push_back("Hodoscope");
         lThick.push_back(sciAirGap);lEle.push_back("Air");
-        lThick.push_back(sciThick);lEle.push_back("Scintillator");
+        lThick.push_back(sciThick);lEle.push_back("Hodoscope");
         lThick.push_back(sciAirGapToAbsorber);lEle.push_back("Air");
 
         //ABSORBER + AIR VOLUME
-        G4double absFeThick(0.3*mm),absPbThick(0.485*cm),absAirGap(0.4*mm),flypathAirThick(1.7*cm);
+        G4double absFeThick(0.3*mm),absPbThick(0.49*cm),absAirGap(0.4*mm),flypathAirThick(1.7*cm);
         G4int nplates(1);
         if(version_ == v_HGCAL_2022TB_2_1)  nplates=2;
         if(version_ == v_HGCAL_2022TB_3_1)  nplates=3;
@@ -1764,6 +1764,10 @@ void DetectorConstruction::DefineMaterials()
   m_materials["Scintillator"]->AddMaterial(m_materials["C"]  , 91.512109*perCent);
   m_materials["Scintillator"]->AddMaterial(m_materials["H"]  , 8.4878906*perCent);
   m_dEdx["Scintillator"] = m_dEdx["C"];
+  m_materials["Hodoscope"]= new G4Material("Hodoscope",1.032*g/cm3,2);
+  m_materials["Hodoscope"]->AddMaterial(m_materials["C"]  , 91.512109*perCent);
+  m_materials["Hodoscope"]->AddMaterial(m_materials["H"]  , 8.4878906*perCent);
+  m_dEdx["Hodoscope"]=m_dEdx["C"];
 
   m_materials["Polystyrole"]= new G4Material("Polystyrole",1.065*g/cm3,2);
   m_materials["Polystyrole"]->AddMaterial(m_materials["H"]  , 50*perCent);

@@ -1317,7 +1317,7 @@ public:
       indices_[5] = indices_[3];
       indices_[6] = indices_[3];
       sensitiveZ_.resize(indices_[3],0);
-      if(versionNumber==120) sensitiveZ_[0] = 936.9;
+      if(versionNumber==120) sensitiveZ_[0] = 936.925;
       if(versionNumber==121) sensitiveZ_[0] = 939.825;
       if(versionNumber==122) sensitiveZ_[0] = 942.75;
       if(versionNumber==123) sensitiveZ_[0] = 945.675;
