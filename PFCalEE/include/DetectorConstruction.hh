@@ -1,6 +1,8 @@
 #ifndef DetectorConstruction_h
 #define DetectorConstruction_h 1
 
+#include "TRandom2.h"
+
 #include "SamplingSection.hh"
 
 #include "G4VUserDetectorConstruction.hh"
@@ -112,7 +114,9 @@ public:
 		       std::string absThickW="",
 		       std::string absThickPb="",
 		       std::string dropLayer="",
-		       int coarseGranularity=1);
+		       int coarseGranularity=1,
+                       int wcuseed=42,
+                       float wcuresol=-1);
 
   void buildHGCALFHE(const unsigned aVersion);
   void buildHGCALBHE(const unsigned aVersion);
@@ -275,6 +279,8 @@ private:
 
   int m_coarseGranularity; //whether fine or coarse cells should be used
   DetectorMessenger* m_detectorMessenger;  //pointer to the Messenger
+
+  float wcuseed_,wcuresol_;
 };
 
 

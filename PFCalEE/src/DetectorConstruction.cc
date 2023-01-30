@@ -38,8 +38,11 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 					   std::string absThickW,
 					   std::string absThickPb,
 					   std::string dropLayer,
-                                           int coarseGranularity) :
-  version_(ver), model_(mod), shape_(shape), addPrePCB_(false), m_coarseGranularity(coarseGranularity)
+                                           int coarseGranularity,
+                                           int wcuseed,
+                                           float wcuresol) :
+  version_(ver), model_(mod), shape_(shape), addPrePCB_(false), m_coarseGranularity(coarseGranularity),
+  wcuseed_(wcuseed), wcuresol_(wcuresol)
 {
   doHF_ = false;
 
@@ -583,13 +586,15 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
             a_lThick.push_back(modSiThick);  a_lEle.push_back("Si");
           }
           a_lThick.push_back(modAirThick2);  a_lEle.push_back("Air");
-          a_lThick.push_back(modWCuThick);   a_lEle.push_back("WCu");
+          TString wcutag; wcutag.Form("WCu_%d",i*2);
+          a_lThick.push_back(modWCuThick);   a_lEle.push_back(wcutag.Data());
    
           //B-side of the cassette
           //cooling plate
           b_lThick.push_back(coolingCuThick); b_lEle.push_back("Cu");
 
           //"inverted" module
+          wcutag.Form("WCu_%d",i*2+1);
           b_lThick.push_back(modWCuThick);   b_lEle.push_back("WCu");
           b_lThick.push_back(modAirThick2);  b_lEle.push_back("Air");
           for(int j=0; j<3; j++){
@@ -1639,8 +1644,25 @@ void DetectorConstruction::DefineMaterials()
   m_materials["WCu"]= new G4Material("WCu",14.979*g/cm3,2);
   m_materials["WCu"]->AddMaterial(m_materials["W"]  , 75*perCent);
   m_materials["WCu"]->AddMaterial(m_materials["Cu"]  , 25*perCent);
-
   m_dEdx["WCu"] = m_materials["WCu"]->GetDensity()/(g/mm3)*(0.75/(m_materials["W"]->GetDensity()/(g/mm3))*m_dEdx["W"]+0.25/(m_materials["Cu"]->GetDensity()/(g/mm3))*m_dEdx["Cu"]);
+
+  TRandom2 rand(wcuseed_);
+  for(int i=0; i<27; i++) {
+    TString matstr; matstr.Form("WCu_%d",i);
+    std::string mat(matstr.Data());
+    if(wcuresol_>0) {
+      float dens0(14.979);
+      float dens = rand.Gaus(dens0,dens0*wcuresol_);
+      m_materials[mat]= new G4Material(mat,dens*g/cm3,2);
+      m_materials[mat]->AddMaterial(m_materials["W"], 75*perCent);
+      m_materials[mat]->AddMaterial(m_materials["Cu"], 25*perCent);
+    } else {
+      m_materials[mat] = m_materials["WCu"];
+    }
+    m_dEdx[mat] = m_dEdx["WCu"];
+    std::cout << mat << " " << m_materials[mat]->GetDensity() << " " << m_materials["WCu"]->GetDensity() << " " << m_dEdx[mat] << std::endl;
+  }
+
 
   //G4cout << m_materials["WCu"] << G4endl
   //<< "Check dEdx: " << G4endl

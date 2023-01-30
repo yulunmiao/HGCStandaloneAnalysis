@@ -21,6 +21,8 @@ parser.add_argument('-d', '--datatype'    , dest='datatype'   ,             help
 parser.add_argument('-f', '--datafile'    , dest='datafile'   ,             help='full path to HepMC input file', default='') #data/example_MyPythia.dat
 parser.add_argument('-F', '--datafileeos' , dest='datafileeos',             help='EOS path to HepMC input file', default='') #/eos/cms/store/cmst3/group/hgcal/HGCalMinbias/Pythia8/
 parser.add_argument('-n', '--nevts'       , dest='nevts'      , type=int,   help='number of events to generate' , default=1000)
+parser.add_argument(    '--wcuseed'       , dest='wcuseed'    , type=int,   help='Seed to use when randomizing WCu density' , default=42)
+parser.add_argument(    '--wcuresol'      , dest='wcuresol'   , type=float,  help='Relative resolution to use when randomizing WCu density' , default=-1)
 parser.add_argument('-o', '--out'         , dest='out'        ,             help='output directory'             , default=os.getcwd() )
 parser.add_argument('-e', '--eosOut'      , dest='eos'        ,             help='eos path to save root file to EOS',         default='')
 parser.add_argument('-g', '--gun'         , dest='dogun'      ,             help='use particle gun.', action="store_true")
@@ -91,8 +93,8 @@ class SubmitProd(SubmitBase):
             if len(self.p.datafileeos)>0:
                 s.write('eos cp {} {}\n'.format( os.path.join(self.p.datafileeos,self.p.datafile),self.p.datafile))
 
-            cmd = ( 'PFCalEE "{}" --model {} --version {} --eta {} --shape {}'
-                    .format(self.shellify_tag(self.mac_var), self.p.model, self.p.version, self.shellify_tag(self.eta_tag), self.p.shape) )
+            cmd = ( 'PFCalEE "{}" --model {} --version {} --eta {} --shape {} --wcuseed {} --wcuresol {}'
+                    .format(self.shellify_tag(self.mac_var), self.p.model, self.p.version, self.shellify_tag(self.eta_tag), self.p.shape,self.p.wcuseed,self.p.wcuresol) )
             s.write('if [ "${GRAN}" -eq 0 ]; then\n')
             s.write(cmd + ' --fineGranularity\n')
             s.write('elif [ "${GRAN}" -eq -1 ]; then\n')
@@ -100,6 +102,7 @@ class SubmitProd(SubmitBase):
             s.write('else\n')
             s.write(cmd + '\n')
             s.write('fi\n')
+            
 
             outTag = 'version{}_model{}_{}'.format(self.p.version, self.p.model, self.bfield)
             outTag += '_en{}_eta{}'.format(self.shellify_tag(self.en_tag),self.shellify_tag(self.etaint_tag)) 

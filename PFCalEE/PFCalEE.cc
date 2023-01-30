@@ -27,6 +27,8 @@ void printHelp() {
             << "\t--eta - pseudo-rapidity" << std::endl
             << "\t--shape - cell shape" << std::endl
             << "\t--absThick{W,Pb} - csv list of the thicknesses for W and Pb absorbers" << std::endl
+            << "\t--wcuseed - seed to use when randomizing WCu density" << std::endl
+            << "\t--wcuresol - resolution to apply when randomizing WCu density" << std::endl
             << "\t--dropLayers - csv list of layers to drop" << std::endl
             << "\t--fineGranularity - use fine granularity cells" << std::endl
             << "\t--ultraFineGranularity - use ultra fine granularity cells" << std::endl
@@ -60,6 +62,8 @@ int main(int argc,char** argv)
   std::string absThickPb="";//1,1,1,1,1,2.1,2.1,2.1,2.1,2.1,4.4,4.4,4.4,4.4";
   std::string dropLayers="";
   bool batchMode(true);
+  int wcuseed(42);
+  float wcuresol(-1);
 
   if (argc<2){
     printHelp();
@@ -70,17 +74,19 @@ int main(int argc,char** argv)
   G4String fileName = argv[1];
   for(int i=2;i<argc;i++){
     std::string arg(argv[i]);
-    if(arg.find("-h") !=std::string::npos)                       { printHelp(); return -1;} 
-    else if(arg.find("--model")!=std::string::npos)              { sscanf(argv[i+1],"%d",&model); i++;}
-    else if(arg.find("--version")!=std::string::npos )           { sscanf(argv[i+1],"%d",&version); i++;}
-    else if(arg.find("--eta")!=std::string::npos )               { sscanf(argv[i+1],"%lf",&eta); i++;}
-    else if(arg.find("--shape")!=std::string::npos )             { sscanf(argv[i+1],"%d",&shape); i++;}
-    else if(arg.find("--absThickW")!=std::string::npos)          { absThickW=argv[i+1]; i++;}
-    else if(arg.find("--absThickPb")!=std::string::npos)         { absThickPb=argv[i+1]; i++;}
-    else if(arg.find("--dropLayers")!=std::string::npos)         { dropLayers=argv[i+1]; i++;}
-    else if(arg.find("--fineGranularity")!=std::string::npos)    { coarseGranularity=0;} 
-    else if(arg.find("--ultraFineGranularity")!=std::string::npos)    { coarseGranularity=-1;} 
-    else if(arg.find("--ui")!=std::string::npos)                 { batchMode=false;} 
+    if(arg.find("-h") !=std::string::npos)                         { printHelp(); return -1;} 
+    else if(arg.find("--model")!=std::string::npos)                { sscanf(argv[i+1],"%d",&model); i++;}
+    else if(arg.find("--version")!=std::string::npos )             { sscanf(argv[i+1],"%d",&version); i++;}
+    else if(arg.find("--eta")!=std::string::npos )                 { sscanf(argv[i+1],"%lf",&eta); i++;}
+    else if(arg.find("--shape")!=std::string::npos )               { sscanf(argv[i+1],"%d",&shape); i++;}
+    else if(arg.find("--wcuseed")!=std::string::npos )             { sscanf(argv[i+1],"%d",&wcuseed); i++;}
+    else if(arg.find("--wcuresol")!=std::string::npos )            { sscanf(argv[i+1],"%f",&wcuresol); i++;}
+    else if(arg.find("--absThickW")!=std::string::npos)            { absThickW=argv[i+1]; i++;}
+    else if(arg.find("--absThickPb")!=std::string::npos)           { absThickPb=argv[i+1]; i++;}
+    else if(arg.find("--dropLayers")!=std::string::npos)           { dropLayers=argv[i+1]; i++;}
+    else if(arg.find("--fineGranularity")!=std::string::npos)      { coarseGranularity=0;} 
+    else if(arg.find("--ultraFineGranularity")!=std::string::npos) { coarseGranularity=-1;} 
+    else if(arg.find("--ui")!=std::string::npos)                   { batchMode=false;} 
   }
 
   std::cout << "-- Running version=" << version << " model=" << model << " shape=" << shape << std::endl
@@ -88,7 +94,7 @@ int main(int argc,char** argv)
             << "\tabsThickW=" << absThickW << " absThickPb=" << absThickPb << " dropLayers=" << dropLayers << std::endl
             << "\tbatchMode=" << batchMode << std::endl;
 
-  runManager->SetUserInitialization(new DetectorConstruction(version,model,shape,absThickW,absThickPb,dropLayers,coarseGranularity));
+  runManager->SetUserInitialization(new DetectorConstruction(version,model,shape,absThickW,absThickPb,dropLayers,coarseGranularity,wcuseed,wcuresol));
   runManager->SetUserInitialization(new PhysicsList);
 
   // Set user action classes
