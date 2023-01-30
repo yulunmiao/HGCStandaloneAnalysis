@@ -238,16 +238,17 @@ class SubmitDigi(SubmitBase):
 ###################################################################################################
 ###################################################################################################
 bval = 'BON' if opt.Bfield>0 else 'BOFF'
-lab = '200u'
+nSiLayers = 3
+lab = '{}00u'.format(nSiLayers)
 odir = '{}/git{}/version_{}/model_{}/{}/{}/{}'.format(opt.out,opt.gittag,opt.version,opt.model,opt.datatype,bval,lab)
 edirout = '/eos/cms{}/git{}/{}'.format(opt.eosout,opt.gittag,opt.datatype)
 edirin = 'root://eoscms//eos/cms{}/git{}/{}'.format(opt.eosin,opt.gittag,opt.datatype) if opt.eosin != '' else edirout
-nSiLayers = 2
 
 nmult = ('0-27:0.27', '0-27:0.13', '0-27:0.07', '0-27:0.13')
 n63 = ('0-51:0.27,53-68:0.15', '0-51:0.13,53-68:0.15', '0-51:0.07,53-68:0.15', '0-51:0.13,53-68:0.15')
 n70 = ('0-25:0.27', '0-25:0.13', '0-25:0.07', '0-25:0.13')
 n73 = ('0-46:0.27,48-61:0.15', '0-46:0.13,48-61:0.15', '0-46:0.07,48-61:0.15', '0-46:0.13,48-61:0.15')
+tb2022 = ('0-1:0.15','0-1:0.15','0-1:0.15','0-1:0.15')
 def get_noise(noise, l):
     if l=='100u':   return noise[0]
     elif l=='200u': return noise[1]
@@ -304,7 +305,11 @@ vdict = {8:   dict(puFile='root://eoscms//eos/cms/store/cmst3/group/hgcal/Standa
          83:  dict(puFile=pudflt, granularity='0-61:1', threshold='0-61:5', noise=get_noise(n73,lab)),
          100: dict(puFile=pudflt, granularity='0-27:4', noise='0-27:0.14', threshold='0-27:5'),
          110: dict(puFile=pudflt, granularity='0-27:4', noise='0-27:0.14', threshold='0-27:5'),
+         120: dict(puFile=pudflt, granularity='0-1:1',  threshold='0-1:5', noise=get_noise(tb2022,lab)),
 }
+
+for i in range(121,140):
+    vdict[i]=vdict[120].copy()
 
 gran = vdict[opt.version]['granularity']
 thr  = vdict[opt.version]['threshold']

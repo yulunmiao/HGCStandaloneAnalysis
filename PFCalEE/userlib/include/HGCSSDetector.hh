@@ -1308,6 +1308,29 @@ public:
       indices_[5] = indices_[1];
       indices_[6] = indices_[1];
     }
+    else if (versionNumber>=120 && versionNumber<140){
+      indices_[0] = 0;
+      indices_[1] = 0;
+      indices_[2] = 0;
+      indices_[3] = 1;
+      indices_[4] = indices_[3];
+      indices_[5] = indices_[3];
+      indices_[6] = indices_[3];
+      sensitiveZ_.resize(indices_[3],0);
+      if(versionNumber==120) sensitiveZ_[0] = 936.925;
+      if(versionNumber==121) sensitiveZ_[0] = 939.825;
+      if(versionNumber==122) sensitiveZ_[0] = 942.75;
+      if(versionNumber==123) sensitiveZ_[0] = 945.675;
+      if(versionNumber==124) sensitiveZ_[0] = 948.6;
+      if(versionNumber==125) sensitiveZ_[0] = 951.525;
+      if(versionNumber==126) sensitiveZ_[0] = 954.45;
+      if(versionNumber==127) sensitiveZ_[0] = 960.3;
+      if(versionNumber==128) sensitiveZ_[0] = 966.15;
+      if(versionNumber==129) sensitiveZ_[0] = 972;
+      if(versionNumber==130) sensitiveZ_[0] = 961.9;
+      if(versionNumber==131) sensitiveZ_[0] = 974.65;
+      if(versionNumber==132) sensitiveZ_[0] = 1000.15;
+    }      
     else {
       indices_[0] = 0;
       indices_[1] = versionNumber==24?11:10;

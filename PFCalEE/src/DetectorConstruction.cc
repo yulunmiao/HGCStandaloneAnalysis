@@ -177,6 +177,94 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 	break;
       }//TB setup
 
+    case v_HGCAL_2022TB_1_1:     case v_HGCAL_2022TB_2_1:     case v_HGCAL_2022TB_3_1:     case v_HGCAL_2022TB_4_1: 
+    case v_HGCAL_2022TB_5_1:     case v_HGCAL_2022TB_6_1:     case v_HGCAL_2022TB_7_1:     case v_HGCAL_2022TB_8_1: 
+    case v_HGCAL_2022TB_9_1:     case v_HGCAL_2022TB_10_1: 
+    case v_HGCAL_2022TB_9_05:    case v_HGCAL_2022TB_9_2:     case v_HGCAL_2022TB_9_5:
+      {
+	G4cout << "[DetectorConstruction] starting v_HGCAL for 2022 testbeam"<< G4endl;
+
+	std::vector<G4double> lThick;
+	std::vector<std::string> lEle;
+
+        //UPSTREAM HODOSCOPE
+        G4double sciThick(1*cm);
+        G4double sciAirGap(20*cm),sciAirGapToAbsorber(122*cm);
+        lThick.push_back(sciThick);lEle.push_back("Hodoscope");
+        lThick.push_back(sciAirGap);lEle.push_back("Air");
+        lThick.push_back(sciThick);lEle.push_back("Hodoscope");
+        lThick.push_back(sciAirGap);lEle.push_back("Air");
+        lThick.push_back(sciThick);lEle.push_back("Hodoscope");
+        lThick.push_back(sciAirGap);lEle.push_back("Air");
+        lThick.push_back(sciThick);lEle.push_back("Hodoscope");
+        lThick.push_back(sciAirGapToAbsorber);lEle.push_back("Air");
+
+        //ABSORBER + AIR VOLUME
+        G4double absFeThick(0.3*mm),absPbThick(0.49*cm),absAirGap(0.4*mm),flypathAirThick(1.7*cm);
+        G4int nplates(1);
+        if(version_ == v_HGCAL_2022TB_2_1)  nplates=2;
+        if(version_ == v_HGCAL_2022TB_3_1)  nplates=3;
+        if(version_ == v_HGCAL_2022TB_4_1)  nplates=4;
+        if(version_ == v_HGCAL_2022TB_5_1)  nplates=5;
+        if(version_ == v_HGCAL_2022TB_6_1)  nplates=6;
+        if(version_ == v_HGCAL_2022TB_7_1)  nplates=7;
+        if(version_ == v_HGCAL_2022TB_8_1)  nplates=9;
+        if(version_ == v_HGCAL_2022TB_9_1)  nplates=11;
+        if(version_ == v_HGCAL_2022TB_10_1) nplates=13;
+        if(version_ == v_HGCAL_2022TB_9_05) {
+          nplates=11;
+          flypathAirThick *= 0.5;
+        }
+        if(version_ == v_HGCAL_2022TB_9_2) {
+          nplates=11;
+          flypathAirThick *= 2;
+        }
+        if(version_ == v_HGCAL_2022TB_9_5) {
+          nplates=11;
+          flypathAirThick *= 5;
+        }
+
+        G4cout << " Nplates=" << nplates << " air=" << flypathAirThick << G4endl;
+        for(int iplate=0; iplate<nplates; iplate++) {
+          lThick.push_back(absFeThick);  lEle.push_back("Fe");
+          lThick.push_back(absPbThick);  lEle.push_back("Pb");
+          lThick.push_back(absFeThick);  lEle.push_back("Fe");
+          if(iplate==nplates-1) continue;
+          lThick.push_back(absAirGap);   lEle.push_back("Air");
+        }
+          
+        //MODULE - COOLING PLATE
+
+        //module
+        G4double modPCBThick(1.3*mm);  //add more copper?
+        G4double modAirThick1(0.4*mm);
+        G4double modSiThick(0.1*mm); //x3 below
+        G4double modAirThick2(0.3*mm);
+        G4double modWCuThick(1.4*mm); //add gold?
+
+        //FLY PATH between absorber and colling plate
+        flypathAirThick -= modPCBThick+modAirThick1+3*modSiThick+modAirThick2;
+        lThick.push_back(flypathAirThick);   lEle.push_back("Air");
+
+        lThick.push_back(modPCBThick);   lEle.push_back("PCB");
+        lThick.push_back(modAirThick1);  lEle.push_back("Air");
+        for(int j=0; j<3; j++){
+          lThick.push_back(modSiThick);  lEle.push_back("Si");
+        }
+        lThick.push_back(modAirThick2);  lEle.push_back("Air");
+        lThick.push_back(modWCuThick);   lEle.push_back("WCu");
+
+        //cooling plate
+        G4double coolingCuThick(6.05*mm);
+        lThick.push_back(coolingCuThick);   lEle.push_back("Cu");
+
+        //single structure
+        m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+	
+	break;
+      }//TB setup
+
+
     case v_HGCAL_2016TB:
       {
 	G4cout << "[DetectorConstruction] starting v_HGCAL for testbeam 2016"<< G4endl;
@@ -1676,6 +1764,10 @@ void DetectorConstruction::DefineMaterials()
   m_materials["Scintillator"]->AddMaterial(m_materials["C"]  , 91.512109*perCent);
   m_materials["Scintillator"]->AddMaterial(m_materials["H"]  , 8.4878906*perCent);
   m_dEdx["Scintillator"] = m_dEdx["C"];
+  m_materials["Hodoscope"]= new G4Material("Hodoscope",1.032*g/cm3,2);
+  m_materials["Hodoscope"]->AddMaterial(m_materials["C"]  , 91.512109*perCent);
+  m_materials["Hodoscope"]->AddMaterial(m_materials["H"]  , 8.4878906*perCent);
+  m_dEdx["Hodoscope"]=m_dEdx["C"];
 
   m_materials["Polystyrole"]= new G4Material("Polystyrole",1.065*g/cm3,2);
   m_materials["Polystyrole"]->AddMaterial(m_materials["H"]  , 50*perCent);
@@ -2085,11 +2177,14 @@ void DetectorConstruction::buildSectorStack(const unsigned sectorNum,
   for (size_t i=0; i<m_caloStruct.size(); i++) {
     std::cout << "sensitiveZ_[" << i << "] = " << m_caloStruct[i].sensitiveZ << ";"  << std::endl;
   }
-  std::cout << " Eta boundary of sensitive layers for HGCSSDetector class: " << std::endl;
-  for (size_t i=0; i<m_caloStruct.size(); i++) {
-    //<< " maxRadius=" <<
-    if (i<firstScintlayer_) std::cout << " etaBoundary_[" << i << "] =" << m_minEta[i] << ";"  << std::endl;
-    else std::cout << " etaBoundary_[" << i << "] =" << m_maxEta[i] << ";"  << std::endl;
+
+  if (model_ == DetectorConstruction::m_FULLSECTION) {
+    std::cout << " Eta boundary of sensitive layers for HGCSSDetector class: " << std::endl;
+    for (size_t i=0; i<m_caloStruct.size(); i++) {
+      //<< " maxRadius=" <<
+      if (i<firstScintlayer_) std::cout << " etaBoundary_[" << i << "] =" << m_minEta[i] << ";"  << std::endl;
+      else std::cout << " etaBoundary_[" << i << "] =" << m_maxEta[i] << ";"  << std::endl;
+    }
   }
 
   //dummy layer to get genparticles

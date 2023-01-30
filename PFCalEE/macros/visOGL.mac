@@ -9,7 +9,8 @@
 #
 # Use this open statement to create an OpenGL view:
 #/vis/open OGL 600x600-0+0
-/vis/open OGLSQt
+#/vis/open OGLSQt
+/vis/open OGL
 
 # Use this open statement to create a .prim file suitable for
 # viewing in DAWN:
@@ -33,8 +34,7 @@
 #
 # Specify view angle:
 # x vs y
-#/vis/viewer/set/viewpointThetaPhi 90. 90.
-#/vis/viewer/set/viewpointThetaPhi 0. 0.
+/vis/viewer/set/viewpointThetaPhi -90. 0. deg
 #/vis/viewer/zoom 5
 
 #angle
@@ -43,7 +43,7 @@
 #/vis/viewer/set/viewpointThetaPhi 10. 10.
 
 # y vs z
-/vis/viewer/set/viewpointThetaPhi 90. 0.
+#/vis/viewer/set/viewpointThetaPhi 90. 0.
 #/vis/viewer/zoom 2
 
 #background white
@@ -73,20 +73,20 @@
 /vis/scene/add/hits
 #
 # To draw only gammas:
-#/vis/filtering/trajectories/create/particleFilter
-#/vis/filtering/trajectories/particleFilter-0/add e-
-#/vis/filtering/trajectories/particleFilter-0/add e+
-#/vis/filtering/trajectories/particleFilter-0/add pi+
-#/vis/filtering/trajectories/particleFilter-0/add pi-
+/vis/filtering/trajectories/create/particleFilter
+/vis/filtering/trajectories/particleFilter-0/add e-
+/vis/filtering/trajectories/particleFilter-0/add e+
+/vis/filtering/trajectories/particleFilter-0/add pi+
+/vis/filtering/trajectories/particleFilter-0/add pi-
 #
 # To invert the above, drawing all particles except gammas,
 # keep the above two lines but also add:
 #/vis/filtering/trajectories/particleFilter-0/invert true
 
-/vis/filtering/trajectories/create/attributeFilter
-/vis/filtering/trajectories/attributeFilter-0/setAttribute IMag
-/vis/filtering/trajectories/attributeFilter-0/addInterval 100 MeV 100 GeV
-
+#/vis/filtering/trajectories/create/attributeFilter
+#/vis/filtering/trajectories/attributeFilter-0/setAttribute IMag
+#/vis/filtering/trajectories/attributeFilter-0/addInterval 100 MeV 100 GeV
+/vis/ogl/set/displayListLimit 1000000
 #
 # Many other options are available with /vis/modeling and /vis/filtering.
 # For example, to select colour by particle ID:
@@ -101,11 +101,20 @@
 #cyan, magenta, gray,white,yellow
 
 # To superimpose all of the events from a given run:
-#/vis/scene/endOfEventAction accumulate
+/vis/scene/endOfEventAction accumulate
 #
 # Re-establish auto refreshing and verbosity:
 /vis/viewer/set/autoRefresh true
 /vis/verbose warnings
 #
 # For file-based drivers, use this to create an empty detector view:
-/vis/viewer/flush
+#/vis/viewer/flush
+
+
+#particle gun
+/tracking/storeTrajectory 1
+/gun/particle e+
+/gun/energy 80 GeV
+/gun/direction 0 0 1
+/gun/position 0 0 -61 cm
+/run/beamOn 1

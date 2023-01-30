@@ -28,6 +28,7 @@ parser.add_argument(      '--enList'      , dest='enList'     , type=int,   help
 parser.add_argument('-S', '--no-submit'   , dest='nosubmit'   ,             help='Do not submit batch job.', action="store_true")
 opt, _ = parser.parse_known_args()
 
+print(opt)
 
 ###################################################################################################
 ###################################################################################################
@@ -170,9 +171,10 @@ class SubmitProd(SubmitBase):
                             s.write('/gun/particle {} \n'.format(self.p.datatype))
                             en = et*math.cosh(eta) if eta<5 else et
                             s.write('/gun/energy {n:.{r}f} GeV\n'.format(n=en, r=6))
-                            if self.p.model != 2:
+                            if self.p.model != 2 and eta<5:
                                 alpha = 2*math.atan(math.exp(-1.*eta));
                                 s.write('/gun/direction {} {} {}\n'.format(math.cos(math.pi*self.p.phi)*math.sin(alpha),math.sin(math.pi*self.p.phi)*math.sin(alpha),math.cos(alpha)))
+                            
                         else :
                             s.write('/generator/select hepmcAscii\n')
                             s.write('/generator/hepmcAscii/open {}\n'.format(self.p.datafile))
