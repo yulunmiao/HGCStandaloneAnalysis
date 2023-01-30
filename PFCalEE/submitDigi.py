@@ -25,6 +25,7 @@ parser.add_argument('-e', '--eosOut'   , dest='eosout'    , help='eos path to sa
 parser.add_argument('-E', '--eosIn'    , dest='eosin'     , help='eos path to read input root file from EOS (if empty, it is equal to `--eosOut`.', default='')
 parser.add_argument('-g', '--gun'      , dest='dogun'     , help='use particle gun.', action='store_true')
 parser.add_argument('-S', '--no-submit', dest='nosubmit'  , help='Do not submit batch job.', action='store_true')
+parser.add_argument('--dontoverwrite',   dest='dontoverwrite', help='Don\'t overwrite possible existing production', action='store_true')
 parser.add_argument('--enList'         , dest='enList'    , type=int, help='E_T list to use with gun', nargs='+', default=[5,10,20,30,40,60,80,100,150,200])
 parser.add_argument('--interCalib'     , dest='iCalibList', type=int, help='inter calibration list in percentage', nargs='+', default=[3]) #0,1,2,3,4,5,10,15,20,50]
 parser.add_argument('--etamean'        , dest='etamean'   , help='mean value of eta ring to save', default=0,  type=float)
@@ -64,6 +65,23 @@ class SubmitDigi(SubmitBase):
     def jobName(self):
         return self.jobName_
 
+    def buildJobTags(self):
+
+        """does the complicated job of building the tas for the input/output files"""
+
+        outTag = 'version{}_model{}_{}'.format(self.p.version,self.p.model,bval)
+        inTag = outTag
+        addToTag_ = '_en{}_eta{}'.format(self.shellify_tag(self.en_tag),self.shellify_tag(self.eta_tag))
+        outTag += '_npuvtx{}_ic{}'.format(self.shellify_tag(self.vtx_tag),self.shellify_tag(self.ic_tag))
+        inTag  += addToTag_
+        outTag += addToTag_
+        if self.p.phi!=0.5:
+            inTag  += '_phi{n:.{r}f}pi'.format(n=self.p.phi,r=3)
+            outTag += '_phi{n:.{r}f}pi'.format(n=self.p.phi,r=3)
+        outTag += '_run{}'.format(self.shellify_tag(self.run_tag))
+        inTag += '_run{}'.format(self.shellify_tag(self.run_tag))
+        return inTag,outTag
+
     def write_shell_script_file(self):
         with open('{}/{}'.format(self.outDir,self.jobName_), 'w') as s:
             s.write('#!/usr/bin/env bash\n')
@@ -96,18 +114,9 @@ class SubmitDigi(SubmitBase):
             s.write('source g4env.sh\n')
             s.write('echo $PATH\n')
             s.write('cd $localdir\n')
-            
-            outTag = 'version{}_model{}_{}'.format(self.p.version,self.p.model,bval)
-            inTag = outTag
-            addToTag_ = '_en{}_eta{}'.format(self.shellify_tag(self.en_tag),self.shellify_tag(self.eta_tag))
-            outTag += '_npuvtx{}_ic{}'.format(self.shellify_tag(self.vtx_tag),self.shellify_tag(self.ic_tag))
-            inTag  += addToTag_
-            outTag += addToTag_
-            if self.p.phi!=0.5:
-                inTag  += '_phi{n:.{r}f}pi'.format(n=self.p.phi,r=3)
-                outTag += '_phi{n:.{r}f}pi'.format(n=self.p.phi,r=3)
-            outTag += '_run{}'.format(self.shellify_tag(self.run_tag))
-            inTag += '_run{}'.format(self.shellify_tag(self.run_tag))
+                        
+            inTag,outTag=self.buildJobTags()
+
             substr = '{cwd}/userlib/bin/digitizer -c {cwd}/userlib/DigiConfig.cfg -n {n} -i {i}/HGcal_{tag}.root -o $localdir/ --granulStr={g}  --noiseStr={noise} --threshStr={thresh} --interCalib={ic} --nSiLayers={nl} --nPU={npu} --puPath={path} '.format(cwd=os.getcwd(),n=self.p.nevts,i=self.eosDirIn,tag=inTag,g=self.granularity,noise=self.noise,thresh=self.threshold,ic=self.shellify_tag(self.ic_tag),nl=self.nSiLayers,npu=self.shellify_tag(self.vtx_tag),path=self.pathPU)
             if self.p.etamean>1.3:
                 s.write(substr+'--etamean={em1:.{em2}f} --deta={p1:.{p2}f}'.format(em1=self.p.etamean,em2=2,p1=self.p.deta,p2=2))
@@ -144,7 +153,13 @@ class SubmitDigi(SubmitBase):
 
 
     def write_condor_submission_file(self):
-        with open('{}/{}'.format(self.outDir,self.condor_submit_name_), 'w') as s:
+        
+        inTag,outTag=self.buildJobTags()
+        outf='{}/Digi_{}{}.root\n'.format(self.eosDirOut,self.label,outTag)
+        inf='{}/HGcal_{}.root'.format(self.eosDirIn,inTag)
+        condor='{}/{}'.format(self.outDir,self.condor_submit_name_)
+
+        with open(condor, 'w') as s:
                 s.write('universe = vanilla\n')
                 s.write('Executable = {}/{}\n'.format(self.outDir,self.jobName_))
                 s.write('Arguments = ')
@@ -165,29 +180,75 @@ class SubmitDigi(SubmitBase):
                 s.write('RequestMemory = 150MB\n')
                 s.write('+JobFlavour = "longlunch"\n')
                 s.write('JobBatchName = digi_' + self.p.gittag + '_' + str(self.p.version) + '_' + self.p.datatype + '\n')
-                s.write('Queue {nruns} {n}, {ic}, {en}, {eta} from (\n'.format( nruns=self.p.nRuns, n=self.clean_tag(self.vtx_tag), ic=self.clean_tag(self.ic_tag), en=self.clean_tag(self.en_tag), eta=self.clean_tag(self.eta_tag) ))
+                
+                #submit all blindly
+                if not self.p.dontoverwrite:
+                    s.write('Queue {nruns} {n}, {ic}, {en}, {eta} from (\n'.format( nruns=self.p.nRuns, 
+                                                                                    n=self.clean_tag(self.vtx_tag), 
+                                                                                    ic=self.clean_tag(self.ic_tag), 
+                                                                                    en=self.clean_tag(self.en_tag), 
+                                                                                    eta=self.clean_tag(self.eta_tag) ))
                                 
-                for nvid in self.p.nPuVtxList:
-                    for icid in self.p.iCalibList:
-                        for et in self.p.enList:
-                            for eta in self.p.etas:
-                                s.write('{}, {}, {}, {}\n'.format(nvid,icid,et,str(eta)))
-                s.write(')')
+                    for nvid in self.p.nPuVtxList:
+                        for icid in self.p.iCalibList:
+                            for et in self.p.enList:
+                                for eta in self.p.etas:                                
+                                    s.write('{}, {}, {}, {}\n'.format(nvid,icid,et,str(eta)))
+                    s.write(')')
+
+                else:
+                    #check jobs one-by-one
+                    for irun in range(self.p.nRuns):
+                        for nvid in self.p.nPuVtxList:
+                            for icid in self.p.iCalibList:
+                                for et in self.p.enList:
+                                    for eta in self.p.etas:
+                                        job_out=outf.strip()
+                                        job_in=inf.strip()
+                                        for x,y in [(self.vtx_tag,nvid),
+                                                    (self.ic_tag,icid),
+                                                    (self.en_tag,et),
+                                                    (self.eta_tag,int(eta*10)),
+                                                    (self.run_tag,irun)]:
+                                            job_out=job_out.replace(self.shellify_tag(x),str(y))
+                                            job_in=job_in.replace(self.shellify_tag(x),str(y))
+                                        if os.path.isfile(job_out): 
+                                            print('Skipping job with output @ {}'.format(job_out))
+                                            continue
+                                        if not os.path.isfile(job_in):
+                                            print('Skipping unavailable input @ {}'.format(job_in))
+                                            continue
+                                        for x,y in [(self.vtx_tag,nvid),
+                                                    (self.ic_tag,icid),
+                                                    (self.en_tag,et),
+                                                    (self.eta_tag,eta),
+                                                    (self.run_tag,irun)]:
+                                            s.write('{} = {}\n'.format(self.clean_tag(x),y))
+                                        s.write('queue 1\n\n')
+                                
+        #replace Step (automatic variable) with a custom named argument
+        if self.p.dontoverwrite:
+            from pathlib2 import Path
+            path = Path(condor)
+            text = path.read_text()
+            text = text.replace('Step','RunNb')
+            path.write_text(text)
 
 ###################################################################################################
 ###################################################################################################
 ###################################################################################################
 bval = 'BON' if opt.Bfield>0 else 'BOFF'
-lab = '200u'
+nSiLayers = 3
+lab = '{}00u'.format(nSiLayers)
 odir = '{}/git{}/version_{}/model_{}/{}/{}/{}'.format(opt.out,opt.gittag,opt.version,opt.model,opt.datatype,bval,lab)
 edirout = '/eos/cms{}/git{}/{}'.format(opt.eosout,opt.gittag,opt.datatype)
 edirin = 'root://eoscms//eos/cms{}/git{}/{}'.format(opt.eosin,opt.gittag,opt.datatype) if opt.eosin != '' else edirout
-nSiLayers = 2
 
 nmult = ('0-27:0.27', '0-27:0.13', '0-27:0.07', '0-27:0.13')
 n63 = ('0-51:0.27,53-68:0.15', '0-51:0.13,53-68:0.15', '0-51:0.07,53-68:0.15', '0-51:0.13,53-68:0.15')
 n70 = ('0-25:0.27', '0-25:0.13', '0-25:0.07', '0-25:0.13')
 n73 = ('0-46:0.27,48-61:0.15', '0-46:0.13,48-61:0.15', '0-46:0.07,48-61:0.15', '0-46:0.13,48-61:0.15')
+tb2022 = ('0-1:0.15','0-1:0.15','0-1:0.15','0-1:0.15')
 def get_noise(noise, l):
     if l=='100u':   return noise[0]
     elif l=='200u': return noise[1]
@@ -234,13 +295,21 @@ vdict = {8:   dict(puFile='root://eoscms//eos/cms/store/cmst3/group/hgcal/Standa
          67:  dict(puFile=( 'root://eoscms//eos/cms/store/group/dpg_hgcal/comm_hgcal/amagnan/HGCalTDR/gitV08-05-00/MinBiasSmall/' if lab=='' else
                             'root://eoscms//eos/cms/store/group/dpg_hgcal/comm_hgcal/amagnan/HGCalTDR/gitV08-05-00/MinBiasLarge/' ),
                    granularity='0-27:1', threshold='0-27:5', noise=get_noise(nmult,lab)),
+         69:  dict(puFile=('root://eoscms//eos/cms/store/cmst3/group/hgcal/HGCalTDR/gittestV8/MinBiasSmall/'
+                           if lab==''
+                           else 'root://eoscms//eos/cms/store/group/dpg_hgcal/comm_hgcal/amagnan/HGCalTDR/gitV08-01-00/MinBiasLarge/'),
+                   granularity='0-68:1', threshold='0-68:5', noise=get_noise(n63,lab)),
          70:  dict(puFile=pudflt, granularity='0-25:1', threshold='0-25:5', noise=get_noise(n70,lab)),
          80:  dict(puFile=pudflt, granularity='0-25:1', threshold='0-25:5', noise=get_noise(n70,lab)),
          73:  dict(puFile=pudflt, granularity='0-61:1', threshold='0-61:5', noise=get_noise(n73,lab)),
          83:  dict(puFile=pudflt, granularity='0-61:1', threshold='0-61:5', noise=get_noise(n73,lab)),
          100: dict(puFile=pudflt, granularity='0-27:4', noise='0-27:0.14', threshold='0-27:5'),
          110: dict(puFile=pudflt, granularity='0-27:4', noise='0-27:0.14', threshold='0-27:5'),
+         120: dict(puFile=pudflt, granularity='0-1:1',  threshold='0-1:5', noise=get_noise(tb2022,lab)),
 }
+
+for i in range(121,140):
+    vdict[i]=vdict[120].copy()
 
 gran = vdict[opt.version]['granularity']
 thr  = vdict[opt.version]['threshold']

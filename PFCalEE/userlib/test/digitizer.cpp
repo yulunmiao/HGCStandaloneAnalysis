@@ -696,6 +696,10 @@ int main(int argc, char** argv){//main
 
   std::vector<PseudoJet> lParticles;
 
+  auto siLayerNumberLessThan = [&geomConv](unsigned layer, const DetectorEnum type, float radius, float posz) -> bool {
+				 return layer < geomConv.getNumberOfSiLayers(type,radius,posz);
+			       };
+  
   for (unsigned ievt(evtmin); ievt<evtmin+nEvts; ++ievt){//loop on entries
 
     inputTree->GetEntry(ievt);
@@ -742,9 +746,7 @@ int main(int argc, char** argv){//main
       double realtime = mycalib.correctTime(lHit.time(),posx,posy,posz);
       bool passTime = myDigitiser.passTimeCut(type,realtime);
       if (!passTime) continue;
-      if (energy>0 && 
-	  lHit.silayer() < geomConv.getNumberOfSiLayers(type,radius) 
-	  ){
+      if (energy>0 && siLayerNumberLessThan(lHit.silayer(), type, radius, posz)){
 	if (debug > 1) std::cout << " hit " << iH 
 				 << " lay " << layer  
 				 << " x " << posx 
@@ -802,7 +804,7 @@ int main(int argc, char** argv){//main
 	  double posy = xy.second;//lHit.get_y(cellSize);
 	  double posz = lHit.get_z();
 	  double radius = sqrt(pow(posx,2)+pow(posy,2));
-	  if (lHit.silayer() < geomConv.getNumberOfSiLayers(type,radius)){
+	  if (siLayerNumberLessThan(lHit.silayer(), type, radius, posz)){
 	    double energy = lHit.energy()*mycalib.MeVToMip(layer,radius);
 	    double realtime = mycalib.correctTime(lHit.time(),posx,posy,posz);
 	    bool passTime = myDigitiser.passTimeCut(type,realtime);
@@ -879,7 +881,7 @@ int main(int argc, char** argv){//main
       if (debug>0){
 	std::cout << " -- Layer " << iL << " " << subdet.name << " z=" << meanZpos
 		  << " bins = " << nBins << " histE entries = " << histE.size() << std::endl;
-      }
+    }
 
       //cell-to-cell cross-talk for scintillator
       if (isScint){

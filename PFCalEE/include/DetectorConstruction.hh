@@ -79,7 +79,7 @@ public:
     v_HGCALEE_v8_Cu_12=66,
     v_HGCALEE_v8_air4=67,
     v_HGCALEE_v8_neutmod=68,
-    v_HGCALEE_v8_envelope=69,
+    v_HGCAL_v8_envelope=69,
     v_HGCALEE_v9=70,
     v_HGCALHE_v9=71,
     v_HGCALBE_v9=72,
@@ -91,6 +91,19 @@ public:
     v_HGCALEE_TB_allW=102,
     v_HGCALEE_TB_samedEdx=103,
     v_HGCAL_2016TB=110,
+    v_HGCAL_2022TB_1_1=120,
+    v_HGCAL_2022TB_2_1=121,
+    v_HGCAL_2022TB_3_1=122,
+    v_HGCAL_2022TB_4_1=123,
+    v_HGCAL_2022TB_5_1=124,
+    v_HGCAL_2022TB_6_1=125,
+    v_HGCAL_2022TB_7_1=126,
+    v_HGCAL_2022TB_8_1=127,
+    v_HGCAL_2022TB_9_1=128,
+    v_HGCAL_2022TB_10_1=129,
+    v_HGCAL_2022TB_9_05=130,
+    v_HGCAL_2022TB_9_2=131,
+    v_HGCAL_2022TB_9_5=132,
     v_testCu=200
   };
 

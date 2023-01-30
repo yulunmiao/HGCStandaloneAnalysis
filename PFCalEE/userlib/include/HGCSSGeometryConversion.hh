@@ -176,10 +176,10 @@ public:
 
   double cellSizeInCm(const unsigned aLayer, const double aR) const;
 
-  //unsigned getNumberOfSiLayers(const DetectorEnum type,
-  //const double & eta=0) const;
   unsigned getNumberOfSiLayers(const DetectorEnum type,
-			       const double & radius=10000) const;
+			       const double radius,
+			       const double z,
+                               bool realistic=true) const;
 
   void initialiseHistos(const bool recreate=false,
 			std::string uniqStr="",
