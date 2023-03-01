@@ -54,6 +54,9 @@ add_executable(PFCalEE PFCalEE.cc ${sources} ${headers})
 target_link_libraries(PFCalEE ${Geant4_LIBRARIES} ${HepMC_DIR}/lib/libHepMCfio.so ${HepMC_DIR}/lib/libHepMC.so ${PROJECT_SOURCE_DIR}/userlib/lib/libPFCalEEuserlib.so)
 #target_link_libraries(PFCalEE ${Geant4_LIBRARIES} ${PROJECT_SOURCE_DIR}/userlib/lib/libPFCalEEuserlib.so)
 
+#add_executable(TestMaterial TestMaterial.cc ${sources} ${headers})
+#target_link_libraries(TestMaterial ${Geant4_LIBRARIES} ${HepMC_DIR}/lib/libHepMCfio.so ${HepMC_DIR}/lib/libHepMC.so ${PROJECT_SOURCE_DIR}/userlib/lib/libPFCalEEuserlib.so)
+
 #----------------------------------------------------------------------------
 # Copy all scripts to the build directory, i.e. the directory in which we
 # build B1. This is so that we can run the executable directly because it

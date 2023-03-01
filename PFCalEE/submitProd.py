@@ -195,7 +195,8 @@ class SubmitProd(SubmitBase):
             s.write('Executable = {}/runJob.sh\n'.format(self.outDir))
             s.write( ('Arguments = --energy {} --eta {} --run {} --granularity {}\n'
                       .format(self.en_tag, self.eta_tag, self.run_tag, self.gran_tag)) )
-            s.write('Requirements = (OpSysAndVer =?= "CentOS7")\n')
+            #s.write('Requirements = (OpSysAndVer =?= "CentOS7")\n')
+            s.write('MY.WantOS = "el7"\n')
 
             t = ( ('prefix', 'prod'), ('en', self.en_tag), ('eta', self.eta_tag),
                   ('run', self.run_tag) )
@@ -206,7 +207,7 @@ class SubmitProd(SubmitBase):
             s.write('Error = {}/{}\n'.format(self.outDir,err_name))
             s.write('Log = {}/{}\n'.format(self.outDir,log_name))
             s.write('RequestMemory = 2GB\n')
-            s.write('+JobFlavour = "testmatch"\n')
+            s.write('+JobFlavour = "testmatch"\n')            
             s.write('JobBatchName = prod_' + self.p.gittag + '_' + str(self.p.version) + '_' + self.p.datatype + '\n')
             s.write('Queue {nruns} {entag}, {etatag}, {gtag} from (\n'.format( nruns=self.p.nRuns, entag=self.clean_tag(self.en_tag),
                                                                                etatag=self.clean_tag(self.eta_tag),

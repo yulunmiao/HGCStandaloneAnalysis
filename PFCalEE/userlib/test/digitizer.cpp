@@ -263,7 +263,7 @@ void processHist(const unsigned iL,
     double simEcor = xtalkE;//isTBsetup ? xtalkE : myDigitiser.mipCor(xtalkE,x,y,posz);
     digiE = simEcor;
 
-    std::cout << isScint << " " << " " << simE;
+    //std::cout << isScint << " " << " " << simE;
     if (isScint && simEcor>0 && doSaturation) {
       digiE = myDigitiser.digiE(simEcor);
     }
@@ -276,9 +276,9 @@ void processHist(const unsigned iL,
     unsigned adc = 0;
     //if (isSi){
     adc = myDigitiser.adcConverter(digiE,adet);
-    std::cout << " " << digiE;
+    //std::cout << " " << digiE;
     digiE = myDigitiser.adcToMIP(adc,adet);
-    std::cout << " " << digiE << std::endl;
+    //std::cout << " " << digiE << std::endl;
     //}
     bool aboveThresh = adc >= pThreshInADC[iL];//digiE > 0.5;
     //(isSi && adc >= pThreshInADC[iL]) ||

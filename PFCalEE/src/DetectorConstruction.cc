@@ -683,7 +683,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 
           //"inverted" module
           wcutag.Form("WCu_%d",i*2+1);
-          b_lThick.push_back(modWCuThick);   b_lEle.push_back("WCu");
+          b_lThick.push_back(modWCuThick);   b_lEle.push_back(wcutag.Data());
           b_lThick.push_back(modAirThick2);  b_lEle.push_back("Air");
           for(int j=0; j<3; j++){
             b_lThick.push_back(modSiThick);  b_lEle.push_back("Si");
@@ -1811,17 +1811,32 @@ void DetectorConstruction::DefineMaterials()
   for(int i=0; i<27; i++) {
     TString matstr; matstr.Form("WCu_%d",i);
     std::string mat(matstr.Data());
-    if(wcuresol_>0) {
-      float dens0(14.979);
-      float dens = rand.Gaus(dens0,dens0*wcuresol_);
-      m_materials[mat]= new G4Material(mat,dens*g/cm3,2);
-      m_materials[mat]->AddMaterial(m_materials["W"], 75*perCent);
-      m_materials[mat]->AddMaterial(m_materials["Cu"], 25*perCent);
+    if(wcuresol_!=0) {
+      
+      float rho0(14.979 * g/cm3);
+      float rho = wcuseed_ >0 ? rand.Gaus(rho0,rho0*wcuresol_) : rho0*(1+wcuresol_);
+      
+      float rhoCu(8.960 * g/cm3),rhoW(19.30 * g/cm3);
+      float fW=(1./rho-1./rhoCu)/(1./rhoW-1./rhoCu);
+
+      G4int ncomponents = 2;
+      G4double fractionmass[2] = {fW, 1-fW};
+      G4Material* wcu = new G4Material(mat, rho, ncomponents);
+      wcu->AddElement(G4NistManager::Instance()->FindOrBuildElement("W"), fractionmass[0]);
+      wcu->AddElement(G4NistManager::Instance()->FindOrBuildElement("Cu"), fractionmass[1]);
+
+      m_materials[mat] = wcu;
+      m_dEdx[mat] = m_dEdx["WCu"];
+      std::cout << mat << " " 
+                << m_materials[mat]->GetDensity() << " " << m_materials[mat]->GetRadlen() << " " 
+                << m_materials["WCu"]->GetDensity() << " " << m_materials["WCu"]->GetRadlen() << " "
+                << m_dEdx[mat] << std::endl;
     } else {
       m_materials[mat] = m_materials["WCu"];
+      m_dEdx[mat] = m_dEdx["WCu"];
     }
-    m_dEdx[mat] = m_dEdx["WCu"];
-    std::cout << mat << " " << m_materials[mat]->GetDensity() << " " << m_materials["WCu"]->GetDensity() << " " << m_dEdx[mat] << std::endl;
+
+
   }
 
 
