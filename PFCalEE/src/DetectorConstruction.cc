@@ -203,8 +203,9 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
         lThick.push_back(sciAirGapToAbsorber);lEle.push_back("Air");
 
         //ABSORBER + AIR VOLUME
-        G4double absFeThick(0.3*mm),absPbThick(0.49*cm),absAirGap(0.4*mm),flypathAirThick(1.7*cm);
-        G4int nplates(1);
+        G4double absFeThick(0.3*mm),absPbThick(0.49*cm),absAirGap(0.4*mm),flypathAirThick(5*cm);
+        G4int nplates(3);
+/*
         if(version_ == v_HGCAL_2022TB_2_1)  nplates=2;
         if(version_ == v_HGCAL_2022TB_3_1)  nplates=3;
         if(version_ == v_HGCAL_2022TB_4_1)  nplates=4;
@@ -226,14 +227,16 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
           nplates=11;
           flypathAirThick *= 5;
         }
+*/
+	nplates=10;
 
         G4cout << " Nplates=" << nplates << " air=" << flypathAirThick << G4endl;
         for(int iplate=0; iplate<nplates; iplate++) {
           lThick.push_back(absFeThick);  lEle.push_back("Fe");
           lThick.push_back(absPbThick);  lEle.push_back("Pb");
           lThick.push_back(absFeThick);  lEle.push_back("Fe");
-          if(iplate==nplates-1) continue;
-          lThick.push_back(absAirGap);   lEle.push_back("Air");
+//          if(iplate==nplates-1) continue;
+//          lThick.push_back(absAirGap);   lEle.push_back("Air");
         }
           
         //MODULE - COOLING PLATE
@@ -244,11 +247,15 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
         G4double modSiThick(0.1*mm); //x3 below
         G4double modAirThick2(0.3*mm);
         G4double modWCuThick(1.4*mm); //add gold?
+	G4double coolingCuThick(6.05*mm);
 
         //FLY PATH between absorber and colling plate
-        flypathAirThick -= modPCBThick+modAirThick1+3*modSiThick+modAirThick2;
+//        flypathAirThick -= 2 * (modPCBThick+modAirThick1+3*modSiThick+modAirThick2)+0.5*cm;
+	G4cout<< "flypathAirThich="<<flypathAirThick<<G4endl;
+//        flypathAirThick -= modPCBThick+modAirThick1+3*modSiThick+modAirThick2;
         lThick.push_back(flypathAirThick);   lEle.push_back("Air");
 
+	//Wafer 1
         lThick.push_back(modPCBThick);   lEle.push_back("PCB");
         lThick.push_back(modAirThick1);  lEle.push_back("Air");
         for(int j=0; j<3; j++){
@@ -256,13 +263,27 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
         }
         lThick.push_back(modAirThick2);  lEle.push_back("Air");
         lThick.push_back(modWCuThick);   lEle.push_back("WCu");
-
-        //cooling plate
-        G4double coolingCuThick(6.05*mm);
+	//cooling plate
         lThick.push_back(coolingCuThick);   lEle.push_back("Cu");
+        m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+	lThick.clear();			 lEle.clear();
+
+	//Air Gap between wafers
+	lThick.push_back(0.5*cm);        lEle.push_back("Air");
+	//Wafer 2
+        lThick.push_back(modPCBThick);   lEle.push_back("PCB");
+        lThick.push_back(modAirThick1);  lEle.push_back("Air");
+        for(int j=0; j<3; j++){
+          lThick.push_back(modSiThick);  lEle.push_back("Si");
+        }
+        lThick.push_back(modAirThick2);  lEle.push_back("Air");
+        lThick.push_back(modWCuThick);   lEle.push_back("WCu");
+	//cooling plate
+        lThick.push_back(coolingCuThick);   lEle.push_back("Cu");
+        m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+	lThick.clear();                  lEle.clear();
 
         //single structure
-        m_caloStruct.push_back( SamplingSection(lThick,lEle) );
 	
 	break;
       }//TB setup
